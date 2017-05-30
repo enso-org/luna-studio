@@ -10,7 +10,6 @@ module Empire.Data.Layers (
     Marker
   , Meta
   , TypeLayer
-  , CodeMarkers
   , attachEmpireLayers
   ) where
 
@@ -58,25 +57,11 @@ importMeta :: Req m '[Writer // Layer // AnyExpr // Meta] => Listener (Import //
 importMeta = listener $ \(t, _, ls) -> when (getTypeDesc_ @Meta ^. from typeDesc `elem` ls) $ putLayer @Meta t Nothing
 makePass 'importMeta
 
-data CodeMarkers
-type instance LayerData CodeMarkers t = MarkedExprMap
-
-initCodeMarkers :: Req m '[Editor // Layer // AnyExpr // CodeMarkers] => Listener (New // Expr l) m
-initCodeMarkers = listener $ \(t, _) -> putLayer @CodeMarkers t Prologue.mempty
-makePass 'initCodeMarkers
-
-importCodeMarkers :: Req m '[Writer // Layer // AnyExpr // CodeMarkers] => Listener (Import // Expr l) m
-importCodeMarkers = listener $ \(t, _, ls) -> when (getTypeDesc_ @CodeMarkers ^. from typeDesc `elem` ls) $ putLayer @CodeMarkers t Prologue.mempty
-makePass 'importCodeMarkers
-
 attachEmpireLayers :: (MonadPassManager m, Throws IRError m) => m ()
 attachEmpireLayers = do
     addExprEventListener @Meta        initMetaPass
     addExprEventListener @Meta        importMetaPass
     addExprEventListener @Marker      initNodeMarkerPass
     addExprEventListener @Marker      importNodeMarkerPass
-    addExprEventListener @CodeMarkers initCodeMarkersPass
-    addExprEventListener @CodeMarkers importCodeMarkersPass
     attachLayer 10 (getTypeDesc @Meta)        (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @Marker)      (getTypeDesc @AnyExpr)
-    attachLayer 10 (getTypeDesc @CodeMarkers) (getTypeDesc @AnyExpr)

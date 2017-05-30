@@ -11,7 +11,6 @@ import           NodeEditor.React.Store     (Ref)
 data State = State { _app                  :: Ref App
                    , _renderNeeded         :: Bool
                    , _mousePos             :: ScreenPosition
-                   , _topZIndex            :: Int
                    }
 
 makeLenses ''State
@@ -21,4 +20,3 @@ mkState ref = State
     {- app          -} ref
     {- renderNeeded -} False
     {- mousePos     -} (ScreenPosition $ Vector2 200 200)
-    {- topZIndex    -} def

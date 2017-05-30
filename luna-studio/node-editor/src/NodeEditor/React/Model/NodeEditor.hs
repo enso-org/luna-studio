@@ -46,6 +46,7 @@ data NodeEditor = NodeEditor { _expressionNodes     :: ExpressionNodesMap
 
                              , _isGraphLoaded       :: Bool
                              , _layout              :: Layout
+                             , _topZIndex           :: Int
                              } deriving (Eq, Generic)
 
 instance Default NodeEditor where
@@ -62,6 +63,7 @@ instance Default NodeEditor where
         {- searcher        -} def
         {- isGraphLoaded   -} False
         {- layout          -} def
+        {- topZIndex       -} def
 
 makeLenses ''NodeEditor
 
