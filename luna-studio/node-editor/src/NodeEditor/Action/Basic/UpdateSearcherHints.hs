@@ -3,8 +3,10 @@ module NodeEditor.Action.Basic.UpdateSearcherHints where
 import           Common.Prelude
 import           Control.Monad.Extra                (mapMaybeM)
 import qualified Control.Monad.State.Lazy           as S
-import           Data.Map.Lazy                      (Map)
-import qualified Data.Map.Lazy                      as Map
+import           Data.Map                           (Map)
+import qualified Data.Map                           as Map
+import           Data.Set                           (Set)
+import qualified Data.Set                           as Set
 import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
@@ -57,15 +59,15 @@ localClearSearcherHints = modifySearcher $ do
         Searcher.PortName pr     _ -> Searcher.PortName pr def
 
 getHintsForNode :: Text -> Maybe Text -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
-getHintsForNode query _         nsData localFunctions False = (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
-                                                           <> (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
+getHintsForNode query _         nsData localFunctions False = searchInScope localFunctions query
+                                                           <> searchInScope (globalFunctions nsData) query
                                                            <> searchInScope (allMethods nsData) query
-getHintsForNode query Nothing   nsData localFunctions True  = (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
-                                                           <> (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
+getHintsForNode query Nothing   nsData localFunctions True  = searchInScope (globalFunctions nsData) query
+                                                           <> searchInScope localFunctions query
                                                            <> searchInScope (allMethods nsData) query
 getHintsForNode query (Just cn) nsData localFunctions True  = searchInScope (methodsForClass cn nsData) query
-                                                           <> (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
-                                                           <> (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
+                                                           <> searchInScope (globalFunctions nsData) query
+                                                           <> searchInScope localFunctions query
                                                            <> searchInScope (allMethodsWithoutClass cn nsData) query
 
 globalFunctions :: Items ExpressionNode -> Items ExpressionNode
@@ -82,23 +84,30 @@ allMethodsWithoutClass :: Text -> Items ExpressionNode -> Items ExpressionNode
 allMethodsWithoutClass className' = Map.filterWithKey filterFunction where
     filterFunction k a = isGroup a && k /= className'
 
-setPrefix :: Text -> [QueryResult a] -> [QueryResult a]
-setPrefix prefix = map (\r -> r & Result.prefix .~ prefix)
+type IsFunction = Bool
 
 mergeByName :: [QueryResult a] -> [QueryResult a]
-mergeByName results = S.evalState (mapMaybeM processResult results) prefixesMap where
-    prefixesMap :: Map Text [Text]
-    prefixesMap = foldl (\m a -> Map.insertWith mapInsertFunction (a ^. Result.name) [a ^. Result.prefix] m) Map.empty results
+mergeByName results = S.evalState (mapMaybeM processResult results) methodMapAndFunctionSet where
+    methodMapAndFunctionSet :: (Map Text [Text], Set Text)
+    methodMapAndFunctionSet = foldl foldFunction (Map.empty, Set.empty) results
+    foldFunction :: (Map Text [Text], Set Text) -> QueryResult a -> (Map Text [Text], Set Text)
+    foldFunction (m,s) v = if Text.null $ v ^. Result.prefix
+        then (m, Set.insert (v ^. Result.name) s)
+        else (Map.insertWith mapInsertFunction (v ^. Result.name) [v ^. Result.prefix] m, s)
     mapInsertFunction :: [Text] -> [Text] -> [Text]
     mapInsertFunction newV oldV = if      length oldV > 3  then oldV
                                   else if length oldV == 3 then oldV <> [convert "..."]
                                                            else oldV <> newV
-    processResult :: QueryResult a -> S.State (Map Text [Text]) (Maybe (QueryResult a))
-    processResult res = (S.gets $ Map.lookup (res ^. Result.name)) >>= \case
+
+    processResult :: QueryResult a -> S.State (Map Text [Text], Set Text) (Maybe (QueryResult a))
+    processResult res = if Text.null $ res ^. Result.prefix then processFunction res else processMethod res
+    processFunction :: QueryResult a -> S.State (Map Text [Text], Set Text) (Maybe (QueryResult a))
+    processFunction res = (S.gets $ Set.member (res ^. Result.name) . (view _2)) >>= \inSet -> if not inSet then return Nothing else do
+        _2 %= Set.delete (res ^. Result.name)
+        return $ Just res
+    processMethod :: QueryResult a -> S.State (Map Text [Text], Set Text) (Maybe (QueryResult a))
+    processMethod res = (S.gets $ Map.lookup (res ^. Result.name) . (view _1)) >>= \case
         Nothing       -> return Nothing
         Just prefixes -> do
-            S.modify $ Map.delete (res ^. Result.name)
-            return . Just $ res & Result.prefix .~ mergePrefixes prefixes
-    mergePrefixes :: [Text] -> Text
-    mergePrefixes [t]      = t
-    mergePrefixes prefixes = Text.intercalate (convert ", ") $ map (\p -> if Text.null p then convert "Class" else p) prefixes
+            _1 %= Map.delete (res ^. Result.name)
+            return . Just $ res & Result.prefix .~ Text.intercalate (convert ", ") prefixes
