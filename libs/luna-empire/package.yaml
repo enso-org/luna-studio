@@ -35,7 +35,7 @@ dependencies:
     - lens
     - luna-core
     - luna-passes
-    - luna-syntax-text
+    - luna-syntax-text-parser
     - luna-studio-common
     - luna-stdlib
     - luna-project
@@ -48,6 +48,7 @@ dependencies:
     - split
     - stm
     - text
+    - text-processing
     - transformers
     - typelevel
     - uuid

@@ -45,8 +45,7 @@ import qualified Luna.Syntax.Text.Parser.Parser               as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing              as Parsing
 import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
 import           Luna.Syntax.Text.Parser.Marker               (MarkedExprMap)
-import qualified Data.SpanTree                                as SpanTree
-import           Luna.Syntax.Text.Source                      (Source, SourceTree)
+import           Luna.Syntax.Text.Source                      (Source)
 
 import qualified OCI.IR.Repr.Vis                   as Vis
 import qualified Control.Monad.State.Dependent.Old as DepOld
@@ -67,12 +66,12 @@ data ParserPass
 type instance Abstract   ParserPass = ParserPass
 type instance Inputs     Net   ParserPass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer ParserPass = ParserLayers
-type instance Inputs     Attr  ParserPass = '[Invalids, Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Parser.ReparsingStatus]
+type instance Inputs     Attr  ParserPass = '[Invalids, Source, Parser.ParsedExpr, MarkedExprMap, Parser.ReparsingStatus]
 type instance Inputs     Event ParserPass = '[]
 
 type instance Outputs    Net   ParserPass = '[AnyExpr, AnyExprLink]
 type instance Outputs    Layer ParserPass = ParserLayers
-type instance Outputs    Attr  ParserPass = '[Invalids, Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Parser.ReparsingStatus]
+type instance Outputs    Attr  ParserPass = '[Invalids, Source, Parser.ParsedExpr, MarkedExprMap, Parser.ReparsingStatus]
 type instance Outputs    Event ParserPass = ParserEmitters
 
 type instance Preserves        ParserPass = '[]

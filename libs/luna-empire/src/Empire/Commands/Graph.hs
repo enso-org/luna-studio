@@ -114,13 +114,12 @@ import qualified Empire.Commands.Autolayout      as Autolayout
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
-import qualified Empire.Commands.Lexer           as Lexer
 import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
 import           Data.Text.Position               (Delta)
-import           Data.SpanTree                    (LeftSpacedSpan(..))
+import           Data.Text.Span                   (LeftSpacedSpan(..), SpacedSpan(..), leftSpacedSpan)
 import qualified Luna.IR                          as IR
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrowTerm)
 import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan)
@@ -166,7 +165,7 @@ addNodeNoTC loc uuid input name meta = do
         addExprMapping index parsedNode
         textExpr     <- printMarkedExpression parsedNode
         let nodeSpan = fromIntegral $ Text.length textExpr
-        IR.putLayer @CodeSpan parsedNode (Just $ LeftSpacedSpan 5 nodeSpan)
+        IR.putLayer @CodeSpan parsedNode (leftSpacedSpan 5 nodeSpan)
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         nearestNode  <- putInSequence parsedNode meta
         return (nearestNode, parsedNode)
@@ -233,7 +232,7 @@ addToCode loc@(GraphLocation file _) previous inserted = do
         ref   <- ASTRead.getASTPointer inserted
         expr  <- printMarkedExpression ref
         range <- readRange ref
-        LeftSpacedSpan off _ <- readCodeSpan ref
+        LeftSpacedSpan (SpacedSpan off _) <- readCodeSpan ref
         let offset = Text.replicate (fromIntegral off - 1) " "
         return (Text.concat [offset, expr], fst range - fromIntegral off + 1)
     Library.withLibrary file $ Library.applyDiff position position (Text.concat [expr, "\n"])
@@ -347,9 +346,9 @@ updateCodeSpan ref = IR.matchExpr ref $ \case
     IR.Seq l r -> do
         l' <- updateCodeSpan =<< IR.source l
         r' <- updateCodeSpan =<< IR.source r
-        IR.putLayer @CodeSpan ref (Just $ l' <> r')
+        IR.putLayer @CodeSpan ref (l' <> r')
         return (l' <> r')
-    _          -> fromMaybe mempty <$> IR.getLayer @CodeSpan ref
+    _          -> IR.getLayer @CodeSpan ref
 
 addPort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 addPort loc portRef = withTC loc False $ addPortNoTC loc portRef
@@ -396,7 +395,7 @@ removeFromCode loc@(GraphLocation file _) nodeId = do
     (start, end) <- withGraph loc $ runASTOp $ do
         ref   <- ASTRead.getASTPointer nodeId
         range <- readRange ref
-        LeftSpacedSpan off _ <- readCodeSpan ref
+        LeftSpacedSpan (SpacedSpan off _) <- readCodeSpan ref
         return (fst range - fromIntegral off, snd range)
     void $ Library.withLibrary file $ Library.applyDiff start end ""
 
@@ -492,8 +491,8 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             Graph.breadcrumbHierarchy . BH.children . ix nodeId .= item
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
-            LeftSpacedSpan off _ <- readCodeSpan expr
-            IR.putLayer @CodeSpan expr (Just $ LeftSpacedSpan off (fromIntegral $ Text.length code))
+            LeftSpacedSpan (SpacedSpan off _) <- readCodeSpan expr
+            IR.putLayer @CodeSpan expr (leftSpacedSpan off (fromIntegral $ Text.length code))
             oldSeq      <- preuse $ Graph.breadcrumbHierarchy . BH.body
             forM_ oldSeq updateCodeSpan
             return (node, code)
@@ -803,8 +802,8 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
         (range, expression) <- withGraph (GraphLocation file (Breadcrumb [])) $ runASTOp $ do
             range                <- readRange ref
             expression           <- printMarkedExpression ref
-            LeftSpacedSpan off _ <- readCodeSpan ref
-            IR.putLayer @CodeSpan ref (Just $ LeftSpacedSpan off (fromIntegral $ Text.length expression))
+            LeftSpacedSpan (SpacedSpan off _) <- readCodeSpan ref
+            IR.putLayer @CodeSpan ref (leftSpacedSpan off (fromIntegral $ Text.length expression))
             return (range, expression)
         withGraph (GraphLocation file (Breadcrumb [])) $ runASTOp $ do
             oldSeq      <- preuse $ Graph.breadcrumbHierarchy . BH.body
@@ -828,16 +827,14 @@ readRange' ref = IR.matchExpr ref $ \case
 
 readRange :: ASTOp m => NodeRef -> m (Int, Int)
 readRange ref = do
-    LeftSpacedSpan off  len  <- readRange' ref
-    LeftSpacedSpan off' len' <- readCodeSpan ref
+    LeftSpacedSpan (SpacedSpan off  len)  <- readRange' ref
+    LeftSpacedSpan (SpacedSpan off' len') <- readCodeSpan ref
     let left' = fromIntegral off + fromIntegral len + fromIntegral off'
         left  = left' + (length ("def main:" :: String))
     return (left, left + fromIntegral len')
 
 readCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
-readCodeSpan ref = do
-    maybecodespan  <- IR.getLayer @CodeSpan ref
-    return $ fromMaybe (LeftSpacedSpan 0 0) maybecodespan
+readCodeSpan ref = IR.getLayer @CodeSpan ref
 
 getNodeIdForMarker :: ASTOp m => Int -> m (Maybe NodeId)
 getNodeIdForMarker index = do

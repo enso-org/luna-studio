@@ -56,8 +56,7 @@ import qualified Luna.Syntax.Text.Parser.Parser               as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing              as Parsing
 import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
 import           Luna.Syntax.Text.Parser.Marker               (MarkedExprMap)
-import qualified Data.SpanTree                                as SpanTree
-import           Luna.Syntax.Text.Source                      (Source, SourceTree)
+import           Luna.Syntax.Text.Source                      (Source)
 import qualified Luna.Pass.Typechecking.Typecheck             as Typecheck
 
 import qualified OCI.IR.Repr.Vis                   as Vis
@@ -80,11 +79,10 @@ type ASTOp m = (MonadThrow m,
                 MonadState Graph m,
                 Emitters EmpireEmitters m,
                 Editors Net  '[AnyExpr, AnyExprLink] m,
-                Editors Attr '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Invalids] m,
+                Editors Attr '[Source, Parser.ParsedExpr, MarkedExprMap, Invalids] m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
-                Parser.IRSpanTreeBuildingR m,
                 HasCallStack)
 
 
@@ -106,12 +104,12 @@ data EmpirePass
 type instance Abstract   EmpirePass = EmpirePass
 type instance Inputs     Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer EmpirePass = EmpireLayers
-type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, ExprMapping, Invalids] -- Parser attrs temporarily - probably need to call it as a separate Pass
+type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, MarkedExprMap, ExprMapping, Invalids] -- Parser attrs temporarily - probably need to call it as a separate Pass
 type instance Inputs     Event EmpirePass = '[]
 
 type instance Outputs    Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Outputs    Layer EmpirePass = EmpireLayers
-type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Invalids]
+type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedExpr, MarkedExprMap, Invalids]
 type instance Outputs    Event EmpirePass = EmpireEmitters
 
 type instance Preserves        EmpirePass = '[]
@@ -132,13 +130,11 @@ match = matchExpr
 
 deriving instance MonadCatch m => MonadCatch (Pass.PassManager m)
 deriving instance MonadCatch m => MonadCatch (DepState.StateT s m)
-deriving instance MonadCatch m => MonadCatch (SpanTree.TreeBuilder k t m)
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) a
          -> Command Graph a
 runASTOp pass = runPass inits pass where
     inits = do
-        setAttr (getTypeDesc @SourceTree)        $ (mempty :: SourceTree)
         setAttr (getTypeDesc @MarkedExprMap)     $ (mempty :: MarkedExprMap)
         setAttr (getTypeDesc @Invalids)          $ (mempty :: Invalids)
         setAttr (getTypeDesc @Source)            $ (error "Data not provided: Source")
@@ -165,7 +161,6 @@ runTypecheck imports = do
                . withVis
                . dropLogs
                . DepState.evalDefStateT @Cache
-               . (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo)
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
     ((st, passSt), newG) <- liftIO $ evalIR $ do
@@ -182,8 +177,8 @@ putNewIR ir = do
 
 
 runPass :: forall pass b a. KnownPass pass
-        => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
-        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+        => Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))) b
+        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) a
         -> Command Graph a
 runPass inits pass = do
     g <- get
@@ -192,7 +187,6 @@ runPass inits pass = do
                . withVis
                . dropLogs
                . DepState.evalDefStateT @Cache
-               . (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo)
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
     ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do

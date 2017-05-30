@@ -30,7 +30,6 @@ import           Empire.Data.AST                (SomeASTException)
 import qualified Empire.Commands.AST            as AST
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.GraphBuilder   as GraphBuilder
-import qualified Empire.Commands.Lexer          as Lexer
 import qualified Empire.Commands.Library        as Library
 import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..), ReparsingStatus (..))
@@ -604,10 +603,6 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
                 nodes `shouldBe` []
                 connections `shouldSatisfy` (not . null)
-        it "lex" $ \env -> do
-            let tokens = Lexer.lexer mainCondensed
-            tokens `shouldSatisfy` (not . null)
-            sum (map fst tokens) `shouldBe` Text.length mainCondensed
         it "autolayouts nodes on file load" $ \env -> do
             nodes <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" mainCondensed
