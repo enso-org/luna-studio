@@ -4,8 +4,7 @@ import           Common.Prelude
 import qualified Data.Map.Lazy                              as Map
 import qualified Data.Text                                  as Text
 import qualified Data.Text.Span                             as Span
-import           Luna.Syntax.Text.Lexer                     (Bound (Begin, End), Stream (Stream), Symbol (Block, BlockStart, Cons, Var),
-                                                             SymbolStream)
+import           Luna.Syntax.Text.Lexer                     (Bound (Begin, End), Stream (Stream), Symbol (..), SymbolStream)
 import qualified Luna.Syntax.Text.Lexer.Class               as Lexer
 import           LunaStudio.Data.Node                       (ExpressionNode)
 import qualified LunaStudio.Data.Node                       as Node
@@ -73,9 +72,18 @@ toText (Divided (DividedInput p q s)) = p <> q <> s
 fromStream :: Text -> SymbolStream Text -> Int -> Input
 fromStream input' inputStream pos = getInput (findQueryBegin inputStream pos) pos where
     isQuery :: Symbol Text -> Bool
-    isQuery (Var  _) = True
-    isQuery (Cons _) = True
-    isQuery _        = False
+    isQuery (Var      {}) = True
+    isQuery (Cons     {}) = True
+    isQuery (Wildcard {}) = True
+    isQuery (KwAll    {}) = True
+    isQuery (KwCase   {}) = True
+    isQuery (KwClass  {}) = True
+    isQuery (KwDef    {}) = True
+    isQuery (KwImport {}) = True
+    isQuery (KwOf     {}) = True
+    isQuery (Operator {}) = True
+    isQuery (Modifier {}) = True
+    isQuery _             = False
     findQueryBegin :: SymbolStream Text -> Int -> Maybe Int
     findQueryBegin (Stream [])    _ = Nothing
     findQueryBegin (Stream (h:t)) p = do

@@ -10,6 +10,7 @@ import qualified Data.Set                           as Set
 import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
+import qualified LunaStudio.Data.NodeSearcher       as NS
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getLocalFunctions, getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
@@ -58,14 +59,20 @@ localClearSearcherHints = modifySearcher $ do
         Searcher.NodeName nl     _ -> Searcher.NodeName nl def
         Searcher.PortName pr     _ -> Searcher.PortName pr def
 
+
 getHintsForNode :: Text -> Maybe Text -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
-getHintsForNode query _         nsData localFunctions False = searchInScope localFunctions query
+getHintsForNode q cn nsData localFunctions isFirst = if convert q == "_"
+    then searchInScope (Map.fromList [NS.entry q]) q <> getHintsForNode' q cn nsData localFunctions isFirst
+    else getHintsForNode' q cn nsData localFunctions isFirst
+
+getHintsForNode' :: Text -> Maybe Text -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
+getHintsForNode' query _         nsData localFunctions False = searchInScope localFunctions query
                                                            <> searchInScope (globalFunctions nsData) query
                                                            <> searchInScope (allMethods nsData) query
-getHintsForNode query Nothing   nsData localFunctions True  = searchInScope (globalFunctions nsData) query
+getHintsForNode' query Nothing   nsData localFunctions True  = searchInScope (globalFunctions nsData) query
                                                            <> searchInScope localFunctions query
                                                            <> searchInScope (allMethods nsData) query
-getHintsForNode query (Just cn) nsData localFunctions True  = searchInScope (methodsForClass cn nsData) query
+getHintsForNode' query (Just cn) nsData localFunctions True  = searchInScope (methodsForClass cn nsData) query
                                                            <> searchInScope (globalFunctions nsData) query
                                                            <> searchInScope localFunctions query
                                                            <> searchInScope (allMethodsWithoutClass cn nsData) query
