@@ -101,19 +101,19 @@ fromStream input' inputStream pos = getInput (findQueryBegin inputStream pos) po
         Divided $ DividedInput pref q suff
 
 findLambdaArgsAndEndOfLambdaArgs :: SymbolStream Text -> Maybe ([Text], Int)
-findLambdaArgsAndEndOfLambdaArgs (Stream tokens) = findRecursive tokens (0 :: Int) 0 def where
+findLambdaArgsAndEndOfLambdaArgs (Stream tokens) = findRecursive tokens (0 :: Int) 0 def def where
     exprLength   t = fromIntegral . unwrap $ t ^. Lexer.span . Span.length
     offsetLength t = fromIntegral . unwrap $ t ^. Lexer.span . Span.offset
     tokenLength  t = exprLength t + offsetLength t
-    findRecursive []    _                     _      _   = def
-    findRecursive (h:t) openParanthesisNumber endPos res = case h ^. Lexer.token_elem of
+    findRecursive []    _                     _      _    res = res
+    findRecursive (h:t) openParanthesisNumber endPos args res = case h ^. Lexer.token_elem of
         BlockStart    -> if openParanthesisNumber == 0
-                    then Just (res, endPos + exprLength h)
-                    else findRecursive t openParanthesisNumber        (endPos + tokenLength h) res
-        Var        {} -> findRecursive t openParanthesisNumber        (endPos + tokenLength h) $ h ^. Lexer.src : res
-        Block Begin   -> findRecursive t (succ openParanthesisNumber) (endPos + tokenLength h) res
-        Block End     -> findRecursive t (pred openParanthesisNumber) (endPos + tokenLength h) res
-        _             -> findRecursive t openParanthesisNumber        (endPos + tokenLength h) res
+                    then findRecursive t openParanthesisNumber        (endPos + tokenLength h) args $ Just (args, endPos + exprLength h)
+                    else findRecursive t openParanthesisNumber        (endPos + tokenLength h) args $ res
+        Var        {} -> findRecursive t openParanthesisNumber        (endPos + tokenLength h) (h ^. Lexer.src : args) res
+        Block Begin   -> findRecursive t (succ openParanthesisNumber) (endPos + tokenLength h) args res
+        Block End     -> findRecursive t (pred openParanthesisNumber) (endPos + tokenLength h) args res
+        _             -> findRecursive t openParanthesisNumber        (endPos + tokenLength h) args res
 
 mkDef :: Mode -> Searcher
 mkDef mode' = Searcher def mode' (Divided $ DividedInput def def def) False False
