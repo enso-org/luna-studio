@@ -99,8 +99,6 @@ updateInput input selectionStart selectionEnd action = do
                           then Searcher.Raw input
                       else if Text.null input
                           then Searcher.Divided $ Searcher.DividedInput def def def
-                      else if selectionStart == Text.length input && Text.last input == ' '
-                          then Searcher.Divided $ Searcher.DividedInput input def def
                           else Searcher.fromStream input inputStream selectionStart
     modifySearcher $ Searcher.input .= newInput
     m <- fmap2 (view Searcher.mode) $ getSearcher

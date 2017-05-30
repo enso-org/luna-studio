@@ -84,15 +84,22 @@ fromStream input' inputStream pos = getInput (findQueryBegin inputStream pos) po
     isQuery (Operator {}) = True
     isQuery (Modifier {}) = True
     isQuery _             = False
+    inString :: Symbol Text -> Bool
+    inString (Str    {})     = True
+    inString (StrEsc {})     = True
+    inString (Quote _ Begin) = True
+    inString _               = False
     findQueryBegin :: SymbolStream Text -> Int -> Maybe Int
     findQueryBegin (Stream [])    _ = Nothing
     findQueryBegin (Stream (h:t)) p = do
         let tokenLength = fromIntegral . unwrap $ h ^. Lexer.span . Span.length + h ^. Lexer.span . Span.offset
         if p > tokenLength
             then (tokenLength +) <$> findQueryBegin (Stream t) (p - tokenLength)
-        else if p <= (fromIntegral . unwrap $ h ^. Lexer.span . Span.length) && isQuery (h ^. Lexer.token_elem)
-            then Just 0
-            else Nothing
+        else if p <= (fromIntegral . unwrap $ h ^. Lexer.span . Span.length)
+            then if isQuery (h ^. Lexer.token_elem) then Just 0 else Nothing
+        else if inString (h ^. Lexer.token_elem)
+            then Nothing
+            else Just p
     getInput :: Maybe Int -> Int -> Input
     getInput Nothing    _   = Raw input'
     getInput (Just beg) end = do
