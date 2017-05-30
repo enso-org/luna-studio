@@ -140,9 +140,12 @@ createStdlib :: String -> IO (IO (), Scope)
 createStdlib = fmap (id *** Scope) . Compilation.createStdlib
 
 getSymbolMap :: Scope -> SymbolMap
-getSymbolMap (Scope (Imports clss funcs)) = SymbolMap (convert <$> Map.keys funcs) classes where
-    classes = processClass <$> Map.mapKeys convert clss
-    processClass (Class conses methods) = convert <$> Map.keys methods
+getSymbolMap (Scope (Imports clss funcs)) = SymbolMap functions classes where
+    functions = conses ++ (convert <$> Map.keys funcs)
+    conses    = getConses =<< Map.elems clss
+    getConses (Class conses _) = convert <$> Map.keys conses
+    classes   = processClass <$> Map.mapKeys convert clss
+    processClass (Class _ methods) = convert <$> Map.keys methods
 
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
