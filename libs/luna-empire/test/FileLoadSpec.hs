@@ -345,6 +345,66 @@ spec = around withChannels $ parallel $ do
                     , (97, 113)
                     , (31, 54)
                     ]
+        it "adds one node with excessive whitespace to existing file via node editor" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "           1" (NodeMeta (Position.fromTuple (0, 5)) False)
+                spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                code  <- Graph.getCode loc
+                return (spans, code)
+            withResult res $ \(spans, code) -> do
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    node1 «4»= 1
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (48, 68)
+                    , (73, 81)
+                    , (86, 102)
+                    , (31, 43)
+                    ]
+        it "adds one lambda with excessive whitespace to existing file via node editor" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "a:   b:   a   *  b" (NodeMeta (Position.fromTuple (0, 5)) False)
+                spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                code  <- Graph.getCode loc
+                return (spans, code)
+            withResult res $ \(spans, code) -> do
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    node1 «4»= a: b: a * b
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (58, 78)
+                    , (83, 91)
+                    , (96, 112)
+                    , (31, 53)
+                    ]
         it "adds lambda to existing file via node editor" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
