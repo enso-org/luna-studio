@@ -38,8 +38,17 @@ localUpdateSearcherHints = do
         m        <- use Searcher.mode
         let (mode, hintsLen) = case m of
                 (Searcher.Node _ nmi _) -> do
-                    let isFirstQuery q = Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
-                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) (nmi ^. className) nsData localFunctions (isFirstQuery q)) mayQuery
+                    let isFirstQuery         q    = Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
+                        strippedPrefix       q    = Text.dropWhileEnd (== ' ') $ q ^. Searcher.prefix
+                        searchForMethodsOnly q    = if Text.null $ strippedPrefix q then False else Text.last (strippedPrefix q) == '.'
+                        filterNSData        nsd q = if searchForMethodsOnly q then allMethods nsd else nsd
+                        filterLocalFuntions lfd q = if searchForMethodsOnly q then def else lfd
+                        items' = mergeByName . flip (maybe []) mayQuery $ \q ->
+                            getHintsForNode (q ^. Searcher.query)
+                                            (nmi ^. className)
+                                            (filterNSData nsData q)
+                                            (filterLocalFuntions localFunctions q)
+                                            (isFirstQuery q)
                     (updateNodeResult items' m, length items')
                 Searcher.Command {} -> do
                     let items' = maybe [] (searchInScope allCommands . view Searcher.query) mayQuery
