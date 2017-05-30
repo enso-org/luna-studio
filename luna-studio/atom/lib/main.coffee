@@ -141,7 +141,7 @@ module.exports = LunaStudio =
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-9':     -> pushSearcherEvent("AcceptEntry", 9)
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-input': -> pushSearcherEvent("AcceptInput")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':       -> pushSearcherEvent("Accept")
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-edit-entry':   -> pushSearcherEvent("EditEntry")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-tab-pressed':  -> pushSearcherEvent("TabPressed")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':    -> pushSearcherEvent("MoveDown")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-left':    -> pushSearcherEvent("MoveLeft")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':      -> pushSearcherEvent("MoveUp")

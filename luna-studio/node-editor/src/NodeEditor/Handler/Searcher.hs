@@ -30,7 +30,7 @@ handleEvent scheduleEvent = \case
     Searcher.Accept                   -> continue $ Searcher.accept scheduleEvent
     Searcher.AcceptInput              -> continue $ Searcher.acceptHint scheduleEvent 0
     Searcher.AcceptEntry  i           -> continue $ Searcher.acceptHint scheduleEvent i
-    Searcher.EditEntry                -> continue $ \action -> Searcher.updateInputWithSelectedHint action >> Searcher.forceSearcherInputUpdate
+    Searcher.TabPressed               -> continue $ Searcher.handleTabPressed
     Searcher.MoveDown                 -> continue Searcher.selectPreviousHint
     -- Searcher.KeyUp k                  -> when (Keys.withoutMods k Keys.backspace) $ continue Searcher.enableRollback
     -- Searcher.MoveLeft                 -> continue Searcher.tryRollback

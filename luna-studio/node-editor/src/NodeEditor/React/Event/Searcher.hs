@@ -13,7 +13,7 @@ data Event = InputChanged Text Int Int
            | Accept
            | AcceptInput
            | AcceptEntry Int
-           | EditEntry
+           | TabPressed
            | MoveDown
            | MoveUp
            | MoveLeft

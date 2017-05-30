@@ -73,7 +73,7 @@
   'cmd-enter'  : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
   'down'       : 'luna-studio:searcher-move-down'             # Searcher MoveDown
   'enter'      : 'luna-studio:searcher-accept'                # Searcher Accept
-  'tab'        : 'luna-studio:searcher-edit-entry'            # Searcher EditEntry
+  'tab'        : 'luna-studio:searcher-tab-pressed'           # Searcher TabPressed
   'up'         : 'luna-studio:searcher-move-up'               # Searcher MoveUp
 
 '.luna-studio':

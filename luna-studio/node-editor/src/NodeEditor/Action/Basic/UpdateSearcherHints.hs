@@ -36,7 +36,8 @@ localUpdateSearcherHints = do
     modifySearcher $ do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode
-        let (mode, hintsLen) = case m of
+        let selectInput      = maybe True (Text.null . view Searcher.query) mayQuery
+            (mode, hintsLen) = case m of
                 (Searcher.Node _ nmi _) -> do
                     let isFirstQuery         q    = Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
                         strippedPrefix       q    = Text.dropWhileEnd (== ' ') $ q ^. Searcher.prefix
@@ -54,7 +55,7 @@ localUpdateSearcherHints = do
                     let items' = maybe [] (searchInScope allCommands . view Searcher.query) mayQuery
                     (updateCommandsResult items' m, length items')
                 _                   -> (m, 0)
-        Searcher.selected      .= min 1 hintsLen
+        Searcher.selected      .= if selectInput then 0 else min 1 hintsLen
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
 

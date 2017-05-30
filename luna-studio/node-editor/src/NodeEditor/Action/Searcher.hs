@@ -119,6 +119,12 @@ updateHints _ = localUpdateSearcherHints
 clearHints :: Searcher -> Command State ()
 clearHints _ = localClearSearcherHints
 
+handleTabPressed :: Searcher -> Command State ()
+handleTabPressed action = withJustM getSearcher $ \s ->
+    if Text.null (s ^. Searcher.inputText) && s ^. Searcher.selected == 0
+        then close action
+        else updateInputWithSelectedHint action >> forceSearcherInputUpdate
+
 updateInputWithSelectedHint :: Searcher -> Command State Bool
 updateInputWithSelectedHint action = getSearcher >>= maybe (return False) updateWithSearcher where
     updateWithSearcher s = if s ^. Searcher.selected == 0 then return True else do
