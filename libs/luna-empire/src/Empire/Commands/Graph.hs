@@ -163,7 +163,11 @@ addNodeNoTC loc uuid input name meta = do
             _      -> generateNodeName
         parsedNode   <- AST.addNode uuid newNodeName parse
         index        <- getNextExprMarker
-        IR.putLayer @CodeSpan parsedNode (Just $ LeftSpacedSpan 5 (fromIntegral $ Text.length input + length newNodeName + length (show index) + 2 + 2 + 1))
+        inputIsUnify <- ASTRead.isMatch parse
+        let markerLength = 1 + length (show index) + 1
+        let nodeSpan = fromIntegral $ Text.length input + markerLength +
+                if inputIsUnify then 0 else length newNodeName + 3
+        IR.putLayer @CodeSpan parsedNode (Just $ LeftSpacedSpan 5 nodeSpan)
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         nearestNode  <- putInSequence parsedNode meta
         addExprMapping index parsedNode
