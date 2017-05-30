@@ -41,14 +41,13 @@ def prep_path(path):
     return os.path.normpath(os.path.join(script_abs_path, path))
 
 def rm_old():
-    for path in ('../atom/lib/gen', '../atom/styles/app.css', '../atom/node_modules'):
+    os.remove(prep_path('../atom/styles/app.css'))
+    for path in ('../atom/lib/gen', '../atom/node_modules'):
         shutil.rmtree(prep_path(path), ignore_errors=True)
 
 def create_dirs():
     for path in ('../atom/lib/gen', '../atom/styles'):
-        directory = prep_path(path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        os.makedirs(prep_path(path), exist_ok=True)
 
 def ghcjs_code():
     node_editor = prep_path('../.stack-work/') + '/**/bin/node-editor.jsexe/all.js'
