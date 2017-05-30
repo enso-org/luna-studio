@@ -95,9 +95,13 @@ openWith input mode = do
 updateInput :: Text -> Int -> Int -> Searcher -> Command State ()
 updateInput input selectionStart selectionEnd action = do
     let inputStream = runLexer input
-        newInput    = if Text.null input then Searcher.Divided $ Searcher.DividedInput def def def
-                      else if selectionStart /= selectionEnd then Searcher.Raw input
-                      else Searcher.fromStream input inputStream selectionStart
+        newInput    = if      selectionStart /= selectionEnd
+                          then Searcher.Raw input
+                      else if Text.null input
+                          then Searcher.Divided $ Searcher.DividedInput def def def
+                      else if selectionStart == Text.length input && Text.last input == ' '
+                          then Searcher.Divided $ Searcher.DividedInput input def def
+                          else Searcher.fromStream input inputStream selectionStart
     modifySearcher $ Searcher.input .= newInput
     m <- fmap2 (view Searcher.mode) $ getSearcher
     if      isNothing $ newInput ^? Searcher._Divided then clearHints action
@@ -123,11 +127,10 @@ updateInputWithSelectedHint action = getSearcher >>= maybe (return False) update
         let mayExpr         = s ^. Searcher.selectedExpression
             mayDividedInput = s ^? Searcher.input . Searcher._Divided
         withJust ((,) <$> mayExpr <*> mayDividedInput) $ \(expr, divInput) -> do
-            modifySearcher $ do
-                let expr' = if divInput ^? Searcher.suffix . ix 0 == Just ' ' then expr else expr <> " "
-                Searcher.input    .= Searcher.Raw (Searcher.toText . Searcher.Divided $ divInput & Searcher.query .~ expr')
-                Searcher.selected .= def
-            clearHints action
+            let expr'    = if divInput ^? Searcher.suffix . ix 0 == Just ' ' then expr else expr <> " "
+                newInput = Searcher.toText . Searcher.Divided $ divInput & Searcher.query .~ expr'
+                caretPos = Text.length newInput
+            updateInput newInput caretPos caretPos action
         return $ isJust mayExpr && isJust mayDividedInput
 
 accept :: (Event -> IO ()) -> Searcher -> Command State ()
