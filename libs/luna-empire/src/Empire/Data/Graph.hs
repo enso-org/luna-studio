@@ -10,6 +10,7 @@ module Empire.Data.Graph (
   , unit
   , breadcrumbHierarchy
   , lastNameId
+  , codeMarkers
   , defaultGraph
   , defaultAST
   , withVis
@@ -23,16 +24,18 @@ import           Empire.Data.BreadcrumbHierarchy   (BParent)
 import           Empire.Prelude
 
 import           Control.Monad.State               (MonadState(..), StateT, evalStateT, lift)
+import           Data.Map                          (Map)
 import           Empire.Data.AST                   (NodeRef)
 import           Empire.Data.Layers                (attachEmpireLayers)
-import qualified Control.Monad.State.Dependent     as DepState
 
 import           Control.Monad.Raise                    (MonadException(..))
+import qualified Control.Monad.State.Dependent          as DepState
 import           Luna.IR                                (IR, IRBuilder, AnyExpr, evalIRBuilder', evalPassManager',
                                                          attachLayer, snapshot, runRegs, Cache)
 import qualified OCI.Pass.Manager                       as Pass (RefState)
 import qualified OCI.Pass.Manager                       as PassManager (PassManager, State)
 import           Luna.Syntax.Text.Parser.Errors         (Invalids)
+import qualified Luna.Syntax.Text.Parser.Marker         as Luna
 import qualified Luna.Syntax.Text.Parser.Parser         as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing        as Parser ()
 import qualified Luna.Syntax.Text.Parser.CodeSpan       as CodeSpan
@@ -55,12 +58,13 @@ data Graph = Graph { _ast                   :: AST
                    , _unit                  :: NodeRef
                    , _breadcrumbHierarchy   :: BParent
                    , _lastNameId            :: Integer
+                   , _codeMarkers           :: Map Luna.Marker NodeRef
                    } deriving Show
 
 defaultGraph :: IO Graph
 defaultGraph = do
     ast' <- defaultAST
-    return $ Graph ast' $notImplemented def 0
+    return $ Graph ast' $notImplemented def 0 def
 
 type AST      = ASTState
 data ASTState = ASTState { _ir      :: IR
@@ -102,7 +106,7 @@ withVis m = do
 
 defaultAST :: IO AST
 defaultAST = mdo
-    let g = Graph ast $notImplemented def 0
+    let g = Graph ast $notImplemented def 0 def
     ast <- flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init

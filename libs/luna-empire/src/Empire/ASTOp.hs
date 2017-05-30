@@ -32,7 +32,7 @@ import           Data.Foldable        (toList)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy, pmState, ir, defaultAST)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Data.Layers   (CodeMarkers, Marker, Meta, TypeLayer, attachEmpireLayers)
+import           Empire.Data.Layers   (Marker, Meta, TypeLayer, attachEmpireLayers)
 import           Empire.Empire        (Command)
 
 import           Data.Event           (Emitters, type (//))
@@ -95,8 +95,7 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // Errors,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
-                      AnyExpr // CodeSpan.CodeSpan,
-                      AnyExpr // CodeMarkers]
+                      AnyExpr // CodeSpan.CodeSpan]
 
 type EmpireEmitters = '[New // AnyExpr, New // AnyExprLink,
                         Import // AnyExpr, Import // AnyExprLink,

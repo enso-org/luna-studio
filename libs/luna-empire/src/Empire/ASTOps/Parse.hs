@@ -32,7 +32,8 @@ import           Empire.ASTOps.Builder           (lams)
 import           Empire.ASTOps.Print
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
 import           Empire.Data.Graph               (Graph)
-import           Empire.Data.Layers              (CodeMarkers, attachEmpireLayers)
+import qualified Empire.Data.Graph               as Graph (codeMarkers)
+import           Empire.Data.Layers              (attachEmpireLayers)
 import           Empire.Data.Parser              (ParserPass)
 
 import           LunaStudio.Data.PortDefault     (PortDefault (..), PortValue (..))
@@ -126,7 +127,6 @@ runUnitParser code = do
         translator <- Function.importRooted funRoot
         exprMap    <- unwrap' <$> IR.getAttr @Parser.MarkedExprMap
         let transMap = Parser.MarkedExprMap $ Map.map translator exprMap
-        IR.putLayer @CodeMarkers (translator funExpr) transMap
         return (translator funExpr, transMap)
 
 runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
@@ -142,7 +142,7 @@ runUnitReparser code oldExpr = do
         run = runPass @ParserPass inits
     run $ do
         (expr, exprMap) <- do
-            gidMapOld <- IR.getLayer @CodeMarkers oldExpr
+            gidMapOld <- use Graph.codeMarkers
 
             -- parsing new file and updating updated analysis
             Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ SomeParserException e)
@@ -160,13 +160,12 @@ runUnitReparser code oldExpr = do
             let transMap = Parser.MarkedExprMap $ Map.map translator exprMap
 
             -- Preparing reparsing status
-            rs        <- Parsing.cmpMarkedExprMaps gidMapOld transMap
+            rs        <- Parsing.cmpMarkedExprMaps (wrap' gidMapOld) transMap
             IR.putAttr @Parser.ReparsingStatus (wrap rs)
             return (translator funExpr, transMap)
 
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         rs      <- IR.getAttr @Parser.ReparsingStatus
-        IR.putLayer @CodeMarkers (expr) exprMap
         return (expr, exprMap, rs)
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
@@ -184,7 +183,6 @@ runParser expr = do
         Parsing.parsingPassM Parsing.expr `catchAll` (\e -> throwM $ SomeParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
-        IR.putLayer @CodeMarkers (unwrap' res) exprMap
         return (unwrap' res, exprMap)
 
 runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
@@ -200,19 +198,18 @@ runReparser expr oldExpr = do
         run = runPass @ParserPass inits
     run $ do
         do
-            gidMapOld <- IR.getLayer @CodeMarkers oldExpr
+            gidMapOld <- use Graph.codeMarkers
 
             -- parsing new file and updating updated analysis
             Parsing.parsingPassM Parsing.valExpr2 `catchAll` (\e -> throwM $ SomeParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
-            rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
+            rs        <- Parsing.cmpMarkedExprMaps (wrap' gidMapOld) gidMap
             IR.putAttr @Parser.ReparsingStatus (wrap rs)
 
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
-        IR.putLayer @CodeMarkers (unwrap' res) exprMap
         status  <- IR.getAttr @Parser.ReparsingStatus
         return (unwrap' res, exprMap, status)
 

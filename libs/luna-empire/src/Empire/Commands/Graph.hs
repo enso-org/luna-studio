@@ -79,7 +79,7 @@ import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
-import           Empire.Data.Layers              (CodeMarkers, Marker)
+import           Empire.Data.Layers              (Marker)
 
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), Named, BreadcrumbItem)
 import qualified LunaStudio.Data.Breadcrumb      as Breadcrumb
@@ -327,12 +327,6 @@ makeCurrentSeq out = do
   let withOut = fmap head $ group $ sortedRefs ++ toList out
   AST.makeSeq withOut
 
-transplantExprMap :: ASTOp m => Maybe NodeRef -> Maybe NodeRef -> m ()
-transplantExprMap (Just oldSeq) (Just newSeq) = do
-    exprMap <- IR.getLayer @CodeMarkers oldSeq
-    IR.putLayer @CodeMarkers newSeq exprMap
-transplantExprMap _             _             = return ()
-
 updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
 updateGraphSeq newOut = do
     oldSeq     <- preuse $ Graph.breadcrumbHierarchy . BH.body
@@ -341,7 +335,6 @@ updateGraphSeq newOut = do
     case (,) <$> outLink <*> newOut of
         Just (l, o) -> IR.replaceSource o l
         Nothing     -> return ()
-    transplantExprMap oldSeq newOut
     forM_ oldSeq $ flip IR.deepDeleteWithWhitelist $ Set.fromList $ maybeToList newOut
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
@@ -727,7 +720,7 @@ loadCode code = do
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody ?= ref
     runAliasAnalysis
     newBH <- runASTOp $ do
-        IR.putLayer @CodeMarkers ref exprMap
+        setExprMap (coerce exprMap)
         makeTopBreadcrumbHierarchy ref
     Graph.breadcrumbHierarchy .= BH.ToplevelParent newBH
 
@@ -760,16 +753,10 @@ nodeLine ref = do
     return line
 
 getExprMap :: ASTOp m => m (Map.Map Luna.Marker NodeRef)
-getExprMap = do
-    nodeSeq <- GraphBuilder.getNodeSeq
-    case nodeSeq of
-        Just s -> coerce <$> IR.getLayer @CodeMarkers s
-        _      -> return Map.empty
+getExprMap = use Graph.codeMarkers
 
 setExprMap :: ASTOp m => Map.Map Luna.Marker NodeRef -> m ()
-setExprMap exprMap = do
-    nodeSeq <- GraphBuilder.getNodeSeq
-    forM_ nodeSeq $ \s -> IR.putLayer @CodeMarkers s (coerce exprMap)
+setExprMap exprMap = Graph.codeMarkers .= exprMap
 
 printMarkedExpression :: ASTOp m => NodeRef -> m Text
 printMarkedExpression ref = do
@@ -852,29 +839,21 @@ readCodeSpan ref = do
 
 getNodeIdForMarker :: ASTOp m => Int -> m (Maybe NodeId)
 getNodeIdForMarker index = do
-    nodeSeq <- GraphBuilder.getNodeSeq
-    case nodeSeq of
-        Just nodeSeq -> do
-            exprMap      <- IR.getLayer @CodeMarkers nodeSeq
-            let exprMap' :: Map.Map Luna.Marker NodeRef
-                exprMap' = coerce exprMap
-                Just ref = Map.lookup (fromIntegral index) exprMap'
-            varNodeId <- ASTRead.safeGetVarNodeId ref
-            nodeId    <- ASTRead.getNodeId ref
-            return $ varNodeId <|> nodeId
-        _            -> return Nothing
+    exprMap      <- getExprMap
+    let exprMap' :: Map.Map Luna.Marker NodeRef
+        exprMap' = coerce exprMap
+        Just ref = Map.lookup (fromIntegral index) exprMap'
+    varNodeId <- ASTRead.safeGetVarNodeId ref
+    nodeId    <- ASTRead.getNodeId ref
+    return $ varNodeId <|> nodeId
 
 markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
 markerCodeSpan loc index = withGraph loc $ runASTOp $ do
-    nodeSeq <- GraphBuilder.getNodeSeq
-    case nodeSeq of
-        Just nodeSeq -> do
-            exprMap      <- IR.getLayer @CodeMarkers nodeSeq
-            let exprMap' :: Map.Map Luna.Marker NodeRef
-                exprMap' = coerce exprMap
-                Just ref = Map.lookup (fromIntegral index) exprMap'
-            readRange ref
-        _            -> return (0,0)
+    exprMap      <- getExprMap
+    let exprMap' :: Map.Map Luna.Marker NodeRef
+        exprMap' = coerce exprMap
+        Just ref = Map.lookup (fromIntegral index) exprMap'
+    readRange ref
 
 -- internal
 
