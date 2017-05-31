@@ -16,13 +16,14 @@ import           Data.Map.Lazy                            (Map)
 import           Data.Time.Clock                          (UTCTime)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
+import           LunaStudio.Data.Error                    (Error)
 import           LunaStudio.Data.MonadPath                (MonadPath)
 import           LunaStudio.Data.Node                     (NodeId)
 import qualified LunaStudio.Data.Node                     as Empire
 import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
 import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
 import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
-import           LunaStudio.Data.NodeValue                (NodeValue (NodeError), NodeVisualization, VisualizerName, VisualizerPath)
+import           LunaStudio.Data.NodeValue                (ShortValue, VisualizationId, Visualizer, VisualizerName, VisualizerPath)
 import           LunaStudio.Data.Position                 (Position)
 import           NodeEditor.React.Model.IsNode            as X
 import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
@@ -40,15 +41,15 @@ data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
                                      , _position              :: Position
                                      , _visualizationsEnabled :: Bool
                                      , _code                  :: Maybe Text
-                                     , _value                 :: Maybe NodeValue
-                                     , _visualization         :: Maybe NodeVisualization
-                                     , _visualizers           :: Map VisualizerName VisualizerPath
+                                     , _value                 :: Maybe Value
+                                     , _visualization         :: Visualization
                                      , _zPos                  :: Int
                                      , _isSelected            :: Bool
                                      , _mode                  :: Mode
                                      , _execTime              :: Maybe Integer
                                      , _collaboration         :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
+
 
 data Mode = Collapsed
           | Expanded ExpandedMode
@@ -59,12 +60,20 @@ data ExpandedMode = Editor
                   | Function (Map BreadcrumbItem Subgraph)
                   deriving (Eq, Generic, NFData, Show)
 
-data Subgraph = Subgraph
-        { _expressionNodes :: ExpressionNodesMap
-        , _inputNode       :: Maybe InputNode
-        , _outputNode      :: Maybe OutputNode
-        , _monads          :: [MonadPath]
-        } deriving (Default, Eq, Generic, NFData, Show)
+data Subgraph = Subgraph { _expressionNodes :: ExpressionNodesMap
+                         , _inputNode       :: Maybe InputNode
+                         , _outputNode      :: Maybe OutputNode
+                         , _monads          :: [MonadPath]
+                         } deriving (Default, Eq, Generic, NFData, Show)
+
+data Value = ShortValue ShortValue
+           | Error      Error
+           deriving (Eq, Generic, NFData, Show)
+
+data Visualization = Visualization { _visualizationId   :: Maybe VisualizationId
+                                   , _activeVisualizer  :: Maybe Visualizer
+                                   , _visualizers       :: Map VisualizerName VisualizerPath
+                                   } deriving (Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
@@ -75,6 +84,7 @@ type ExpressionNodesMap = HashMap NodeId ExpressionNode
 makeLenses ''Collaboration
 makeLenses ''ExpressionNode
 makeLenses ''Subgraph
+makeLenses ''Visualization
 makePrisms ''ExpandedMode
 makePrisms ''Mode
 
@@ -90,8 +100,7 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- code                  -} (n ^. Empire.code)
         {- value                 -} def
-        {- visualization         -} def
-        {- visualizers           -} def
+        {- visualization         -} (Visualization def def def)
         {- zPos                  -} def
         {- isSelected            -} False
         {- mode                  -} def
@@ -128,8 +137,11 @@ subgraphs = mode . _Expanded . _Function
 
 returnsError :: ExpressionNode -> Bool
 returnsError node = case node ^. value of
-    Just (NodeError _) -> True
-    _                  -> False
+    Just (Error _) -> True
+    _              -> False
+
+getActiveVisualization :: ExpressionNode -> Maybe (VisualizationId, Visualizer)
+getActiveVisualization n = (,) <$> n ^. visualization . visualizationId <*> n ^. visualization . activeVisualizer
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'

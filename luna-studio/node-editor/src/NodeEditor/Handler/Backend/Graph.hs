@@ -36,7 +36,7 @@ import           NodeEditor.Action.Basic                     (localAddConnection
                                                               localSetSearcherHints, localUpdateNodeTypecheck,
                                                               localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
-                                                              setNodeValue, updateGraph, updateScene)
+                                                              updateGraph, updateNodeValueAndVisualization, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,
@@ -185,8 +185,8 @@ handle (Event.Batch ev) = Just $ case ev of
         let location = update ^. NodeResultUpdate.location
         inCurrentLocation location $ \path -> do
             let nid = update ^. NodeResultUpdate.nodeId
-            setNodeValue         (convert (path, nid)) $ update ^. NodeResultUpdate.value
-            setNodeProfilingData (convert (path, nid)) $ update ^. NodeResultUpdate.execTime
+            updateNodeValueAndVisualization (convert (path, nid)) $ update ^. NodeResultUpdate.value
+            setNodeProfilingData            (convert (path, nid)) $ update ^. NodeResultUpdate.execTime
 
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->

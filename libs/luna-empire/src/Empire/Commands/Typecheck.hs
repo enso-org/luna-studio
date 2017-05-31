@@ -13,7 +13,7 @@ import           Control.Arrow                     ((***))
 import           Data.List                         (sort)
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
-import           Data.Maybe                        (isNothing, maybeToList)
+import           Data.Maybe                        (isNothing, maybeToList, listToMaybe)
 import           Empire.Prelude                    hiding (toList)
 import           Prologue                          (catMaybes, fromString, itoListOf, itraverse, toListOf)
 
@@ -22,7 +22,7 @@ import           LunaStudio.Data.GraphLocation     (GraphLocation (..))
 import           LunaStudio.Data.MonadPath         (MonadPath (MonadPath))
 import           LunaStudio.Data.Node              (NodeId, nodeId)
 import qualified LunaStudio.Data.NodeMeta          as NodeMeta
-import           LunaStudio.Data.NodeValue         (NodeValue(..), VisualizationValue (JsonValue))
+import           LunaStudio.Data.NodeValue         (NodeValue(..), VisualizationValue (Value))
 import           LunaStudio.Data.TypeRep           (TypeRep (TCons))
 import           LunaStudio.Data.PortDefault       (PortValue (StringValue))
 
@@ -87,7 +87,7 @@ reportError loc nid err = do
         valuesCache %= Map.delete nid
         case err of
             Just e  -> Publisher.notifyResultUpdate loc nid (NodeError e)     0
-            Nothing -> Publisher.notifyResultUpdate loc nid (NodeValue "" []) 0
+            Nothing -> Publisher.notifyResultUpdate loc nid (NodeValue "" Nothing) 0
 
 updateNodes :: GraphLocation -> Command InterpreterEnv ()
 updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
@@ -126,7 +126,7 @@ updateValues loc scope = do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
         liftIO $ forM_ resVal $ \v -> listenReps v $ \case
             Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.Error APIError.RuntimeError $ convert err) 0
-            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (convert short) $ JsonValue . convert <$> longs) 0
+            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (convert short) $ Value . convert <$> listToMaybe longs) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do

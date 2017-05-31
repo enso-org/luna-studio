@@ -80,7 +80,6 @@ module NodeEditor.Action.Basic
     , setNodeMeta
     , setNodeProfilingData
     , setNodesMeta
-    , setNodeValue
     , setOutputMode
     , setOutputSidebarPortMode
     , setPortDefault
@@ -101,6 +100,7 @@ module NodeEditor.Action.Basic
     , updatePortSelfVisibility
     , updatePortSelfVisibilityForIds
     , updateScene
+    , updateNodeValueAndVisualization
     ) where
 
 import           NodeEditor.Action.Basic.AddConnection       (connect, localAddConnection, localAddConnections)
@@ -132,7 +132,6 @@ import           NodeEditor.Action.Basic.SetNodeMeta         (localMoveNode, loc
                                                               localToggleVisualizations, moveNode, moveNodes, setNodeMeta, setNodesMeta,
                                                               toggleVisualizations)
 import           NodeEditor.Action.Basic.SetNodeMode         (toggleSelectedNodesMode, toggleSelectedNodesUnfold)
-import           NodeEditor.Action.Basic.SetNodeResult       (setNodeProfilingData, setNodeValue)
 import           NodeEditor.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
 import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPortMode, setOutputSidebarPortMode)
 import           NodeEditor.Action.Basic.SetSidebarMode      (setInputMode, setOutputMode, toggleInputMode, toggleOutputMode)
@@ -144,4 +143,5 @@ import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpress
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode,
                                                               updateAllPortsSelfVisibility, updatePortSelfVisibility,
                                                               updatePortSelfVisibilityForIds)
+import           NodeEditor.Action.Basic.UpdateNodeValue     (setNodeProfilingData, updateNodeValueAndVisualization)
 import           NodeEditor.Action.Basic.UpdateSearcherHints (localClearSearcherHints, localSetSearcherHints, localUpdateSearcherHints)

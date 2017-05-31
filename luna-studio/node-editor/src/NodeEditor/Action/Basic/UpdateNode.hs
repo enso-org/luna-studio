@@ -2,6 +2,7 @@ module NodeEditor.Action.Basic.UpdateNode where
 
 import           Common.Prelude
 import           Control.Monad                              (filterM)
+import qualified Data.Map                                   as Map
 import           LunaStudio.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
 import qualified LunaStudio.Data.Node                       as Empire
 import           LunaStudio.Data.NodeValue                  (applyType)
@@ -58,21 +59,25 @@ localUpdateExpressionNode' :: Bool -> ExpressionNode -> Command State Bool
 localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
+        visualizers <- case node ^? outPortAt [] . valueType of
+            Nothing  -> return def
+            Just tpe -> use Global.visualizers >>= applyType tpe
+        portSelfVis <- shouldDisplayPortSelf node
         let selected    = prevNode ^. isSelected
             mode'       = prevNode ^. ExpressionNode.mode
             inPorts     = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
             outPorts    = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
-        portSelfVis <- shouldDisplayPortSelf node
-        let (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
-        visualizers <- case node ^? outPortAt [] . valueType of
-            Nothing  -> return def
-            Just tpe -> use Global.visualizers >>= applyType tpe
-        NodeEditor.addExpressionNode $ node & isSelected                 .~ selected
-                                            & ExpressionNode.mode        .~ mode'
-                                            & ExpressionNode.inPorts     .~ inPorts
-                                            & ExpressionNode.outPorts    .~ outPorts
-                                            & ExpressionNode.visualizers .~ visualizers
-                                            & inPortAt [Self] . mode     %~ selfMode
+            (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
+            activeVisualizer = case node ^. ExpressionNode.visualization . ExpressionNode.activeVisualizer of
+                Nothing               -> listToMaybe (Map.toList visualizers)
+                Just v@(vname, vpath) -> if Map.lookup vname visualizers == Just vpath then Just v else listToMaybe (Map.toList visualizers)
+        NodeEditor.addExpressionNode $ node & isSelected                   .~ selected
+                                            & ExpressionNode.mode          .~ mode'
+                                            & ExpressionNode.inPorts       .~ inPorts
+                                            & ExpressionNode.outPorts      .~ outPorts
+                                            & ExpressionNode.visualization . ExpressionNode.activeVisualizer .~ activeVisualizer
+                                            & ExpressionNode.visualization . ExpressionNode.visualizers      .~ visualizers
+                                            & inPortAt [Self] . mode       %~ selfMode
         return True
 
 localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()
