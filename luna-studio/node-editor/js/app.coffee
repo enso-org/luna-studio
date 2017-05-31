@@ -1,8 +1,10 @@
 $$              = require('./common')
 config          = require('./config')
 
-atomCallback    = require('./atom-callback')
-GoogleAnalytics = require('./GoogleAnalytics')
+atomCallback            = require('./atom-callback')
+GoogleAnalytics         = require('./GoogleAnalytics')
+
+window.visualizerFramesManager = require('./visualizers')
 
 start = ->
   $(document).ready ->
