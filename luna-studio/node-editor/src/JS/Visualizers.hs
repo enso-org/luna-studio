@@ -14,10 +14,10 @@ foreign import javascript safe "Object.keys(typeof window.visualizers == 'object
 getVisualizers :: IO [String]
 getVisualizers = fmap pFromJSVal . toList <$> getVisualizers'
 
-foreign import javascript safe "window.frames[$1].window.postMessage($2, '*')"
+foreign import javascript safe "visualizerFramesManager.sendData($1, $2);"
     sendVisualisationData' :: JSString -> JSString -> IO ()
 
-foreign import javascript safe "console.log($1)"
+foreign import javascript safe "visualizerFramesManager.register($1);"
     registerVisualizerFrame' :: JSString -> IO ()
 
 registerVisualizerFrame :: UUID -> IO ()
