@@ -41,7 +41,10 @@ def prep_path(path):
     return os.path.normpath(os.path.join(script_abs_path, path))
 
 def rm_old():
-    os.remove(prep_path('../atom/styles/app.css'))
+    try:
+        os.remove(prep_path('../atom/styles/app.css'))
+    except IOError:
+        pass
     for path in ('../atom/lib/gen', '../atom/node_modules'):
         shutil.rmtree(prep_path(path), ignore_errors=True)
 
