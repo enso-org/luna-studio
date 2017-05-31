@@ -50,7 +50,7 @@ lunaClasses = {
 module.exports =
 class LunaSemanticGrammar extends Grammar
     constructor: (registry, lex) ->
-        super(registry, { name: "Luna (Semantic Highlighting)"
+        super(registry, { name: "Luna"
                         , fileTypes: ["luna"]
                         , scopeName: "source.luna"
                         })
