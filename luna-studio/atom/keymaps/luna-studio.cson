@@ -49,26 +49,26 @@
   'up'              : 'native!'
 
 '.luna-searcher__input':
-  'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher AcceptEntry 0
-  'cmd-0'      : 'luna-studio:searcher-accept-0'              # Searcher AcceptEntry 0
-  'ctrl-1'     : 'luna-studio:searcher-accept-1'              # Searcher AcceptEntry 1
-  'cmd-1'      : 'luna-studio:searcher-accept-1'              # Searcher AcceptEntry 1
-  'ctrl-2'     : 'luna-studio:searcher-accept-2'              # Searcher AcceptEntry 2
-  'cmd-2'      : 'luna-studio:searcher-accept-2'              # Searcher AcceptEntry 2
-  'ctrl-3'     : 'luna-studio:searcher-accept-3'              # Searcher AcceptEntry 3
-  'cmd-3'      : 'luna-studio:searcher-accept-3'              # Searcher AcceptEntry 3
-  'ctrl-4'     : 'luna-studio:searcher-accept-4'              # Searcher AcceptEntry 4
-  'cmd-4'      : 'luna-studio:searcher-accept-4'              # Searcher AcceptEntry 4
-  'ctrl-5'     : 'luna-studio:searcher-accept-5'              # Searcher AcceptEntry 5
-  'cmd-5'      : 'luna-studio:searcher-accept-5'              # Searcher AcceptEntry 5
-  'ctrl-6'     : 'luna-studio:searcher-accept-6'              # Searcher AcceptEntry 6
-  'cmd-6'      : 'luna-studio:searcher-accept-6'              # Searcher AcceptEntry 6
-  'ctrl-7'     : 'luna-studio:searcher-accept-7'              # Searcher AcceptEntry 7
-  'cmd-7'      : 'luna-studio:searcher-accept-7'              # Searcher AcceptEntry 7
-  'ctrl-8'     : 'luna-studio:searcher-accept-8'              # Searcher AcceptEntry 8
-  'cmd-8'      : 'luna-studio:searcher-accept-8'              # Searcher AcceptEntry 8
-  'ctrl-9'     : 'luna-studio:searcher-accept-9'              # Searcher AcceptEntry 9
-  'cmd-9'      : 'luna-studio:searcher-accept-9'              # Searcher AcceptEntry 9
+  'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher HintShortcut 0
+  'cmd-0'      : 'luna-studio:searcher-accept-0'              # Searcher HintShortcut 0
+  'ctrl-1'     : 'luna-studio:searcher-accept-1'              # Searcher HintShortcut 1
+  'cmd-1'      : 'luna-studio:searcher-accept-1'              # Searcher HintShortcut 1
+  'ctrl-2'     : 'luna-studio:searcher-accept-2'              # Searcher HintShortcut 2
+  'cmd-2'      : 'luna-studio:searcher-accept-2'              # Searcher HintShortcut 2
+  'ctrl-3'     : 'luna-studio:searcher-accept-3'              # Searcher HintShortcut 3
+  'cmd-3'      : 'luna-studio:searcher-accept-3'              # Searcher HintShortcut 3
+  'ctrl-4'     : 'luna-studio:searcher-accept-4'              # Searcher HintShortcut 4
+  'cmd-4'      : 'luna-studio:searcher-accept-4'              # Searcher HintShortcut 4
+  'ctrl-5'     : 'luna-studio:searcher-accept-5'              # Searcher HintShortcut 5
+  'cmd-5'      : 'luna-studio:searcher-accept-5'              # Searcher HintShortcut 5
+  'ctrl-6'     : 'luna-studio:searcher-accept-6'              # Searcher HintShortcut 6
+  'cmd-6'      : 'luna-studio:searcher-accept-6'              # Searcher HintShortcut 6
+  'ctrl-7'     : 'luna-studio:searcher-accept-7'              # Searcher HintShortcut 7
+  'cmd-7'      : 'luna-studio:searcher-accept-7'              # Searcher HintShortcut 7
+  'ctrl-8'     : 'luna-studio:searcher-accept-8'              # Searcher HintShortcut 8
+  'cmd-8'      : 'luna-studio:searcher-accept-8'              # Searcher HintShortcut 8
+  'ctrl-9'     : 'luna-studio:searcher-accept-9'              # Searcher HintShortcut 9
+  'cmd-9'      : 'luna-studio:searcher-accept-9'              # Searcher HintShortcut 9
   'ctrl-enter' : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
   'cmd-enter'  : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
   'down'       : 'luna-studio:searcher-move-down'             # Searcher MoveDown

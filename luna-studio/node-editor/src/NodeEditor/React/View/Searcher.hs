@@ -90,7 +90,7 @@ results_ ref selected results = forKeyed_ (drop (selected - 1) results) $ \(idx,
     div_
         [ "key"       $= jsShow idx
         , "className" $= resultClasses idx
-        , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+        , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptWithHint (idx + 1))
         ] $ do
         div_
             ["key" $= "name"

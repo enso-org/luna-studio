@@ -7,8 +7,8 @@ import qualified Data.Text                                  as Text
 import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
 import           Luna.Syntax.Text.Lexer                     (runGUILexer)
-import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
 import           LunaStudio.Data.Geometry                   (snap)
+import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef (OutPortRef))
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
@@ -187,9 +187,16 @@ selectHint i _ = do
             modifySearcher $ Searcher.selected .= i
             return True
 
-acceptHint :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
-acceptHint scheduleEvent hintNum action =
-    whenM (selectHint hintNum action) $ accept scheduleEvent action
+acceptWithHint :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
+acceptWithHint scheduleEvent hintNum' action = let hintNum = (hintNum' - 1) `mod` 10 in
+    withJustM (view Searcher.selected `fmap2` getSearcher) $ \selected ->
+        whenM (selectHint (max selected 1 + hintNum) action) $ accept scheduleEvent action
+
+updateInputWithHint :: Int -> Searcher -> Command State ()
+updateInputWithHint hintNum' action = let hintNum = (hintNum' - 1) `mod` 10 in
+    withJustM (view Searcher.selected `fmap2` getSearcher) $ \selected ->
+        whenM (selectHint (max selected 1 + hintNum) action) $
+            updateInputWithSelectedHint action >> forceSearcherInputUpdate
 
 
 forceSearcherInputUpdate :: Command State ()
