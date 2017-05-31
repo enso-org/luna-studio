@@ -8,6 +8,7 @@ import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
 import           Luna.Syntax.Text.Lexer                     (runLexer)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
+import           LunaStudio.Data.Geometry                   (snap)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef (OutPortRef))
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
@@ -73,10 +74,10 @@ open = do
                     Just (TCons cn _) -> Just $ convert cn
                     _                 -> Nothing
                 predPortRef = OutPortRef (n ^. ExpressionNode.nodeLoc) . view Port.portId <$> mayP
-            return $ (className, Searcher.NewNode pos predPortRef)
+            return $ (className, Searcher.NewNode (snap pos) predPortRef)
         _   -> do
             pos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
-            return $ (def, Searcher.NewNode pos def)
+            return $ (def, Searcher.NewNode (snap pos) def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
     openWith "" $ Searcher.Node nl (Searcher.NodeModeInfo className (Just nn) def) def
 
