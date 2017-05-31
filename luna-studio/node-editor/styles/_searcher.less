@@ -2,6 +2,9 @@
 //         searcher        //
 /////////////////////////////
 
+@searcherWidth:      460px;
+@searcherLineHeight: 24px;
+
 .luna-node__name,
 .luna-node__expression {
     min-height: 16px;
@@ -64,18 +67,18 @@
     display:        flex;
     flex-direction: column-reverse;
     position:       absolute;
-    left:          -200px;
-    width:          400px;
+    left:          -@searcherWidth/2;
+    width:          @searcherWidth;
     text-align:     center;
     border-radius:  4px;
     overflow:       hidden;
     padding:        0;
     background:     #222;
-    max-height:     240px;
+    max-height:     @searcherLineHeight*10;
 }
 
 .luna-searcher__results__item {
-    line-height: 24px;
+    line-height: @searcherLineHeight;
 }
 .luna-searcher__results__item--selected {
     background: rgba(255,255,255,.1);
@@ -85,11 +88,25 @@
         opacity: 1;
     }
 }
-
+.luna-searcher__results__item::before {
+    position: absolute;
+    left:     4px;
+    opacity:  .5;
+}
+.luna-searcher__results__item:nth-of-type(1)::before { content: "⌘1" }
+.luna-searcher__results__item:nth-of-type(2)::before { content: "⌘2" }
+.luna-searcher__results__item:nth-of-type(3)::before { content: "⌘3" }
+.luna-searcher__results__item:nth-of-type(4)::before { content: "⌘4" }
+.luna-searcher__results__item:nth-of-type(5)::before { content: "⌘5" }
+.luna-searcher__results__item:nth-of-type(6)::before { content: "⌘6" }
+.luna-searcher__results__item:nth-of-type(7)::before { content: "⌘7" }
+.luna-searcher__results__item:nth-of-type(8)::before { content: "⌘8" }
+.luna-searcher__results__item:nth-of-type(9)::before { content: "⌘9" }
+.luna-searcher__results__item:nth-of-type(10)::before { content: "⌘0" }
 
 .luna-searcher__pre,
 .luna-searcher__pre + span {
-    height:     24px;
+    height:     @searcherLineHeight;
     display:    block;
     text-align: left;
     width:      50%;
