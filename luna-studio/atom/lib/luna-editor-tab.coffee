@@ -48,7 +48,6 @@ module.exports =
               if @uri == uri_send
                 @getBuffer().setText(text)
                 console.log("setBuffer")
-                @setGrammar(new LunaSemanticGrammar(atom.grammars, @internal.lex))
 
         @internal.bufferListener setBuffer
 

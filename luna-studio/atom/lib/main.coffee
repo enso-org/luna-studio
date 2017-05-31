@@ -6,6 +6,8 @@ SubAtom       = require 'sub-atom'
 codeEditor = (require './gen/text-editor-ghcjs.js')()
 nodeEditor = (require './gen/node-editor-ghcjs.js')()
 path = require 'path'
+LunaSemanticGrammar = require './luna-grammar'
+
 
 pushShortcutEvent = (name, arg = null) -> nodeEditor.pushEvent({_shortcut: name, _arg : arg})
 pushSearcherEvent = (name, arg = null) -> nodeEditor.pushEvent(if arg == null then {tag: name} else {tag: name, contents : arg})
@@ -30,6 +32,7 @@ module.exports = LunaStudio =
     codeEditor.statusListener actStatus
 
   activate: (state) ->
+    atom.grammars.addGrammar(new LunaSemanticGrammar(atom.grammars, codeEditor.lex))
     codeEditor.start()
     actStatus = (data) ->
         if data == 'activate'
