@@ -2,7 +2,6 @@
 {TextEditorView, View} = require 'atom-space-pen-views'
 path = require 'path'
 SubAtom = require 'sub-atom'
-LunaSemanticGrammar = require './luna-grammar'
 
 TextBuffer::onDidStopChangingWithDiffs = (callback) ->
   diffs = []

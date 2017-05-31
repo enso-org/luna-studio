@@ -44,7 +44,7 @@ lunaClasses = {
         ## Comment
         LineComment: 'comment'
         ## Other
-        Unknown: ''
+        # Unknown: ''
     }
 
 module.exports =
@@ -56,10 +56,6 @@ class LunaSemanticGrammar extends Grammar
                         })
         @lex = lex
 
-    getScore: ->
-        lunaGrammar = @registry.grammarForScopeName("source.luna")
-        return if lunaGrammar? then (lunaGrammar.getScore.apply(lunaGrammar, arguments) + 1) else 0
-
     tokenizeLine: (line, ruleStack, firstLine = false) ->
         ruleStack = 0 unless ruleStack?
         lexerLine = @lex(line)
@@ -67,13 +63,17 @@ class LunaSemanticGrammar extends Grammar
         tags = []
         tokens = []
         outerRegistry = @registry
+        outerScopeName = @scopeName
         addToken = (text, lexerTags) ->
-            scopes = if lexerTags.length == 0 then undefined else lunaClasses[lexerTags[lexerTags.length - 1]] #FIXME use all keywords
-            fullScopes = @scopeName + (if scopes != undefined then ("." + scopes) else "")
-            tags.push outerRegistry.startIdForScope(fullScopes)
+            scopes = outerScopeName
+            for lexerTag in lexerTags
+                cls = lunaClasses[lexerTag]
+                if cls?
+                    scopes += "." + cls
+            tags.push outerRegistry.startIdForScope(scopes)
             tags.push text.length
-            tags.push outerRegistry.endIdForScope(fullScopes)
-            tokens.push { value: text, scopes: [fullScopes] }
+            tags.push outerRegistry.endIdForScope(scopes)
+            tokens.push { value: text, scopes: [scopes] }
 
         while buffer.length != 0
             if lexerLine.length > 0
