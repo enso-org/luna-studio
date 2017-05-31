@@ -1,9 +1,32 @@
 <html>
+<head>
+    <style>
+        body {
+            color: white;
+            font-family: monospace;
+        }
+        table {
+          border: 1px solid white;
+          border-collapse: collapse;
+        }
+        td {
+          border: 1px solid white;
+          margin: 0;
+        }
+    </style>
+</head>
 <body>
     <script>
-        console.log("Loaded.");
+        var render = function (json) {
+            data = JSON.parse(json);
+            result = "";
+            data.forEach(function (point, ix) {
+              result += ("<tr><td>" + ix + "</td><td>" + point + "</td></tr>");
+            });
+            document.body.innerHTML = "<table>" + result + "</table>";
+        };
         window.addEventListener("message", function (evt) {
-            document.write("<h1>" + evt.data + "</h1>");
+            render(evt.data);
         });
     </script>
 </body>
