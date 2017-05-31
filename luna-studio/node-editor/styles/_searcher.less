@@ -64,8 +64,8 @@
     display:        flex;
     flex-direction: column-reverse;
     position:       absolute;
-    left:          -250px;
-    width:          500px;
+    left:          -200px;
+    width:          400px;
     text-align:     center;
     border-radius:  4px;
     overflow:       hidden;
@@ -79,6 +79,11 @@
 }
 .luna-searcher__results__item--selected {
     background: rgba(255,255,255,.1);
+    color: #9ab;
+    .luna-searcher__hl {
+        color: #fff;
+        opacity: 1;
+    }
 }
 
 
@@ -99,5 +104,6 @@
     opacity: 0;
 }
 .luna-searcher__hl {
-    color: #eff;
+    color: #dff;
+    opacity: 0.7;
 }
