@@ -7,6 +7,7 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import           Data.Map                   (Map)
 import qualified Data.Map                   as Map
 import           Data.Text                  (Text)
+import           Data.UUID.Types            (UUID)
 import           LunaStudio.Data.Error      (Error)
 import           LunaStudio.Data.TypeRep    (TypeRep, toConstructorRep)
 import           Prologue                   hiding (Text, TypeRep)
@@ -15,6 +16,9 @@ import           Prologue                   hiding (Text, TypeRep)
 type VisualizerName    = Text
 type VisualizerPath    = Text
 type VisualizerMatcher = TypeRep -> IO (Maybe VisualizerPath)
+type Visualizer        = (VisualizerName, VisualizerPath)
+type VisualizationData = [Text]
+type VisualizationId   = UUID
 
 transformJSVisualizerMatcher :: MonadIO m => (String -> m String) -> TypeRep -> m (Maybe VisualizerPath)
 transformJSVisualizerMatcher f r = case toConstructorRep r of
@@ -31,21 +35,17 @@ applyType tpe = fmap (Map.fromList . catMaybes) . mapM applyToEntry . Map.toList
 
 type ShortValue = Text
 
-data VisualizationValue = JsonValue String
-                        | HtmlValue String
+data VisualizationValue = Value Text
+                        | StreamStart
                         deriving (Eq, Generic, NFData, Show)
 
-data NodeValue = NodeValue ShortValue [VisualizationValue]
-               | NodeError Error
+data NodeValue = NodeValue       ShortValue (Maybe VisualizationValue)
+               | StreamDataPoint Text
+               | NodeError       Error
                deriving (Eq, Generic, NFData, Show)
 
-data NodeVisualization = NodeVisualization { _visualizerName     :: VisualizerName
-                                           , _visualizerPath     :: VisualizerPath
-                                           , _visualizationData  :: VisualizationValue
-                                           } deriving (Eq, Generic, NFData, Show)
 
 makePrisms ''NodeValue
-makePrisms ''NodeVisualization
 makePrisms ''VisualizationValue
 instance Binary NodeValue
 instance Binary VisualizationValue

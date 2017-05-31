@@ -1,5 +1,10 @@
 <html>
 <body>
-    <h1> DUPSKO </h1>
+    <script>
+        console.log("Loaded.");
+        window.addEventListener("message", function (evt) {
+            document.write("<h1>" + evt.data + "</h1>");
+        });
+    </script>
 </body>
 </html>
