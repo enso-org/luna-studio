@@ -100,7 +100,7 @@ updateInput input selectionStart selectionEnd action = do
                           then Searcher.Raw input
                       else if Text.null input
                           then Searcher.Divided $ Searcher.DividedInput def def def
-                          else Searcher.fromStream input inputStream selectionStart
+                          else Searcher.fromStream inputStream selectionStart
     modifySearcher $ Searcher.input .= newInput
     m <- fmap2 (view Searcher.mode) $ getSearcher
     if      isNothing $ newInput ^? Searcher._Divided then clearHints action

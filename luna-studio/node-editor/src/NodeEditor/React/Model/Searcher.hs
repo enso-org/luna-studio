@@ -68,9 +68,11 @@ toText :: Input -> Text
 toText (Raw t)                        = t
 toText (Divided (DividedInput p q s)) = p <> q <> s
 
---TODO[LJK]: Once WD fixes convert use convert on Stream instead of passing input
-fromStream :: Text -> [LexerGUIToken String] -> Int -> Input
-fromStream input' inputStream pos = getInput (findQueryBegin inputStream pos) pos where
+fromStream :: [LexerGUIToken String] -> Int -> Input
+fromStream inputStream pos = getInput (findQueryBegin inputStream pos) pos where
+
+    input' = convert $ concatMap (view Lexer.guiSource) inputStream
+
     isQuery :: Symbol String -> Bool
     isQuery (Var      {}) = True
     isQuery (Cons     {}) = True
