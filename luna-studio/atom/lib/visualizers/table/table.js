@@ -8,7 +8,7 @@
     document.body.innerHTML = "<table>" + result + "</table>";
   };
   window.addEventListener("message", function (evt) {
-    render(evt.data);
+    render(evt.data.data);
     document.body.addEventListener("click", function () { console.log("Clicked inside table"); });
   });
 }());

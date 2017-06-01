@@ -5,6 +5,7 @@
 
 module Empire.Commands.Typecheck where
 
+import           Control.Concurrent                (forkIO)
 import           Control.Monad                     (forM_, void)
 import           Control.Monad.Except              hiding (when)
 import           Control.Monad.Reader              (ask, runReaderT)
@@ -22,7 +23,7 @@ import           LunaStudio.Data.GraphLocation     (GraphLocation (..))
 import           LunaStudio.Data.MonadPath         (MonadPath (MonadPath))
 import           LunaStudio.Data.Node              (NodeId, nodeId)
 import qualified LunaStudio.Data.NodeMeta          as NodeMeta
-import           LunaStudio.Data.NodeValue         (NodeValue(..), VisualizationValue (Value))
+import           LunaStudio.Data.NodeValue         (NodeValue(..), VisualizationValue (..))
 import           LunaStudio.Data.TypeRep           (TypeRep (TCons))
 import           LunaStudio.Data.PortDefault       (PortValue (StringValue))
 
@@ -41,7 +42,7 @@ import qualified Empire.Data.Graph                 as Graph
 import           Empire.Empire
 
 import           Luna.Builtin.Data.LunaValue       (LunaData)
-import           Luna.Builtin.Prim                 (listenReps)
+import           Luna.Builtin.Prim                 (getReps, SingleRep (..), ValueRep (..))
 import           Luna.Builtin.Data.LunaEff         (runIO, runError)
 import           Luna.Builtin.Data.Module          (Imports (..), importedClasses, importedFunctions)
 import           Luna.Builtin.Data.Class           (Class (..))
@@ -124,9 +125,18 @@ updateValues loc scope = do
         _              -> return Nothing
     forM_ allVars $ \(nid, ref) -> do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
-        liftIO $ forM_ resVal $ \v -> listenReps v $ \case
-            Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.Error APIError.RuntimeError $ convert err) 0
-            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (convert short) $ Value . convert <$> listToMaybe longs) 0
+            send m = flip runReaderT env $ Publisher.notifyResultUpdate loc nid m 0
+            sendRep (ErrorRep e)     = send $ NodeError $ APIError.Error APIError.RuntimeError $ convert e
+            sendRep (SuccessRep s l) = send $ NodeValue (convert s) $ Value . convert <$> l
+            sendStreamRep a@(ErrorRep _)   = sendRep a
+            sendStreamRep (SuccessRep s l) = send $ NodeValue (convert s) $ StreamDataPoint . convert <$> l
+        liftIO $ forM_ resVal $ \v -> do
+            value <- getReps v
+            case value of
+                OneTime r   -> sendRep r
+                Streaming f -> do
+                    send (NodeValue "Stream" $ Just StreamStart)
+                    void $ forkIO $ f sendStreamRep
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do

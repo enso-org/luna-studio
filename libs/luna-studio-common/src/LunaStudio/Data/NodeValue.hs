@@ -37,10 +37,10 @@ type ShortValue = Text
 
 data VisualizationValue = Value Text
                         | StreamStart
+                        | StreamDataPoint Text
                         deriving (Eq, Generic, NFData, Show)
 
 data NodeValue = NodeValue       ShortValue (Maybe VisualizationValue)
-               | StreamDataPoint Text
                | NodeError       Error
                deriving (Eq, Generic, NFData, Show)
 
