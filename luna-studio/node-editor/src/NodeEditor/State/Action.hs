@@ -107,6 +107,14 @@ data VisualizationDrag = VisualizationDrag
 
 makeLenses ''VisualizationDrag
 
+
+data VisualizationActive = VisualizationActive
+    { _visualizationActiveParentNodeLoc :: NodeLoc
+    } deriving (Eq, Show, Generic, Typeable)
+
+makeLenses ''VisualizationActive
+
+
 data SomeAction m = forall a. (Action m a, Show a, Typeable a) => SomeAction Dynamic a deriving (Typeable)
 
 instance Show (SomeAction m) where
@@ -134,18 +142,19 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, connectAction, portDragAction, searcherAction :: ActionRep
-nodeDragAction          = ActionRep (typeOf NodeDrag)
-multiSelectionAction    = ActionRep (typeOf MultiSelection)
-panDragAction           = ActionRep (typeOf PanDrag)
-zoomDragAction          = ActionRep (typeOf ZoomDrag)
-sliderDragAction        = ActionRep (typeOf SliderDrag)
-penConnectAction        = ActionRep (typeOf PenConnect)
-penDisconnectAction     = ActionRep (typeOf PenDisconnect)
-connectAction           = ActionRep (typeOf Connect)
-portDragAction          = ActionRep (typeOf PortDrag)
-searcherAction          = ActionRep (typeOf Searcher)
-visualizationDragAction = ActionRep (typeOf VisualizationDrag)
+nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, connectAction, portDragAction, searcherAction, visualizationActiveAction :: ActionRep
+nodeDragAction            = ActionRep (typeOf NodeDrag)
+multiSelectionAction      = ActionRep (typeOf MultiSelection)
+panDragAction             = ActionRep (typeOf PanDrag)
+zoomDragAction            = ActionRep (typeOf ZoomDrag)
+sliderDragAction          = ActionRep (typeOf SliderDrag)
+penConnectAction          = ActionRep (typeOf PenConnect)
+penDisconnectAction       = ActionRep (typeOf PenDisconnect)
+connectAction             = ActionRep (typeOf Connect)
+portDragAction            = ActionRep (typeOf PortDrag)
+searcherAction            = ActionRep (typeOf Searcher)
+visualizationDragAction   = ActionRep (typeOf VisualizationDrag)
+visualizationActiveAction = ActionRep (typeOf VisualizationActive)
 
 overlappingActions :: [Set ActionRep]
 overlappingActions = [ Set.fromList [ connectAction
@@ -157,10 +166,12 @@ overlappingActions = [ Set.fromList [ connectAction
                                     , sliderDragAction
                                     , visualizationDragAction
                                     , portDragAction
+                                    , visualizationActiveAction
                                     ]
                      , Set.fromList [ panDragAction
                                     , zoomDragAction
                                     , portDragAction
+                                    , visualizationActiveAction
                                     ]
                      ]
 

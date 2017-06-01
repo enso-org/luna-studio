@@ -11,7 +11,5 @@ import           NodeEditor.React.Model.Node (NodeLoc)
 
 
 
-data Event = Pin                  NodeLoc Int
-           | Unpin                NodeLoc Int Position
-           | MouseDown MouseEvent NodeLoc Int Position
+data Event = Activate NodeLoc
             deriving (Show, Generic, NFData, Typeable)
