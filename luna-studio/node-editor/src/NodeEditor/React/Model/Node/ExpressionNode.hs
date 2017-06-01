@@ -32,22 +32,23 @@ import qualified NodeEditor.React.Model.Port              as Port
 import           NodeEditor.State.Collaboration           (ColorId)
 
 
-data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
-                                     , _name                  :: Maybe Text
-                                     , _expression            :: Text
-                                     , _canEnter              :: Bool
-                                     , _inPorts               :: InPortTree InPort
-                                     , _outPorts              :: OutPortTree OutPort
-                                     , _position              :: Position
-                                     , _visualizationsEnabled :: Bool
-                                     , _code                  :: Maybe Text
-                                     , _value                 :: Maybe Value
-                                     , _visualization         :: Visualization
-                                     , _zPos                  :: Int
-                                     , _isSelected            :: Bool
-                                     , _mode                  :: Mode
-                                     , _execTime              :: Maybe Integer
-                                     , _collaboration         :: Collaboration
+data ExpressionNode = ExpressionNode { _nodeLoc'                :: NodeLoc
+                                     , _name                    :: Maybe Text
+                                     , _expression              :: Text
+                                     , _canEnter                :: Bool
+                                     , _inPorts                 :: InPortTree InPort
+                                     , _outPorts                :: OutPortTree OutPort
+                                     , _position                :: Position
+                                     , _visualizationsEnabled   :: Bool
+                                     , _code                    :: Maybe Text
+                                     , _value                   :: Maybe Value
+                                     , _activeVisualizationInfo :: Maybe (Maybe VisualizationId, Visualizer)
+                                     , _visualizers             :: Map VisualizerName VisualizerPath
+                                     , _zPos                    :: Int
+                                     , _isSelected              :: Bool
+                                     , _mode                    :: Mode
+                                     , _execTime                :: Maybe Integer
+                                     , _collaboration           :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
 
 
@@ -70,11 +71,6 @@ data Value = ShortValue ShortValue
            | Error      Error
            deriving (Eq, Generic, NFData, Show)
 
-data Visualization = Visualization { _visualizationId   :: Maybe VisualizationId
-                                   , _activeVisualizer  :: Maybe Visualizer
-                                   , _visualizers       :: Map VisualizerName VisualizerPath
-                                   } deriving (Eq, Generic, NFData, Show)
-
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
                                    } deriving (Default, Eq, Generic, NFData, Show)
@@ -84,28 +80,28 @@ type ExpressionNodesMap = HashMap NodeId ExpressionNode
 makeLenses ''Collaboration
 makeLenses ''ExpressionNode
 makeLenses ''Subgraph
-makeLenses ''Visualization
 makePrisms ''ExpandedMode
 makePrisms ''Mode
 
 instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
     convert (path, n) = ExpressionNode
-        {- nodeLoc               -} (NodeLoc path $ n ^. Empire.nodeId)
-        {- name                  -} (n ^. Empire.name)
-        {- expression            -} (n ^. Empire.expression)
-        {- canEnter              -} (n ^. Empire.canEnter)
-        {- inPorts               -} (convert <$> n ^. Empire.inPorts)
-        {- outPorts              -} (convert <$> n ^. Empire.outPorts)
-        {- position              -} (n ^. Empire.position)
-        {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
-        {- code                  -} (n ^. Empire.code)
-        {- value                 -} def
-        {- visualization         -} (Visualization def def def)
-        {- zPos                  -} def
-        {- isSelected            -} False
-        {- mode                  -} def
-        {- execTime              -} def
-        {- collaboration         -} def
+        {- nodeLoc                 -} (NodeLoc path $ n ^. Empire.nodeId)
+        {- name                    -} (n ^. Empire.name)
+        {- expression              -} (n ^. Empire.expression)
+        {- canEnter                -} (n ^. Empire.canEnter)
+        {- inPorts                 -} (convert <$> n ^. Empire.inPorts)
+        {- outPorts                -} (convert <$> n ^. Empire.outPorts)
+        {- position                -} (n ^. Empire.position)
+        {- visualizationsEnabled   -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
+        {- code                    -} (n ^. Empire.code)
+        {- value                   -} def
+        {- activeVisualizationInfo -} def
+        {- visualizers             -} def
+        {- zPos                    -} def
+        {- isSelected              -} False
+        {- mode                    -} def
+        {- execTime                -} def
+        {- collaboration           -} def
 
 instance Convertible ExpressionNode Empire.ExpressionNode where
     convert n = Empire.ExpressionNode
@@ -141,7 +137,9 @@ returnsError node = case node ^. value of
     _              -> False
 
 getActiveVisualization :: ExpressionNode -> Maybe (VisualizationId, Visualizer)
-getActiveVisualization n = (,) <$> n ^. visualization . visualizationId <*> n ^. visualization . activeVisualizer
+getActiveVisualization n = case n ^. activeVisualizationInfo of
+    Just (Just vid, vis) -> Just (vid, vis)
+    _                    -> Nothing
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'
