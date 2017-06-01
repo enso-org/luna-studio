@@ -131,6 +131,9 @@ import qualified Luna.Syntax.Text.Parser.Marker   as Luna
 import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingStatus(..), ReparsingChange(..))
 
 
+defaultOffset :: Num a => a
+defaultOffset = 5
+
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
     lastNameId <- use Graph.lastNameId
@@ -168,7 +171,7 @@ addNodeNoTC loc uuid input name meta = do
         addExprMapping index parsedNode
         textExpr     <- printMarkedExpression parsedNode
         let nodeSpan = fromIntegral $ Text.length textExpr
-        IR.putLayer @CodeSpan parsedNode (leftSpacedSpan 5 nodeSpan)
+        IR.putLayer @CodeSpan parsedNode (leftSpacedSpan defaultOffset nodeSpan)
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         nearestNode  <- putInSequence parsedNode meta
         return (nearestNode, parsedNode)
@@ -220,7 +223,12 @@ putInSequence ref meta = do
                                 void $ updateCodeSpan s
                             _       -> undefined
                         _        -> updateGraphSeq =<< AST.makeSeq (nodes ++ [ref])
-                _ -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
+                _ -> do
+                    LeftSpacedSpan (SpacedSpan off len) <- readCodeSpan ref
+                    IR.putLayer @CodeSpan ref (leftSpacedSpan 0 len)
+                    LeftSpacedSpan (SpacedSpan off' len') <- readCodeSpan (head nodes)
+                    IR.putLayer @CodeSpan (head nodes) (leftSpacedSpan defaultOffset len')
+                    updateGraphSeq =<< AST.makeSeq (ref:nodes)
             Just newSeq <- preuse $ Graph.breadcrumbHierarchy . BH.body
             newNodes    <- AST.readSeq newSeq
             return nearestNode
@@ -237,10 +245,17 @@ addToCode loc@(GraphLocation file _) previous inserted = do
         range <- readRange ref
         Just nodeSeq <- GraphBuilder.getNodeSeq
         LeftSpacedSpan (SpacedSpan (fromIntegral -> off) _) <- readCodeSpan ref
-        let insertedIsTheOnlyNode = ref == nodeSeq
-            position   = if insertedIsTheOnlyNode then off else fst range - off
-            whitespace = Text.concat ["\n", Text.replicate (off - 1) " "]
-            expr'      = if insertedIsTheOnlyNode then Text.concat [expr, "\n"] else Text.concat [whitespace, expr]
+        nodes <- AST.readSeq nodeSeq
+        let insertedIsTheOnlyNode  = ref == nodeSeq
+            insertedIsTheFirstNode = ref == head nodes
+            properOffset           = if | insertedIsTheOnlyNode  -> off
+                                        | insertedIsTheFirstNode -> defaultOffset
+                                        | otherwise              -> off
+            position   = if | insertedIsTheOnlyNode  -> properOffset
+                            | otherwise              -> fst range - properOffset
+            whitespace = Text.concat ["\n", Text.replicate (properOffset - 1) " "]
+            expr'      = if | insertedIsTheOnlyNode  -> Text.concat [expr, "\n"]
+                            | otherwise              -> Text.concat [whitespace, expr]
         return (expr', position)
     Library.withLibrary file $ Library.applyDiff position position expr
     return ()

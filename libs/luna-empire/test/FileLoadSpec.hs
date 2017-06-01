@@ -376,6 +376,48 @@ spec = around withChannels $ parallel $ do
     c «2»= 4
     bar «3»= foo 8 c
 |]
+        it "adds one node to the beginning of the file via node editor" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (-10, 0)) False)
+                spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                codespans <- Graph.withGraph loc $ runASTOp $ forM [0..4] $ \i -> do
+                    Just nodeId <- Graph.getNodeIdForMarker i
+                    ref <- ASTRead.getASTPointer nodeId
+                    Graph.readCodeSpan ref
+                code  <- Graph.getCode loc
+                let convertCodeSpanToMoreSaneFormat (LeftSpacedSpan (SpacedSpan offset length)) = (offset, length)
+                return (spans, map convertCodeSpanToMoreSaneFormat codespans, code)
+            withResult res $ \(spans, codespans, code) -> do
+                codespans `shouldBe` [
+                      (5, 12)
+                    , (5, 20)
+                    , (5, 8)
+                    , (5, 16)
+                    , (0, 12)
+                    ]
+                spans `shouldBe` [
+                      (31, 43)
+                    , (48, 68)
+                    , (73, 81)
+                    , (86, 102)
+                    , (14, 26)
+                    ]
+                code `shouldBe` [r|def main:
+    node1 «4»= 4
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
         it "adds one named node to existing file via node editor" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
