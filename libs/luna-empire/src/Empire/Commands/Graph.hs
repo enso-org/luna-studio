@@ -6,6 +6,7 @@
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 module Empire.Commands.Graph
     ( addNode
@@ -234,9 +235,14 @@ addToCode loc@(GraphLocation file _) previous inserted = do
         ref   <- ASTRead.getASTPointer inserted
         expr  <- printMarkedExpression ref
         range <- readRange ref
-        LeftSpacedSpan (SpacedSpan off _) <- readCodeSpan ref
-        return (expr, fst range - fromIntegral off)
-    Library.withLibrary file $ Library.applyDiff position position (Text.concat ["\n    ", expr])
+        Just nodeSeq <- GraphBuilder.getNodeSeq
+        LeftSpacedSpan (SpacedSpan (fromIntegral -> off) _) <- readCodeSpan ref
+        let insertedIsTheOnlyNode = ref == nodeSeq
+            position   = if insertedIsTheOnlyNode then off else fst range - off
+            whitespace = Text.concat ["\n", Text.replicate (off - 1) " "]
+            expr'      = if insertedIsTheOnlyNode then Text.concat [expr, "\n"] else Text.concat [whitespace, expr]
+        return (expr', position)
+    Library.withLibrary file $ Library.applyDiff position position expr
     return ()
 
 addExprMapping :: ASTOp m => Word64 -> NodeRef -> m ()

@@ -78,8 +78,11 @@ applyDiff start end code = do
     currentCode <- use Library.code
     let len            = end - start
         (prefix, rest) = Text.splitAt start currentCode
+        prefix'        = if Text.length prefix < start
+                            then Text.concat [prefix, Text.replicate (start - Text.length prefix) " "]
+                            else prefix
         suffix         = Text.drop len rest
-        newCode        = Text.concat [prefix, code, suffix]
+        newCode        = Text.concat [prefix', code, suffix]
     Library.code .= newCode
     return newCode
 

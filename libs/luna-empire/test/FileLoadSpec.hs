@@ -311,8 +311,11 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "4" def
-                Graph.getCode top
-            withResult res $ \code -> do
+                codespan <- Graph.markerCodeSpan top 0
+                code <- Graph.getCode top
+                return (codespan, code)
+            withResult res $ \(codespan, code) -> do
+                codespan `shouldBe` (14, 26)
                 code `shouldBe` "def main:\n    node1 «0»= 4\n"
         it "adds one node and updates it" $ \env -> do
             u1 <- mkUUID
