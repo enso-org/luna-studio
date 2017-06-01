@@ -4,7 +4,7 @@
       var c = new paper.Path.Circle(new paper.Point(circ.center.x, circ.center.y), circ.radius);
       c.fillColor = circ.color;
     };
-    var data = JSON.parse(evt.data);
+    var data = JSON.parse(evt.data.data);
         canvas = document.getElementById("drawing");
     paper.setup(canvas);
     if (Array.isArray(data)) {
