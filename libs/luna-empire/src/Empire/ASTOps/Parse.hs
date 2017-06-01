@@ -76,7 +76,6 @@ parserBoilerplate = do
     IR.attachLayer 5 (getTypeDesc @Pos.Range)         (getTypeDesc @IR.AnyExpr)
     CodeSpan.init
     IR.attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @IR.AnyExpr)
-    IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
     IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
     IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
     IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
@@ -106,7 +105,6 @@ runProperParser code = do
 runUnitParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runUnitParser code = do
     let inits = do
-          IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
           IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
           IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
           IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
@@ -132,7 +130,6 @@ runUnitParser code = do
 runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
 runUnitReparser code oldExpr = do
     let inits = do
-          IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
           IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
 
           IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
@@ -171,7 +168,6 @@ runUnitReparser code oldExpr = do
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do
     let inits = do
-            IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
             IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
 
             IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
@@ -188,7 +184,6 @@ runParser expr = do
 runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
 runReparser expr oldExpr = do
     let inits = do
-            IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
             IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
 
             IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
@@ -201,7 +196,7 @@ runReparser expr oldExpr = do
             gidMapOld <- use Graph.codeMarkers
 
             -- parsing new file and updating updated analysis
-            Parsing.parsingPassM Parsing.valExpr2 `catchAll` (\e -> throwM $ SomeParserException e)
+            Parsing.parsingPassM Parsing.valExpr `catchAll` (\e -> throwM $ SomeParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status

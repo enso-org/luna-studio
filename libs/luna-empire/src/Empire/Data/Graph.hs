@@ -39,7 +39,6 @@ import qualified Luna.Syntax.Text.Parser.Marker         as Luna
 import qualified Luna.Syntax.Text.Parser.Parser         as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing        as Parser ()
 import qualified Luna.Syntax.Text.Parser.CodeSpan       as CodeSpan
-import qualified Data.SpanTree                          as SpanTree
 import           Data.TypeDesc                          (getTypeDesc)
 
 import           System.Log                             (Logger, DropLogger, dropLogs, MonadLogging)
@@ -68,7 +67,7 @@ defaultGraph = do
 
 type AST      = ASTState
 data ASTState = ASTState { _ir      :: IR
-                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))))
+                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))
                          }
 
 instance Show ASTState where
@@ -82,10 +81,6 @@ instance MonadState s m => MonadState s (PassManager.PassManager m) where
     get = lift   get
     put = lift . put
 
-instance MonadState s m => MonadState s (SpanTree.TreeBuilder x y m) where
-    get = lift   get
-    put = lift . put
-
 instance MonadState s m => MonadState s (Logger DropLogger m) where
     get = lift   get
     put = lift . put
@@ -93,7 +88,6 @@ instance MonadState s m => MonadState s (Logger DropLogger m) where
 instance Exception e => MonadException e IO where
     raise = throwM
 
-deriving instance MonadThrow m => MonadThrow (SpanTree.TreeBuilder s v m)
 
 withVis :: MonadIO m => Vis.VisStateT m a -> m a
 withVis m = do
@@ -107,7 +101,7 @@ withVis m = do
 defaultAST :: IO AST
 defaultAST = mdo
     let g = Graph ast $notImplemented def 0 def
-    ast <- flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
+    ast <- flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init
         attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @AnyExpr)
