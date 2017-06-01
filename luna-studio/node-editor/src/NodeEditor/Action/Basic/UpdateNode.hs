@@ -68,16 +68,19 @@ localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (nod
             inPorts     = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
             outPorts    = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
             (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
-            activeVisualizationInfo = case node ^. ExpressionNode.activeVisualizationInfo of
-                Nothing                      -> (Nothing,) <$> listToMaybe (Map.toList visualizers)
-                v@(Just (_, (vname, vpath))) -> if Map.lookup vname visualizers == Just vpath then v else (Nothing,) <$> listToMaybe (Map.toList visualizers)
-        NodeEditor.addExpressionNode $ node & isSelected                             .~ selected
-                                            & ExpressionNode.mode                    .~ mode'
-                                            & ExpressionNode.inPorts                 .~ inPorts
-                                            & ExpressionNode.outPorts                .~ outPorts
-                                            & ExpressionNode.activeVisualizationInfo .~ activeVisualizationInfo
-                                            & ExpressionNode.visualizers             .~ visualizers
-                                            & inPortAt [Self] . mode                 %~ selfMode
+            defVisualization = maybe def (\visualizer -> Just $ ExpressionNode.Visualization def visualizer False) $ listToMaybe (Map.toList visualizers)
+            visualization = case node ^. ExpressionNode.visualization of
+                Nothing -> defVisualization
+                Just v  -> if Map.lookup (v ^. ExpressionNode.visualizer . _1) visualizers == Just (v ^. ExpressionNode.visualizer . _2)
+                    then Just v
+                    else defVisualization
+        NodeEditor.addExpressionNode $ node & isSelected                   .~ selected
+                                            & ExpressionNode.mode          .~ mode'
+                                            & ExpressionNode.inPorts       .~ inPorts
+                                            & ExpressionNode.outPorts      .~ outPorts
+                                            & ExpressionNode.visualization .~ visualization
+                                            & ExpressionNode.visualizers   .~ visualizers
+                                            & inPortAt [Self] . mode       %~ selfMode
         return True
 
 localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()

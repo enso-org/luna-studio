@@ -7,8 +7,8 @@ import           LunaStudio.Data.NodeValue                  (NodeValue (NodeErro
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyExpressionNode)
 import           NodeEditor.Action.UUID                     (getUUID)
-import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), activeVisualizationInfo, execTime,
-                                                             getActiveVisualization, getActiveVisualization, value)
+import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), execTime, getVisualization, isActive,
+                                                             value, visualization, visualizationId)
 import           NodeEditor.State.Global                    (State)
 
 
@@ -18,26 +18,27 @@ updateNodeValueAndVisualization nl nv = case nv of
         uuid <- getUUID
         modifyExpressionNode nl $ do
             value ?= ShortValue sv
-            activeVisualizationInfo . _Just . _1 ?= uuid
-        whenM (isJust . maybe def getActiveVisualization <$> getExpressionNode nl) . liftIO $ do
+            visualization . _Just . visualizationId ?= uuid
+        whenM (isJust . maybe def getVisualization <$> getExpressionNode nl) . liftIO $ do
             registerVisualizerFrame uuid
             sendVisualisationData uuid visVal
     NodeValue sv (Just StreamStart) -> do
         uuid <- getUUID
         modifyExpressionNode nl $ do
             value ?= ShortValue sv
-            activeVisualizationInfo . _Just . _1 ?= uuid
-        whenM (isJust . maybe def getActiveVisualization <$> getExpressionNode nl) . liftIO $
+            visualization . _Just . visualizationId ?= uuid
+        whenM (isJust . maybe def getVisualization <$> getExpressionNode nl) . liftIO $
             registerVisualizerFrame uuid
     NodeValue sv Nothing -> modifyExpressionNode nl $ do
         value ?= ShortValue sv
-        activeVisualizationInfo . _Just . _1 .= def
-    StreamDataPoint visData -> withJustM (maybe def getActiveVisualization <$> getExpressionNode nl) $
-        liftIO . flip sendVisualisationData visData . fst
+        visualization . _Just . visualizationId .= def
+        visualization . _Just . isActive        .= False
+    StreamDataPoint visData -> withJustM (maybe def getVisualization <$> getExpressionNode nl) $
+        liftIO . flip sendVisualisationData visData . view _1
     NodeError e -> modifyExpressionNode nl $ do
         value ?= Error e
-        activeVisualizationInfo . _Just . _1 .= def
-
+        visualization . _Just . visualizationId .= def
+        visualization . _Just . isActive        .= False
 
 setNodeProfilingData :: NodeLoc -> Integer -> Command State ()
 setNodeProfilingData nl t = modifyExpressionNode nl $ execTime ?= t

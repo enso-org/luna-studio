@@ -21,7 +21,7 @@ import           LunaStudio.Data.Position                   (Position)
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
 import           NodeEditor.React.Model.App                 (App)
-import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, Value (..), getActiveVisualization)
+import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, IsVisualizationActive, NodeLoc, Value (..), getVisualization)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
@@ -33,6 +33,7 @@ import qualified React.Flux                                 as React
 
 viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
+iframeName      = "visualization-iframe"
 objNameVis      = "node-vis"
 objNameShortVal = "node-short-value"
 
@@ -57,24 +58,38 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
         [ "key"       $= "visualizations"
         , "className" $= Style.prefixFromList [ "node__visualizations", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ withJust (getActiveVisualization n) $ uncurry (visualization_ ref nodeLoc def)
+        ] $ withJust (getVisualization n) $ \(visId, visualizer, active) ->
+            visualization_ ref nodeLoc def visId visualizer active
 
 pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
 pinnedVisualization_ ref ne (nl, _, position) =
-    withJust (NodeEditor.getExpressionNode nl ne >>= getActiveVisualization) $ uncurry (visualization_ ref nl $ Just position)
+    withJust (NodeEditor.getExpressionNode nl ne >>= getVisualization) $ \(visId, visualizer, isActive) ->
+        visualization_ ref nl (Just position) visId visualizer isActive
 
-visualization_ :: Ref App -> NodeLoc -> Maybe Position -> VisualizationId -> Visualizer -> ReactElementM ViewEventHandler ()
-visualization_ ref nl mayPos visId v = React.view visualization (ref, nl, mayPos, visId, v) mempty
+visualization_ :: Ref App -> NodeLoc -> Maybe Position -> VisualizationId -> Visualizer -> IsVisualizationActive -> ReactElementM ViewEventHandler ()
+visualization_ ref nl mayPos visId v active = React.view visualization (ref, nl, mayPos, visId, v, active) mempty
 
-visualization :: ReactView (Ref App, NodeLoc, Maybe Position, VisualizationId, Visualizer)
-visualization = React.defineView viewName $ \(ref, nl, mayPos, visId, visualizer) ->
-    div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
-        iframe_ [ "src"    $= (convert $ snd visualizer)
-                , "name"   $= (convert $ show visId)
-                , "width"  $= "300"
-                , "height" $= "300"
-                ] mempty
+visualization :: ReactView (Ref App, NodeLoc, Maybe Position, VisualizationId, Visualizer, IsVisualizationActive)
+visualization = React.defineView viewName $ \(ref, nl, mayPos, visId, visualizer, active) -> do
+    let coverClass = if active then "visualization-iframe-cover-hidden" else "visualization-iframe-cover"
+    div_ [ "className" $= Style.prefixFromList [ "noselect", "visualization-container" ] ] $ do
+        div_ [ "className" $= Style.prefix coverClass
+             , onClick     $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Activate nl
+             ] mempty
+        div_ [ "className" $= Style.prefix "visualization-iframe-container"
+             ] $ visualizationIframe_ ref visId visualizer
     -- mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed vData
+
+visualizationIframe_ :: Ref App -> VisualizationId -> Visualizer -> ReactElementM ViewEventHandler ()
+visualizationIframe_ ref visId v = React.view visualizationIframe (ref, visId, v) mempty
+
+visualizationIframe :: ReactView (Ref App, VisualizationId, Visualizer)
+visualizationIframe = React.defineView iframeName $ \(ref, visId, visualizer) ->
+    iframe_ [ "src"   $= (convert $ snd visualizer)
+            , "name"  $= (convert $ show visId)
+            , "width"  $= "300"
+            , "height" $= "300"
+            ] mempty
 
 -- iframe_
 --     [ "srcDoc" $= ("<style>"
