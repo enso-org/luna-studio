@@ -196,7 +196,7 @@ runReparser expr oldExpr = do
             gidMapOld <- use Graph.codeMarkers
 
             -- parsing new file and updating updated analysis
-            Parsing.parsingPassM Parsing.expr `catchAll` (\e -> throwM $ SomeParserException e)
+            Parsing.parsingPassM Parsing.valExpr `catchAll` (\e -> throwM $ SomeParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
