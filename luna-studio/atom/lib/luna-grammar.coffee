@@ -2,49 +2,54 @@
 
 # https://github.com/atom/template-syntax/blob/master/stylesheets/base.less
 lunaClasses = {
-        ## Layout
-        # BOF: '',
-        # EOF: '',
-        EOL: '',
-        # Terminator: ''
-        BlockStart: 'keyword',
-        # Block: '',
-        # Group: '',
-        Marker: 'marker',
-        ## Ident
-        Var: 'variable'
-        Cons: 'variable'
-        Wildcard: 'keyword'
-        ## Keyword
-        KwAll: 'keyword'
-        KwCase: 'keyword'
-        KwClass: 'meta.class'
-        KwDef: 'meta.class'
-        KwFrom: 'keyword'
-        KwImport: 'meta.import'
-        KwOf: 'keyword'
-        ## Operator
-        Operator: 'keyword.operator'
-        Modifier: 'keyword.other.special-method'
-        Accessor: 'keyword.other.special-method'
-        Arrow: 'keyword.operator'
-        Assignment: 'keyword.operator'
-        Typed: 'keyword.other.unit'
-        TypeApp: 'keyword.other.unit'
-        Merge: 'keyword.other.unit'
-        Range: 'keyword.other.unit'
-        ## Literal
-        Number: 'constant.numeric'
-        Quote: 'constant'
-        Str: 'string'
-        StrEsc: 'constant.character.escape'
-        List: 'storage'
-        StrWrongEsc: 'constant'
-        # Separator: ''
-        ## Comment
-        LineComment: 'comment'
-        ## Other
-        # Unknown: ''
+
+        # Layout      :
+        # BOF         :
+        # EOF         :
+        # EOL         :
+        # Terminator  :
+        # BlockStart  :
+        # Block       :
+        # Group       :
+        Marker      : 'marker'
+
+        # Ident       :
+        Var         : 'variable'
+        Cons        : 'constant'
+        Wildcard    : 'variable'
+
+        Keyword     : 'keyword'
+        KwAll       : 'keyword.control'
+        KwCase      : 'keyword.control'
+        KwClass     : 'meta.class'
+        KwDef       : 'meta.class'
+        KwImport    : 'meta.import'
+        KwOf        : 'keyword.control'
+
+        Operator    : 'keyword.operator'
+        Modifier    : 'keyword.other.special-method'
+        Accessor    : 'keyword.other.special-method'
+        # Assignment  :
+        # TypeApp     :
+        # Merge       :
+        # Range       :
+        # Anything    :
+
+        Literal     : 'constant'
+        Number      : 'constant.numeric'
+        # Quote       :
+        Str         : 'string'
+        StrEsc      : 'constant.character.escape'
+        List        : 'storage'
+        StrWrongEsc : 'invalid.illegal'
+
+        # Control     :
+        Disabled    : 'disabled'
+
+        Comment     : 'comment'
+        # Doc         :
+
+        # Unknown     :
     }
 
 module.exports =
