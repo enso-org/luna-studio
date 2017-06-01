@@ -44,7 +44,7 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: 1efffe2c7f23c5d5311318e05bd381949a474a30
+      commit: 4b364a8edddddd77ff284cafc0b4ec5c894adc43
       git: git@github.com:luna/luna.git
     subdirs: [core, passes, syntax/text/parser, syntax/text/lexer, stdlib, project]
     extra-dep: true
@@ -81,7 +81,7 @@ packages:
       git: https://github.com/luna/data-result.git
     extra-dep: true
   - location:
-      commit: e1156d3445eca43b4d99aa2a4a427bfd549802d6
+      commit: c7c25fcf260842802ed3a84a2c2b123be8766975
       git: https://github.com/luna/dependent-state.git
     extra-dep: true
   - location:
@@ -101,7 +101,7 @@ packages:
       git: https://github.com/luna/poly-control.git
     extra-dep: true
   - location:
-      commit: 642b290e21d94b01273bfae05963b203f75c8191
+      commit: 54f57c553a9245d1ebd2b027fb21af9906217ef9
       git: https://github.com/luna/prologue.git
     extra-dep: true
   - location:
@@ -109,7 +109,7 @@ packages:
       git: https://github.com/luna/type-cache.git
     extra-dep: true
   - location:
-      commit: 9165d1818d9ec0b0f030623282b80c2d654089ea
+      commit: bea2f83f9112f2e9420d000456e94e3a436357a0
       git: https://github.com/luna/typelevel.git
     extra-dep: true
   - location:
@@ -133,10 +133,14 @@ packages:
       git: git@github.com:luna/visualization-api.git
     extra-dep: true
   - location:
-      commit: 7f5f64d1b1f81827431c9462d35665adbb609ba8
+      commit: ffd97a6ec0eab065cebf06663a37362c1e13a05b
       git: https://github.com/luna/monoid
     extra-dep: true
   - location:
-      commit: 296a00c92ab5b77a38e49b93d9d1c3a7d53378a4
+      commit: a860a612bd71db8dbcc1c4bbf0ef553d22a7f84e
       git: https://github.com/luna/text-processing
+    extra-dep: true
+  - location:
+      commit: 6ea5443b7f93c93b25cb365aeb7b6536876a0bec
+      git: https://github.com/luna/parsert
     extra-dep: true

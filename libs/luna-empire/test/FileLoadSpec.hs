@@ -26,12 +26,14 @@ import           LunaStudio.Data.TypeRep        (TypeRep (TStar))
 import           Empire.ASTOp                   (runASTOp)
 import qualified Empire.ASTOps.Parse            as ASTParse
 import qualified Empire.ASTOps.Print            as ASTPrint
+import qualified Empire.ASTOps.Read             as ASTRead
 import           Empire.Data.AST                (SomeASTException)
 import qualified Empire.Commands.AST            as AST
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.GraphBuilder   as GraphBuilder
 import qualified Empire.Commands.Library        as Library
 import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
+import           Data.Text.Span                 (LeftSpacedSpan(..), SpacedSpan(..))
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..), ReparsingStatus (..))
 
 import           Empire.Prelude
@@ -201,7 +203,7 @@ spec = around withChannels $ parallel $ do
                 nodes `shouldSatisfy` ((== 1) . length)
                 connections `shouldSatisfy` ((== 3) . length)
     describe "code spans" $ do
-        it "pi «0»= 3.14" $ \env -> do
+        xit "pi «0»= 3.14" $ \env -> do
             let code = [r|def main:
     «0»print 3.14
     «1»delete root
@@ -218,11 +220,56 @@ spec = around withChannels $ parallel $ do
                     , (35, 46)
                     , (54, 70)
                     ]
+        it "simple example" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 5
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                forM [0..0] $ Graph.markerCodeSpan loc
+            withResult res $ \spans -> do
+                spans `shouldBe` [
+                      (14, 23)
+                    ]
+        it "not so simple example" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 5
+    a «1»= 60
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                forM [0..1] $ Graph.markerCodeSpan loc
+            withResult res $ \spans -> do
+                spans `shouldBe` [
+                      (14, 23)
+                    , (28, 37)
+                    ]
         it "shows proper expressions ranges" $ \env -> do
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode mainCondensed
+                forM [0..3] $ Graph.markerCodeSpan loc
+            withResult res $ \spans -> do
+                spans `shouldBe` [
+                      (14, 26)
+                    , (31, 51)
+                    , (56, 64)
+                    , (69, 85)
+                    ]
+        it "updateCodeSpan does not break anything" $ \env -> do
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ do
+                    Graph.loadCode mainCondensed
+                    runASTOp $ do
+                        Just nodeSeq <- GraphBuilder.getNodeSeq
+                        Graph.updateCodeSpan nodeSeq
                 forM [0..3] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
                 spans `shouldBe` [
@@ -297,16 +344,21 @@ spec = around withChannels $ parallel $ do
                     Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
                 Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (0, 5)) False)
                 spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                codespans <- Graph.withGraph loc $ runASTOp $ forM [0..4] $ \i -> do
+                    Just nodeId <- Graph.getNodeIdForMarker i
+                    ref <- ASTRead.getASTPointer nodeId
+                    Graph.readCodeSpan ref
                 code  <- Graph.getCode loc
-                return (spans, code)
-            withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    node1 «4»= 4
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
+                let convertCodeSpanToMoreSaneFormat (LeftSpacedSpan (SpacedSpan offset length)) = (offset, length)
+                return (spans, map convertCodeSpanToMoreSaneFormat codespans, code)
+            withResult res $ \(spans, codespans, code) -> do
+                codespans `shouldBe` [
+                      (0, 12)
+                    , (5, 20)
+                    , (5, 8)
+                    , (5, 16)
+                    , (5, 12)
+                    ]
                 spans `shouldBe` [
                       (14, 26)
                     , (48, 68)
@@ -314,6 +366,13 @@ spec = around withChannels $ parallel $ do
                     , (86, 102)
                     , (31, 43)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    node1 «4»= 4
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
         it "adds one named node to existing file via node editor" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -330,13 +389,6 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 return (spans, code)
             withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    someNode «4»= 123456789
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
                 spans `shouldBe` [
                       (14, 26)
                     , (59, 79)
@@ -344,6 +396,13 @@ spec = around withChannels $ parallel $ do
                     , (97, 113)
                     , (31, 54)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    someNode «4»= 123456789
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
         it "adds one node with excessive whitespace to existing file via node editor" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -360,13 +419,6 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 return (spans, code)
             withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    node1 «4»= 1
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
                 spans `shouldBe` [
                       (14, 26)
                     , (48, 68)
@@ -374,6 +426,13 @@ spec = around withChannels $ parallel $ do
                     , (86, 102)
                     , (31, 43)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    node1 «4»= 1
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
         it "adds one lambda with excessive whitespace to existing file via node editor" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -390,13 +449,6 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 return (spans, code)
             withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    node1 «4»= a: b: a * b
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
                 spans `shouldBe` [
                       (14, 26)
                     , (58, 78)
@@ -404,6 +456,13 @@ spec = around withChannels $ parallel $ do
                     , (96, 112)
                     , (31, 53)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    node1 «4»= a: b: a * b
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
         it "adds lambda to existing file via node editor" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -420,13 +479,6 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 return (spans, code)
             withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-    node1 «4»= x: x
-|]
                 spans `shouldBe` [
                       (14, 26)
                     , (31, 51)
@@ -434,6 +486,13 @@ spec = around withChannels $ parallel $ do
                     , (69, 85)
                     , (90, 105)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+    node1 «4»= x: x
+|]
         it "adds node via node editor and removes it" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -451,18 +510,18 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 return (spans, code)
             withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
                 spans `shouldBe` [
                       (14, 26)
                     , (31, 51)
                     , (56, 64)
                     , (69, 85)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
         it "updates code span after editing an expression" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -475,18 +534,18 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 return (spans, code)
             withResult res $ \(spans, code) -> do
-                code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 123456789
-    bar «3»= foo 8 c
-|]
                 spans `shouldBe` [
                       (14, 26)
                     , (31, 51)
                     , (56, 72)
                     , (77, 93)
                     ]
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 123456789
+    bar «3»= foo 8 c
+|]
         it "adds one node to existing file via text" $ \env -> do
             u1 <- mkUUID
             (code, spans) <- evalEmp env $ do
@@ -497,13 +556,6 @@ spec = around withChannels $ parallel $ do
                 code  <- Graph.getCode loc
                 spans <- forM [0..4] $ Graph.markerCodeSpan loc
                 return (code, spans)
-            code `shouldBe` [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    d «4»= 6
-    bar «3»= foo 8 c
-|]
             spans `shouldBe` [
                   (14, 26)
                 , (31, 51)
@@ -511,6 +563,13 @@ spec = around withChannels $ parallel $ do
                 , (82, 98)
                 , (69, 77)
                 ]
+            code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    d «4»= 6
+    bar «3»= foo 8 c
+|]
         it "renames unused node in code" $ \env -> do
             code <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" mainCondensed
@@ -578,6 +637,12 @@ spec = around withChannels $ parallel $ do
                 spans <- forM [0..3] $ Graph.markerCodeSpan loc
                 return (code, spans)
             withResult res $ \(code, spans) -> do
+                spans `shouldBe` [
+                      (14, 26)
+                    , (31, 68)
+                    , (73, 81)
+                    , (86, 102)
+                    ]
                 code `shouldBe` [r|def main:
     pi «0»= 3.14
     foo «1»= a: b: a + b
@@ -585,12 +650,6 @@ spec = around withChannels $ parallel $ do
     c «2»= 4
     bar «3»= foo 8 c
 |]
-                spans `shouldBe` [
-                      (14, 26)
-                    , (31, 68)
-                    , (73, 81)
-                    , (86, 102)
-                    ]
         it "lambda in code can be entered" $ \env -> do
             let code = [r|def main:
     foo «0»= a: a|]

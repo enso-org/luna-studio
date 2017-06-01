@@ -44,7 +44,9 @@ module Empire.Commands.Graph
     , substituteCode
     , loadCode
     , markerCodeSpan
+    , readCodeSpan
     , getNodeIdForMarker
+    , updateCodeSpan
     , withTC
     , withGraph
     , runTC
@@ -233,9 +235,8 @@ addToCode loc@(GraphLocation file _) previous inserted = do
         expr  <- printMarkedExpression ref
         range <- readRange ref
         LeftSpacedSpan (SpacedSpan off _) <- readCodeSpan ref
-        let offset = Text.replicate (fromIntegral off - 1) " "
-        return (Text.concat [offset, expr], fst range - fromIntegral off + 1)
-    Library.withLibrary file $ Library.applyDiff position position (Text.concat [expr, "\n"])
+        return (expr, fst range - fromIntegral off)
+    Library.withLibrary file $ Library.applyDiff position position (Text.concat ["\n    ", expr])
     return ()
 
 addExprMapping :: ASTOp m => Word64 -> NodeRef -> m ()
@@ -341,14 +342,21 @@ updateGraphSeq newOut = do
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
     forM_ newOut $ updateCodeSpan
 
-updateCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
-updateCodeSpan ref = IR.matchExpr ref $ \case
+updateCodeSpan' :: ASTOp m => NodeRef -> m _
+updateCodeSpan' ref = IR.matchExpr ref $ \case
     IR.Seq l r -> do
-        l' <- updateCodeSpan =<< IR.source l
-        r' <- updateCodeSpan =<< IR.source r
-        IR.putLayer @CodeSpan ref (l' <> r')
-        return (l' <> r')
-    _          -> IR.getLayer @CodeSpan ref
+        l' <- updateCodeSpan' =<< IR.source l
+        r' <- updateCodeSpan' =<< IR.source r
+        let span = l' <> r'
+        IR.putLayer @CodeSpan ref span
+        return span
+    _ -> IR.getLayer @CodeSpan ref
+
+updateCodeSpan :: ASTOp m => NodeRef -> m ()
+updateCodeSpan ref = do
+    updateCodeSpan' ref
+    LeftSpacedSpan (SpacedSpan off len) <- IR.getLayer @CodeSpan ref
+    IR.putLayer @CodeSpan ref (leftSpacedSpan 14 len)
 
 addPort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 addPort loc portRef = withTC loc False $ addPortNoTC loc portRef
@@ -810,28 +818,32 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
             forM_ oldSeq updateCodeSpan
         void $ Library.withLibrary file $ Library.applyDiff (fst range) (snd range + 1) $ Text.concat [expression, "\n"]
 
-readRange' :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
-readRange' ref = IR.matchExpr ref $ \case
-    IR.Seq{} -> return mempty
-    _        -> do
-        parents <- IR.getLayer @IR.Succs ref
-        case toList parents of
-            []       -> return mempty
-            [parent] -> do
-                inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
-                let lefts = takeWhile (/= ref) inputs
-                spans  <- mapM readCodeSpan lefts
-                let leftSpan = mconcat spans
-                return leftSpan
-            _ -> error "something is no yes"
+previousOffset :: ASTOp m => NodeRef -> m Delta
+previousOffset ref = do
+    parents <- IR.getLayer @IR.Succs ref
+    case toList parents of
+        [] -> return mempty
+        [parent] -> do
+            inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
+            let lefts = takeWhile (/= ref) inputs
+            spans  <- mapM readCodeSpan lefts
+            let LeftSpacedSpan (SpacedSpan leftOff leftLen) = mconcat spans
+            offset <- previousOffset =<< IR.readTarget parent
+            LeftSpacedSpan (SpacedSpan o _) <- readCodeSpan =<< IR.readTarget parent
+            return (leftOff + offset + o + leftLen)
+
+readRangeProper :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
+readRangeProper ref = do
+    refSpan@(LeftSpacedSpan (SpacedSpan off len)) <- readCodeSpan ref
+    moreOffset <- previousOffset ref
+    let properOffset = off + moreOffset
+        properSpan   = leftSpacedSpan properOffset len
+    return properSpan
 
 readRange :: ASTOp m => NodeRef -> m (Int, Int)
 readRange ref = do
-    LeftSpacedSpan (SpacedSpan off  len)  <- readRange' ref
-    LeftSpacedSpan (SpacedSpan off' len') <- readCodeSpan ref
-    let left' = fromIntegral off + fromIntegral len + fromIntegral off'
-        left  = left' + (length ("def main:" :: String))
-    return (left, left + fromIntegral len')
+    LeftSpacedSpan (SpacedSpan offset len) <- readRangeProper ref
+    return (fromIntegral offset, fromIntegral $ offset + len)
 
 readCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
 readCodeSpan ref = IR.getLayer @CodeSpan ref

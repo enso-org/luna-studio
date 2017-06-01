@@ -128,12 +128,19 @@ readSeq node = match node $ \case
         return (previous ++ [rightmost])
     _       -> return [node]
 
+getSeqs' :: ASTOp m => NodeRef -> m [NodeRef]
+getSeqs' node = match node $ \case
+    Seq l r -> do
+        previous <- IR.source l >>= getSeqs'
+        return $ previous ++ [node]
+    _ -> return []
+
 getSeqs :: ASTOp m => NodeRef -> m [NodeRef]
 getSeqs node = match node $ \case
     Seq l r -> do
-        previous <- IR.source l >>= getSeqs
+        previous <- IR.source l >>= getSeqs'
         return $ previous ++ [node]
-    _ -> return []
+    _ -> return [node]
 
 previousNodeForSeq :: ASTOp m => NodeRef -> m (Maybe NodeRef)
 previousNodeForSeq node = match node $ \case
