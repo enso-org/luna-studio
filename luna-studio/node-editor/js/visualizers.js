@@ -16,7 +16,7 @@ var queueMsg = function (id, data) {
 };
 
 var register = function (id) {
-    if (window.frames[id]) flushAll(id);
+    if (window.frames[id] && window.frames[id].window.document.readyState == "complete") flushAll(id);
     else setTimeout(function () { register(id); }, 100);
 };
 
