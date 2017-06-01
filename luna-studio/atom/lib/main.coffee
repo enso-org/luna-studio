@@ -6,6 +6,8 @@ SubAtom       = require 'sub-atom'
 codeEditor = (require './gen/text-editor-ghcjs.js')()
 nodeEditor = (require './gen/node-editor-ghcjs.js')()
 path = require 'path'
+LunaSemanticGrammar = require './luna-grammar'
+
 
 pushShortcutEvent = (name, arg = null) -> nodeEditor.pushEvent({_shortcut: name, _arg : arg})
 pushSearcherEvent = (name, arg = null) -> nodeEditor.pushEvent(if arg == null then {tag: name} else {tag: name, contents : arg})
@@ -30,6 +32,7 @@ module.exports = LunaStudio =
     codeEditor.statusListener actStatus
 
   activate: (state) ->
+    atom.grammars.addGrammar(new LunaSemanticGrammar(atom.grammars, codeEditor.lex))
     codeEditor.start()
     actStatus = (data) ->
         if data == 'activate'
@@ -129,19 +132,19 @@ module.exports = LunaStudio =
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-all-nodes':      -> pushShortcutEvent("AutolayoutAllNodes")
     # searcher
     @subs.add atom.commands.add '.luna-studio',   'luna-studio:searcher-open':         -> pushShortcutEvent("SearcherOpen")
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-0':     -> pushSearcherEvent("AcceptEntry", 0)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-1':     -> pushSearcherEvent("AcceptEntry", 1)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-2':     -> pushSearcherEvent("AcceptEntry", 2)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-3':     -> pushSearcherEvent("AcceptEntry", 3)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-4':     -> pushSearcherEvent("AcceptEntry", 4)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-5':     -> pushSearcherEvent("AcceptEntry", 5)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-6':     -> pushSearcherEvent("AcceptEntry", 6)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-7':     -> pushSearcherEvent("AcceptEntry", 7)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-8':     -> pushSearcherEvent("AcceptEntry", 8)
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-9':     -> pushSearcherEvent("AcceptEntry", 9)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-0':     -> pushSearcherEvent("HintShortcut", 0)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-1':     -> pushSearcherEvent("HintShortcut", 1)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-2':     -> pushSearcherEvent("HintShortcut", 2)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-3':     -> pushSearcherEvent("HintShortcut", 3)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-4':     -> pushSearcherEvent("HintShortcut", 4)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-5':     -> pushSearcherEvent("HintShortcut", 5)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-6':     -> pushSearcherEvent("HintShortcut", 6)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-7':     -> pushSearcherEvent("HintShortcut", 7)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-8':     -> pushSearcherEvent("HintShortcut", 8)
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-9':     -> pushSearcherEvent("HintShortcut", 9)
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-input': -> pushSearcherEvent("AcceptInput")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':       -> pushSearcherEvent("Accept")
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-edit-entry':   -> pushSearcherEvent("EditEntry")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-tab-pressed':  -> pushSearcherEvent("TabPressed")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':    -> pushSearcherEvent("MoveDown")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-left':    -> pushSearcherEvent("MoveLeft")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':      -> pushSearcherEvent("MoveUp")

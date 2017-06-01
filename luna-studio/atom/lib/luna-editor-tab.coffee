@@ -2,7 +2,6 @@
 {TextEditorView, View} = require 'atom-space-pen-views'
 path = require 'path'
 SubAtom = require 'sub-atom'
-LunaSemanticGrammar = require './luna-grammar'
 
 TextBuffer::onDidStopChangingWithDiffs = (callback) ->
   diffs = []
@@ -48,7 +47,6 @@ module.exports =
               if @uri == uri_send
                 @getBuffer().setText(text)
                 console.log("setBuffer")
-                @setGrammar(new LunaSemanticGrammar(atom.grammars, @internal.lex))
 
         @internal.bufferListener setBuffer
 

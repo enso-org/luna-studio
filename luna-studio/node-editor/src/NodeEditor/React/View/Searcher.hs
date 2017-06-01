@@ -48,7 +48,6 @@ searcher =  React.defineView name $ \(ref, s) -> do
         div_
             [ "key"         $= "searcherBody"
             , "className"   $= Style.prefix "searcher__body"
-            -- , "style"     @= Aeson.object [ "transform" Aeson..= (showNodeTranslate camera $ s ^. Searcher.position) ]
             , onMouseDown   $ \e _ -> [stopPropagation e]
             , onMouseUp     $ \e _ -> [stopPropagation e]
             , onClick       $ \e _ -> [stopPropagation e]
@@ -58,7 +57,6 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 [ "key"         $= "searchInput"
                 , "className"   $= Style.prefix "searcher__input"
                 , "id"          $= searcherId
-                , "placeholder" $= ""
                 , onKeyDown     $ handleKeyDown ref
                 , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
                 , onChange      $ \e -> let val = target e "value"
@@ -87,12 +85,12 @@ searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
 results_ :: Ref App -> Int -> [QueryResult r] -> ReactElementM ViewEventHandler ()
-results_ ref selected results = forKeyed_ results $ \(idx, result) ->
-    let resultClasses i   = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == selected then [ "searcher__results__item--selected" ] else []))
-    in div_
-        [ "key"        $= jsShow idx
-        , "className"  $= resultClasses idx
-        , onClick      $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+results_ ref selected results = forKeyed_ (drop (selected - 1) results) $ \(idx, result) -> do
+    let resultClasses i = Style.prefixFromList $ "searcher__results__item" : (if selected > 0 && i == 0 then [ "searcher__results__item--selected" ] else [])
+    div_
+        [ "key"       $= jsShow idx
+        , "className" $= resultClasses idx
+        , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptWithHint (idx + 1))
         ] $ do
         div_
             ["key" $= "name"

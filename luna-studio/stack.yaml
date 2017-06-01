@@ -39,7 +39,7 @@ packages:
 - extra-dep: true
   location: {commit: 0f86d4dff7192db7b4f4001f427126a889ff311f, git: 'https://github.com/luna/data-rtuple.git'}
 - extra-dep: true
-  location: {commit: e1156d3445eca43b4d99aa2a4a427bfd549802d6, git: 'https://github.com/luna/dependent-state.git'}
+  location: {commit: c7c25fcf260842802ed3a84a2c2b123be8766975, git: 'https://github.com/luna/dependent-state.git'}
 - extra-dep: true
   location: {commit: 409dc63cc1ccd2c85000460ce39df5c19dd15d0c, git: 'https://github.com/luna/functor-utils.git'}
 - extra-dep: true
@@ -49,17 +49,19 @@ packages:
 - extra-dep: true
   location: {commit: 4af8e1021a8127b05d98920e387150fa4f0aa2e4, git: 'https://github.com/luna/lens-utils.git'}
 - extra-dep: true
-  location: {commit: 759066c81218eba1e3c209ed4fdaaeacba05d560, git: 'https://github.com/luna/luna.git'}
+  location: {commit: 4b364a8edddddd77ff284cafc0b4ec5c894adc43, git: 'https://github.com/luna/luna.git'}
   subdirs: [syntax/text/lexer]
 - extra-dep: true
   location: {commit: ffd97a6ec0eab065cebf06663a37362c1e13a05b, git: 'https://github.com/luna/monoid'}
 - extra-dep: true
-  location: {commit: 642b290e21d94b01273bfae05963b203f75c8191, git: 'https://github.com/luna/prologue.git'}
+  location: {commit: 6ea5443b7f93c93b25cb365aeb7b6536876a0bec, git: 'https://github.com/luna/parsert'}
+- extra-dep: true
+  location: {commit: 54f57c553a9245d1ebd2b027fb21af9906217ef9, git: 'https://github.com/luna/prologue.git'}
 - extra-dep: true
   location: {commit: ad94b1f2e4bc87b81853ff746b64c59b3eae7f09, git: 'https://github.com/luna/react-flux'}
 - extra-dep: true
-  location: {commit: 296a00c92ab5b77a38e49b93d9d1c3a7d53378a4, git: 'https://github.com/luna/text-processing.git'}
+  location: {commit: a860a612bd71db8dbcc1c4bbf0ef553d22a7f84e, git: 'https://github.com/luna/text-processing.git'}
 - extra-dep: true
-  location: {commit: 9165d1818d9ec0b0f030623282b80c2d654089ea, git: 'https://github.com/luna/typelevel.git'}
+  location: {commit: bea2f83f9112f2e9420d000456e94e3a436357a0, git: 'https://github.com/luna/typelevel.git'}
 - extra-dep: true
   location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'https://github.com/luna/visualization-api.git'}

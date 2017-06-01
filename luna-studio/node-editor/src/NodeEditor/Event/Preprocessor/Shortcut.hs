@@ -77,7 +77,7 @@ handleKeySearcher evt
     | Keys.withoutMods   evt Keys.downArrow = Just   Searcher.MoveDown
     | Keys.withoutMods   evt Keys.enter     = Just   Searcher.Accept
     | Keys.withCtrl      evt Keys.enter     = Just   Searcher.AcceptInput
-    | Keys.digitWithCtrl evt                = Just $ Searcher.AcceptEntry $ (React.keyCode evt) - Keys.zero
-    | Keys.withoutMods   evt Keys.tab       = Just   Searcher.EditEntry
+    | Keys.digitWithCtrl evt                = Just $ Searcher.HintShortcut $ (React.keyCode evt) - Keys.zero
+    | Keys.withoutMods   evt Keys.tab       = Just   Searcher.TabPressed
     | Keys.withoutMods   evt Keys.upArrow   = Just   Searcher.MoveUp
     | otherwise                             = Nothing

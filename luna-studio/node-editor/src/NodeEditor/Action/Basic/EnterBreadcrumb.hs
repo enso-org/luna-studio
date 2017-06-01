@@ -24,8 +24,8 @@ exitBreadcrumb :: Command State ()
 exitBreadcrumb =
     withJustM (preuse $ workspace . traverse . currentLocation) $ \location ->
         case location ^. breadcrumb . items of
-            (_:t) -> navigateToGraph $ location & breadcrumb . items .~ t
-            []    -> return ()
+            [] -> return ()
+            bc -> navigateToGraph $ location & breadcrumb . items .~ init bc
 
 enterNode :: ExpressionNode -> Command State ()
 enterNode node = when (node ^. canEnter) $ enterBreadcrumb $ Lambda (node ^. nodeId)

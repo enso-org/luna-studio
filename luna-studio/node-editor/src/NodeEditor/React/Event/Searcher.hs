@@ -12,8 +12,9 @@ import           React.Flux     (KeyboardEvent)
 data Event = InputChanged Text Int Int
            | Accept
            | AcceptInput
-           | AcceptEntry Int
-           | EditEntry
+           | HintShortcut   Int
+           | AcceptWithHint Int
+           | TabPressed
            | MoveDown
            | MoveUp
            | MoveLeft
