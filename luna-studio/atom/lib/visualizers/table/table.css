@@ -7,6 +7,8 @@ body {
   font-size: 8rem;
   font-weight: lighter;
   color: #666;
+  padding: 0;
+  margin: 0;
 }
 table {
   border-collapse: collapse;

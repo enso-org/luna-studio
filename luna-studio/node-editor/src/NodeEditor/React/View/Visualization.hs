@@ -69,8 +69,10 @@ visualization_ ref nl mayPos visId v = React.view visualization (ref, nl, mayPos
 visualization :: ReactView (Ref App, NodeLoc, Maybe Position, VisualizationId, Visualizer)
 visualization = React.defineView viewName $ \(ref, nl, mayPos, visId, visualizer) ->
     div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
-        iframe_ [ "src"  $= (convert $ snd visualizer)
-                , "name" $= (convert $ show visId)
+        iframe_ [ "src"    $= (convert $ snd visualizer)
+                , "name"   $= (convert $ show visId)
+                , "width"  $= "300"
+                , "height" $= "300"
                 ] mempty
     -- mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed vData
 

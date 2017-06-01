@@ -1,7 +1,7 @@
 (function () {
   var render = function (json) {
-    data = JSON.parse(json);
-    result = "";
+    var data = JSON.parse(json);
+    var result = "";
     data.forEach(function (point, ix) {
       result += ("<tr><td>" + ix + "</td><td>" + point + "</td></tr>");
     });
