@@ -8,6 +8,7 @@ module NodeEditor.Action.State.NodeEditor where
 import           Control.Arrow                               ((&&&))
 import qualified Control.Monad.State                         as M
 import qualified Data.HashMap.Strict                         as HashMap
+import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
 import           Data.Monoid                                 (First (First), getFirst)
 import qualified Data.Set                                    as Set
@@ -18,6 +19,7 @@ import           Common.Prelude
 import           LunaStudio.Data.MonadPath                   (MonadPath)
 import qualified LunaStudio.Data.Node                        as Empire
 import qualified LunaStudio.Data.NodeSearcher                as NS
+import           LunaStudio.Data.NodeValue                   (VisualizationValue)
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef)
@@ -260,3 +262,9 @@ getLocalFunctions = do
             Just (Searcher.Node _ (Searcher.NodeModeInfo _ _ argNames) _) -> argNames
             _                                                             -> []
     return . Map.fromList . map NS.entry $ (functionsNames <> lambdaArgsNames)
+
+getVisualizationsBackupMap :: Command State (Map NodeLoc VisualizationValue)
+getVisualizationsBackupMap = view (NE.visualizationsBackup . NE.backupMap) <$> getNodeEditor
+
+removeBackupForNodes :: [NodeLoc] -> Command State ()
+removeBackupForNodes nls = modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap %= \backupMap -> foldl (flip Map.delete) backupMap nls

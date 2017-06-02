@@ -8,9 +8,11 @@ module NodeEditor.React.Model.NodeEditor where
 
 import           Common.Prelude
 import qualified Data.HashMap.Strict                        as HashMap
+import           Data.Map                                   (Map)
 import qualified LunaStudio.Data.Breadcrumb                 as B
 import           LunaStudio.Data.MonadPath                  (MonadPath)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
+import           LunaStudio.Data.NodeValue                  (VisualizationValue)
 import qualified LunaStudio.Data.PortRef                    as PortRef
 import           LunaStudio.Data.Position                   (Position)
 import           NodeEditor.Data.CameraTransformation       (CameraTransformation)
@@ -32,39 +34,46 @@ import           NodeEditor.React.Model.Searcher            (Searcher)
 import           NodeEditor.React.Model.SelectionBox        (SelectionBox)
 
 
-data NodeEditor = NodeEditor { _expressionNodes     :: ExpressionNodesMap
-                             , _inputNode           :: Maybe InputNode
-                             , _outputNode          :: Maybe OutputNode
-                             , _monads              :: [MonadPath]
-                             , _connections         :: ConnectionsMap
-                             , _visualizations      :: [(NodeLoc, Int, Position)] --TODO move to node
+data NodeEditor = NodeEditor { _expressionNodes      :: ExpressionNodesMap
+                             , _inputNode            :: Maybe InputNode
+                             , _outputNode           :: Maybe OutputNode
+                             , _monads               :: [MonadPath]
+                             , _connections          :: ConnectionsMap
+                             , _visualizations       :: [(NodeLoc, Int, Position)] --TODO move to node
+                             , _visualizationsBackup :: VisualizationsBackup
 
-                             , _halfConnections     :: [HalfConnection]
-                             , _connectionPen       :: Maybe ConnectionPen
-                             , _selectionBox        :: Maybe SelectionBox
-                             , _searcher            :: Maybe Searcher
+                             , _halfConnections      :: [HalfConnection]
+                             , _connectionPen        :: Maybe ConnectionPen
+                             , _selectionBox         :: Maybe SelectionBox
+                             , _searcher             :: Maybe Searcher
 
-                             , _isGraphLoaded       :: Bool
-                             , _layout              :: Layout
-                             , _topZIndex           :: Int
+                             , _isGraphLoaded        :: Bool
+                             , _layout               :: Layout
+                             , _topZIndex            :: Int
                              } deriving (Eq, Generic)
+
+data VisualizationsBackup = VisualizationsBackup { _backupMap :: Map NodeLoc VisualizationValue
+                                                 } deriving (Generic, Default)
+instance Eq VisualizationsBackup where _ == _ = True
 
 instance Default NodeEditor where
     def = NodeEditor
-        {- expressionNodes -} def
-        {- inputNode       -} def
-        {- outputNode      -} def
-        {- monads          -} def
-        {- connections     -} def
-        {- visualizations  -} def
-        {- halfConnections -} def
-        {- connectionPen   -} def
-        {- selectionBox    -} def
-        {- searcher        -} def
-        {- isGraphLoaded   -} False
-        {- layout          -} def
-        {- topZIndex       -} def
+        {- expressionNodes      -} def
+        {- inputNode            -} def
+        {- outputNode           -} def
+        {- monads               -} def
+        {- connections          -} def
+        {- visualizations       -} def
+        {- visualizationsBackup -} def
+        {- halfConnections      -} def
+        {- connectionPen        -} def
+        {- selectionBox         -} def
+        {- searcher             -} def
+        {- isGraphLoaded        -} False
+        {- layout               -} def
+        {- topZIndex            -} def
 
+makeLenses ''VisualizationsBackup
 makeLenses ''NodeEditor
 
 screenTransform :: Lens' NodeEditor CameraTransformation

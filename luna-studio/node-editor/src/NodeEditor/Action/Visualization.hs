@@ -3,13 +3,16 @@ module NodeEditor.Action.Visualization where
 
 import           Common.Prelude
 import qualified Data.Map                                   as Map
+import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendVisualisationData)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
-import           LunaStudio.Data.NodeValue                  (VisualizerName)
+import           LunaStudio.Data.NodeValue                  (VisualizationValue (StreamStart, Value), VisualizerName)
 import           LunaStudio.Data.Position                   (Position)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
-import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyExpressionNode, modifyNodeEditor)
+import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getVisualizationsBackupMap, modifyExpressionNode,
+                                                             modifyNodeEditor)
+import           NodeEditor.Action.UUID                     (getUUID)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
 import           NodeEditor.React.Model.Node.ExpressionNode (Visualization (Visualization), getVisualization, isActive, position,
                                                              visualization, visualizer, visualizers)
@@ -44,7 +47,24 @@ selectVisualization nl visName = withJustM (getExpressionNode nl) $ \n ->
     withJust (Map.lookup visName $ n ^. visualizers) $ \visPath ->
         when (n ^? visualization . _Just . visualizer /= Just (visName, visPath)) $ do
             continue $ deactivateVisualization
-            modifyExpressionNode nl $ visualization ?= Visualization def (visName, visPath) False
+            visBackup <- getVisualizationsBackupMap
+            case Map.lookup nl visBackup of
+                Just StreamStart -> do
+                    uuid <- getUUID
+                    modifyExpressionNode nl $ visualization ?= Visualization (Just uuid) (visName, visPath) False
+                    liftIO $ do
+                        registerVisualizerFrame uuid
+                        notifyStreamRestart     uuid
+                Just (Value v) -> do
+                    uuid <- getUUID
+                    modifyExpressionNode nl $ visualization ?= Visualization (Just uuid) (visName, visPath) False
+                    liftIO $ do
+                        registerVisualizerFrame uuid
+                        sendVisualisationData   uuid v
+                _ -> modifyExpressionNode nl $ visualization ?= Visualization def (visName, visPath) False
+
+
+
 
 
 
