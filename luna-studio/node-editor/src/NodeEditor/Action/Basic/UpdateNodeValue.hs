@@ -26,16 +26,16 @@ updateNodeValueAndVisualization nl nv = case nv of
             value ?= ShortValue sv
             visualization . _Just . visualizationId %= Just . fromMaybe uuid
         withJustM (maybe def getVisualization <$> getExpressionNode nl) $ \(visId, _, _) -> liftIO $ do
-            registerVisualizerFrame visId
-            sendVisualisationData   visId visVal
+            when (uuid == visId) $ registerVisualizerFrame visId
+            sendVisualisationData visId visVal
     NodeValue sv (Just StreamStart) -> do
         uuid <- getUUID
         modifyExpressionNode nl $ do
             value ?= ShortValue sv
             visualization . _Just . visualizationId %= Just . fromMaybe uuid
         withJustM (maybe def getVisualization <$> getExpressionNode nl) $ \(visId, _, _) -> liftIO $ do
-            registerVisualizerFrame visId
-            notifyStreamRestart     visId
+            when (uuid == visId) $ registerVisualizerFrame visId
+            notifyStreamRestart visId
     NodeValue sv Nothing -> modifyExpressionNode nl $ do
         value ?= ShortValue sv
         visualization . _Just . visualizationId .= def
