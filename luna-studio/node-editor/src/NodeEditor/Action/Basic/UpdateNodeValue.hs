@@ -8,8 +8,8 @@ import           LunaStudio.Data.NodeValue                  (NodeValue (NodeErro
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyExpressionNode, modifyNodeEditor)
 import           NodeEditor.Action.UUID                     (getUUID)
-import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), execTime, getVisualization, isActive,
-                                                             value, visualization, visualizationId)
+import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), execTime, getVisualization, value,
+                                                             visualization, visualizationId, visualizationMode)
 import           NodeEditor.React.Model.NodeEditor          (backupMap, visualizationsBackup)
 import           NodeEditor.State.Global                    (State)
 
@@ -43,14 +43,14 @@ updateNodeValueAndVisualization nl nv = case nv of
         modifyNodeEditor $ visualizationsBackup . backupMap . at nl .= def
         modifyExpressionNode nl $ do
             value ?= ShortValue sv
-            visualization . _Just . visualizationId .= def
-            visualization . _Just . isActive        .= False
+            visualization . _Just . visualizationId   .= def
+            visualization . _Just . visualizationMode .= def
     NodeError e -> do
         modifyNodeEditor $ visualizationsBackup . backupMap . at nl .= def
         modifyExpressionNode nl $ do
             value ?= Error e
-            visualization . _Just . visualizationId .= def
-            visualization . _Just . isActive        .= False
+            visualization . _Just . visualizationId   .= def
+            visualization . _Just . visualizationMode .= def
 
 setNodeProfilingData :: NodeLoc -> Integer -> Command State ()
 setNodeProfilingData nl t = modifyExpressionNode nl $ execTime ?= t

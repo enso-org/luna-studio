@@ -24,7 +24,8 @@ import           LunaStudio.Data.Position                   (Position)
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
 import           NodeEditor.React.Model.App                 (App)
-import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, IsVisualizationActive, NodeLoc, Value (..), getVisualization)
+import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, Value (..),
+                                                             VisualizationMode (Default, Focused, Zoomed), getVisualization)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
@@ -62,9 +63,9 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
         [ "key"       $= "visualizations"
         , "className" $= Style.prefixFromList [ "node__visualizations", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ withJust (getVisualization n) $ \(visId, visualizer, active) -> do
+        ] $ withJust (getVisualization n) $ \(visId, visualizer, vmode) -> do
             visualizersMenu_ ref nodeLoc (fst visualizer) $ n ^. Node.visualizers
-            visualization_ ref nodeLoc def visId visualizer active
+            visualization_ ref nodeLoc def visId visualizer vmode
 
 
 visualizersMenu_ :: Ref App -> NodeLoc -> VisualizerName -> Map VisualizerName VisualizerPath -> ReactElementM ViewEventHandler ()
@@ -81,35 +82,40 @@ visualizersMenu = React.defineView visMenuName $ \(ref, nl, actVisName, visualiz
             ul_ [ "className" $= Style.prefix "luna-dropdown__menu" ] $ mapM_ menuEntry $ Map.keys visualizersMap
 
 
-visualization_ :: Ref App -> NodeLoc -> Maybe Position -> VisualizationId -> Visualizer -> IsVisualizationActive -> ReactElementM ViewEventHandler ()
-visualization_ ref nl mayPos visId v active = React.view visualization (ref, nl, mayPos, visId, v, active) mempty
+visualization_ :: Ref App -> NodeLoc -> Maybe Position -> VisualizationId -> Visualizer -> VisualizationMode -> ReactElementM ViewEventHandler ()
+visualization_ ref nl mayPos visId v vmode = React.view visualization (ref, nl, mayPos, visId, v, vmode) mempty
 
-visualization :: ReactView (Ref App, NodeLoc, Maybe Position, VisualizationId, Visualizer, IsVisualizationActive)
-visualization = React.defineView viewName $ \(ref, nl, mayPos, visId, visualizer, active) -> do
-    let coverClass = if active then "visualization-iframe-cover-hidden" else "visualization-iframe-cover"
+visualization :: ReactView (Ref App, NodeLoc, Maybe Position, VisualizationId, Visualizer, VisualizationMode)
+visualization = React.defineView viewName $ \(ref, nl, mayPos, visId, visualizer, vmode) -> do
+    let coverClass = if vmode == Default then "visualization-iframe-cover" else "visualization-iframe-cover-hidden"
     div_ [ "className" $= Style.prefixFromList [ "noselect", "visualization-container" ] ] $ do
         div_ [ "className" $= Style.prefix coverClass
-             , onClick     $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Activate nl
+             , onClick     $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Focus nl
              ] mempty
         div_ [ "className" $= Style.prefix "visualization-iframe-container"
-             ] $ visualizationIframe_ ref visId visualizer
+             ] $ visualizationIframe_ ref visId visualizer vmode
     -- mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed vData
 
-visualizationIframe_ :: Ref App -> VisualizationId -> Visualizer -> ReactElementM ViewEventHandler ()
-visualizationIframe_ ref visId v = React.view visualizationIframe (ref, visId, v) mempty
+visualizationIframe_ :: Ref App -> VisualizationId -> Visualizer -> VisualizationMode -> ReactElementM ViewEventHandler ()
+visualizationIframe_ ref visId v vmode = React.view visualizationIframe (ref, visId, v, vmode) mempty
 
-visualizationIframe :: ReactView (Ref App, VisualizationId, Visualizer)
-visualizationIframe = React.defineView iframeName $ \(ref, visId, visualizer) ->
-    iframe_ [ "src"   $= (convert $ snd visualizer)
-            , "name"  $= (convert $ show visId)
-            , "width"  $= "300"
-            , "height" $= "300"
-            ] mempty
+visualizationIframe :: ReactView (Ref App, VisualizationId, Visualizer, VisualizationMode)
+visualizationIframe = React.defineView iframeName $ \(ref, visId, visualizer, vmode) -> do
+    let props = if vmode == Zoomed
+            then [ "className" $= Style.prefix "visualization-iframe-zoomed" ]
+            else [ "className" $= Style.prefix "visualization-iframe"
+                 , "height"    $= "300"
+                 , "width"     $= "300"
+                 ]
+
+    iframe_ ([ "src"       $= (convert $ snd visualizer)
+             , "name"      $= (convert $ show visId)
+             ] ++ props) mempty
 
 pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
 pinnedVisualization_ ref ne (nl, _, position) =
-    withJust (NodeEditor.getExpressionNode nl ne >>= getVisualization) $ \(visId, visualizer, isActive) ->
-        visualization_ ref nl (Just position) visId visualizer isActive
+    withJust (NodeEditor.getExpressionNode nl ne >>= getVisualization) $ \(visId, visualizer, vmode) ->
+        visualization_ ref nl (Just position) visId visualizer vmode
 
 
 -- iframe_

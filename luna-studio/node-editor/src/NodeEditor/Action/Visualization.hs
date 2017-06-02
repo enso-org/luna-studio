@@ -10,12 +10,13 @@ import           LunaStudio.Data.Position                   (Position)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
-import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getVisualizationsBackupMap, modifyExpressionNode,
-                                                             modifyNodeEditor)
+import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getSelectedNodes, getVisualizationsBackupMap,
+                                                             modifyExpressionNode, modifyNodeEditor)
 import           NodeEditor.Action.UUID                     (getUUID)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
-import           NodeEditor.React.Model.Node.ExpressionNode (Visualization (Visualization), getVisualization, isActive, position,
-                                                             visualization, visualizer, visualizers)
+import           NodeEditor.React.Model.Node.ExpressionNode (Visualization (Visualization), VisualizationMode (Focused, Zoomed),
+                                                             getVisualization, nodeLoc, position, visualization, visualizationMode,
+                                                             visualizer, visualizers)
 import           NodeEditor.React.Model.NodeEditor          (visualizations)
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
                                                              VisualizationActive (VisualizationActive),
@@ -31,39 +32,48 @@ instance Action (Command State) VisualizationActive where
     update     = updateActionWithKey   visualizationActiveAction
     end action = do
         modifyExpressionNode (action ^. visualizationActiveParentNodeLoc) $
-            visualization . _Just . isActive .= False
+            visualization . _Just . visualizationMode .= def
         removeActionFromState visualizationActiveAction
 
-activateVisualization :: NodeLoc -> Command State ()
-activateVisualization nl = whenM (isJust . maybe def getVisualization <$> getExpressionNode nl) $ do
-    modifyExpressionNode nl $ visualization . _Just . isActive .= True
+focusVisualization :: NodeLoc -> Command State ()
+focusVisualization nl = whenM (isJust . maybe def getVisualization <$> getExpressionNode nl) $ do
+    modifyExpressionNode nl $ visualization . _Just . visualizationMode .= Focused
     begin $ VisualizationActive nl
 
-deactivateVisualization :: VisualizationActive -> Command State ()
-deactivateVisualization = end
+closeVisualization :: VisualizationActive -> Command State ()
+closeVisualization = end
 
 selectVisualization :: NodeLoc -> VisualizerName -> Command State ()
 selectVisualization nl visName = withJustM (getExpressionNode nl) $ \n ->
     withJust (Map.lookup visName $ n ^. visualizers) $ \visPath ->
         when (n ^? visualization . _Just . visualizer /= Just (visName, visPath)) $ do
-            continue $ deactivateVisualization
+            continue $ closeVisualization
             visBackup <- getVisualizationsBackupMap
             case Map.lookup nl visBackup of
                 Just StreamStart -> do
                     uuid <- getUUID
-                    modifyExpressionNode nl $ visualization ?= Visualization (Just uuid) (visName, visPath) False
+                    modifyExpressionNode nl $ visualization ?= Visualization (Just uuid) (visName, visPath) def
                     liftIO $ do
                         registerVisualizerFrame uuid
                         notifyStreamRestart     uuid
                 Just (Value v) -> do
                     uuid <- getUUID
-                    modifyExpressionNode nl $ visualization ?= Visualization (Just uuid) (visName, visPath) False
+                    modifyExpressionNode nl $ visualization ?= Visualization (Just uuid) (visName, visPath) def
                     liftIO $ do
                         registerVisualizerFrame uuid
                         sendVisualisationData   uuid v
-                _ -> modifyExpressionNode nl $ visualization ?= Visualization def (visName, visPath) False
+                _ -> modifyExpressionNode nl $ visualization ?= Visualization def (visName, visPath) def
 
-
+zoomVisualization :: Command State ()
+zoomVisualization = do
+    nodes <- getSelectedNodes
+    case nodes of
+        [n] -> when (isJust $ getVisualization n) $ do
+            let nl = n ^. nodeLoc
+            continue $ closeVisualization
+            modifyExpressionNode nl $ visualization . _Just . visualizationMode .= Zoomed
+            -- begin $ VisualizationActive nl
+        _   -> return ()
 
 
 

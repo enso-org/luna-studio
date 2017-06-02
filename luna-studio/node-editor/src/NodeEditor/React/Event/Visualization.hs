@@ -12,6 +12,6 @@ import           NodeEditor.React.Model.Node (NodeLoc)
 
 
 
-data Event = Activate            NodeLoc
+data Event = Focus               NodeLoc
            | SelectVisualization NodeLoc VisualizerName
             deriving (Show, Generic, NFData, Typeable)

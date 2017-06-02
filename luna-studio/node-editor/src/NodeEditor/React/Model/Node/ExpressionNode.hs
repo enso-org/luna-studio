@@ -70,10 +70,16 @@ data Value = ShortValue ShortValue
            | Error      Error
            deriving (Eq, Generic, NFData, Show)
 
-type IsVisualizationActive = Bool
-data Visualization = Visualization { _visualizationId :: Maybe VisualizationId
-                                   , _visualizer      :: Visualizer
-                                   , _isActive        :: IsVisualizationActive
+data VisualizationMode = Default
+                       | Focused
+                       | Zoomed
+                       deriving (Eq, Generic, NFData, Show)
+
+instance Default VisualizationMode where def = Default
+
+data Visualization = Visualization { _visualizationId   :: Maybe VisualizationId
+                                   , _visualizer        :: Visualizer
+                                   , _visualizationMode :: VisualizationMode
                                    } deriving (Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
@@ -88,6 +94,7 @@ makeLenses ''Subgraph
 makeLenses ''Visualization
 makePrisms ''ExpandedMode
 makePrisms ''Mode
+makePrisms ''VisualizationMode
 
 instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
     convert (path, n) = ExpressionNode
@@ -142,10 +149,10 @@ returnsError node = case node ^. value of
     Just (Error _) -> True
     _              -> False
 
-getVisualization :: ExpressionNode -> Maybe (VisualizationId, Visualizer, IsVisualizationActive)
+getVisualization :: ExpressionNode -> Maybe (VisualizationId, Visualizer, VisualizationMode)
 getVisualization n = case n ^. visualization of
-    Just (Visualization (Just vid) vis active) -> Just (vid, vis, active)
-    _                                           -> Nothing
+    Just (Visualization (Just vid) vis vmode) -> Just (vid, vis, vmode)
+    _                                         -> Nothing
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'
