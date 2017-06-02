@@ -2,17 +2,22 @@
 module NodeEditor.Action.Visualization where
 
 import           Common.Prelude
+import qualified Data.Map                                   as Map
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import           LunaStudio.Data.NodeValue                  (VisualizerName)
 import           LunaStudio.Data.Position                   (Position)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyExpressionNode, modifyNodeEditor)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
-import           NodeEditor.React.Model.Node.ExpressionNode (position, visualization, isActive, getVisualization)
+import           NodeEditor.React.Model.Node.ExpressionNode (Visualization (Visualization), getVisualization, isActive, position,
+                                                             visualization, visualizer, visualizers)
 import           NodeEditor.React.Model.NodeEditor          (visualizations)
-import           NodeEditor.State.Action                    (Action (begin, continue, end, update), VisualizationDrag (VisualizationDrag),
-                                                             visualizationDragAction, VisualizationActive (VisualizationActive), visualizationActiveAction, visualizationActiveParentNodeLoc)
+import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
+                                                             VisualizationActive (VisualizationActive),
+                                                             VisualizationDrag (VisualizationDrag), visualizationActiveAction,
+                                                             visualizationActiveParentNodeLoc, visualizationDragAction)
 import           NodeEditor.State.Global                    (State)
 import           React.Flux                                 (MouseEvent)
 
@@ -31,6 +36,15 @@ activateVisualization nl = whenM (isJust . maybe def getVisualization <$> getExp
     modifyExpressionNode nl $ visualization . _Just . isActive .= True
     begin $ VisualizationActive nl
 
+deactivateVisualization :: VisualizationActive -> Command State ()
+deactivateVisualization = end
+
+selectVisualization :: NodeLoc -> VisualizerName -> Command State ()
+selectVisualization nl visName = withJustM (getExpressionNode nl) $ \n ->
+    withJust (Map.lookup visName $ n ^. visualizers) $ \visPath ->
+        when (n ^? visualization . _Just . visualizer /= Just (visName, visPath)) $ do
+            continue $ deactivateVisualization
+            modifyExpressionNode nl $ visualization ?= Visualization def (visName, visPath) False
 
 
 
