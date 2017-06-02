@@ -1,9 +1,10 @@
 module NodeEditor.Action.Basic.UpdateNodeValue where
 
 import           Common.Prelude
-import           JS.Visualizers                             (registerVisualizerFrame, sendVisualisationData, notifyStreamRestart, sendStreamDatapoint)
+import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendStreamDatapoint,
+                                                             sendVisualisationData)
 import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue),
-                                                             VisualizationValue (StreamStart, Value, StreamDataPoint))
+                                                             VisualizationValue (StreamDataPoint, StreamStart, Value))
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyExpressionNode)
 import           NodeEditor.Action.UUID                     (getUUID)
@@ -23,18 +24,18 @@ updateNodeValueAndVisualization nl nv = case nv of
         uuid <- getUUID
         modifyExpressionNode nl $ do
             value ?= ShortValue sv
-            visualization . _Just . visualizationId ?= uuid
-        whenM (isJust . maybe def getVisualization <$> getExpressionNode nl) . liftIO $ do
-            registerVisualizerFrame uuid
-            sendVisualisationData uuid visVal
+            visualization . _Just . visualizationId %= Just . fromMaybe uuid
+        withJustM (maybe def getVisualization <$> getExpressionNode nl) $ \(visId, _, _) -> liftIO $ do
+            registerVisualizerFrame visId
+            sendVisualisationData   visId visVal
     NodeValue sv (Just StreamStart) -> do
         uuid <- getUUID
         modifyExpressionNode nl $ do
             value ?= ShortValue sv
-            visualization . _Just . visualizationId ?= uuid
-        whenM (isJust . maybe def getVisualization <$> getExpressionNode nl) . liftIO $ do
-            registerVisualizerFrame uuid
-            notifyStreamRestart uuid
+            visualization . _Just . visualizationId %= Just . fromMaybe uuid
+        withJustM (maybe def getVisualization <$> getExpressionNode nl) $ \(visId, _, _) -> liftIO $ do
+            registerVisualizerFrame visId
+            notifyStreamRestart     visId
     NodeValue sv Nothing -> modifyExpressionNode nl $ do
         value ?= ShortValue sv
         visualization . _Just . visualizationId .= def
