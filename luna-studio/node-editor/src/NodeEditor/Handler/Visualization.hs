@@ -8,19 +8,20 @@ import           NodeEditor.Action.Command            (Command)
 import qualified NodeEditor.Action.Visualization      as Visualization
 import           NodeEditor.Event.Event               (Event (UI))
 import qualified NodeEditor.Event.Mouse               as Mouse
-import           NodeEditor.Event.UI                  (UIEvent (AppEvent, VisualizationEvent, NodeEditorEvent))
-import qualified NodeEditor.React.Event.NodeEditor as NodeEditor
+import           NodeEditor.Event.UI                  (UIEvent (AppEvent, NodeEditorEvent, VisualizationEvent))
 import qualified NodeEditor.React.Event.App           as App
+import qualified NodeEditor.React.Event.NodeEditor    as NodeEditor
 import qualified NodeEditor.React.Event.Visualization as Visualization
 import           NodeEditor.State.Action              (continue, end)
-import           NodeEditor.State.Global              (State)
 import           NodeEditor.State.Action              (VisualizationActive)
+import           NodeEditor.State.Global              (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (UI (VisualizationEvent (Visualization.Activate nl))) = Just $ Visualization.activateVisualization nl
-handle (UI (NodeEditorEvent    (NodeEditor.Wheel _ _     ))) = Just $ continue $ (end :: VisualizationActive -> Command State ())
-handle _                                                     = Nothing
+handle (UI (VisualizationEvent (Visualization.Activate            nl)))         = Just $ Visualization.activateVisualization nl
+handle (UI (VisualizationEvent (Visualization.SelectVisualization nl visName))) = Just $ Visualization.selectVisualization nl visName
+handle (UI (NodeEditorEvent    (NodeEditor.Wheel _ _)))                         = Just $ continue $ Visualization.deactivateVisualization
+handle _                                                                        = Nothing
 
 -- handle :: Event -> Maybe (Command State ())
 -- handle (UI (VisualizationEvent (Visualization.Pin   nodeLoc visIx         ))) = Just $ Visualization.pin   nodeLoc visIx

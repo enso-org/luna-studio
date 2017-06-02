@@ -12,11 +12,14 @@ module NodeEditor.React.View.Visualization
 import           Common.Prelude
 import qualified Data.Aeson                                 as Aeson
 import qualified Data.ByteString.Lazy.Char8                 as ByteString
+import           Data.Map                                   (Map)
+import qualified Data.Map                                   as Map
 import           Data.Scientific                            (coefficient)
-import           Data.Text                                  as Text
+import qualified Data.Text                                  as Text
 import qualified Data.Vector                                as Vector
 import qualified LunaStudio.Data.Error                      as LunaError
-import           LunaStudio.Data.NodeValue                  (VisualizationId, VisualizationValue (..), Visualizer)
+import           LunaStudio.Data.NodeValue                  (VisualizationId, VisualizationValue (..), Visualizer, VisualizerName,
+                                                             VisualizerPath)
 import           LunaStudio.Data.Position                   (Position)
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
@@ -34,6 +37,7 @@ import qualified React.Flux                                 as React
 viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
 iframeName      = "visualization-iframe"
+visMenuName     = "visualizers"
 objNameVis      = "node-vis"
 objNameShortVal = "node-short-value"
 
@@ -58,13 +62,24 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
         [ "key"       $= "visualizations"
         , "className" $= Style.prefixFromList [ "node__visualizations", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ withJust (getVisualization n) $ \(visId, visualizer, active) ->
+        ] $ withJust (getVisualization n) $ \(visId, visualizer, active) -> do
+            visualizersMenu_ ref nodeLoc (fst visualizer) $ n ^. Node.visualizers
             visualization_ ref nodeLoc def visId visualizer active
 
-pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
-pinnedVisualization_ ref ne (nl, _, position) =
-    withJust (NodeEditor.getExpressionNode nl ne >>= getVisualization) $ \(visId, visualizer, isActive) ->
-        visualization_ ref nl (Just position) visId visualizer isActive
+
+visualizersMenu_ :: Ref App -> NodeLoc -> VisualizerName -> Map VisualizerName VisualizerPath -> ReactElementM ViewEventHandler ()
+visualizersMenu_ ref nl actVisName visMap = React.view visualizersMenu (ref, nl, actVisName, visMap) mempty
+
+visualizersMenu :: ReactView (Ref App, NodeLoc, VisualizerName, Map VisualizerName VisualizerPath)
+visualizersMenu = React.defineView visMenuName $ \(ref, nl, actVisName, visualizersMap) ->
+    when (Map.size visualizersMap > 1 || (Map.size visualizersMap == 1 && Map.notMember actVisName visualizersMap)) $ do
+        let menuEntry :: Text -> ReactElementM ViewEventHandler ()
+            menuEntry name = when (name /= actVisName) $
+                li_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.SelectVisualization nl name ] $ elemString $ convert name
+        div_ [ "className" $= Style.prefix "luna-dropdown" ] $ do
+            span_ $ elemString $ convert actVisName
+            ul_ [ "className" $= Style.prefix "luna-dropdown__menu" ] $ mapM_ menuEntry $ Map.keys visualizersMap
+
 
 visualization_ :: Ref App -> NodeLoc -> Maybe Position -> VisualizationId -> Visualizer -> IsVisualizationActive -> ReactElementM ViewEventHandler ()
 visualization_ ref nl mayPos visId v active = React.view visualization (ref, nl, mayPos, visId, v, active) mempty
@@ -90,6 +105,12 @@ visualizationIframe = React.defineView iframeName $ \(ref, visId, visualizer) ->
             , "width"  $= "300"
             , "height" $= "300"
             ] mempty
+
+pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
+pinnedVisualization_ ref ne (nl, _, position) =
+    withJust (NodeEditor.getExpressionNode nl ne >>= getVisualization) $ \(visId, visualizer, isActive) ->
+        visualization_ ref nl (Just position) visId visualizer isActive
+
 
 -- iframe_
 --     [ "srcDoc" $= ("<style>"
