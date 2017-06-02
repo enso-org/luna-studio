@@ -126,7 +126,9 @@
   'cmd-e'           : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
   'enter'           : 'luna-studio:expand-selected-nodes'     # ExpandSelectedNodes
-  'space'           : 'luna-studio:edit-selected-nodes'       # EditSelectedNodes
+  'ctrl-enter'      : 'luna-studio:edit-selected-nodes'       # EditSelectedNodes
+  'cmd-enter'       : 'luna-studio:edit-selected-nodes'       # EditSelectedNodes
+  'ctrl-space'      : 'luna-studio:zoom-visualization'        # ZoomVisualization
   'l'               : 'luna-studio:autolayout-selected-nodes' # AutolayoutSelectedNodes
   'ctrl-l'          : 'luna-studio:autolayout-all-nodes'      # AutolayoutAllNodes
   'cmd-l'           : 'luna-studio:autolayout-all-nodes'      # AutolayoutAllNodes

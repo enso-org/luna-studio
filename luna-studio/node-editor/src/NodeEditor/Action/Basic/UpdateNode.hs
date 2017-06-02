@@ -68,7 +68,7 @@ localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (nod
             inPorts     = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
             outPorts    = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
             (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
-            defVisualization = maybe def (\visualizer -> Just $ ExpressionNode.Visualization def visualizer False) $ listToMaybe (Map.toList visualizers)
+            defVisualization = maybe def (\visualizer -> Just $ ExpressionNode.Visualization def visualizer def) $ listToMaybe (Map.toList visualizers)
             visualization = case node ^. ExpressionNode.visualization of
                 Nothing -> defVisualization
                 Just v  -> if Map.lookup (v ^. ExpressionNode.visualizer . _1) visualizers == Just (v ^. ExpressionNode.visualizer . _2)

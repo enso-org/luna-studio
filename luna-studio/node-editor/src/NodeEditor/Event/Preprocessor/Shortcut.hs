@@ -59,7 +59,8 @@ handleKeyApp evt
     | Keys.withoutMods      evt Keys.backspace  = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
-    | Keys.withoutMods      evt Keys.space      = Just EditSelectedNodes
+    | Keys.withCtrl         evt Keys.enter      = Just EditSelectedNodes
+    | Keys.withCtrl         evt Keys.space      = Just ZoomVisualization
     | Keys.withoutMods      evt Keys.l          = Just AutolayoutSelectedNodes
     | Keys.withCtrl         evt Keys.l          = Just AutolayoutAllNodes
     -- searcher

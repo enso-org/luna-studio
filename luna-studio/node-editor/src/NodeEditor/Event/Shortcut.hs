@@ -39,6 +39,7 @@ data Command = Cancel
              | ExpandSelectedNodes
              | UnfoldSelectedNodes
              | EditSelectedNodes
+             | ZoomVisualization
              | AutolayoutSelectedNodes
              | AutolayoutAllNodes
              -- searcher
