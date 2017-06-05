@@ -61,13 +61,17 @@ handleMouseDown ref nodeLoc e m =
     else []
 
 nodeName_ :: Ref App -> NodeLoc -> Maybe Text -> Maybe Searcher -> ReactElementM ViewEventHandler ()
-nodeName_ ref nl nodeName mayS = div_ ([ "className" $= Style.prefixFromList ["node__name", "noselect"] ] ++ handlers) nameElement where
+nodeName_ ref nl nodeName mayS = let
     regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nl)]
                              , elemString . convert $ fromMaybe def nodeName )
     (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
         Searcher.NodeName snl _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
         _                       -> regularHandlersAndElem
 
+    in div_ ([ "className" $= Style.prefixFromList ["node__name", "noselect"]
+             , "key" $= "nodeName"
+             ] ++ handlers)
+                nameElement
 nodeExpression_ :: Ref App -> NodeLoc -> Text -> Maybe Searcher -> ReactElementM ViewEventHandler ()
 nodeExpression_ ref nl expr mayS = div_ (
     [ "className" $= Style.prefixFromList ["node__expression", "noselect"]
