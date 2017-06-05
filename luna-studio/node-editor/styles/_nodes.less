@@ -157,34 +157,43 @@
     stroke-linejoin: round;
 }
 
-// controls
+/////////////////////////////
+//         controls        //
+/////////////////////////////
 
 .luna-node__controls {
     padding:               12rem 12rem 12rem 4rem;
     overflow:              hidden;
     background:            #222;
     border-radius:         3rem;
-    display:               grid;
-    grid-template-rows:    16rem;
-    grid-template-columns: auto auto;
     line-height:           16rem;
-    justify-items:         stretch;
-    justify-content:       stretch;
+    display:               flex;
+    flex-direction:        column;
+    //display:               grid;
+    //grid-template-rows:    16rem;
+    //grid-template-columns: auto auto;
+    //justify-items:         stretch;
+    //justify-content:       stretch;
+}
+.luna-node__control {
+    width: 100%;
 }
 
 .luna-node__label {
     padding-left: 4rem;
     width:        50rem;
+    float:        left;
 }
 
 .luna-node__label--self {
-    grid-column-start: 1;
-    grid-column-end:   3;
+    //grid-column-start: 1;
+    //grid-column-end:   3;
 }
 .luna-node__ctrl--self {
     display: none;
 }
 .luna-node__ctrl {
+    float:      right;
     text-align: center;
     min-width:  90rem;
     align-self: center;
@@ -200,6 +209,8 @@
     line-height:    11rem;
     padding-bottom: 1rem;
     cursor:         pointer;
+    position:       relative;
+    top:            2px;
 }
 
 .luna-ctrl--set {
@@ -232,14 +243,15 @@
 }
 
 
-.luna-ctrl-switch {
+.luna-ctrl--bool--True,
+.luna-ctrl--bool--False {
+    float:         right;
+    top:           4rem;
     cursor:        pointer;
     height:        8rem;
     width:         23rem;
-    background:    #111;
     border-radius: 1000px;
     position:      relative;
-    top:           4rem;
     display:       flex;
     &::after {
         top:          -2rem;
@@ -248,24 +260,23 @@
         content:       " ";
         width:         12rem;
         height:        12rem;
-        background:    #777;
-        border-radius: 1000px;
+        border-radius: 1000rem;
     }
 }
 
-.luna-ctrl-switch--on {
+.luna-ctrl--bool--True {
     background: #888;
     &::after {
-        background: #bbb;
+        background: #eee;
         left:       11rem;
     }
 }
 
-.luna-ctrl-switch--off {
-    background: #3a3a3a;
+.luna-ctrl--bool--False {
+    background: #444;
     &::after {
         background: #666;
-        left:       -1rem;
+        left:      -2rem;
     }
 }
 

@@ -138,9 +138,10 @@ portControl_ ref' nl' port' = React.viewWithSKey portControl (jsShow $ port' ^. 
                             ValueType.Bool -> do
                                 let value = fromMaybe True $ defVal ^? PortDefault._Constant . PortDefault._BoolValue
                                     defaultValue = PortDefault.Constant $ PortDefault.BoolValue $ not value
-                                button_
+                                div_
                                     [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
-                                    ] $ elemString $ show value
+                                    , "className" $= Style.prefix ("ctrl--bool--" <> jsShow value)
+                                    ] mempty
                             ValueType.Other -> elemString ""
 
                 _ -> div_

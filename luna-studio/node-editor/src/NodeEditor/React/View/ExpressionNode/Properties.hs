@@ -17,9 +17,11 @@ objName = "node-properties"
 nodeProperties :: ReactView (Ref App, NodeProperties)
 nodeProperties = React.defineView objName $ \(ref, p) -> do
     let nodeLoc    = p ^. Prop.nodeLoc
-        controls p = do
-            portLabel_ p
-            portControl_ ref nodeLoc p
+        controls p = div_
+                        [ "className" $= Style.prefix "node__control"
+                        ] $ do
+                        portLabel_ p
+                        portControl_ ref nodeLoc p
     div_
         [ "key"       $= "controls"
         , "className" $= Style.prefixFromList [ "node__controls", "noselect" ]
