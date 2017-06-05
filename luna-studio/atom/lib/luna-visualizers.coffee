@@ -9,9 +9,10 @@ resolveVis = (p, name) ->
     normalizeVis p, name, require(path.join p, name, "config.js")
 
 normalizeVis = (p, name, visConf) -> (cons) ->
-    fileToLoad = visConf (JSON.parse cons)
-    if fileToLoad?
-        JSON.stringify(path.join p, name, fileToLoad)
+    filesToLoad = visConf (JSON.parse cons)
+    if filesToLoad?
+        f.path = path.join(p, name, f.path) for f in filesToLoad
+        JSON.stringify(filesToLoad)
     else JSON.stringify(null)
 
 setupConfigMap = (path) ->
