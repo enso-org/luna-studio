@@ -1,7 +1,7 @@
 var knownFrames = {};
 
 var sendToFrame = function (id, data) {
-  window.frames[id].window.postMessage(data, "*");
+  document.getElementsByName(id)[0].contentWindow.postMessage(data, "*");
 };
 
 var flushAll = function (id) {
@@ -16,7 +16,8 @@ var queueMsg = function (id, data) {
 };
 
 var loaded = function (id) {
-  return (window.frames[id] && window.frames[id].window.document.readyState == "complete");
+  var frame = document.getElementsByName(id)[0]
+  return (frame && frame.contentWindow.document.readyState == "complete");
 };
 
 var register = function (id) {

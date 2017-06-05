@@ -35,7 +35,7 @@
   var currentData = null;
 
   var display = function () {
-    options.series = [{ name: "Data", type: "line", symbolSize: 1, data: currentData }];
+    options.series = [{ name: "Data", type: "line", lineStyle: {normal: {color: "#0000FF"}}, symbolSize: 1, data: currentData }];
     chart.setOption(options);
   }
 
