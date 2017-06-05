@@ -4,11 +4,20 @@
     chart  = echarts.init(document.getElementById("chart-container"));
   });
   var options = {
+    dataZoom: [{
+      bottom: 25,
+      id: "dataZoomX",
+      type: "slider",
+      xAxisIndex: [0],
+      filterMode: "filter",
+      dataBackground: "red"
+    }],
     textStyle: {
       fontFamily: "monospace",
       fontSize: 10
     },
     xAxis: {
+      position: "top",
       splitLine: {
         lineStyle: {
           color: "#333"
