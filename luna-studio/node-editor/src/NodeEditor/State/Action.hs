@@ -9,6 +9,7 @@ import           Data.Map                          (Map)
 import           Data.ScreenPosition               (ScreenPosition)
 import           Data.Set                          (Set)
 import qualified Data.Set                          as Set
+import           Data.Time.Clock                   (UTCTime)
 import           LunaStudio.Data.NodeLoc           (NodeLoc)
 import           LunaStudio.Data.PortRef           (AnyPortRef, InPortRef, OutPortRef)
 import           LunaStudio.Data.Position          (Position)
@@ -42,6 +43,7 @@ makeLenses ''ZoomDrag
 
 
 data SliderDrag = SliderDrag { _sliderDragPortRef   :: InPortRef
+                             , _sliderDragStartTime :: UTCTime
                              , _sliderDragStartPos  :: ScreenPosition
                              , _sliderDragInitValue :: InitValue
                              } deriving (Eq, Show, Generic, Typeable)
