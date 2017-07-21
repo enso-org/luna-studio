@@ -3,8 +3,13 @@ config          = require('./config')
 
 atomCallback            = require('./atom-callback')
 GoogleAnalytics         = require('./GoogleAnalytics')
+console.log('DUPADUPADUPA');
+gzip                    = require('./gzip')
+console.log(gzip);
+console.log('DUPADUPADUPA');
 
 window.visualizerFramesManager = require('./visualizers')
+window.gzip = require('./gzip');
 
 start = ->
   $(document).ready ->

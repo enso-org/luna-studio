@@ -4,10 +4,12 @@ module Empire.Handlers where
 import           Prelude               (undefined)
 import           Prologue
 
+import qualified Codec.Compression.GZip as GZip
 import           Control.Monad.State   (StateT)
 import qualified Data.Binary           as Bin
 import           Data.ByteString       (ByteString)
 import           Data.ByteString.Lazy  (fromStrict)
+import qualified Data.ByteString.Lazy  as BSL
 import           Data.Map.Strict       (Map)
 import qualified Data.Map.Strict       as Map
 import qualified LunaStudio.API.Topic      as Topic
@@ -18,6 +20,7 @@ import qualified Empire.Server.Library as Library
 import qualified Empire.Server.Project as Project
 import           ZMQ.Bus.Trans         (BusT (..))
 
+import System.IO.Unsafe (unsafePerformIO)
 
 type Handler = ByteString -> StateT Env BusT ()
 
@@ -58,6 +61,13 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleSubstitute
     ]
 
+decompressWithDebug :: BSL.ByteString -> BSL.ByteString
+decompressWithDebug d = unsafePerformIO $ do
+    putStrLn "===== Decompressing data ====="
+    print d
+    putStrLn "===== o takie ================"
+    return $ GZip.decompress d
+
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)
 makeHandler h = (Topic.topic (undefined :: a), process) where
-   process content = h request where request = Bin.decode . fromStrict $ content
+   process content = h request where request = Bin.decode . decompressWithDebug . fromStrict $ content
