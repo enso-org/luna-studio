@@ -58,6 +58,13 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleSubstitute
     ]
 
+decompressWithDebug :: BSL.ByteString -> BSL.ByteString
+decompressWithDebug d = unsafePerformIO $ do
+    putStrLn "===== Decompressing data ====="
+    print d
+    putStrLn "===== o takie ================"
+    return $ GZip.decompress d
+
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)
 makeHandler h = (Topic.topic (undefined :: a), process) where
    process content = h request where request = Bin.decode content

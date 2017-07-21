@@ -1,6 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 module NodeEditor.Event.Preprocessor.Batch (process) where
 
+import qualified Codec.Compression.GZip            as GZip
 import           Common.Prelude                    hiding (cons)
 import           Data.Binary                       (Binary, decode)
 import           Data.ByteString.Lazy.Char8        (ByteString)
@@ -17,6 +18,13 @@ import qualified NodeEditor.Event.Event            as Event
 process :: Event.Event -> Maybe Event.Event
 process (Event.Connection (Message msg)) = Just $ Event.Batch $ processMessage msg
 process _                                = Nothing
+
+decompressWithDebug :: BSL.ByteString -> BSL.ByteString
+decompressWithDebug d = unsafePerformIO $ do
+    putStrLn "===== Decompressing data ====="
+    print d
+    putStrLn "===== o takie ================"
+    return $ GZip.decompress d
 
 handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (String, ByteString -> Batch.Event)
 handle cons = (Topic.topic (undefined :: a), cons . decode . GZip.decompress)

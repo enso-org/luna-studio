@@ -23,6 +23,7 @@ import           ZMQ.Bus.Trans                (BusT (..))
 
 sendToBus :: Binary a => String -> a -> StateT Env BusT ()
 sendToBus topic bin = do
+    liftIO $ putStrLn $ "====== Writing to topic " ++ topic ++ " ======"
     chan <- use Env.toBusChan
     liftIO $ atomically $ writeTChan chan $ Message.Message topic $ Compress.pack $ Bin.encode bin
 
