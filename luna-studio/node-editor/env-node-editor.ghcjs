@@ -3,7 +3,8 @@ var app              = require('./app'),
     common           = require('./common'),
     config           = require('./config');
     init             = require('./init'),
-    lexerClasses     = require('./lexer-classes')
+    lexerClasses     = require('./lexer-classes'),
+    gzip             = require('./gzip')
 
 var run = function(maybe_url, maybe_mountPoint, websocket) {
   var arg_url   = function() { return maybe_url; };

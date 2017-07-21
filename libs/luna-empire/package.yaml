@@ -64,6 +64,7 @@ dependencies:
     - uuid
     - vector-text
     - visualization-api
+    - zlib == 0.6.1.2
 
 default-extensions:
     - FlexibleContexts

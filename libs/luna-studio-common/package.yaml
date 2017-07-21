@@ -26,6 +26,7 @@ dependencies:
   - text
   - time
   - uuid-types
+  - zlib == 0.6.1.2
 
 default-extensions:
   - DeriveAnyClass
