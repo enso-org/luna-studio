@@ -13,6 +13,8 @@ import qualified LunaStudio.API.Topic            as Topic
 import           WebSocket
 import           Common.Prelude         hiding (Text)
 
+import System.IO.Unsafe (unsafePerformIO)
+import qualified GZip
 
 data ControlCode = ConnectionTakeover
                  | Welcome
@@ -42,6 +44,14 @@ instance Binary.Binary ControlCode
 instance Binary.Binary WebMessage
 instance Binary.Binary Frame
 
+
+compressWithDebug x = unsafePerformIO $ do
+    putStrLn "======= COMPRESSING ======="
+    compressed <- GZip.compress x
+    print compressed
+    putStrLn "==== Done ===="
+    return compressed
+
 serialize :: Frame -> JSString
 serialize = lazyTextToJSString . decodeUtf8 . Base64.encode . Binary.encode
 
@@ -57,16 +67,16 @@ sendMessage :: WebMessage -> IO ()
 sendMessage msg = sendMessages [msg]
 
 makeMessage :: BinaryRequest a => Message a -> WebMessage
-makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (Binary.encode body')
+makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (compressWithDebug $ Binary.encode body')
 
 makeMessage' :: BinaryMessage a => a -> WebMessage
-makeMessage' body = let body' = body in WebMessage (Topic.topic body') (Binary.encode body')
+makeMessage' body = let body' = body in WebMessage (Topic.topic body') (compressWithDebug $ Binary.encode body')
 
 sendRequest :: BinaryRequest a => Message a -> IO ()
-sendRequest = sendMessage . makeMessage
+sendRequest m = putStrLn "=== sendRequest =====" >> (sendMessage $ makeMessage m)
 
 sendUpdate :: BinaryMessage a => a -> IO ()
-sendUpdate = sendMessage . makeMessage'
+sendUpdate m = putStrLn "=== sendUpdate =====" >> (sendMessage $ makeMessage' m)
 
 sendRequests :: BinaryRequest a => [Message a] -> IO ()
 sendRequests msgs = sendMessages $ makeMessage <$> msgs

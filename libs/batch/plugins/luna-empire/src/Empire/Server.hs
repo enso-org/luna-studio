@@ -6,6 +6,7 @@
 
 module Empire.Server where
 
+import qualified Codec.Compression.GZip           as GZip
 import           Control.Concurrent               (forkIO)
 import           Control.Concurrent.STM           (STM)
 import           Control.Concurrent.MVar
@@ -71,7 +72,11 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 sendStarted :: BusEndPoints -> IO ()
 sendStarted endPoints = do
-    let content = toStrict . Bin.encode $ EmpireStarted.Status
+    putStrLn "======= SENDING MESSAGE STARTED ========="
+    let content = toStrict . GZip.compress .  Bin.encode $ EmpireStarted.Status
+    putStrLn "====== compressed content ===== "
+    print content
+    putStrLn "===== End ========"
     void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic EmpireStarted.Status) content
 
 run :: BusEndPoints -> [Topic] -> Bool -> FilePath -> IO (Either Bus.Error ())
