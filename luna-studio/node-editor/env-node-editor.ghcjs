@@ -4,7 +4,8 @@ var app              = require('./app'),
     config           = require('./config');
     fontSize         = require('./font-size');
     init             = require('./init'),
-    lexerClasses     = require('./lexer-classes')
+    lexerClasses     = require('./lexer-classes'),
+    gzip             = require('./gzip')
 
 
 var run = function(maybe_url, maybe_mountPoint, websocket) {
