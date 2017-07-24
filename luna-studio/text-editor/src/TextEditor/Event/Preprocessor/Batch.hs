@@ -12,13 +12,21 @@ import           TextEditor.Event.Batch                as Batch
 import           TextEditor.Event.Connection           as Connection
 import qualified TextEditor.Event.Event                as Event
 
+import qualified GZip
+import System.IO.Unsafe (unsafePerformIO)
+
+decompressWithDebug x = unsafePerformIO $ do
+    putStrLn $ "===== TEXT EDITOR ==== DECOMPRESS ====="
+    print x
+    putStrLn $ "o takie"
+    GZip.decompress x
 
 process :: Event.Event -> Maybe Event.Event
 process (Event.Connection (Message msg)) = Just $ Event.Batch $ processMessage msg
 process _                                = Nothing
 
 handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (String, ByteString -> Batch.Event)
-handle cons = (Topic.topic (undefined :: a), cons . decode)
+handle cons = (Topic.topic (undefined :: a), cons . decode . decompressWithDebug)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
 handlers = Map.fromList [ handle EmpireStarted

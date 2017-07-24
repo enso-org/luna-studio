@@ -1,7 +1,8 @@
 var app              = require('./app-text-editor'),
     init             = require('./init'),
     common           = require('./common'),
-    config           = require('./config');
+    config           = require('./config'),
+    gzip             = require('./gzip');
     atomCallbackTextEditor = require('./atom-callback-text-editor')();
     globalRegistry = {};
 
