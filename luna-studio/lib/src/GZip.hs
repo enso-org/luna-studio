@@ -54,4 +54,3 @@ decompress bytesL = do
    let buffer = Buffer.createFromArrayBuffer arrayBuffer :: Buffer
    putStrLn "sraka"
    return . fromStrict $ Buffer.toByteString 0 Nothing buffer
-
