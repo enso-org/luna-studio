@@ -44,20 +44,6 @@ instance Binary.Binary ControlCode
 instance Binary.Binary WebMessage
 instance Binary.Binary Frame
 
-
-compressWithDebug x = unsafePerformIO $ do
-    putStrLn "======= COMPRESSING ======="
-    compressed <- GZip.compress x
-    print compressed
-    putStrLn "==== Done ===="
-    return compressed
-
-decompressWithDebug x = unsafePerformIO $ do
-    putStrLn "======= DECOMPRESSING ====="
-    decompressed <- GZip.decompress x
-    putStrLn "==== Done ===="
-    return decompressed
-
 serialize :: Frame -> JSString
 serialize = lazyTextToJSString . decodeUtf8 . Base64.encode . Binary.encode
 
@@ -73,16 +59,16 @@ sendMessage :: WebMessage -> IO ()
 sendMessage msg = sendMessages [msg]
 
 makeMessage :: BinaryRequest a => Message a -> WebMessage
-makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (compressWithDebug $ Binary.encode body')
+makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (GZip.compress $ Binary.encode body')
 
 makeMessage' :: BinaryMessage a => a -> WebMessage
-makeMessage' body = let body' = body in WebMessage (Topic.topic body') (compressWithDebug $ Binary.encode body')
+makeMessage' body = let body' = body in WebMessage (Topic.topic body') (GZip.compress $ Binary.encode body')
 
 sendRequest :: BinaryRequest a => Message a -> IO ()
-sendRequest m = putStrLn "=== sendRequest =====" >> (sendMessage $ makeMessage m)
+sendRequest m = sendMessage $ makeMessage m
 
 sendUpdate :: BinaryMessage a => a -> IO ()
-sendUpdate m = putStrLn "=== sendUpdate =====" >> (sendMessage $ makeMessage' m)
+sendUpdate m = sendMessage $ makeMessage' m
 
 sendRequests :: BinaryRequest a => [Message a] -> IO ()
 sendRequests msgs = sendMessages $ makeMessage <$> msgs

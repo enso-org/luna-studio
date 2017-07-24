@@ -6,7 +6,6 @@ var compressBytes = function (bytes) {
     var compressed = pako.gzip(bytes);
     console.log(compressed);
     console.log('----- done -------------');
-    // return "Dupa"
     return compressed.buffer;
 };
 
@@ -23,4 +22,3 @@ module.exports = {
     compressBytes: compressBytes,
     decompressBytes: decompressBytes
 };
-
