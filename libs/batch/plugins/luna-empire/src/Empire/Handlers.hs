@@ -20,9 +20,7 @@ import qualified Empire.Server.Library as Library
 import qualified Empire.Server.Project as Project
 import           ZMQ.Bus.Trans         (BusT (..))
 
-import System.IO.Unsafe (unsafePerformIO)
-
-type Handler = ByteString -> StateT Env BusT ()
+type Handler = BSL.ByteString -> StateT Env BusT ()
 
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
@@ -61,13 +59,6 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleSubstitute
     ]
 
-decompressWithDebug :: BSL.ByteString -> BSL.ByteString
-decompressWithDebug d = unsafePerformIO $ do
-    putStrLn "===== Decompressing data ====="
-    print d
-    putStrLn "===== o takie ================"
-    return $ GZip.decompress d
-
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)
 makeHandler h = (Topic.topic (undefined :: a), process) where
-   process content = h request where request = Bin.decode . decompressWithDebug . fromStrict $ content
+   process content = h request where request = Bin.decode content
