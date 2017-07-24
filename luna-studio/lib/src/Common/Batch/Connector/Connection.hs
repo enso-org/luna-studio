@@ -52,6 +52,12 @@ compressWithDebug x = unsafePerformIO $ do
     putStrLn "==== Done ===="
     return compressed
 
+decompressWithDebug x = unsafePerformIO $ do
+    putStrLn "======= DECOMPRESSING ====="
+    decompressed <- GZip.decompress x
+    putStrLn "==== Done ===="
+    return decompressed
+
 serialize :: Frame -> JSString
 serialize = lazyTextToJSString . decodeUtf8 . Base64.encode . Binary.encode
 
