@@ -17,8 +17,9 @@ import           Control.Monad.State              (StateT, evalStateT)
 import           Control.Monad.STM                (atomically)
 import qualified Data.Binary                      as Bin
 import           Data.ByteString                  (ByteString)
-import           Data.ByteString.Char8            (unpack)
+import           Data.ByteString.Lazy.Char8       (unpack)
 import           Data.ByteString.Lazy             (fromStrict, toStrict)
+import qualified Data.ByteString.Lazy             as BSL
 import qualified Data.Map.Strict                  as Map
 
 import           System.FilePath                  ()
@@ -66,6 +67,8 @@ import           System.Remote.Monitoring
 import           System.Environment               (getEnv)
 import           System.Directory                 (canonicalizePath)
 import           System.Mem                       (performGC)
+
+import System.IO.Unsafe (unsafePerformIO)
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -181,7 +184,7 @@ handleMessage = do
                 logMsg = show (crlID ^. Message.messageID) <> ": " <> show senderID
                          <> " -> (last = " <> show lastFrame
                          <> ")\t:: " <> topic
-                content = msg ^. Message.message
+                content = GZip.decompress . fromStrict $ msg ^. Message.message
             case Utils.lastPart '.' topic of
                 "update"  -> handleUpdate        logMsg topic content
                 "status"  -> handleStatus        logMsg topic content
@@ -189,38 +192,36 @@ handleMessage = do
                 "debug"   -> handleDebug         logMsg topic content
                 _         -> handleNotRecognized logMsg topic content
 
-
-defaultHandler :: ByteString -> StateT Env BusT ()
+defaultHandler :: BSL.ByteString -> StateT Env BusT ()
 defaultHandler content = do
     logger Logger.error $ "Not recognized request"
     logger Logger.info $ unpack content
 
-handleRequest :: String -> String -> ByteString -> StateT Env BusT ()
+handleRequest :: String -> String -> BSL.ByteString -> StateT Env BusT ()
 handleRequest logMsg topic content = do
     logger Logger.info logMsg
     let handler = Map.findWithDefault defaultHandler topic Handlers.handlersMap
     handler content
 
-handleUpdate :: String -> String -> ByteString -> StateT Env BusT ()
+handleUpdate :: String -> String -> BSL.ByteString -> StateT Env BusT ()
 handleUpdate logMsg topic content = do
     logger Logger.info logMsg
     let update = if topic == "empire.graph.node.updateMeta.update"
-                      then Just (Bin.decode (fromStrict content) :: SetNodesMeta.Update)
+                      then Just (Bin.decode content :: SetNodesMeta.Update)
                       else Nothing
     forM_ update $ Graph.handleSetNodesMetaUpdate
 
-handleStatus :: String -> String -> ByteString -> StateT Env BusT ()
-handleStatus logMsg _ content = do
-    logger Logger.info logMsg
+handleStatus :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleStatus logMsg _ content = logger Logger.info logMsg
 
-handleDebug :: String -> String -> ByteString -> StateT Env BusT ()
+handleDebug :: String -> String -> BSL.ByteString -> StateT Env BusT ()
 handleDebug logMsg _ content = do
     logger Logger.info logMsg
     currentEmpireEnv <- use Env.empireEnv
     formatted        <- use Env.formatted
     logger Logger.debug $ Utils.display formatted currentEmpireEnv
 
-handleNotRecognized :: String -> String -> ByteString -> StateT Env BusT ()
+handleNotRecognized :: String -> String -> BSL.ByteString -> StateT Env BusT ()
 handleNotRecognized logMsg _ content = do
     logger Logger.error logMsg
     logger Logger.error $ show content
