@@ -84,7 +84,9 @@ preprocessEvent ev = do
 
 processEvent :: LoopRef -> Event -> IO ()
 processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
+    print ev
     realEvent <- preprocessEvent ev
+    putStrLn $ take 100 $ show realEvent
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
         --putStrLn . show . length $ show realEvent
