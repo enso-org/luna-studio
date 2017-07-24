@@ -13,14 +13,6 @@ import           TextEditor.Event.Batch                as Batch
 import           TextEditor.Event.Connection           as Connection
 import qualified TextEditor.Event.Event                as Event
 
-import qualified GZip
-import System.IO.Unsafe (unsafePerformIO)
-
-decompressWithDebug x = unsafePerformIO $ do
-    putStrLn $ "===== TEXT EDITOR ==== DECOMPRESS ====="
-    print x
-    putStrLn $ "o takie"
-    GZip.decompress x
 
 process :: Event.Event -> Maybe Event.Event
 process (Event.Connection (Message msg)) = Just $ Event.Batch $ processMessage msg

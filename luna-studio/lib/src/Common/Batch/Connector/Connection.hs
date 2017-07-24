@@ -44,20 +44,6 @@ instance Binary.Binary ControlCode
 instance Binary.Binary WebMessage
 instance Binary.Binary Frame
 
-
-compressWithDebug x = unsafePerformIO $ do
-    putStrLn "======= COMPRESSING ======="
-    compressed <- GZip.compress x
-    print compressed
-    putStrLn "==== Done ===="
-    return compressed
-
-decompressWithDebug x = unsafePerformIO $ do
-    putStrLn "======= DECOMPRESSING ====="
-    decompressed <- GZip.decompress x
-    putStrLn "==== Done ===="
-    return decompressed
-
 serialize :: Frame -> JSString
 serialize = lazyTextToJSString . decodeUtf8 . Base64.encode . Binary.encode
 
