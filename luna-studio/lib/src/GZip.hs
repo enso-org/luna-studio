@@ -1,4 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
+{-# LANGUAGE CPP           #-}
+
 module GZip (compress, decompress) where
 
 import           Common.Prelude
@@ -33,7 +35,7 @@ newUint8Array (bytes, len) = pFromJSVal <$> jsUint8Array bytes (pToJSVal len)
 getArrayBuffer :: JSVal -> IO MutableArrayBuffer
 getArrayBuffer = return . pFromJSVal
 
-useGZip :: (Uint8Array -> IO JSVal) -> ByteString -> ByteString
+useGZip :: (Uint8Array -> IO JSVal) -> ByteString -> IO ByteString
 useGZip op bytesL = do
     let bytes = toStrict bytesL
     bytesArray  <- useAsCStringLen bytes newUint8Array

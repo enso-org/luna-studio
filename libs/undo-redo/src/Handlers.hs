@@ -10,8 +10,7 @@ import           UndoState
 import           Control.Exception                      (Exception)
 import           Control.Exception.Safe                 (throwM)
 import           Data.Binary                            (Binary, decode)
-import           Data.ByteString                        (ByteString)
-import           Data.ByteString.Lazy                   (fromStrict)
+import           Data.ByteString.Lazy                   (ByteString, fromStrict)
 import qualified Data.List                              as List
 import           Data.Map.Strict                        (Map)
 import qualified Data.Map.Strict                        as Map
@@ -44,7 +43,7 @@ import           Prologue                               hiding (throwM)
 
 type Handler = ByteString -> UndoPure ()
 
-handlersMap :: Map String (Handler)
+handlersMap :: Map String Handler
 handlersMap = Map.fromList
     [ makeHandler handleAddConnectionUndo
     , makeHandler handleAddNodeUndo

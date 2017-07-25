@@ -10,8 +10,8 @@ import           Control.Lens
 import           Control.Monad.State       (MonadState, StateT (StateT), forM, runStateT)
 import           Data.Binary               (decode)
 import qualified Data.Binary               as Bin
-import           Data.ByteString           (ByteString, null)
-import           Data.ByteString.Lazy      (fromStrict, toStrict)
+import           Data.ByteString           (null)
+import           Data.ByteString.Lazy      (ByteString)
 import qualified Data.List                 as List
 import qualified Data.Map.Strict           as Map
 import           Data.Maybe
