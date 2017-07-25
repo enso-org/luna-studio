@@ -28,7 +28,7 @@ dependencies:
   - time
   - unordered-containers
   - uuid-types
-  - zlib == 0.6.1.2
+  - zlib
 
 default-extensions:
   - DeriveAnyClass

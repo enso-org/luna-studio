@@ -71,7 +71,6 @@ dependencies:
   - uuid-types
   - vector
   - visualization-api
-  - zlib == 0.6.1.2
 
 executables:
   node-editor:

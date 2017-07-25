@@ -6,7 +6,7 @@
 
 module Empire.Server where
 
-import qualified Codec.Compression.GZip           as GZip
+import qualified Compress
 import           Control.Concurrent               (forkIO)
 import           Control.Concurrent.STM           (STM)
 import           Control.Concurrent.MVar
@@ -16,10 +16,8 @@ import           Control.Monad.Catch              (try, catchAll)
 import           Control.Monad.State              (StateT, evalStateT)
 import           Control.Monad.STM                (atomically)
 import qualified Data.Binary                      as Bin
-import           Data.ByteString                  (ByteString)
 import           Data.ByteString.Lazy.Char8       (unpack)
-import           Data.ByteString.Lazy             (fromStrict, toStrict)
-import qualified Data.ByteString.Lazy             as BSL
+import           Data.ByteString.Lazy             (ByteString)
 import qualified Data.Map.Strict                  as Map
 
 import           System.FilePath                  ()
@@ -75,11 +73,7 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 sendStarted :: BusEndPoints -> IO ()
 sendStarted endPoints = do
-    putStrLn "======= SENDING MESSAGE STARTED ========="
-    let content = toStrict . GZip.compress .  Bin.encode $ EmpireStarted.Status
-    putStrLn "====== compressed content ===== "
-    print content
-    putStrLn "===== End ========"
+    let content = Compress.pack .  Bin.encode $ EmpireStarted.Status
     void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic EmpireStarted.Status) content
 
 run :: BusEndPoints -> [Topic] -> Bool -> FilePath -> IO (Either Bus.Error ())
@@ -184,7 +178,7 @@ handleMessage = do
                 logMsg = show (crlID ^. Message.messageID) <> ": " <> show senderID
                          <> " -> (last = " <> show lastFrame
                          <> ")\t:: " <> topic
-                content = GZip.decompress . fromStrict $ msg ^. Message.message
+                content = Compress.unpack $ msg ^. Message.message
             case Utils.lastPart '.' topic of
                 "update"  -> handleUpdate        logMsg topic content
                 "status"  -> handleStatus        logMsg topic content
@@ -192,18 +186,18 @@ handleMessage = do
                 "debug"   -> handleDebug         logMsg topic content
                 _         -> handleNotRecognized logMsg topic content
 
-defaultHandler :: BSL.ByteString -> StateT Env BusT ()
+defaultHandler :: ByteString -> StateT Env BusT ()
 defaultHandler content = do
     logger Logger.error $ "Not recognized request"
     logger Logger.info $ unpack content
 
-handleRequest :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleRequest :: String -> String -> ByteString -> StateT Env BusT ()
 handleRequest logMsg topic content = do
     logger Logger.info logMsg
     let handler = Map.findWithDefault defaultHandler topic Handlers.handlersMap
     handler content
 
-handleUpdate :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleUpdate :: String -> String -> ByteString -> StateT Env BusT ()
 handleUpdate logMsg topic content = do
     logger Logger.info logMsg
     let update = if topic == "empire.graph.node.updateMeta.update"
@@ -211,17 +205,17 @@ handleUpdate logMsg topic content = do
                       else Nothing
     forM_ update $ Graph.handleSetNodesMetaUpdate
 
-handleStatus :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleStatus :: String -> String -> ByteString -> StateT Env BusT ()
 handleStatus logMsg _ content = logger Logger.info logMsg
 
-handleDebug :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleDebug :: String -> String -> ByteString -> StateT Env BusT ()
 handleDebug logMsg _ content = do
     logger Logger.info logMsg
     currentEmpireEnv <- use Env.empireEnv
     formatted        <- use Env.formatted
     logger Logger.debug $ Utils.display formatted currentEmpireEnv
 
-handleNotRecognized :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleNotRecognized :: String -> String -> ByteString -> StateT Env BusT ()
 handleNotRecognized logMsg _ content = do
     logger Logger.error logMsg
     logger Logger.error $ show content

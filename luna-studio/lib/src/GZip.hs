@@ -20,11 +20,11 @@ foreign import javascript unsafe
     jsUint8Array :: Ptr a -> JSVal -> IO JSVal
 
 foreign import javascript unsafe
-    "(function(a) { var b = gzip.compressBytes(a); return b;})($1)"
+    "(function(a) { return gzip.compressBytes(a); })($1)"
     jsCompress :: Uint8Array -> IO JSVal
 
 foreign import javascript unsafe
-    "(function(a) { var b = gzip.decompressBytes(a); return b;})($1)"
+    "(function(a) { return gzip.decompressBytes(a); })($1)"
     jsDecompress :: Uint8Array -> IO JSVal
 
 newUint8Array :: (Ptr a, Int) -> IO Uint8Array
@@ -42,7 +42,15 @@ useGZip op bytesL = do
     return . fromStrict $ Buffer.toByteString 0 Nothing buffer
 
 compress :: ByteString -> ByteString
+#ifdef COMPRESS_REQUESTS
 compress = unsafePerformIO . useGZip jsCompress
+#else
+compress = id
+#endif
 
 decompress :: ByteString -> ByteString
+#ifdef COMPRESS_REQUESTS
 decompress = unsafePerformIO . useGZip jsDecompress
+#else
+decompress = id
+#endif
