@@ -55,7 +55,6 @@ dependencies:
   - transformers
   - unordered-containers
   - uuid-types
-  - zlib == 0.6.1.2
 
 library:
   source-dirs: src

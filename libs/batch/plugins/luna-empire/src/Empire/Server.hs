@@ -191,13 +191,13 @@ defaultHandler content = do
     logger Logger.error $ "Not recognized request"
     logger Logger.info $ unpack content
 
-handleRequest :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleRequest :: String -> String -> ByteString -> StateT Env BusT ()
 handleRequest logMsg topic content = do
     logger Logger.info logMsg
     let handler = Map.findWithDefault defaultHandler topic Handlers.handlersMap
     handler content
 
-handleUpdate :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleUpdate :: String -> String -> ByteString -> StateT Env BusT ()
 handleUpdate logMsg topic content = do
     logger Logger.info logMsg
     let update = if topic == "empire.graph.node.updateMeta.update"
@@ -208,14 +208,14 @@ handleUpdate logMsg topic content = do
 handleStatus :: String -> String -> ByteString -> StateT Env BusT ()
 handleStatus logMsg _ content = logger Logger.info logMsg
 
-handleDebug :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleDebug :: String -> String -> ByteString -> StateT Env BusT ()
 handleDebug logMsg _ content = do
     logger Logger.info logMsg
     currentEmpireEnv <- use Env.empireEnv
     formatted        <- use Env.formatted
     logger Logger.debug $ Utils.display formatted currentEmpireEnv
 
-handleNotRecognized :: String -> String -> BSL.ByteString -> StateT Env BusT ()
+handleNotRecognized :: String -> String -> ByteString -> StateT Env BusT ()
 handleNotRecognized logMsg _ content = do
     logger Logger.error logMsg
     logger Logger.error $ show content
