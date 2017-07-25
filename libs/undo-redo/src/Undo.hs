@@ -5,6 +5,7 @@
 
 module Undo where
 
+import qualified Compress
 import           Control.Lens
 import           Control.Monad.State       (MonadState, StateT (StateT), forM, runStateT)
 import           Data.Binary               (decode)
@@ -63,15 +64,15 @@ pattern RedoRequestTopic <- "empire.redo.request"
 handleMessage :: Message.Message -> UndoPure (Maybe Action)
 handleMessage msg = do
     let topic'  = msg ^. Message.topic
-        content = msg ^. Message.message
+        content = Compress.unpack $ msg ^. Message.message
     case topic' of
         UndoRequestTopic -> do
-            let Request.Request _ undoGuiID (UndoRequest.Request _) = decode . fromStrict $ content
+            let Request.Request _ undoGuiID (UndoRequest.Request _) = decode content
             case undoGuiID of
                 Just guiID -> doUndo guiID
                 Nothing    -> return Nothing
         RedoRequestTopic -> do
-            let Request.Request _ redoGuiID (RedoRequest.Request _) = decode . fromStrict $ content
+            let Request.Request _ redoGuiID (RedoRequest.Request _) = decode content
             case redoGuiID of
                 Just guiID -> doRedo guiID
                 Nothing    -> return Nothing
@@ -124,4 +125,4 @@ sendMessage :: Action -> Bus.Bus ()
 sendMessage action = do
     uuid <- liftIO $ UUID.nextRandom
     void $ Bus.send Flag.Enable $ case action of
-        Action topic' msg -> Message.Message topic' $ toStrict $ Bin.encode $ Request.Request uuid Nothing msg
+        Action topic' msg -> Message.Message topic' $ Compress.pack . Bin.encode $ Request.Request uuid Nothing msg
