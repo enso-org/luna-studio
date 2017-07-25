@@ -8,7 +8,6 @@ import qualified Codec.Compression.GZip as GZip
 import           Control.Monad.State   (StateT)
 import qualified Data.Binary           as Bin
 import           Data.ByteString       (ByteString)
-import           Data.ByteString.Lazy  (fromStrict)
 import qualified Data.ByteString.Lazy  as BSL
 import           Data.Map.Strict       (Map)
 import qualified Data.Map.Strict       as Map

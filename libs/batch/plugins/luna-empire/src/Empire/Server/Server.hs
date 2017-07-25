@@ -2,7 +2,7 @@
 {-# LANGUAGE Rank2Types       #-}
 module Empire.Server.Server where
 
-import qualified Codec.Compression.GZip       as GZip
+import qualified Compress
 import           Control.Concurrent.STM.TChan (writeTChan)
 import           Control.Monad.State          (StateT)
 import           Control.Monad.STM            (atomically)
@@ -23,9 +23,8 @@ import           ZMQ.Bus.Trans                (BusT (..))
 
 sendToBus :: Binary a => String -> a -> StateT Env BusT ()
 sendToBus topic bin = do
-    liftIO $ putStrLn $ "====== Writing to topic " ++ topic ++ " ======"
     chan <- use Env.toBusChan
-    liftIO $ atomically $ writeTChan chan $ Message.Message topic $ toStrict $ GZip.compress $ Bin.encode bin
+    liftIO $ atomically $ writeTChan chan $ Message.Message topic $ Compress.pack $ Bin.encode bin
 
 sendToBus' :: (MessageTopic a, Binary a) => a -> StateT Env BusT ()
 sendToBus' msg = sendToBus (Topic.topic msg) msg

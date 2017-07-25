@@ -101,7 +101,7 @@ makeHandler :: forall req inv res. (Topic.MessageTopic (Response req inv res), B
             Topic.MessageTopic (Request (RedoResponseRequest (Response req inv res))), Binary (RedoResponseRequest (Response req inv res)))
             => (Response req inv res -> Maybe (UndoRequests (Response req inv res))) -> (String, Handler)
 makeHandler h =
-    let process content = let response   = decode . fromStrict $ content
+    let process content = let response   = decode content
                               maybeGuiID = response ^. Response.guiID
                               reqUUID    = response ^. Response.requestId
                           in forM_ maybeGuiID $ \guiId -> do
