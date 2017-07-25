@@ -1,29 +1,29 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Empire.Server where
 
 import qualified Compress
-import           Control.Concurrent               (forkIO)
-import           Control.Concurrent.STM           (STM)
+import           Control.Concurrent                   (forkIO)
 import           Control.Concurrent.MVar
-import           Control.Concurrent.STM.TChan     (TChan, newTChan, readTChan, tryPeekTChan)
-import           Control.Monad                    (forM_, forever)
-import           Control.Monad.Catch              (try, catchAll)
-import           Control.Monad.State              (StateT, evalStateT)
-import           Control.Monad.STM                (atomically)
-import qualified Data.Binary                      as Bin
-import           Data.ByteString.Lazy.Char8       (unpack)
-import           Data.ByteString.Lazy             (ByteString)
-import qualified Data.Map.Strict                  as Map
+import           Control.Concurrent.STM               (STM)
+import           Control.Concurrent.STM.TChan         (TChan, newTChan, readTChan, tryPeekTChan)
+import           Control.Monad                        (forM_, forever)
+import           Control.Monad.Catch                  (catchAll, try)
+import           Control.Monad.State                  (StateT, evalStateT)
+import           Control.Monad.STM                    (atomically)
+import qualified Data.Binary                          as Bin
+import           Data.ByteString.Lazy                 (ByteString)
+import           Data.ByteString.Lazy.Char8           (unpack)
+import qualified Data.Map.Strict                      as Map
 
-import           System.FilePath                  ()
-import           System.FilePath.Find             (always, extension, find, (==?))
-import           System.FilePath.Glob             ()
-import           System.FilePath.Manip            ()
+import           System.FilePath                      ()
+import           System.FilePath.Find                 (always, extension, find, (==?))
+import           System.FilePath.Glob                 ()
+import           System.FilePath.Manip                ()
 
 
 import           Empire.Data.AST                      (SomeASTException)
@@ -35,38 +35,36 @@ import qualified LunaStudio.API.Graph.SetNodesMeta    as SetNodesMeta
 import qualified LunaStudio.API.Topic                 as Topic
 import           LunaStudio.Data.GraphLocation        (GraphLocation)
 
-import qualified Empire.Commands.AST              as AST
-import qualified Empire.Commands.Graph            as Graph (openFile)
-import qualified Empire.Commands.Library          as Library
-import qualified Empire.Commands.Persistence      as Persistence
-import qualified Empire.Commands.Typecheck        as Typecheck
-import           Empire.Commands.Typecheck        (Scope (..))
-import qualified Empire.Empire                    as Empire
-import           Empire.Env                       (Env)
-import qualified Empire.Env                       as Env
-import qualified Empire.Handlers                  as Handlers
-import qualified Empire.Server.Graph              as Graph
-import qualified Empire.Server.Server             as Server
-import qualified Empire.Utils                     as Utils
-import           Prologue                         hiding (Text)
-import qualified System.Log.MLogger               as Logger
-import           ZMQ.Bus.Bus                      (Bus)
-import qualified ZMQ.Bus.Bus                      as Bus
-import qualified ZMQ.Bus.Config                   as Config
-import qualified ZMQ.Bus.Data.Flag                as Flag
-import           ZMQ.Bus.Data.Message             (Message)
-import qualified ZMQ.Bus.Data.Message             as Message
-import           ZMQ.Bus.Data.MessageFrame        (MessageFrame (MessageFrame))
-import           ZMQ.Bus.Data.Topic               (Topic)
-import           ZMQ.Bus.EndPoint                 (BusEndPoints)
-import           ZMQ.Bus.Trans                    (BusT (..))
-import qualified ZMQ.Bus.Trans                    as BusT
+import qualified Empire.Commands.AST                  as AST
+import qualified Empire.Commands.Graph                as Graph (openFile)
+import qualified Empire.Commands.Library              as Library
+import qualified Empire.Commands.Persistence          as Persistence
+import           Empire.Commands.Typecheck            (Scope (..))
+import qualified Empire.Commands.Typecheck            as Typecheck
+import qualified Empire.Empire                        as Empire
+import           Empire.Env                           (Env)
+import qualified Empire.Env                           as Env
+import qualified Empire.Handlers                      as Handlers
+import qualified Empire.Server.Graph                  as Graph
+import qualified Empire.Server.Server                 as Server
+import qualified Empire.Utils                         as Utils
+import           Prologue                             hiding (Text)
+import           System.Directory                     (canonicalizePath)
+import           System.Environment                   (getEnv)
+import qualified System.Log.MLogger                   as Logger
+import           System.Mem                           (performGC)
 import           System.Remote.Monitoring
-import           System.Environment               (getEnv)
-import           System.Directory                 (canonicalizePath)
-import           System.Mem                       (performGC)
-
-import System.IO.Unsafe (unsafePerformIO)
+import           ZMQ.Bus.Bus                          (Bus)
+import qualified ZMQ.Bus.Bus                          as Bus
+import qualified ZMQ.Bus.Config                       as Config
+import qualified ZMQ.Bus.Data.Flag                    as Flag
+import           ZMQ.Bus.Data.Message                 (Message)
+import qualified ZMQ.Bus.Data.Message                 as Message
+import           ZMQ.Bus.Data.MessageFrame            (MessageFrame (MessageFrame))
+import           ZMQ.Bus.Data.Topic                   (Topic)
+import           ZMQ.Bus.EndPoint                     (BusEndPoints)
+import           ZMQ.Bus.Trans                        (BusT (..))
+import qualified ZMQ.Bus.Trans                        as BusT
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Common.Batch.Connector.Connection where
 
+import           Common.Prelude              hiding (Text)
 import           Data.Binary                 (Binary)
 import qualified Data.Binary                 as Binary
 import qualified Data.ByteString.Base64.Lazy as Base64
@@ -8,13 +9,10 @@ import           Data.ByteString.Lazy.Char8  (ByteString, pack)
 import           Data.JSString.Text
 import           Data.Text.Lazy.Encoding     (decodeUtf8)
 import           Data.UUID.Types             (UUID)
-import           LunaStudio.API.Request          (Request (..))
-import qualified LunaStudio.API.Topic            as Topic
-import           WebSocket
-import           Common.Prelude         hiding (Text)
-
-import System.IO.Unsafe (unsafePerformIO)
 import qualified GZip
+import           LunaStudio.API.Request      (Request (..))
+import qualified LunaStudio.API.Topic        as Topic
+import           WebSocket
 
 data ControlCode = ConnectionTakeover
                  | Welcome

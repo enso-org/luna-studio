@@ -4,19 +4,18 @@ module Empire.Handlers where
 import           Prelude               (undefined)
 import           Prologue
 
-import qualified Codec.Compression.GZip as GZip
 import           Control.Monad.State   (StateT)
 import qualified Data.Binary           as Bin
 import           Data.ByteString       (ByteString)
 import qualified Data.ByteString.Lazy  as BSL
 import           Data.Map.Strict       (Map)
 import qualified Data.Map.Strict       as Map
-import qualified LunaStudio.API.Topic      as Topic
 import           Empire.Env            (Env)
 import qualified Empire.Server.Atom    as Atom
 import qualified Empire.Server.Graph   as Graph
 import qualified Empire.Server.Library as Library
 import qualified Empire.Server.Project as Project
+import qualified LunaStudio.API.Topic  as Topic
 import           ZMQ.Bus.Trans         (BusT (..))
 
 type Handler = BSL.ByteString -> StateT Env BusT ()
