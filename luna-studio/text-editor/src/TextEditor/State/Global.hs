@@ -1,22 +1,23 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module TextEditor.State.Global where
 
-import           Data.Aeson                           (ToJSON, toJSON)
-import           Data.DateTime                        (DateTime)
-import           Data.Set                             (Set)
-import           Data.UUID.Types                      (UUID)
-import           Data.Word                            (Word8)
-import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
-import           TextEditor.Action.Command           (Command)
-import           TextEditor.Event.Event              (Event)
 import           Common.Prelude
-import           System.Random                        (StdGen)
-import qualified System.Random                        as Random
+import           Data.Aeson                               (ToJSON, toJSON)
+import           Data.DateTime                            (DateTime)
+import           Data.Map                                 (Map)
+import           Data.Time.Clock                          (UTCTime)
+import           Data.UUID.Types                          (UUID)
+import           Data.Word                                (Word8)
+import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import           System.Random                            (StdGen)
+import qualified System.Random                            as Random
+import           TextEditor.Action.Command                (Command)
+import           TextEditor.Event.Event                   (Event)
 
 
 data State = State { _lastEvent            :: Maybe Event
                    , _eventNum             :: Int
-                   , _pendingRequests      :: Set UUID
+                   , _pendingRequests      :: Map UUID UTCTime
                    , _lastEventTimestamp   :: DateTime
                    , _clientId             :: ClientId
                    , _random               :: StdGen

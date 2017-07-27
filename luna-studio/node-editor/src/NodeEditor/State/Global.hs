@@ -7,9 +7,11 @@ import           Data.DateTime                            (DateTime)
 import           Data.HashMap.Lazy                        (HashMap)
 import           Data.Map                                 (Map)
 import           Data.Set                                 (Set)
+import           Data.Time.Clock                          (UTCTime)
 import           Data.UUID.Types                          (UUID)
 import           Data.Word                                (Word8)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import           LunaStudio.API.Topic                     (Topic)
 import           LunaStudio.Data.NodeLoc                  (NodeLoc)
 import           LunaStudio.Data.NodeValue                (Visualizer, VisualizerMatcher, VisualizerName)
 import           LunaStudio.Data.TypeRep                  (TypeRep)
@@ -48,7 +50,7 @@ data ActionState = ActionState
         } deriving (Default, Generic)
 
 data BackendState = BackendState
-        { _pendingRequests      :: Set UUID
+        { _pendingRequests      :: Map UUID UTCTime
         , _clientId             :: ClientId
         }
 

@@ -29,7 +29,7 @@ default-extensions:
   - ViewPatterns
 
 ghc-options:
-    -Wall -O2
+  -Wall -O2 # -DDEBUG_PERF
 
 #
 # ACHTUNG! Zmieniasz tu - zmien w interactive
