@@ -1,11 +1,11 @@
 module NodeEditor.Action.Basic.SetPortDefault where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Port               (PortState (WithDefault))
 import           LunaStudio.Data.PortDefault        (PortDefault)
 import           LunaStudio.Data.PortRef            (InPortRef, dstPortId, nodeLoc)
 import qualified NodeEditor.Action.Batch            as Batch
-import           NodeEditor.Action.Command          (Command)
 import qualified NodeEditor.Action.State.NodeEditor as NodeEditor
 import qualified NodeEditor.React.Model.Node        as Node
 import           NodeEditor.React.Model.NodeEditor  (getPort)

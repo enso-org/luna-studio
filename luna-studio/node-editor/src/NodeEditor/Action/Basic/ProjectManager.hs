@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.ProjectManager where
 
+import           Common.Action.Command                (Command)
 import           Common.Prelude
 import qualified JS.Atom                            as Atom
 import           LunaStudio.Data.GraphLocation      (GraphLocation, filePath)

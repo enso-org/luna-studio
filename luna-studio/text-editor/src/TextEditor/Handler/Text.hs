@@ -9,7 +9,7 @@ import qualified LunaStudio.API.Atom.Substitute    as Substitute
 import qualified LunaStudio.API.Response           as Response
 import           LunaStudio.Data.GraphLocation     (GraphLocation (GraphLocation))
 import qualified TextEditor.Action.Batch           as ActBatch
-import           TextEditor.Action.Command         (Command)
+import           Common.Action.Command         (Command)
 import           TextEditor.Event.Batch            (Event (..))
 import qualified TextEditor.Event.Event            as Event
 import           TextEditor.Event.Internal         (InternalEvent (..))

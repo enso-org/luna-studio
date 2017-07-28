@@ -10,7 +10,7 @@ import           Common.Prelude
 import qualified TextEditor.Event.Batch    as Batch
 import           TextEditor.Event.Event    (Event (Batch))
 
-import           TextEditor.Action.Command (Command)
+import           Common.Action.Command (Command)
 import           TextEditor.State.Global   (State)
 
 

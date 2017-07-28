@@ -2,13 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module JS.Node where
 
+import           Common.Action.Command         (Command)
 import           Common.Prelude
 import           Data.ScreenPosition           (fromDoubles)
 import qualified JS.Config                     as Config
 import qualified JS.Scene                      as Scene
 import           LunaStudio.Data.Node          (NodeId)
 import           LunaStudio.Data.Position      (Position)
-import           NodeEditor.Action.Command     (Command)
 import           NodeEditor.Action.State.Scene (translateToWorkspace)
 import           NodeEditor.React.Model.Layout (Scene)
 import qualified NodeEditor.React.Model.Layout as Scene

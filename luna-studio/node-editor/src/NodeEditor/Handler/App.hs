@@ -4,9 +4,9 @@ module NodeEditor.Handler.App
 
 import           Common.Prelude
 
+import           Common.Action.Command          (Command)
 import           NodeEditor.Action.Basic        (setFile, unselectAll, unsetFile, updateScene)
 import qualified NodeEditor.Action.Batch        as Batch
-import           NodeEditor.Action.Command      (Command)
 import           NodeEditor.Action.State.Action (endActions, endAllActions)
 import qualified NodeEditor.Event.Atom          as Atom
 import           NodeEditor.Event.Event         (Event (Atom, Init, Shortcut, UI))

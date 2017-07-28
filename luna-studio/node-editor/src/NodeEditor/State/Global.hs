@@ -2,6 +2,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.State.Global where
 
+import           Common.Action.Command                    (Command)
+import           Common.Debug                             (HasRequestTimes, requestTimes)
 import           Common.Prelude
 import           Data.DateTime                            (DateTime)
 import           Data.HashMap.Lazy                        (HashMap)
@@ -15,7 +17,6 @@ import           LunaStudio.API.Topic                     (Topic)
 import           LunaStudio.Data.NodeLoc                  (NodeLoc)
 import           LunaStudio.Data.NodeValue                (Visualizer, VisualizerMatcher, VisualizerName)
 import           LunaStudio.Data.TypeRep                  (TypeRep)
-import           NodeEditor.Action.Command                (Command)
 import           NodeEditor.Batch.Workspace               (Workspace)
 import qualified NodeEditor.Batch.Workspace               as Workspace
 import           NodeEditor.Event.Event                   (Event)
@@ -76,3 +77,6 @@ mkState ref clientId' mpath = State
 
 nextRandom :: Command State Word8
 nextRandom = uses random Random.random >>= \(val, rnd) -> random .= rnd >> return val
+
+instance HasRequestTimes State where
+    requestTimes = backend . pendingRequests

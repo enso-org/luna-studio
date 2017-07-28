@@ -1,10 +1,10 @@
 --TODO[LJK, PM]: Review names in this module
 module NodeEditor.Action.Basic.SetNodeMode where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           NodeEditor.Action.Basic.Merge              (localUnmerge)
 import qualified NodeEditor.Action.Batch                    as Batch
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Model              (updatePortsModeForNode)
 import           NodeEditor.Action.State.NodeEditor         (getSelectedNodes)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor

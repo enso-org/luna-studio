@@ -3,14 +3,14 @@
 
 module NodeEditor.React.Store.Ref where
 
+import           Common.Prelude             as P hiding (transform)
 import           Control.Monad.State        (runState)
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.State  hiding (get, modify)
-import           Common.Prelude        as P hiding (transform)
 import           React.Flux
 
-import           NodeEditor.Action.Command (Command)
-import qualified NodeEditor.Event.Event    as E
+import           Common.Action.Command      (Command)
+import qualified NodeEditor.Event.Event     as E
 
 
 

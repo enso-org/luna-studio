@@ -5,11 +5,11 @@ module NodeEditor.Action.MultiSelection
     , stopMultiSelection
     ) where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Geometry                   (isPointInRectangle)
 import           LunaStudio.Data.Position                   (Position, fromDoubles, x, y)
 import           NodeEditor.Action.Basic                    (modifySelectionHistory, selectNodes, unselectAll)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodes, getSelectedNodes, modifyNodeEditor)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
 import           NodeEditor.React.Model.Node.ExpressionNode (nodeLoc, position)

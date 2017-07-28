@@ -5,6 +5,7 @@ module NodeEditor.Action.ConnectionPen.DisconnectionPen
     , stopDisconnecting
     ) where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Data.Curve                                 (CurveSegment, getPointsOnCurveSegment)
 import qualified Data.Curve                                 as Curve
@@ -12,7 +13,6 @@ import qualified Data.HashMap.Strict                        as HashMap
 import           Data.Timestamp                             (Timestamp)
 import           LunaStudio.Data.Position                   (Position, distance)
 import           NodeEditor.Action.Basic.RemoveConnection   (removeConnection, removeConnectionsBetweenNodes)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)

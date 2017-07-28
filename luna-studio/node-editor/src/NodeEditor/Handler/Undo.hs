@@ -1,11 +1,11 @@
 module NodeEditor.Handler.Undo where
 
 -- TODO[LJK, SB]: This should be handled via folder Basic instead of Action.Batch
+import           Common.Action.Command     (Command)
+import           Common.Prelude
 import           NodeEditor.Action.Batch   (redo, undo)
-import           NodeEditor.Action.Command (Command)
 import           NodeEditor.Event.Event    (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut as Shortcut
-import           Common.Prelude
 import           NodeEditor.State.Global   (State)
 
 

@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.SetSidebarMode where
 
-import           NodeEditor.Action.Command               (Command)
-import           NodeEditor.Action.State.NodeEditor      (modifyInputNode, modifyOutputNode)
+import           Common.Action.Command                   (Command)
 import           Common.Prelude
+import           NodeEditor.Action.State.NodeEditor      (modifyInputNode, modifyOutputNode)
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), inputMode, outputMode)
 import           NodeEditor.State.Global                 (State)
 

@@ -1,9 +1,9 @@
 module NodeEditor.Action.Basic.SetPortMode where
 
-import           LunaStudio.Data.PortRef             (InPortRef, OutPortRef, dstPortId, nodeLoc, srcPortId)
-import           NodeEditor.Action.Command          (Command)
-import           NodeEditor.Action.State.NodeEditor (modifyInputNode, modifyOutputNode)
+import           Common.Action.Command              (Command)
 import           Common.Prelude
+import           LunaStudio.Data.PortRef            (InPortRef, OutPortRef, dstPortId, nodeLoc, srcPortId)
+import           NodeEditor.Action.State.NodeEditor (modifyInputNode, modifyOutputNode)
 import           NodeEditor.React.Model.Node        (inPortAt, outPortAt)
 import           NodeEditor.React.Model.Port        (Mode, mode)
 import           NodeEditor.State.Global            (State)

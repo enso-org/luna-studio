@@ -1,13 +1,13 @@
 module NodeEditor.Action.Basic.RemovePort where
 
-import           LunaStudio.Data.PortRef                   (OutPortRef (OutPortRef), srcPortId)
+import           Common.Action.Command                    (Command)
+import           Common.Prelude
+import           LunaStudio.Data.PortRef                  (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection    (localAddConnection)
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnection)
 import           NodeEditor.Action.Basic.UpdateNode       (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                  as Batch
-import           NodeEditor.Action.Command                (Command)
 import           NodeEditor.Action.State.NodeEditor       (getConnectionsContainingNode, getInputNode)
-import           Common.Prelude
 import           NodeEditor.React.Model.Connection        (connectionId, dst, src)
 import           NodeEditor.React.Model.Node.SidebarNode  (countProjectionPorts, hasPort, inputSidebarPorts, isInputSidebar)
 import           NodeEditor.React.Model.Port              (OutPortIndex (Projection))

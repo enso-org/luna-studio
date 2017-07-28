@@ -2,9 +2,9 @@ module NodeEditor.Handler.ConnectionPen
     ( handle
     ) where
 
+import           Common.Action.Command           (Command)
 import           Common.Prelude
 import           Data.Timestamp                  (Timestamp)
-import           NodeEditor.Action.Command       (Command)
 import           NodeEditor.Action.ConnectionPen (connectMove, disconnectMove, startConnecting, startDisconnecting, stopConnecting,
                                                   stopDisconnecting)
 import           NodeEditor.Event.Event          (Event, Event (UI))

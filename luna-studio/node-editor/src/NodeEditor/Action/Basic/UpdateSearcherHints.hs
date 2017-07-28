@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.UpdateSearcherHints where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           Control.Monad.Extra                (mapMaybeM)
 import qualified Control.Monad.State.Lazy           as S
@@ -11,7 +12,6 @@ import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
 import qualified LunaStudio.Data.NodeSearcher       as NS
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getLocalFunctions, getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
 import           NodeEditor.React.Model.Searcher    (allCommands, className, updateCommandsResult, updateNodeResult)

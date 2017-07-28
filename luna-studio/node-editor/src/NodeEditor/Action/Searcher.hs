@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.Action.Searcher where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Text                                  as Text
 import qualified JS.GoogleAnalytics                         as GA
@@ -14,7 +15,6 @@ import           LunaStudio.Data.PortRef                    (OutPortRef (OutPort
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
 import           NodeEditor.Action.Basic                    (createNode, localClearSearcherHints, localUpdateSearcherHints, renameNode,
                                                              renamePort, setNodeExpression)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.App                (renderIfNeeded)

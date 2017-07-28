@@ -4,7 +4,7 @@ module NodeEditor.Handler.Searcher where
 
 import           Common.Prelude
 
-import           NodeEditor.Action.Command          (Command)
+import           Common.Action.Command              (Command)
 import qualified NodeEditor.Action.Searcher         as Searcher
 import           NodeEditor.Action.State.NodeEditor (whenGraphLoaded)
 import           NodeEditor.Event.Event             (Event (Shortcut, UI))

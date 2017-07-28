@@ -1,11 +1,11 @@
 module NodeEditor.Action.State.Graph where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import qualified Data.List                          as List
 import           LunaStudio.Data.Breadcrumb         (Breadcrumb (Breadcrumb), items)
 import           LunaStudio.Data.GraphLocation      (GraphLocation, breadcrumb, filePath)
 import           LunaStudio.Data.NodeLoc            (NodePath)
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (isGraphLoaded)
 import           NodeEditor.Batch.Workspace         (currentLocation)
 import           NodeEditor.State.Global            (State, workspace)

@@ -10,7 +10,7 @@ module JS.GoogleAnalytics where
 import           Common.Prelude
 -- import           GHCJS.Nullable            (Nullable)
 
-import           NodeEditor.Action.Command (Command)
+import           Common.Action.Command (Command)
 
 data ConnectType = Manual
                  | Pen

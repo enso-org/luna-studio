@@ -6,14 +6,14 @@ module TextEditor.Handler.Backend.Common
     , doNothing
     ) where
 
+import           Common.Debug              (measureResponseTime)
 import           Common.Prelude
 import           Common.Report             (error)
 import qualified Data.Aeson                as JSON (ToJSON)
-import qualified Data.Map                  as Map
 import qualified Data.UUID.Types           as UUID (toString)
 import qualified LunaStudio.API.Response   as Response
 import qualified LunaStudio.API.Topic      as Topic
-import           TextEditor.Action.Command (Command)
+import           Common.Action.Command (Command)
 import           TextEditor.Action.UUID    (isOwnRequest, unregisterRequest)
 import           TextEditor.State.Global   (State, pendingRequests)
 
@@ -35,18 +35,3 @@ handleResponse resp@(Response.Response uuid _ req inv res) success failure = do
 
 doNothing :: a -> Command State ()
 doNothing = const $ return ()
-
-measureResponseTime :: Topic.MessageTopic (Response.Response req inv res) => Response.Response req inv res -> Command State ()
-#ifdef DEBUG_PERF
-measureResponseTime resp = do
-    let uuid = resp ^. Response.requestId
-    reqTimeM <- uses pendingRequests (Map.lookup uuid)
-    case reqTimeM of
-        Just reqTime -> liftIO $ do
-            currTime <- getCurrentTime
-            let timeDiff = show $ diffUTCTime currTime reqTime
-            putStrLn $ "[Request time -- TextEditor] " <> Topic.topic resp <> " took " <> timeDiff
-        Nothing      -> liftIO . putStrLn $ "[Request time -- TextEditor] request uuid doesn't match any known requests."
-#else
-measureResponseTime _ = return ()
-#endif

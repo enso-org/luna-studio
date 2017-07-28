@@ -6,14 +6,14 @@ module NodeEditor.Action.UUID
     , module X
     ) where
 
+import           Common.Action.Command    (Command)
 import           Common.Prelude
-import           Data.UUID.Types           as X (UUID)
-import           Data.UUID.Types.Internal  (buildFromBytes)
-import           NodeEditor.Action.Command (Command)
-import           NodeEditor.State.Global   (State, backend, nextRandom, pendingRequests)
+import           Data.UUID.Types          as X (UUID)
+import           Data.UUID.Types.Internal (buildFromBytes)
+import           NodeEditor.State.Global  (State, backend, nextRandom, pendingRequests)
 
-import qualified Data.Map                  as Map
-import           Data.Time.Clock           (UTCTime, getCurrentTime)
+import           Data.Map                 (member)
+import           Data.Time.Clock          (UTCTime, getCurrentTime)
 
 getUUID :: Command State UUID
 getUUID = do
@@ -25,11 +25,11 @@ registerRequest :: Command State UUID
 registerRequest = do
     uuid <- getUUID
     time <- liftIO getCurrentTime
-    backend . pendingRequests %= Map.insert uuid time
+    backend . pendingRequests . at uuid ?= time
     return uuid
 
 unregisterRequest :: UUID -> Command State ()
-unregisterRequest uuid = backend . pendingRequests %= Map.delete uuid
+unregisterRequest uuid = backend . pendingRequests . at uuid .= Nothing
 
 isOwnRequest :: UUID -> Command State Bool
-isOwnRequest uuid = uses (backend . pendingRequests) $ Map.member uuid
+isOwnRequest uuid = uses (backend . pendingRequests) $ member uuid

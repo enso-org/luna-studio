@@ -1,9 +1,9 @@
 module NodeEditor.Action.Basic.SetNodeExpression where
 
-import qualified NodeEditor.Action.Batch                    as Batch
-import           NodeEditor.Action.Command                  (Command)
-import           NodeEditor.Action.State.NodeEditor         (inGraph, modifyExpressionNode)
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
+import qualified NodeEditor.Action.Batch                    as Batch
+import           NodeEditor.Action.State.NodeEditor         (inGraph, modifyExpressionNode)
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, expression)
 import           NodeEditor.State.Global                    (State)
 

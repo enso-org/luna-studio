@@ -5,11 +5,11 @@ module NodeEditor.Handler.Backend.Control
 import           Common.Prelude
 import           Common.Report
 
-import qualified NodeEditor.Event.Batch    as Batch
-import           NodeEditor.Event.Event    (Event (Batch))
+import qualified NodeEditor.Event.Batch  as Batch
+import           NodeEditor.Event.Event  (Event (Batch))
 
-import           NodeEditor.Action.Command (Command)
-import           NodeEditor.State.Global   (State)
+import           Common.Action.Command   (Command)
+import           NodeEditor.State.Global (State)
 
 
 

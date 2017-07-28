@@ -1,10 +1,10 @@
 module NodeEditor.Action.Basic.EnterBreadcrumb where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Breadcrumb                 (Breadcrumb, BreadcrumbItem (Definition, Lambda), items)
 import           LunaStudio.Data.GraphLocation              (breadcrumb)
 import           NodeEditor.Action.Basic.ProjectManager     (navigateToGraph)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Batch.Workspace                 (currentLocation)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, canEnter, isDefinition, nodeId)
 import           NodeEditor.State.Global                    (State, workspace)

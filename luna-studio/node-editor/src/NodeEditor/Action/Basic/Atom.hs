@@ -1,10 +1,11 @@
 module NodeEditor.Action.Basic.Atom where
 
+import           Common.Action.Command                  (Command)
 import           Common.Prelude
 import           LunaStudio.Data.GraphLocation          (filePath)
 import           NodeEditor.Action.Basic.ProjectManager (getSettings, loadGraph, saveSettings)
 import           NodeEditor.Action.Batch                (searchNodes)
-import           NodeEditor.Action.Command              (Command)
+import           NodeEditor.Action.Camera.Persistence   (saveCamera)
 import           NodeEditor.Action.State.NodeEditor     (resetApp)
 import           NodeEditor.Batch.Workspace             (currentLocation, nodeSearcherData)
 import qualified NodeEditor.Batch.Workspace             as Workspace

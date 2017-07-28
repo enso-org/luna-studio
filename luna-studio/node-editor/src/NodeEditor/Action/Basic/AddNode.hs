@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.AddNode where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
@@ -14,7 +15,6 @@ import           LunaStudio.Data.TypeRep            (TypeRep (TStar))
 import           NodeEditor.Action.Basic.FocusNode  (focusNode)
 import           NodeEditor.Action.Basic.SelectNode (selectNode)
 import qualified NodeEditor.Action.Batch            as Batch
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.Model      (calculatePortSelfMode)
 import           NodeEditor.Action.State.NodeEditor (getSelectedNodes)
 import           NodeEditor.Action.State.NodeEditor (addInputNode, addOutputNode)

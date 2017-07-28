@@ -4,11 +4,11 @@ module NodeEditor.Action.Port.Highlight
     , handleMouseLeave
     ) where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Set                                   as Set
 import           LunaStudio.Data.Port                       (AnyPortId (InPortId', OutPortId'))
 import           LunaStudio.Data.PortRef                    (AnyPortRef (..), nodeLoc, portId)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (runningActions)
 import           NodeEditor.Action.State.Model              (calculatePortMode)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyExpressionNode)

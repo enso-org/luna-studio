@@ -1,5 +1,6 @@
 module NodeEditor.Action.State.Model.ExpressionNode where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Control.Monad                              (filterM)
 import qualified JS.Node                                    as JS
@@ -8,7 +9,6 @@ import           LunaStudio.Data.PortRef                    (AnyPortRef, toAnyPo
 import qualified LunaStudio.Data.PortRef                    as PortRef
 import           LunaStudio.Data.Position                   (Position)
 import           LunaStudio.Data.TypeRep                    (TypeRep, matchTypes)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (checkIfActionPerfoming)
 import           NodeEditor.Action.State.NodeEditor         (getConnectionsToNode, getExpressionNode, getExpressionNodes, getPort, getScene,
                                                              modifyExpressionNode)

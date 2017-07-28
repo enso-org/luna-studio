@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.Handler.Visualization where
 
+import           Common.Action.Command                (Command)
 import           Common.Prelude
-import           NodeEditor.Action.Command            (Command)
 import qualified NodeEditor.Action.Visualization      as Visualization
 import           NodeEditor.Event.Event               (Event (Shortcut, UI))
 import qualified NodeEditor.Event.Shortcut            as Shortcut

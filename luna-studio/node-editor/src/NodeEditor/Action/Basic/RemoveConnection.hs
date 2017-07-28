@@ -1,11 +1,11 @@
 module NodeEditor.Action.Basic.RemoveConnection where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           Control.Monad                      (filterM)
 import           LunaStudio.Data.NodeLoc            (NodeLoc)
 import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'))
 import qualified NodeEditor.Action.Batch            as Batch
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.Model      (updatePortMode)
 import           NodeEditor.Action.State.NodeEditor (getConnection, getConnectionsBetweenNodes, getConnectionsContainingNode,
                                                      getConnectionsContainingNodes)

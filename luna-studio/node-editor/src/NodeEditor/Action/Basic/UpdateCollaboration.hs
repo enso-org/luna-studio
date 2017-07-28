@@ -1,17 +1,16 @@
 module NodeEditor.Action.Basic.UpdateCollaboration where
 
-import qualified Control.Monad.State                         as M
-import qualified Data.DateTime                               as DT
-import qualified Data.Map.Lazy                               as Map
-import           LunaStudio.API.Graph.CollaborationUpdate        (ClientId)
-import qualified NodeEditor.Action.Batch                    as Batch
-import           NodeEditor.Action.Command                  (Command)
-import           NodeEditor.Action.State.NodeEditor         (getSelectedNodes, modifyExpressionNodes_)
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
+import qualified Control.Monad.State                        as M
+import qualified Data.DateTime                              as DT
+import qualified Data.Map.Lazy                              as Map
+import           LunaStudio.API.Graph.CollaborationUpdate   (ClientId)
+import qualified NodeEditor.Action.Batch                    as Batch
+import           NodeEditor.Action.State.NodeEditor         (getSelectedNodes, modifyExpressionNodes_)
 import           NodeEditor.React.Model.Node.ExpressionNode (modify, nodeLoc, touch)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
-import           NodeEditor.State.Collaboration             (Client (Client), ColorId (ColorId), colorId, knownClients, lastSeen,
-                                                              unColorId)
+import           NodeEditor.State.Collaboration             (Client (Client), ColorId (ColorId), colorId, knownClients, lastSeen, unColorId)
 import           NodeEditor.State.Global                    (State, collaboration, lastEventTimestamp)
 
 updateCollaboration :: Command State ()

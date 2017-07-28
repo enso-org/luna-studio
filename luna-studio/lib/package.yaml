@@ -59,4 +59,4 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options: -Wall -O2 -threaded
+  ghc-options: -Wall -O2 -threaded # -DDEBUG_PERF

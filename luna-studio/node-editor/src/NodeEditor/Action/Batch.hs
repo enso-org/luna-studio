@@ -1,5 +1,6 @@
 module NodeEditor.Action.Batch  where
 
+import           Common.Action.Command               (Command)
 import           Common.Prelude
 import           Data.UUID.Types                     (UUID)
 import           LunaStudio.Data.GraphLocation       (GraphLocation)

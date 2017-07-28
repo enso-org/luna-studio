@@ -12,15 +12,15 @@ module NodeEditor.Action.Node
     , showFullError
     ) where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Geometry                   (snap, snapCoord)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.NodeDrag                 (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
 import           NodeEditor.Action.Searcher                 (editExpression)
 import           NodeEditor.Action.Searcher                 (editName)
 import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
 import           NodeEditor.React.Model.Node                (NodeLoc)
-import           NodeEditor.React.Model.Node.ExpressionNode (isMouseOver, isErrorExpanded)
+import           NodeEditor.React.Model.Node.ExpressionNode (isErrorExpanded, isMouseOver)
 import           NodeEditor.State.Global                    (State)
 
 

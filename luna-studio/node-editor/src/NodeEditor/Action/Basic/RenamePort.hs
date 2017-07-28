@@ -1,10 +1,10 @@
 module NodeEditor.Action.Basic.RenamePort where
 
+import           Common.Action.Command                   (Command)
 import           Common.Prelude
 import           LunaStudio.Data.LabeledTree             (value)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch
-import           NodeEditor.Action.Command               (Command)
 import           NodeEditor.Action.State.NodeEditor      (getInputNode)
 import           NodeEditor.React.Model.Node.SidebarNode (hasPort, inputSidebarPorts, isInputSidebar)
 import           NodeEditor.React.Model.Port             (OutPortIndex (Projection), OutPortRef (OutPortRef), name)

@@ -8,10 +8,10 @@ module TextEditor.Action.UUID
 import           Common.Prelude
 import           Data.UUID.Types           (UUID)
 import           Data.UUID.Types.Internal  (buildFromBytes)
-import           TextEditor.Action.Command (Command)
+import           Common.Action.Command (Command)
 import           TextEditor.State.Global   (State, nextRandom, pendingRequests)
 
-import qualified Data.Map                  as Map
+import           Data.Map                  (member)
 import           Data.Time.Clock           (UTCTime, getCurrentTime)
 
 getUUID :: Command State UUID
@@ -24,11 +24,11 @@ registerRequest :: Command State UUID
 registerRequest = do
     uuid <- getUUID
     time <- liftIO getCurrentTime
-    pendingRequests %= Map.insert uuid time
+    pendingRequests . at uuid ?= time
     return uuid
 
 unregisterRequest :: UUID -> Command State ()
-unregisterRequest uuid = pendingRequests %= Map.delete uuid
+unregisterRequest uuid = pendingRequests . at uuid .= Nothing
 
 isOwnRequest :: UUID -> Command State Bool
-isOwnRequest uuid = uses pendingRequests $ Map.member uuid
+isOwnRequest uuid = uses pendingRequests $ member uuid
