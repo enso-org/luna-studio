@@ -1,14 +1,14 @@
 {-# LANGUAGE CPP #-}
 module Common.Debug where
 
-import Common.Action.Command
-import Common.Prelude
-import Data.Map (Map)
-import qualified Data.Map as Map
-import Data.UUID.Types (UUID)
-import Data.Time.Clock (UTCTime, getCurrentTime, diffUTCTime)
+import           Common.Action.Command
+import           Common.Prelude
+import           Data.Map                (Map)
+import qualified Data.Map                as Map
+import           Data.Time.Clock         (UTCTime, diffUTCTime, getCurrentTime)
+import           Data.UUID.Types         (UUID)
 import qualified LunaStudio.API.Response as Response
-import qualified LunaStudio.API.Topic as Topic
+import qualified LunaStudio.API.Topic    as Topic
 
 class HasRequestTimes st where
     requestTimes :: Lens' st (Map UUID UTCTime)

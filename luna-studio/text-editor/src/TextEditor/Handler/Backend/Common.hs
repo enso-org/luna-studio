@@ -1,23 +1,21 @@
-{-# LANGUAGE CPP #-}
-
 module TextEditor.Handler.Backend.Common
     ( whenOk
     , handleResponse
     , doNothing
     ) where
 
-import           Common.Debug              (measureResponseTime)
+import           Common.Action.Command   (Command)
+import           Common.Debug            (measureResponseTime)
 import           Common.Prelude
-import           Common.Report             (error)
-import qualified Data.Aeson                as JSON (ToJSON)
-import qualified Data.UUID.Types           as UUID (toString)
-import qualified LunaStudio.API.Response   as Response
-import qualified LunaStudio.API.Topic      as Topic
-import           Common.Action.Command (Command)
-import           TextEditor.Action.UUID    (isOwnRequest, unregisterRequest)
-import           TextEditor.State.Global   (State, pendingRequests)
+import           Common.Report           (error)
+import qualified Data.Aeson              as JSON (ToJSON)
+import qualified Data.UUID.Types         as UUID (toString)
+import qualified LunaStudio.API.Response as Response
+import qualified LunaStudio.API.Topic    as Topic
+import           TextEditor.Action.UUID  (isOwnRequest, unregisterRequest)
+import           TextEditor.State.Global (State, pendingRequests)
 
-import           Data.Time.Clock           (diffUTCTime, getCurrentTime)
+import           Data.Time.Clock         (diffUTCTime, getCurrentTime)
 
 whenOk :: Response.Response req inv res -> (res -> Command State ()) -> Command State ()
 whenOk (Response.Response _ _ _ _ (Response.Ok    res)) handler = handler res
