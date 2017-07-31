@@ -1,12 +1,12 @@
 module NodeEditor.Action.Basic.MovePort where
 
+import           Common.Action.Command                   (Command)
 import           Common.Prelude
 import           LunaStudio.Data.LabeledTree             (value)
 import           LunaStudio.Data.PortRef                 (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch
-import           NodeEditor.Action.Command               (Command)
 import           NodeEditor.Action.State.NodeEditor      (getConnectionsContainingNode, getInputNode)
 import           NodeEditor.React.Model.Connection       (dst, src)
 import           NodeEditor.React.Model.Node.SidebarNode (countProjectionPorts, hasPort, inputSidebarPorts, isInputSidebar)

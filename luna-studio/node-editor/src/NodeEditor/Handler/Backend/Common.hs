@@ -4,16 +4,18 @@ module NodeEditor.Handler.Backend.Common
     , doNothing
     ) where
 
-import qualified Data.Aeson                 as JSON (ToJSON)
-import qualified Data.UUID.Types            as UUID (toString)
-import qualified LunaStudio.API.Response        as Response
-import qualified LunaStudio.API.Topic           as Topic
-import qualified JS.Debug                   as Debug
-import           NodeEditor.Action.Command (Command)
-import           NodeEditor.Action.UUID    (isOwnRequest, unregisterRequest)
+import           Common.Action.Command   (Command)
+import           Common.Debug            (measureResponseTime)
 import           Common.Prelude
-import           NodeEditor.State.Global   (State)
-
+import qualified Data.Aeson              as JSON (ToJSON)
+import qualified Data.Map                as Map
+import           Data.Time.Clock         (diffUTCTime, getCurrentTime)
+import qualified Data.UUID.Types         as UUID (toString)
+import qualified JS.Debug                as Debug
+import qualified LunaStudio.API.Response as Response
+import qualified LunaStudio.API.Topic    as Topic
+import           NodeEditor.Action.UUID  (isOwnRequest, unregisterRequest)
+import           NodeEditor.State.Global (State, backend, pendingRequests)
 
 whenOk :: Response.Response req inv res -> (res -> Command State ()) -> Command State ()
 whenOk (Response.Response _ _ _ _ (Response.Ok    res)) handler = handler res
@@ -26,6 +28,7 @@ handleResponse resp@(Response.Response uuid _ req inv res) success failure = do
         Response.Error str  -> do
             liftIO $ Debug.error (convert $ Topic.topic resp <> " [" <> UUID.toString uuid <> "] " <> str) req
             failure inv
+    measureResponseTime resp
     whenM (isOwnRequest uuid) $ unregisterRequest uuid
 
 doNothing :: a -> Command State ()

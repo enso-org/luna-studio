@@ -1,9 +1,9 @@
 module NodeEditor.Action.Basic.UpdateConnection where
 
+import           Common.Action.Command                    (Command)
+import           Common.Prelude
 import           NodeEditor.Action.Basic.AddConnection    (connect, localAddConnection)
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnection, removeConnection)
-import           NodeEditor.Action.Command                (Command)
-import           Common.Prelude
 import           NodeEditor.React.Model.Connection        (Connection, ConnectionId, connectionId, dst, src)
 import           NodeEditor.State.Global                  (State)
 

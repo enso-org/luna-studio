@@ -1,20 +1,20 @@
 module NodeEditor.Action.Basic.Merge where
 
-import qualified Data.HashMap.Strict                         as HashMap
-import           Data.Map.Lazy                               (Map)
-import qualified Data.Map.Lazy                               as Map
-import           LunaStudio.Data.Breadcrumb                  (BreadcrumbItem)
-import           LunaStudio.Data.Graph                       (Graph)
-import qualified LunaStudio.Data.Graph                       as GraphAPI
-import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
+import           Common.Action.Command                      (Command)
+import           Common.Prelude
+import qualified Data.HashMap.Strict                        as HashMap
+import           Data.Map.Lazy                              (Map)
+import qualified Data.Map.Lazy                              as Map
+import           LunaStudio.Data.Breadcrumb                 (BreadcrumbItem)
+import           LunaStudio.Data.Graph                      (Graph)
+import qualified LunaStudio.Data.Graph                      as GraphAPI
+import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           NodeEditor.Action.Basic.AddConnection      (localAddConnections)
 import           NodeEditor.Action.Basic.RemoveConnection   (localRemoveConnectionsContainingNodes)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
-import           Common.Prelude
 import           NodeEditor.React.Model.Node                (ExpressionNode, NodePath, nodeLoc, toNodesMap)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpandedMode (Function), Mode (Collapsed, Expanded), Subgraph (Subgraph),
-                                                              expressionNodes, inputNode, mode, outputNode)
+                                                             expressionNodes, inputNode, mode, outputNode)
 import           NodeEditor.State.Global                    (State)
 
 

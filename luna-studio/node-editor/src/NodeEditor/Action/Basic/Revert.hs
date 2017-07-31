@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.Revert where
 
+import           Common.Action.Command                     (Command)
 import           Common.Prelude
 import qualified LunaStudio.API.Graph.AddConnection        as AddConnection
 import qualified LunaStudio.API.Graph.AddNode              as AddNode
@@ -31,7 +32,6 @@ import           NodeEditor.Action.Basic.SetNodeExpression (localSetNodeExpressi
 import           NodeEditor.Action.Basic.SetNodeMeta       (localSetNodesMeta)
 import           NodeEditor.Action.Basic.SetPortDefault    (localSetPortDefault)
 import qualified NodeEditor.Action.Batch                   as Batch
-import           NodeEditor.Action.Command                 (Command)
 import           NodeEditor.Action.State.Graph             (inCurrentLocation)
 import           NodeEditor.React.Model.Port               (OutPortIndex (Projection))
 import           NodeEditor.State.Global                   (State)

@@ -8,7 +8,7 @@ import           GHCJS.Prim                          (JSException)
 
 import           Common.Prelude
 import           Common.Report                       (error)
-import           TextEditor.Action.Command           (Command, execCommand)
+import           Common.Action.Command           (Command, execCommand)
 import           TextEditor.Event.Event              (Event)
 import qualified TextEditor.Event.Event              as Event
 import           TextEditor.Event.Loop               (LoopRef)

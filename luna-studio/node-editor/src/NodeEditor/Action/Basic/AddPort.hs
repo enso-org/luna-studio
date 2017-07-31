@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.AddPort where
 
+import           Common.Action.Command                   (Command)
 import           Common.Prelude
 import qualified Data.Text                               as Text
 import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
@@ -9,7 +10,6 @@ import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch
-import           NodeEditor.Action.Command               (Command)
 import           NodeEditor.Action.State.NodeEditor      (getConnectionsContainingNode, getInputNode)
 import qualified NodeEditor.React.Model.Connection       as Connection
 import           NodeEditor.React.Model.Node.SidebarNode (countProjectionPorts, inputSidebarPorts)

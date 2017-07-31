@@ -5,12 +5,14 @@ module TextEditor.Action.UUID
     , isOwnRequest
     ) where
 
-import qualified Data.Set                   as Set
-import           Data.UUID.Types            (UUID)
-import           Data.UUID.Types.Internal   (buildFromBytes)
-import           TextEditor.Action.Command (Command)
 import           Common.Prelude
+import           Data.UUID.Types           (UUID)
+import           Data.UUID.Types.Internal  (buildFromBytes)
+import           Common.Action.Command (Command)
 import           TextEditor.State.Global   (State, nextRandom, pendingRequests)
+
+import           Data.Map                  (member)
+import           Data.Time.Clock           (UTCTime, getCurrentTime)
 
 getUUID :: Command State UUID
 getUUID = do
@@ -21,11 +23,12 @@ getUUID = do
 registerRequest :: Command State UUID
 registerRequest = do
     uuid <- getUUID
-    pendingRequests %= Set.insert uuid
+    time <- liftIO getCurrentTime
+    pendingRequests . at uuid ?= time
     return uuid
 
 unregisterRequest :: UUID -> Command State ()
-unregisterRequest uuid = pendingRequests %= Set.delete uuid
+unregisterRequest uuid = pendingRequests . at uuid .= Nothing
 
 isOwnRequest :: UUID -> Command State Bool
-isOwnRequest uuid = uses pendingRequests $ Set.member uuid
+isOwnRequest uuid = uses pendingRequests $ member uuid

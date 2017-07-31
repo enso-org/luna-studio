@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.RemoveNode where
 
+import           Common.Action.Command                    (Command)
 import           Common.Prelude
 import           Control.Monad                            (filterM)
 import qualified Data.Set                                 as Set
@@ -8,7 +9,6 @@ import           LunaStudio.Data.NodeLoc                  (NodeLoc)
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnectionsContainingNodes)
 import           NodeEditor.Action.Basic.SelectNode       (selectPreviousNodes)
 import qualified NodeEditor.Action.Batch                  as Batch
-import           NodeEditor.Action.Command                (Command)
 import           NodeEditor.Action.State.NodeEditor       (getSelectedNodes, inGraph, removeBackupForNodes)
 import qualified NodeEditor.Action.State.NodeEditor       as NodeEditor
 import           NodeEditor.React.Model.Node              (nodeLoc)

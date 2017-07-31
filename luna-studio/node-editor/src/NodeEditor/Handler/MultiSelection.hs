@@ -2,8 +2,8 @@ module NodeEditor.Handler.MultiSelection
     ( handle
     ) where
 
+import           Common.Action.Command             (Command)
 import           Common.Prelude
-import           NodeEditor.Action.Command         (Command)
 import           NodeEditor.Action.MultiSelection  (startMultiSelection, stopMultiSelection, updateMultiSelection)
 import           NodeEditor.Event.Event            (Event (UI))
 import qualified NodeEditor.Event.Mouse            as Mouse

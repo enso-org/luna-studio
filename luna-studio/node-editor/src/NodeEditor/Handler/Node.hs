@@ -1,12 +1,12 @@
 module NodeEditor.Handler.Node where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Data.ScreenPosition                        (ScreenPosition)
 import           NodeEditor.Action.Basic                    (collapseToFunction, enterNode, localSetPortDefault, removeSelectedNodes,
                                                              selectAll, setNodeExpression, setPortDefault, toggleSelect,
                                                              toggleSelectedNodesMode, toggleSelectedNodesUnfold)
 import           NodeEditor.Action.Batch                    (autolayoutNodes)
-import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.Node                     as Node
 import qualified NodeEditor.Action.Port                     as PortControl
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes)

@@ -6,6 +6,7 @@ module NodeEditor.Action.NodeDrag
     , handleNodeDragMouseUp
     ) where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Control.Arrow
 import qualified Data.Map                                   as Map
@@ -15,7 +16,8 @@ import           LunaStudio.Data.PortRef                    (InPortRef (InPortRe
 import qualified LunaStudio.Data.PortRef                    as PortRef
 import           LunaStudio.Data.Position                   (Position, move, vector)
 import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortsModeForNode)
-import           NodeEditor.Action.Command                  (Command)
+import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                             updateActionWithKey)
 import           NodeEditor.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getExpressionNode, getNodeEditor, getSelectedNodes,
                                                              modifyConnection, modifyExpressionNode, modifyInPort, modifyNodeEditor,
@@ -30,8 +32,6 @@ import qualified NodeEditor.React.Model.Port                as Port
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
                                                              nodeDragNodeLoc, nodeDragNodesStartPos, nodeDragSnappedConnIdAndPrevMode,
                                                              nodeDragStartPos)
-import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                             updateActionWithKey)
 import           NodeEditor.State.Global                    (State)
 import           React.Flux                                 (MouseEvent)
 

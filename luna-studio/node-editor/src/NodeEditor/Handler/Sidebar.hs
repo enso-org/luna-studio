@@ -1,8 +1,8 @@
 module NodeEditor.Handler.Sidebar where
 
+import           Common.Action.Command          (Command)
 import           Common.Prelude
 import           NodeEditor.Action.Basic        (toggleInputMode, toggleOutputMode)
-import           NodeEditor.Action.Command      (Command)
 import           NodeEditor.Action.Searcher     (editPortName)
 import           NodeEditor.Action.Sidebar      (addPort, handleAppMove, handleMouseUp, handleSidebarMove, removePort)
 import           NodeEditor.Event.Event         (Event (UI))

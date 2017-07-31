@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.FocusNode where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Data.Ord                                   (comparing)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodes, getNodeEditor, modifyExpressionNode, modifyNodeEditor)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, nodeLoc, zPos)
 import           NodeEditor.React.Model.NodeEditor          (topZIndex)

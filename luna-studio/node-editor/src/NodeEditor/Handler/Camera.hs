@@ -2,12 +2,12 @@ module NodeEditor.Handler.Camera
     ( handle
     ) where
 
+import           Common.Action.Command             (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Vector2           (Vector2 (Vector2))
 import           NodeEditor.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
                                                     resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
                                                     zoomDrag, zoomIn, zoomOut)
-import           NodeEditor.Action.Command         (Command)
 import           NodeEditor.Event.Event            (Event (Shortcut, UI))
 import           NodeEditor.Event.Mouse            (mousePosition)
 import qualified NodeEditor.Event.Mouse            as Mouse

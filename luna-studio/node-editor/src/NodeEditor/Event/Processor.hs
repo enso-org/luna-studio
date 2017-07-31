@@ -6,10 +6,10 @@ import           Data.DateTime                          (getCurrentTime)
 import           Data.Monoid                            (Last (..))
 import           GHCJS.Prim                             (JSException)
 
+import           Common.Action.Command                  (Command, execCommand)
 import           Common.Prelude
 import           Common.Report
 import qualified JS.Debug
-import           NodeEditor.Action.Command              (Command, execCommand)
 import           NodeEditor.Action.State.App            (renderIfNeeded)
 import           NodeEditor.Event.Event                 (Event)
 import qualified NodeEditor.Event.Event                 as Event

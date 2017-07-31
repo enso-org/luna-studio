@@ -4,10 +4,10 @@ import           Common.Prelude
 import           LunaStudio.Data.Position                   (Position (Position), vector, x, y)
 import           LunaStudio.Data.Vector2                    (lengthSquared, magnitude)
 
+import           Common.Action.Command                      (Command)
 import qualified LunaStudio.Data.Port                       as P
 import qualified LunaStudio.Data.PortRef                    as R
 import           NodeEditor.Action.Basic                    (selectNodes)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getConnections, getExpressionNode, getExpressionNodes,
                                                              getSelectedNodes)
 import           NodeEditor.Action.State.Scene              (getScreenCenter, translateToWorkspace)

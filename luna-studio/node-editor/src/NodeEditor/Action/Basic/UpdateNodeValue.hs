@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.UpdateNodeValue where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Map                                   as Map
 import qualified Data.Text                                  as Text
@@ -7,7 +8,6 @@ import           JS.Visualizers                             (notifyStreamRestart
 import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue),
                                                              VisualizationValue (StreamDataPoint, StreamStart, Value))
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeType, getNodeVisualizations, modifyExpressionNode,
                                                              modifyNodeEditor, recoverVisualizations, updateVisualizationsForNode)
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), execTime, value)

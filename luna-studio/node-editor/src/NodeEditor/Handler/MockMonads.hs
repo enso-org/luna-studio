@@ -1,10 +1,10 @@
 module NodeEditor.Handler.MockMonads where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           LunaStudio.Data.MonadPath                  (MonadPath (MonadPath))
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getSelectedNodes, modifyNodeEditor)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut

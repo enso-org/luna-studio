@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module TextEditor.Action.Command where
+module Common.Action.Command where
 
 import           Common.Prelude             hiding (gets)
 import           Control.Lens.Internal.Zoom

@@ -1,10 +1,10 @@
 module NodeEditor.Action.Basic.AddConnection where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           Control.Monad                      (filterM)
 import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified NodeEditor.Action.Batch            as Batch
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.Model      (updatePortMode)
 import           NodeEditor.Action.State.Model      (createConnectionModel)
 import qualified NodeEditor.Action.State.NodeEditor as NodeEditor

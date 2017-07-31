@@ -1,12 +1,12 @@
 module NodeEditor.Action.State.Action where
 
+import           Common.Action.Command   (Command)
 import           Common.Prelude
-import qualified Data.Map                  as Map
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
-import           NodeEditor.Action.Command (Command)
-import           NodeEditor.State.Action   (Action (end, update), ActionRep, SomeAction, fromSomeAction, overlappingActions, someAction)
-import           NodeEditor.State.Global   (State, actions, currentActions)
+import qualified Data.Map                as Map
+import           Data.Set                (Set)
+import qualified Data.Set                as Set
+import           NodeEditor.State.Action (Action (end, update), ActionRep, SomeAction, fromSomeAction, overlappingActions, someAction)
+import           NodeEditor.State.Global (State, actions, currentActions)
 
 
 checkSomeAction :: ActionRep -> Command State (Maybe (SomeAction (Command State)))

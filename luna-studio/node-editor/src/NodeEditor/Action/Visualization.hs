@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.Action.Visualization where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Map                                   as Map
 import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendVisualizationData)
@@ -9,7 +10,6 @@ import           LunaStudio.Data.NodeMeta                   (displayResult)
 import           LunaStudio.Data.NodeValue                  (VisualizerName)
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
 import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, checkAction, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeType, getNodeMeta, getNodeVisualizations, getSelectedNodes,

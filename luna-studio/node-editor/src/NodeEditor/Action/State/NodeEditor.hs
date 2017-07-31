@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies           #-}
 module NodeEditor.Action.State.NodeEditor where
 
+import           Common.Action.Command                       (Command)
 import           Common.Prelude                              hiding (get)
 import           Control.Arrow                               ((&&&))
 import qualified Control.Monad.State                         as M
@@ -27,7 +28,6 @@ import qualified LunaStudio.Data.PortRef                     as PortRef
 import           LunaStudio.Data.Position                    (Position)
 import           LunaStudio.Data.TypeRep                     (TypeRep)
 import qualified NodeEditor.Action.Batch                     as Batch
-import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (get, modify, modifyApp)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
 import           NodeEditor.Action.UUID                      (getUUID)

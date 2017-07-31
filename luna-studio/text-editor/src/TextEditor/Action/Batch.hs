@@ -4,7 +4,7 @@ import           Common.Prelude
 import           Data.UUID.Types               (UUID)
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.Point         (Point)
-import           TextEditor.Action.Command     (Command)
+import           Common.Action.Command     (Command)
 import           TextEditor.Action.UUID        (registerRequest)
 import qualified TextEditor.Batch.Commands     as BatchCmd
 import           TextEditor.State.Global       (State, clientId)

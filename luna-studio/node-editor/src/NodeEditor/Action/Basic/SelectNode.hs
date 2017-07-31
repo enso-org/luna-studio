@@ -1,12 +1,12 @@
 --TODO[LJK, PM]: Refactor
 module NodeEditor.Action.Basic.SelectNode where
 
-import qualified Data.Set                                    as Set
+import           Common.Action.Command                      (Command)
+import           Common.Prelude
+import qualified Data.Set                                   as Set
 import           NodeEditor.Action.Basic.FocusNode          (focusNodes)
 import           NodeEditor.Action.Batch                    (cancelCollaborativeTouch, collaborativeTouch)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes, modifyExpressionNode)
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, isSelected, nodeLoc)
 import           NodeEditor.State.Global                    (State, selectionHistory)
 

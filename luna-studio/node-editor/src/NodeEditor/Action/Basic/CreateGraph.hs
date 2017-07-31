@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic.CreateGraph where
 
+import           Common.Action.Command                 (Command)
 import           Common.Prelude
 import qualified Data.Set                              as Set
 import           LunaStudio.Data.MonadPath             (MonadPath)
@@ -10,7 +11,6 @@ import           NodeEditor.Action.Basic.FocusNode     (updateNodeZOrder)
 import           NodeEditor.Action.Basic.RemoveNode    (localRemoveNodes)
 import           NodeEditor.Action.Basic.UpdateNode    (localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
                                                         localUpdateOrAddOutputNode)
-import           NodeEditor.Action.Command             (Command)
 import           NodeEditor.Action.State.NodeEditor    (addInputNode, addOutputNode, getExpressionNodes, modifyNodeEditor, resetGraph,
                                                         updateMonads)
 import           NodeEditor.React.Model.Node           (ExpressionNode, InputNode, OutputNode, nodeLoc)

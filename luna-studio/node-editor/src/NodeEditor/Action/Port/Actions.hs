@@ -3,10 +3,10 @@ module NodeEditor.Action.Port.Actions
     , handleClick
     ) where
 
+import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           LunaStudio.Data.PortRef            (AnyPortRef (OutPortRef'), OutPortRef, nodeLoc, srcPortId)
 import           NodeEditor.Action.Basic            (localAddPort)
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.Connect          (connectToPort, startConnecting)
 import           NodeEditor.Action.Sidebar          (startPortDrag)
 import           NodeEditor.Event.Mouse             (mousePosition)

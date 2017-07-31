@@ -1,10 +1,10 @@
 -- TODO[PM]: Finish implementation
 module NodeEditor.Handler.Clipboard where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           NodeEditor.Action.Basic                    (removeSelectedNodes)
 import           NodeEditor.Action.Batch                    (copy, paste)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getSelectedNodes)
 import qualified NodeEditor.Action.State.Scene              as Scene
 import           NodeEditor.Event.Event                     (Event (Shortcut))

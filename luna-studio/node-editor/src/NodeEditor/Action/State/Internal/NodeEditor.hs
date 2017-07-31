@@ -9,8 +9,8 @@ import           Data.HashMap.Strict                        (HashMap)
 import qualified LunaStudio.Data.Breadcrumb                 as B
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.App                (modify)
 import           NodeEditor.React.Model.App                 (nodeEditor)
 import           NodeEditor.React.Model.Node                (HasNodeLoc, NodeId, NodeLoc, nodeId)

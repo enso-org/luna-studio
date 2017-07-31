@@ -2,8 +2,8 @@ module NodeEditor.Handler.Connect
     ( handle
     ) where
 
+import           Common.Action.Command             (Command)
 import           Common.Prelude
-import           NodeEditor.Action.Command         (Command)
 import           NodeEditor.Action.Connect         (cancelSnapToPort, handleConnectionMouseDown, handleMouseUp, handleMove,
                                                     handlePortMouseUp, snapToPort)
 import           NodeEditor.Event.Event            (Event (UI))

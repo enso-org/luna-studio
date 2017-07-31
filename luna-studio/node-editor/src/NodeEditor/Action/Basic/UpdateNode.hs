@@ -1,11 +1,11 @@
 module NodeEditor.Action.Basic.UpdateNode where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
 import qualified LunaStudio.Data.Node                       as Empire
 import           NodeEditor.Action.Basic.AddNode            (localAddExpressionNode, localAddInputNode, localAddOutputNode)
 import           NodeEditor.Action.Basic.Scene              (updateScene)
-import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Model              (calculatePortSelfMode)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
 import           NodeEditor.React.Model.Node                (ExpressionNode, InputNode, NodePath, OutputNode, inPortAt, nodeLoc)

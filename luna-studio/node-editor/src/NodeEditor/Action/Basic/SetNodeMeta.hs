@@ -1,12 +1,12 @@
 module NodeEditor.Action.Basic.SetNodeMeta where
 
+import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Control.Monad                              (filterM)
 import           LunaStudio.Data.NodeMeta                   (NodeMeta (NodeMeta))
 import qualified LunaStudio.Data.NodeMeta                   as NodeMeta
 import           LunaStudio.Data.Position                   (Position)
 import qualified NodeEditor.Action.Batch                    as Batch
-import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, defaultVisualizer, position, visualizationsEnabled)
 import           NodeEditor.State.Global                    (State)
