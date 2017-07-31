@@ -24,6 +24,7 @@ withLevel action = do
     liftIO $ IORef.writeIORef levelRef level
     return r
 
+{-# INLINE timeIt #-}
 timeIt :: MonadIO m => String -> m a -> m a
 #ifdef DEBUG_PERF
 timeIt name action = withLevel $ \l -> do
@@ -42,6 +43,7 @@ timeIt name action = withLevel $ \l -> do
 timeIt _ = id
 #endif
 
+{-# INLINE (<!!>) #-}
 infixl 0 <!!>
 (<!!>) :: MonadIO m => m a -> String -> m a
 (<!!>) = flip timeIt

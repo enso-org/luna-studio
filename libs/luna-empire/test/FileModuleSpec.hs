@@ -104,7 +104,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc multiFunCode
-                Graph.addNode loc u1 "def quux a b c" def
+                Graph.addNode loc u1 "def quux a b c" (atXPos (-1000))
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             length nodes `shouldBe` 4
             find (\n -> n ^. Node.name == Just "quux") nodes `shouldSatisfy` isJust
@@ -173,7 +173,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc multiFunCode
-                Graph.addNode loc u1 "def quux" def
+                Graph.addNode loc u1 "def quux" (atXPos (-100))
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             length nodes `shouldBe` 4
             find (\n -> n ^. Node.name == Just "quux") nodes `shouldSatisfy` isJust
@@ -314,7 +314,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc multiFunCode
-                n <- Graph.addNode loc u1 "def quux" def
+                n <- Graph.addNode loc u1 "def quux" (atXPos (-1000))
                 Graph.removeNodes loc [n ^. Node.nodeId]
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             find (\n -> n ^. Node.name == Just "main") nodes `shouldSatisfy` isJust
@@ -630,3 +630,34 @@ spec = around withChannels $ parallel $ do
                 code <- Graph.getCode loc
                 return (offsets, code)
             offsets `shouldMatchList` [("foo", 0), ("qwerty", 19), ("main", 45)]
+        it "adds the first function in a file" $ \env -> do
+            u1 <- mkUUID
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc ""
+                Graph.addNode loc u1 "def main" def
+                (,) <$> Graph.getNodes loc <*> Graph.getCode loc
+            length nodes `shouldBe` 1
+            find (\n -> n ^. Node.name == Just "main") nodes `shouldSatisfy` isJust
+            normalizeQQ code `shouldBe` normalizeQQ [r|
+                def main:
+                    None
+                |]
+        it "adds the first function in a file with imports" $ \env -> do
+            u1 <- mkUUID
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc "import Std\nimport Foo\n"
+                Graph.addNode loc u1 "def main" def
+                (,) <$> Graph.getNodes loc <*> Graph.getCode loc
+            length nodes `shouldBe` 1
+            find (\n -> n ^. Node.name == Just "main") nodes `shouldSatisfy` isJust
+            normalizeQQ code `shouldBe` normalizeQQ [r|
+                import Std
+                import Foo
+
+                def main:
+                    None
+                |]

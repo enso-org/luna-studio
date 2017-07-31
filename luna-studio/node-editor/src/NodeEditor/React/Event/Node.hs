@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 module NodeEditor.React.Event.Node where
 
 import           Common.Prelude

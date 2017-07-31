@@ -29,7 +29,7 @@ modifyApp action = do
     withApp $ continueModify action
 
 renderIfNeeded :: Command State ()
-renderIfNeeded = whenM (use $ ui . renderNeeded) $ do
+renderIfNeeded = whenM (use $ ui . renderNeeded) $ timeIt "render" $ do
     withApp commit
     ui . renderNeeded .= False
 

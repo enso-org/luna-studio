@@ -87,7 +87,6 @@ processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
     realEvent <- preprocessEvent ev
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
-        --putStrLn . show . length $ show realEvent
         JS.Debug.error (convert $ realEvent ^. Event.name) ()
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)

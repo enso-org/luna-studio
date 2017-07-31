@@ -1,3 +1,4 @@
+{-# LANGUAGE StrictData #-}
 module NodeEditor.React.Model.Image where
 
 import           Common.Prelude

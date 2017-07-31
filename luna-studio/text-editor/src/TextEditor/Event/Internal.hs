@@ -5,25 +5,17 @@ import           Common.Prelude
 import           Data.Aeson     (FromJSON, ToJSON)
 
 
-data ActionType = CloseFile
-                | Copy
-                | FileChanged
-                | GetBuffer
-                | IsSaved
-                | OpenFile
-                | SaveFile
-                | SetProject
-                deriving (Bounded, Eq, Enum, Generic, NFData, Read, Show, Typeable)
-
-data InternalEvent = InternalEvent
-                   { _dataType   :: ActionType
-                   , _path       :: String
-                   , _selections :: Maybe [(Int, Int)]
-                   } deriving (Generic, NFData, Show, Typeable)
+data InternalEvent = Copy        { _path :: FilePath , _selections :: Maybe [(Int, Int)]}
+                   | CloseFile   { _path :: FilePath }
+                   | FileChanged { _path :: FilePath }
+                   | GetBuffer   { _path :: FilePath }
+                   | IsSaved     { _path :: FilePath }
+                   | OpenFile    { _path :: FilePath }
+                   | SaveFile    { _path :: FilePath }
+                   | SetProject  { _path :: FilePath }
+                   deriving (Generic, NFData, Show, Typeable)
 
 makeLenses ''InternalEvent
 
-instance ToJSON   ActionType
-instance FromJSON ActionType
 instance ToJSON   InternalEvent
 instance FromJSON InternalEvent

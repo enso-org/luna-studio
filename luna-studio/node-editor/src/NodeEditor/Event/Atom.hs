@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 module NodeEditor.Event.Atom where
 
 import           Common.Prelude

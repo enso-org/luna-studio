@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 module NodeEditor.React.Model.Layout where
 
 import           Common.Prelude

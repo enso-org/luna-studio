@@ -6,7 +6,6 @@ import qualified Data.HashMap.Strict                        as HashMap
 import           Data.Matrix                                (Matrix)
 import           Data.Maybe                                 (mapMaybe)
 import qualified Data.Set                                   as Set
-import           JS.FontSize                                (getFontSize)
 import           JS.Scene                                   (sceneId)
 import qualified LunaStudio.Data.CameraTransformation       as CameraTransformation
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
@@ -35,7 +34,8 @@ import           NodeEditor.React.View.Connection           (connection_, halfCo
 import           NodeEditor.React.View.ConnectionPen        (connectionPen_)
 import           NodeEditor.React.View.ExpressionNode       (filterOutSearcherIfNotRelated, nodeDynamicStyles_, node_)
 import           NodeEditor.React.View.Monad                (monads_)
-import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlane_, planeNewConnection_)
+import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_, planeNewConnection_,
+                                                             planeNodes_, svgPlane_)
 import           NodeEditor.React.View.SelectionBox         (selectionBox_)
 import           NodeEditor.React.View.Sidebar              (sidebar_)
 import qualified NodeEditor.React.View.Style                as Style
@@ -61,9 +61,6 @@ show1 a = showFFloat (Just 1) a "" -- limit Double to two decimal numbers TODO: 
 
 show4 :: Double -> String
 show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: remove before the release
-
-
---fontSize = liftIO getFontSize
 
 applySearcherHints :: NodeEditor -> NodeEditor
 applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
@@ -124,7 +121,7 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
                                               (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
                                               (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
                     forM_ visualizations $ nodeVisualization_ ref
-                    
+
                 planeNewConnection_ $ do
                     forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
 

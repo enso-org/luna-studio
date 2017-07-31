@@ -11,7 +11,7 @@ TextBuffer::subscribeToFileOverride = (internal) ->
     @fileSubscriptions.add @file.onDidChange =>
         @conflict = true if @isModified()
         console.log "FileChanged"
-        internal.pushInternalEvent(event: "FileChanged", uri: @getPath())
+        internal.pushInternalEvent(tag: "FileChanged", _path: @getPath())
       #   previousContents = @cachedDiskContents
       #
       #   # Synchrounously update the disk contents because the {File} has already cached them. If the
@@ -52,7 +52,7 @@ module.exports =
         @getBuffer().setPath(@uri)
         @getBuffer().subscribeToFileOverride(@internal)
 
-        @internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
+        @internal.pushInternalEvent(tag: "GetBuffer", _path: @uri)
 
         omitDiff = (text) =>
             @diffToOmit.add(text)
@@ -96,4 +96,4 @@ module.exports =
     getTitle: -> path.basename(@uri)
 
     deactivate: ->
-      @subscribe.dispose()
+        @subscribe.dispose()

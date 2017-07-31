@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 module NodeEditor.Event.Event where
 
 import           Common.Prelude
@@ -10,11 +11,11 @@ import           NodeEditor.Event.UI         (UIEvent)
 
 
 data Event = Init
-           | Batch                         Batch.Event
-           | Connection               Connection.Event
-           | Atom                           Atom.Event
-           | Shortcut                    ShortcutEvent
-           | UI                                UIEvent
+           | Batch            Batch.Event
+           | Connection  Connection.Event
+           | Atom              Atom.Event
+           | Shortcut       ShortcutEvent
+           | UI                   UIEvent
            deriving (Generic, Show, NFData)
 
 makeLenses ''Event

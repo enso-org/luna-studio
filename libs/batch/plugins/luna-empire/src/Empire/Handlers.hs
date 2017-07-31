@@ -27,10 +27,13 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleAddPort
     , makeHandler Graph.handleAddSubgraph
     , makeHandler Graph.handleAutolayoutNodes
+    , makeHandler Graph.handleCollapseToFunction
+    , makeHandler Graph.handleCopy
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
     , makeHandler Graph.handleGetSubgraphs
     , makeHandler Graph.handleMovePort
+    , makeHandler Graph.handlePaste
     , makeHandler Graph.handleRemoveConnection
     , makeHandler Graph.handleRemoveNodes
     , makeHandler Graph.handleRemovePort
@@ -55,6 +58,7 @@ handlersMap = Map.fromList
     , makeHandler Atom.handleCloseFile
     , makeHandler Graph.handleGetBuffer
     , makeHandler Graph.handleSubstitute
+    , makeHandler Graph.handleSaveSettings
     ]
 
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)

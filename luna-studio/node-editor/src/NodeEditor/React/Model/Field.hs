@@ -1,9 +1,10 @@
+{-# LANGUAGE StrictData #-}
 module NodeEditor.React.Model.Field where
 
 import           Common.Prelude
+import           NodeEditor.Event.UI        (UIEvent)
 import           NodeEditor.React.Model.App (App)
 import           NodeEditor.React.Store     (Ref)
-import NodeEditor.Event.UI (UIEvent)
 
 
 data Field = Field { _ref :: Ref App

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 module NodeEditor.React.Model.Port
     ( module NodeEditor.React.Model.Port
     , module X

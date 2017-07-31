@@ -21,11 +21,14 @@ import qualified LunaStudio.API.Graph.AddNode           as AddNode
 import qualified LunaStudio.API.Graph.AddPort           as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph       as AddSubgraph
 import qualified LunaStudio.API.Graph.MovePort          as MovePort
+import qualified LunaStudio.API.Graph.Paste             as Paste
 import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort        as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode        as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort        as RenamePort
+import           LunaStudio.API.Graph.Result            (Result)
+import qualified LunaStudio.API.Graph.Result            as Result
 import qualified LunaStudio.API.Graph.SetNodeExpression as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta      as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault    as SetPortDefault
@@ -50,6 +53,7 @@ handlersMap = Map.fromList
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleMovePortUndo
+    , makeHandler handlePasteUndo
     , makeHandler handleRemoveConnectionUndo
     , makeHandler handleRemoveNodesUndo
     , makeHandler handleRemovePortUndo
@@ -68,6 +72,7 @@ type family UndoResponseRequest t where
     UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
     UndoResponseRequest MovePort.Response             = MovePort.Request
+    UndoResponseRequest Paste.Response                = RemoveNodes.Request
     UndoResponseRequest RemoveConnection.Response     = AddConnection.Request
     UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
     UndoResponseRequest RemovePort.Response           = AddPort.Request
@@ -83,6 +88,7 @@ type family RedoResponseRequest t where
     RedoResponseRequest AddPort.Response              = AddPort.Request
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
     RedoResponseRequest MovePort.Response             = MovePort.Request
+    RedoResponseRequest Paste.Response                = Paste.Request
     RedoResponseRequest RemoveConnection.Response     = RemoveConnection.Request
     RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
     RedoResponseRequest RemovePort.Response           = RemovePort.Request
@@ -165,6 +171,15 @@ getUndoMovePort (MovePort.Request location oldPortRef newPos) = case oldPortRef 
 handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
 handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoMovePort req, req)
+
+
+getUndoPaste :: Paste.Request -> Result -> RemoveNodes.Request
+getUndoPaste request result = RemoveNodes.Request
+    (request ^. Paste.location) (convert . view Node.nodeId <$> result ^. Result.graphUpdates . Graph.nodes)
+
+handlePasteUndo :: Paste.Response -> Maybe (RemoveNodes.Request, Paste.Request)
+handlePasteUndo (Response.Response _ _ req _ (Response.Ok rsp)) =
+    Just (getUndoPaste req rsp, req)
 
 
 getUndoRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse -> AddConnection.Request

@@ -13,6 +13,7 @@ module JS.Atom
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe     (MaybeT (MaybeT), runMaybeT)
 import           Data.Aeson                    (Result (Success), fromJSON)
+import           Data.Aeson.Types              (FromJSON)
 import qualified Data.Text                     as Text
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure            (PFromJSVal (pFromJSVal), PToJSVal (pToJSVal))
@@ -45,7 +46,6 @@ foreign import javascript safe "atomCallbackTextEditor.subscribeDiff($1)"
 foreign import javascript safe "($1).unsubscribeDiff()"
     unsubscribeDiff' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "$1.event"  getEvent  :: JSVal -> JSVal
 foreign import javascript safe "$1.uri"    getPath   :: JSVal -> JSVal
 foreign import javascript safe "$1.start"  getStart  :: JSVal -> JSVal
 foreign import javascript safe "$1.end"    getEnd    :: JSVal -> JSVal
@@ -55,21 +55,21 @@ foreign import javascript safe "$1.column" getColumn :: JSVal -> Int
 foreign import javascript safe "$1.row"    getRow    :: JSVal -> Int
 foreign import javascript safe "{column: $1, row: $2}" mkPoint   :: Int -> Int -> JSVal
 
-foreign import javascript safe "function() {if($1.hasOwnProperty(selections)) { return $1.selections };}()"
-    getSelections :: JSVal -> JSVal
-
 instance PFromJSVal Point where
     pFromJSVal jsval = Point (getColumn jsval) (getRow jsval)
 
 instance PToJSVal Point where
     pToJSVal point = mkPoint (point ^. Point.column) (point ^. Point.row)
 
-instance FromJSVal GraphLocation where
-    fromJSVal jsval = fromJSVal jsval >>= \case
-        Just jsonValue -> case fromJSON jsonValue of
-            Success r -> return $ Just r
-            _         -> return Nothing
-        _ -> return Nothing
+fromJSONVal :: (Show a, FromJSON a) => JSVal -> IO (Maybe a)
+fromJSONVal jsval = fromJSVal jsval >>= \case
+    Just jsonValue -> case fromJSON jsonValue of
+        Success r -> return $ Just r
+        e         -> putStrLn ("Cannot parse event " ++ show jsonValue ++ " " ++ show e) >>  return Nothing
+    _ -> putStrLn ("Unparseable JSON event") >>  return Nothing
+
+instance FromJSVal GraphLocation where fromJSVal = fromJSONVal
+instance FromJSVal InternalEvent where fromJSVal = fromJSONVal
 
 instance FromJSVal TextEvent where
     fromJSVal jsval = runMaybeT $ do
@@ -80,13 +80,6 @@ instance FromJSVal TextEvent where
             cursor   = pFromJSVal $ getCursor jsval
             result   = TextEvent location start end text $ Just cursor
         return result
-
-instance PFromJSVal InternalEvent where
-    pFromJSVal jsval = result where
-        event = read $ pFromJSVal $ getEvent jsval
-        filepath = pFromJSVal $ getPath jsval
-        -- maybeSelections = GHCJSInternal.fromJSVal $ getSelections jsval
-        result = InternalEvent event filepath Nothing
 
 subscribeDiff :: (TextEvent -> IO ()) -> IO (IO ())
 subscribeDiff callback = do
@@ -104,6 +97,6 @@ pushCode = do
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do
-    wrappedCallback <- syncCallback1 ContinueAsync $ callback . pFromJSVal
+    wrappedCallback <- syncCallback1 ContinueAsync $ \jsval -> withJustM (fromJSVal jsval) callback
     subscribeEventListenerInternal' wrappedCallback
     return $ unsubscribeEventListenerInternal' wrappedCallback >> releaseCallback wrappedCallback

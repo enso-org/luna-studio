@@ -13,7 +13,6 @@ import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
 import           Data.Monoid                                 (First (First), getFirst)
 import qualified Data.Set                                    as Set
-import           JS.LocalStorage                             (saveVisualizationPreferences)
 import           JS.Visualizers                              (registerVisualizerFrame)
 import           LunaStudio.Data.CameraTransformation        (CameraTransformation)
 import           LunaStudio.Data.MonadPath                   (MonadPath)
@@ -249,6 +248,9 @@ getScene = view Scene.scene <$> getLayout
 getScreenTranform :: Command State CameraTransformation
 getScreenTranform = view Scene.screenTransform <$> getLayout
 
+setScreenTransform :: CameraTransformation -> Command State ()
+setScreenTransform camera = modifyNodeEditor $ NE.layout . Scene.screenTransform .= camera
+
 globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
 
@@ -366,10 +368,7 @@ updateVisualizationsForNode nl mayTpe = do
                 NE.nodeVisualizations . at nl ?= Visualization.NodeVisualizations running ready visualizers'
 
 updatePreferedVisualizer :: TypeRep -> Visualizer -> Command State ()
-updatePreferedVisualizer tpe vis = do
-    preferedVisualizers . at tpe ?= vis
-    prefVis <- use preferedVisualizers
-    liftIO $ saveVisualizationPreferences prefVis
+updatePreferedVisualizer tpe vis = preferedVisualizers . at tpe ?= vis
 
 getExpressionNodeType :: NodeLoc -> Command State (Maybe TypeRep)
 getExpressionNodeType = fmap (maybe def (view ExpressionNode.nodeType)) . getExpressionNode

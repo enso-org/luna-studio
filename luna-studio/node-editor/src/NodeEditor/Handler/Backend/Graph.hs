@@ -5,6 +5,7 @@ module NodeEditor.Handler.Backend.Graph
 import           Common.Prelude
 import           Common.Report
 import qualified Data.DateTime                               as DT
+import qualified JS.Clipboard                                as JS
 import qualified LunaStudio.API.Atom.Substitute              as Substitute
 import qualified LunaStudio.API.Graph.AddConnection          as AddConnection
 import qualified LunaStudio.API.Graph.AddNode                as AddNode
@@ -13,12 +14,14 @@ import qualified LunaStudio.API.Graph.AddSubgraph            as AddSubgraph
 import qualified LunaStudio.API.Graph.AutolayoutNodes        as AutolayoutNodes
 import qualified LunaStudio.API.Graph.CollaborationUpdate    as CollaborationUpdate
 import qualified LunaStudio.API.Graph.CollapseToFunction     as CollapseToFunction
+import qualified LunaStudio.API.Graph.Copy                   as Copy
 import qualified LunaStudio.API.Graph.GetProgram             as GetProgram
 import qualified LunaStudio.API.Graph.GetSubgraphs           as GetSubgraphs
 import qualified LunaStudio.API.Graph.MonadsUpdate           as MonadsUpdate
 import qualified LunaStudio.API.Graph.MovePort               as MovePort
 import qualified LunaStudio.API.Graph.NodeResultUpdate       as NodeResultUpdate
 import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate  as NodeTCUpdate
+import qualified LunaStudio.API.Graph.Paste                  as Paste
 import qualified LunaStudio.API.Graph.RemoveConnection       as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes            as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort             as RemovePort
@@ -48,12 +51,11 @@ import           NodeEditor.Action.Basic.Revert              (revertAddConnectio
                                                               revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,
                                                               revertSetPortDefault)
 import           NodeEditor.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
-import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
-import           NodeEditor.Action.Camera                    (tryLoadCamera)
+import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (setBreadcrumbs)
 import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentFile, isCurrentLocation)
-import           NodeEditor.Action.State.NodeEditor          (isGraphLoaded, modifyExpressionNode, setGraphStatus, updateMonads)
+import           NodeEditor.Action.State.NodeEditor          (modifyExpressionNode, setGraphStatus, setScreenTransform, updateMonads)
 import           NodeEditor.Action.UUID                      (isOwnRequest)
 import qualified NodeEditor.Batch.Workspace                  as Workspace
 import           NodeEditor.Event.Batch                      (Event (..))
@@ -95,8 +97,9 @@ checkBreadcrumb res = do
 handle :: Event.Event -> Maybe (Command State ())
 handle (Event.Batch ev) = Just $ case ev of
     GetProgramResponse response -> handleResponse response success failure where
-        location       = response ^. Response.request . GetProgram.location
-        success result = do
+        location        = response ^. Response.request . GetProgram.location
+        requestId       = response ^. Response.requestId
+        success result  = do
             whenM (isCurrentLocation location) $ do
                 putStrLn "GetProgram"
                 setBreadcrumbs $ result ^. GetProgram.breadcrumb
@@ -108,20 +111,19 @@ handle (Event.Batch ev) = Just $ case ev of
                             output      = convert . (NodeLoc.empty,) <$> graph ^. Graph.outputSidebar
                             connections = graph ^. Graph.connections
                             monads      = graph ^. Graph.monads
-                        shouldCenter <- not <$> isGraphLoaded
                         updateGraph nodes input output connections monads
                         setGraphStatus GraphLoaded
+                        setScreenTransform $ result ^. GetProgram.camera
+                        whenM (isOwnRequest requestId) $ withJust (result ^. GetProgram.typeRepToVisMap) $ \visMap ->
+                            Global.preferedVisualizers .= visMap
                         updateScene
-                        when shouldCenter $ do
-                            tryLoadCamera
-                            requestCollaborationRefresh
         failure _ = do
             isOnTop <- fromMaybe True <$> preuses (Global.workspace . traverse) Workspace.isOnTopBreadcrumb
             if isOnTop
                 then fatal "Cannot get file from backend"
                 else do
                     Global.workspace . _Just %= Workspace.upperWorkspace
-                    getProgram True
+                    getProgram def
 
     AddConnectionResponse response -> handleResponse response success failure where
         requestId = response ^. Response.requestId
@@ -182,6 +184,14 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. CollapseToFunction.location
         success         = applyResult location
 
+    CopyResponse response -> handleResponse response success doNothing where
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request ^. Copy.location
+        success result = inCurrentLocation location $ const $
+            whenM (isOwnRequest requestId) $
+                liftIO $ JS.copyStringToClipboard $ convert $ result ^. Copy.clipboardData
+
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
     --TODO[LJK, PM]: Review this Handler
@@ -214,6 +224,11 @@ handle (Event.Batch ev) = Just $ case ev of
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
           void $ localUpdateNodeTypecheck path $ update ^. NodeTCUpdate.node
+
+    PasteResponse response -> handleResponse response success doNothing where
+        request   = response ^. Response.request
+        location  = request  ^. Paste.location
+        success   = applyResult location
 
     RedoResponse _response -> $notImplemented
 

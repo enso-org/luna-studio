@@ -3,6 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
 module NodeEditor.React.Model.NodeEditor where
 

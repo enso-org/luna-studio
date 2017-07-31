@@ -42,10 +42,6 @@ import qualified NodeEditor.React.View.Style                          as Style
 import           React.Flux
 import qualified React.Flux                                           as React
 
-import           System.IO.Unsafe                                     (unsafePerformIO)
-
-traceShowMToStdout :: (Show a, Monad m) => a -> m ()
-traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 
 name, objNameBody, objNamePorts, objNameDynStyles :: JSString
 name             = "node"
@@ -69,9 +65,12 @@ handleMouseDown ref nodeLoc e m =
     else []
 
 nodeName_ :: Ref App -> NodeLoc -> Maybe Text -> Maybe Bool -> Maybe Searcher -> ReactElementM ViewEventHandler ()
-nodeName_ ref nl nodeName mayVisualizationVisible mayS = do
+nodeName_ ref nl name mayVisualizationVisible mayS = React.viewWithSKey nodeName "node-name" (ref, nl, name, mayVisualizationVisible, mayS) mempty
+
+nodeName :: ReactView (Ref App, NodeLoc, Maybe Text, Maybe Bool, Maybe Searcher)
+nodeName = React.defineView "node-name" $ \(ref, nl, name, mayVisualizationVisible, mayS) -> do
     let regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nl)]
-                                 , elemString . convert $ fromMaybe def nodeName )
+                                 , elemString . convert $ fromMaybe def name )
         (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
             Searcher.NodeName snl _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
             _                       -> regularHandlersAndElem
@@ -95,8 +94,12 @@ nodeName_ ref nl nodeName mayVisualizationVisible mayS = do
                         then path_ [ "d" $= Style.iconEye         ] mempty
                         else path_ [ "d" $= Style.iconEyeDisabled ] mempty
 
+
 nodeExpression_ :: Ref App -> NodeLoc -> Text -> Maybe Searcher -> ReactElementM ViewEventHandler ()
-nodeExpression_ ref nl expr mayS = do
+nodeExpression_ ref nl expr mayS = React.viewWithSKey nodeExpression "node-expression" (ref, nl, expr, mayS) mempty
+
+nodeExpression :: ReactView (Ref App, NodeLoc, Text, Maybe Searcher)
+nodeExpression = React.defineView "node-expression" $ \(ref, nl, expr, mayS) -> do
     let isLong = Text.length expr > 64
 
         regularHandlersAndElem  = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nl)]

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 module NodeEditor.React.Model.Visualization
     ( module NodeEditor.React.Model.Visualization
     , module X

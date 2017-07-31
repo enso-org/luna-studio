@@ -1,3 +1,4 @@
+{-# LANGUAGE StrictData #-}
 module NodeEditor.React.Model.Searcher where
 
 import           Common.Prelude

@@ -20,6 +20,7 @@ dependencies:
   - deepseq
   - hashable
   - lens
+  - lens-utils
   - matrix
   - pretty-show
   - prologue
@@ -28,6 +29,7 @@ dependencies:
   - time
   - unordered-containers
   - uuid-types
+  - yaml
   - zlib
 
 default-extensions:
@@ -42,3 +44,14 @@ default-extensions:
 library:
   source-dirs: src
   ghc-options: -Wall -O2 -threaded
+
+
+executables:
+  luna-studio-common-test:
+    source-dirs: test
+    main: Main.hs
+    ghc-options: -Wall -O2 -threaded
+    dependencies:
+      - base
+      - prologue
+      - luna-studio-common

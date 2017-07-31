@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 module NodeEditor.React.Model.Node.ExpressionNodeProperties
 ( module NodeEditor.React.Model.Node.ExpressionNodeProperties
 , module X

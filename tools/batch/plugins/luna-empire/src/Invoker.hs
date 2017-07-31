@@ -97,7 +97,7 @@ main = do
         setPortValue endPoints (toGraphLocation file) (read nodeId) (read portId) (read value)
     when (args `isPresent` command "getProgram") $ do
         file      <- args `getArgOrExit` argument "file"
-        getProgram endPoints (toGraphLocation file) True
+        getProgram endPoints (toGraphLocation file)
     when (args `isPresent` command "createProject") $ do
         name      <- args `getArgOrExit` argument "name"
         createProject endPoints name
@@ -142,8 +142,8 @@ disconnect endPoints graphLocation  dstNodeId inPort = sendToBus endPoints $ Rem
 setPortValue :: EP.BusEndPoints -> GraphLocation -> NodeId -> Int -> Double -> IO ()
 setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetPortDefault.Request graphLocation (InPortRef (NodeLoc def nodeId) [Arg portId]) (Just $ Constant $ DoubleValue value)
 
-getProgram :: EP.BusEndPoints -> GraphLocation -> Bool -> IO ()
-getProgram endPoints graphLocation newModule = sendToBus endPoints $ GetProgram.Request graphLocation newModule
+getProgram :: EP.BusEndPoints -> GraphLocation -> IO ()
+getProgram endPoints graphLocation = sendToBus endPoints $ GetProgram.Request graphLocation def
 
 createProject :: EP.BusEndPoints -> String -> IO ()
 createProject endPoints name = sendToBus endPoints $ CreateProject.Request name

@@ -16,7 +16,7 @@ import           Empire.Prelude
 
 import           LunaStudio.Data.Node               (NodeId)
 import qualified LunaStudio.Data.Port               as Port
-import           Empire.ASTOp                       (GraphOp, match)
+import           Empire.ASTOp                       (GraphOp, ASTOp, match)
 import qualified Empire.ASTOps.Deconstruct          as ASTDeconstruct
 import qualified Empire.ASTOps.Read                 as ASTRead
 import qualified Empire.ASTOps.Remove               as ASTRemove
@@ -183,7 +183,7 @@ rewireCurrentNode newTarget = do
     replaceTargetNode matchNode newTarget
     ASTRemove.removeSubtree oldTarget
 
-renameVar :: GraphOp m => NodeRef -> String -> m ()
+renameVar :: ASTOp a m => NodeRef -> String -> m ()
 renameVar vref name = do
     var <- IR.narrowTerm @IR.Var vref
     mapM_ (flip IR.modifyExprTerm $ IR.name .~ (stringToName name)) var

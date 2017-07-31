@@ -1,26 +1,26 @@
 module TextEditor.Event.Processor where
 
 import           Control.Concurrent.MVar
-import           Control.Exception                          (handle)
-import           Data.DateTime                              (getCurrentTime)
-import           Data.Monoid                                (Last (..))
-import           GHCJS.Prim                                 (JSException)
+import           Control.Exception                   (handle)
+import           Data.DateTime                       (getCurrentTime)
+import           Data.Monoid                         (Last (..))
+import           GHCJS.Prim                          (JSException)
 
-import           WebSocket                               (WebSocket)
-import           TextEditor.Action.Command                 (Command, execCommand)
-import           TextEditor.Event.Event                    (Event)
-import qualified TextEditor.Event.Event                    as Event
-import           TextEditor.Event.Loop                     (LoopRef)
-import qualified TextEditor.Event.Loop                     as Loop
-import qualified TextEditor.Event.Preprocessor.Batch       as BatchEventPreprocessor
-import           TextEditor.Event.Source                   (AddHandler (..))
-import qualified TextEditor.Event.Source                   as JSHandlers
-import qualified TextEditor.Handler.ProjectManager as ProjectManager
-import qualified TextEditor.Handler.Text           as Text
 import           Common.Prelude
-import           TextEditor.State.Global                   (State)
-import qualified TextEditor.State.Global                   as Global
-import           Common.Report                              (error)
+import           Common.Report                       (error)
+import           TextEditor.Action.Command           (Command, execCommand)
+import           TextEditor.Event.Event              (Event)
+import qualified TextEditor.Event.Event              as Event
+import           TextEditor.Event.Loop               (LoopRef)
+import qualified TextEditor.Event.Loop               as Loop
+import qualified TextEditor.Event.Preprocessor.Batch as BatchEventPreprocessor
+import           TextEditor.Event.Source             (AddHandler (..))
+import qualified TextEditor.Event.Source             as JSHandlers
+import qualified TextEditor.Handler.ProjectManager   as ProjectManager
+import qualified TextEditor.Handler.Text             as Text
+import           TextEditor.State.Global             (State)
+import qualified TextEditor.State.Global             as Global
+import           WebSocket                           (WebSocket)
 
 displayProcessingTime :: Bool
 displayProcessingTime = False

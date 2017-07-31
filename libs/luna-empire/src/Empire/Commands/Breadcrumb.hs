@@ -22,6 +22,7 @@ import           Empire.ASTOps.BreadcrumbHierarchy as ASTBreadcrumb
 import           Empire.ASTOps.Parse               as ASTParse
 import           Empire.ASTOps.Read                as ASTRead
 import           Empire.Commands.Code              (functionBlockStartRef, propagateLengths)
+import           Empire.Commands.AST              as AST
 import           Empire.Data.AST                   (NodeRef, astExceptionFromException, astExceptionToException)
 import           Empire.Data.BreadcrumbHierarchy   (navigateTo, replaceAt)
 import qualified Empire.Data.BreadcrumbHierarchy   as BH
@@ -52,22 +53,24 @@ makeGraphCls :: NodeRef -> Maybe NodeId -> Command Graph.ClsGraph (NodeId, Graph
 makeGraphCls fun lastUUID = do
     pmState   <- liftIO Graph.defaultPMState
     nodeCache <- use Graph.nodeCache
-    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ IR.matchExpr fun $ \case
+    (funName, IR.Rooted ir ref, fileOffset, endOfNameOffset) <- runASTOp $ IR.matchExpr fun $ \case
         IR.ASGRootedFunction n root -> do
             offset <- functionBlockStartRef fun
-            return (nameToString n, root, offset)
+            name   <- ASTRead.getVarName' =<< IR.source n
+            (SpacedSpan off len) <- (unwrap . view CodeSpan.realSpan) <$> (IR.getLayer @CodeSpan.CodeSpan =<< IR.source n)
+            return (nameToString name, root, offset, off + len)
     let ast   = Graph.AST ir pmState
-    uuid <- maybe (liftIO $ UUID.nextRandom) return lastUUID
+    uuid <- maybe (liftIO UUID.nextRandom) return lastUUID
     let oldPortMapping = nodeCache ^. Graph.portMappingMap . at (uuid, Nothing)
     portMapping <- fromMaybeM (liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom) oldPortMapping
-    let bh = BH.LamItem portMapping ref def ref
-        graph = Graph.Graph ast bh 0 def def def fileOffset 0
+    let bh    = BH.LamItem portMapping ref def ref
+        graph = Graph.Graph ast bh 0 def def def fileOffset endOfNameOffset
     Graph.clsFuns . at uuid ?= (funName, graph)
     withRootedFunction uuid $ do
         runASTOp $ do
             propagateLengths ref
             LeftSpacedSpan (SpacedSpan off _) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan.CodeSpan ref
-            Graph.bodyOffset .= off
+            Graph.bodyOffset .= endOfNameOffset + off
         runAliasAnalysis
         runASTOp $ do
             ASTBreadcrumb.makeTopBreadcrumbHierarchy nodeCache ref
@@ -117,7 +120,8 @@ withRootedFunction uuid act = do
         cls <- use Graph.clsClass
         funs <- ASTRead.classFunctions cls
         forM funs $ \fun -> IR.matchExpr fun $ \case
-            IR.ASGRootedFunction name _ -> do
+            IR.ASGRootedFunction n _ -> do
+                name <- ASTRead.getVarName' =<< IR.source n
                 if (nameToString name == funName) then do
                     LeftSpacedSpan (SpacedSpan off prevLen) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan.CodeSpan fun
                     let bodyLen = newGraph ^. Graph.bodyOffset + len

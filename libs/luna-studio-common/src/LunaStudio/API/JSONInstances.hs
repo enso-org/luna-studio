@@ -19,6 +19,7 @@ import           LunaStudio.API.Graph.AddSubgraph           as AddSubgraph
 import           LunaStudio.API.Graph.AutolayoutNodes       as AutolayoutNodes
 import           LunaStudio.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import           LunaStudio.API.Graph.CollapseToFunction    as CollapseToFunction
+import           LunaStudio.API.Graph.Copy                  as Copy
 import           LunaStudio.API.Graph.DumpGraphViz          as DumpGraphViz
 import           LunaStudio.API.Graph.GetProgram            as GetProgram
 import           LunaStudio.API.Graph.GetSubgraphs          as GetSubgraphs
@@ -26,6 +27,7 @@ import           LunaStudio.API.Graph.MonadsUpdate          as MonadsUpdate
 import           LunaStudio.API.Graph.MovePort              as MovePort
 import           LunaStudio.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import           LunaStudio.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
+import           LunaStudio.API.Graph.Paste                 as Paste
 import           LunaStudio.API.Graph.Redo                  as Redo
 import           LunaStudio.API.Graph.RemoveConnection      as RemoveConnection
 import           LunaStudio.API.Graph.RemoveNodes           as RemoveNodes
@@ -54,7 +56,6 @@ import           LunaStudio.API.Response                    as Response
 import           LunaStudio.Data.Connection                 as Connection
 import           LunaStudio.Data.Error                      as Error
 import           LunaStudio.Data.Graph                      as Graph
-import           LunaStudio.Data.GraphLocation              as GraphLocation
 import           LunaStudio.Data.Library                    as Library
 import           LunaStudio.Data.MonadPath                  as MonadPath
 import           LunaStudio.Data.Node                       as Node
@@ -75,7 +76,6 @@ import           LunaStudio.Data.Vector2                    as Vector2
 instance FromJSON a => FromJSON (Vector2.Vector2 a)
 instance FromJSON Connection.Connection
 instance FromJSON Graph.Graph
-instance FromJSON GraphLocation.GraphLocation
 instance FromJSON i => FromJSON (Port.Port i)
 instance FromJSON MonadPath.MonadPath
 instance FromJSON Node.ExpressionNode
@@ -121,6 +121,8 @@ instance ToJSON CollaborationUpdate.Update
 instance ToJSON CollapseToFunction.Inverse
 instance ToJSON CollapseToFunction.Request
 instance ToJSON Connection.Connection
+instance ToJSON Copy.Request
+instance ToJSON Copy.Result
 instance ToJSON CreateLibrary.Request
 instance ToJSON CreateLibrary.Result
 instance ToJSON CreateLibrary.Update
@@ -141,7 +143,6 @@ instance ToJSON GetProgram.Result
 instance ToJSON GetSubgraphs.Request
 instance ToJSON GetSubgraphs.Result
 instance ToJSON Graph.Graph
-instance ToJSON GraphLocation.GraphLocation
 instance ToJSON i => ToJSON (Port.Port i)
 instance ToJSON ImportProject.Request
 instance ToJSON ImportProject.Result
@@ -174,6 +175,7 @@ instance ToJSON OpenProject.Request
 instance ToJSON OpenProject.Result
 instance ToJSON OpenProject.Update
 instance ToJSON payload => ToJSON (Response.Status payload)
+instance ToJSON Paste.Request
 instance ToJSON PEnvelope.Envelope
 instance ToJSON PLibrary.Library
 instance ToJSON Point

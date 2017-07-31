@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 {-# LANGUAGE TypeFamilies   #-}
 
 module NodeEditor.React.Event.App where
@@ -10,12 +11,12 @@ import           React.Flux          (KeyboardEvent, MouseEvent)
 
 
 
-data Event = MouseDown     MouseEvent Timestamp
-           | Movement      ScreenPosition
-           | MouseMove     MouseEvent Timestamp
-           | MouseUp       MouseEvent
+data Event = MouseDown  MouseEvent Timestamp
+           | Movement   ScreenPosition
+           | MouseMove  MouseEvent Timestamp
+           | MouseUp    MouseEvent
            | Click
-           | KeyDown       KeyboardEvent
+           | KeyDown    KeyboardEvent
            | MouseLeave
            | Resize
             deriving (Show, Generic, NFData, Typeable)

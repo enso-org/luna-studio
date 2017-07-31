@@ -25,7 +25,7 @@ import qualified Empire.Commands.Code            as Code
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.Library         as Library
 import           Empire.Data.AST                 (SomeASTException)
-import qualified Empire.Data.Graph               as Graph (clsClass, code, codeMarkers, breadcrumbHierarchy)
+import qualified Empire.Data.Graph               as Graph (clsClass, clsFuns, fileOffset, code, codeMarkers, breadcrumbHierarchy)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Empire                   (CommunicationEnv (..), Empire)
 import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
@@ -75,7 +75,7 @@ def main:
 ### META {"metas":[]}
 |]
 
-code = [r|def foo:
+withoutMetadata = [r|def foo:
     «1»pi = 3.14
 
 def main:
@@ -96,6 +96,18 @@ def main:
     «0»c = 4.0
 
 ### META {"metas":[{"marker":0,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":33,"_vector2_x":66}}}},{"marker":1,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":-33,"_vector2_x":-66}}}}]}
+|]
+
+
+crypto = [r|def getCurrentPrices crypto fiat:
+    «0»baseUri = "https://min-api.cryptocompare.com/data/price?"
+    «3»withFsym = baseUri + "fsym=" + crypto
+    «4»withTsym = withFsym + "&tsyms=" + fiat
+    «5»result = Http.getJSON withTsym . lookupReal fiat
+    result
+
+def main:
+    «2»node1 = every 500.miliseconds (getCurrentPrices "BTC" "USD")
 |]
 
 atXPos = ($ def) . (NodeMeta.position . Position.x .~)
@@ -123,7 +135,7 @@ spec = around withChannels $ parallel $ do
             meta <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.loadCode loc code
+                Graph.loadCode loc withoutMetadata
                 Graph.withUnit loc $ runASTOp $ do
                     cls <- use Graph.clsClass
                     ASTRead.getMetadataRef cls
@@ -142,7 +154,7 @@ spec = around withChannels $ parallel $ do
             (prevMeta, meta) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.loadCode loc code
+                Graph.loadCode loc withoutMetadata
                 prevMeta <- Graph.dumpMetadata "TestPath"
                 Graph.addMetadataToCode "TestPath"
                 Graph.FileMetadata meta <- Graph.readMetadata "TestPath"
@@ -165,6 +177,14 @@ spec = around withChannels $ parallel $ do
                 return (join zeroMeta, join oneMeta)
             zeroMeta `shouldBe` Just (NodeMeta (Position.fromTuple (66,33)) False Nothing)
             oneMeta  `shouldBe` Just (NodeMeta (Position.fromTuple (-66,-33)) False Nothing)
+        it "loads crypto file" $ \env -> do
+            nodes <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc crypto
+                nodes <- Graph.getNodes loc
+                return nodes
+            nodes `shouldSatisfy` (not.null)
         xit "removes last node in a file with metadata" $ \env -> do
             code <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -183,3 +203,249 @@ spec = around withChannels $ parallel $ do
                     None
 
                 |]
+        it "copies nodes with metadata" $ \env -> do
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc codeWithMetadata
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                [Just c, Just bar] <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
+                    mapM Graph.getNodeIdForMarker [2,3]
+                Graph.prepareCopy (loc |>= main ^. Node.nodeId) [c, bar]
+            code `shouldStartWith` [r|«2»c = 4.0
+
+«3»bar = foo 8.0 c
+
+### META |]
+        it "copies lambda with metadata" $ \env -> do
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc codeWithMetadata
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                Just foo <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
+                    Graph.getNodeIdForMarker 1
+                Graph.prepareCopy (loc |>= main ^. Node.nodeId) [foo]
+            code `shouldStartWith` [r|«1»foo = a: b:
+    «4»lala = 17.0
+    «11»buzz = x: y:
+        «9»x * y
+    «5»pi = 3.14
+    «6»n = buzz a lala
+    «7»m = buzz b pi
+    «8»m + n
+
+### META|]
+        it "copies top level node" $ \env -> do
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc codeWithMetadata
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                Graph.prepareCopy loc [main ^. Node.nodeId]
+            code `shouldStartWith` [r|def main:
+    «0»pi = 3.14
+    «1»foo = a: b:
+        «4»lala = 17.0
+        «11»buzz = x: y:
+            «9»x * y
+        «5»pi = 3.14
+        «6»n = buzz a lala
+        «7»m = buzz b pi
+        «8»m + n
+    «2»c = 4.0
+    «3»bar = foo 8.0 c|]
+        it "pastes top level node" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc oneNode
+                Graph.paste loc (Position.fromTuple (-10,0)) [r|def bar:
+    «0»pi = 3.14
+    «1»foo = a: b:
+        «4»lala = 17.0
+        «11»buzz = x: y:
+            «9»x * y
+        «5»pi = 3.14
+        «6»n = buzz a lala
+        «7»m = buzz b pi
+        «8»m + n
+    «2»c = 4.0
+    «3»bar = foo 8.0 c|]
+                nodes <- Graph.getNodes loc
+                code  <- Graph.withUnit loc $ use Graph.code
+                return (nodes, Text.unpack code)
+            map (view Node.name) nodes `shouldMatchList` [Just "main", Just "bar"]
+            let positions = map (view $ Node.nodeMeta . NodeMeta.position . to Position.toTuple) nodes
+            length (Set.toList $ Set.fromList positions) `shouldBe` 2
+            code `shouldStartWith` [r|def bar:
+    «1»pi = 3.14
+    «2»foo = a: b:
+        «3»lala = 17.0
+        «4»buzz = x: y:
+            «5»x * y
+        «6»pi = 3.14
+        «7»n = buzz a lala
+        «8»m = buzz b pi
+        «9»m + n
+    «10»c = 4.0
+    «11»bar = foo 8.0 c
+
+def main:
+    «0»pi = 3.14
+    None
+|]
+        it "pastes top level node with empty line inside" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc oneNode
+                Graph.paste loc (Position.fromTuple (-10,0)) [r|def bar:
+    «0»pi = 3.14
+
+    «2»c = 4.0
+
+    «3»bar = foo 8.0 c|]
+                nodes <- Graph.getNodes loc
+                code  <- Graph.withUnit loc $ use Graph.code
+                return (nodes, Text.unpack code)
+            map (view Node.name) nodes `shouldMatchList` [Just "main", Just "bar"]
+            let positions = map (view $ Node.nodeMeta . NodeMeta.position . to Position.toTuple) nodes
+            length (Set.toList $ Set.fromList positions) `shouldBe` 2
+            code `shouldStartWith` [r|def bar:
+    «1»pi = 3.14
+
+    «2»c = 4.0
+
+    «3»bar = foo 8.0 c
+
+def main:
+    «0»pi = 3.14
+    None
+|]
+        it "pastes and removes top level node" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc oneNode
+                Graph.paste loc (Position.fromTuple (-10,0)) [r|def foo:
+    5
+
+def bar:
+    "bar"|]
+                nodes <- Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
+                let Just foo = find (\n -> n ^. Node.name == Just "foo") nodes
+                    Just bar = find (\n -> n ^. Node.name == Just "bar") nodes
+                Graph.removeNodes loc [foo ^. Node.nodeId, bar ^. Node.nodeId]
+                nodes <- Graph.getNodes loc
+                code  <- Graph.withUnit loc $ use Graph.code
+                return (nodes, Text.unpack code)
+            map (view Node.name) nodes `shouldMatchList` [Just "main"]
+            code `shouldStartWith` [r|
+
+def main:
+    «0»pi = 3.14
+    None
+|]
+        it "pastes and removes and pastes top level nodes" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc oneNode
+                Graph.paste loc (Position.fromTuple (-500,0)) [r|def foo:
+    5
+
+def bar:
+    "bar"|]
+                nodes <- Graph.getNodes loc
+                let Just foo = find (\n -> n ^. Node.name == Just "foo") nodes
+                    Just bar = find (\n -> n ^. Node.name == Just "bar") nodes
+                Graph.removeNodes loc [foo ^. Node.nodeId, bar ^. Node.nodeId]
+                Graph.paste loc (Position.fromTuple (-500,0)) [r|def foo:
+    5
+
+def bar:
+    "bar"|]
+                nodes <- Graph.getNodes loc
+                code  <- Graph.withUnit loc $ use Graph.code
+                return (nodes, Text.unpack code)
+            map (view Node.name) nodes `shouldMatchList` [Just "foo", Just "bar", Just "main"]
+            code `shouldStartWith` [r|
+
+def foo:
+    «3»5
+
+def bar:
+    «4»"bar"
+
+def main:
+    «0»pi = 3.14
+    None
+|]
+        it "pastes two nodes without metadata" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc oneNode
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (200,0)) [r|
+                    «2»c = 4.0
+
+                    «3»bar = foo 8.0 c
+                    |]
+                nodes <- Graph.getNodes (loc |>= main ^. Node.nodeId)
+                code  <- Graph.withUnit loc $ use Graph.code
+                return (nodes, Text.unpack code)
+            let c   = find (\n -> n ^. Node.name == Just "c") nodes
+                bar = find (\n -> n ^. Node.name == Just "bar") nodes
+            c `shouldSatisfy` isJust
+            bar `shouldSatisfy` isJust
+            code `shouldStartWith` [r|def main:
+    «0»pi = 3.14
+    «1»c = 4.0
+    «2»bar = foo 8.0 c
+    None
+|]
+        it "moves positions to origin" $ \_ ->
+            let positions = map (\pos -> Graph.MarkerNodeMeta 0 $ set NodeMeta.position (Position.fromTuple pos) def) [(-10, 30), (40, 20), (999, 222), (40, -344)]
+                moved     = Graph.moveToOrigin positions
+                newPositions = map (\(Graph.MarkerNodeMeta _ nm) -> nm ^. NodeMeta.position . to Position.toTuple) moved
+            in  newPositions `shouldMatchList` [(0.0,374.0), (50.0,364.0), (1009.0,566.0), (50.0,0.0)]
+        it "pastes lambda" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc oneNode
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (200,0)) [r|«1»foo = a: b:
+    «4»lala = 17.0
+    «11»buzz = x: y:
+        «9»x * y
+    «5»pi = 3.14
+    «6»n = buzz a lala
+    «7»m = buzz b pi
+    «8»m + n
+|]
+                nodes <- Graph.getNodes (loc |>= main ^. Node.nodeId)
+                code  <- Graph.withUnit loc $ use Graph.code
+                return (nodes, Text.unpack code)
+            let foo = find (\n -> n ^. Node.name == Just "foo") nodes
+            foo `shouldSatisfy` isJust
+            code `shouldStartWith` [r|def main:
+    «0»pi = 3.14
+    «1»foo = a: b:
+        «2»lala = 17.0
+        «3»buzz = x: y:
+            «4»x * y
+        «5»pi = 3.14
+        «6»n = buzz a lala
+        «7»m = buzz b pi
+        «8»m + n
+    None
+|]

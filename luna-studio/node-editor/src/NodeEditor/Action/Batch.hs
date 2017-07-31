@@ -2,10 +2,13 @@ module NodeEditor.Action.Batch  where
 
 import           Common.Prelude
 import           Data.UUID.Types                     (UUID)
+import           LunaStudio.Data.GraphLocation       (GraphLocation)
 import           LunaStudio.Data.NodeMeta            (NodeMeta)
 import           LunaStudio.Data.PortDefault         (PortDefault)
 import           LunaStudio.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
                                                       dstNodeLoc, nodeLoc)
+import           LunaStudio.Data.Position            (Position)
+import           LunaStudio.Data.Project             (LocationSettings)
 import           NodeEditor.Action.Command           (Command)
 import           NodeEditor.Action.UUID              (registerRequest)
 import qualified NodeEditor.Batch.Connector.Commands as BatchCmd
@@ -40,7 +43,7 @@ dumpGraphViz :: Command State ()
 dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
 
 
-getProgram :: Bool -> Command State ()
+getProgram :: Maybe (GraphLocation, LocationSettings) -> Command State ()
 getProgram = withWorkspace . BatchCmd.getProgram
 
 
@@ -71,6 +74,10 @@ collapseToFunction :: [NodeLoc] -> Command State ()
 collapseToFunction []  = return ()
 collapseToFunction nls = withWorkspace $ BatchCmd.collapseToFunction nls
 
+copy :: [NodeLoc] -> Command State ()
+copy []  = return ()
+copy nls = withWorkspace $ BatchCmd.copy nls
+
 getSubgraph :: NodeLoc -> Command State ()
 getSubgraph nl = withWorkspace (BatchCmd.getSubgraph nl)
 
@@ -97,6 +104,12 @@ renameNode = withWorkspace .:  BatchCmd.renameNode
 
 renamePort :: OutPortRef -> Text -> Command State ()
 renamePort = withWorkspace .: BatchCmd.renamePort
+
+paste :: Position -> String -> Command State ()
+paste = withWorkspace .: BatchCmd.paste
+
+saveSettings :: LocationSettings -> Command State ()
+saveSettings = withWorkspace . BatchCmd.saveSettings
 
 searchNodes :: Command State ()
 searchNodes = withWorkspace BatchCmd.searchNodes

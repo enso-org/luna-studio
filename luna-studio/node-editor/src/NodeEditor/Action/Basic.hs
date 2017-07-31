@@ -69,7 +69,7 @@ module NodeEditor.Action.Basic
     , renameNode
     , renamePort
     , resetCamera
-    , saveCurrentLocation
+    , saveSettings
     , selectAll
     , selectNode
     , selectNodes
@@ -116,7 +116,7 @@ import           NodeEditor.Action.Basic.FocusNode           (focusNode, focusNo
 import           NodeEditor.Action.Basic.Merge               (localMerge, localUnmerge)
 import           NodeEditor.Action.Basic.ModifyCamera        (modifyCamera, resetCamera)
 import           NodeEditor.Action.Basic.MovePort            (localMovePort, movePort)
-import           NodeEditor.Action.Basic.ProjectManager      (loadGraph, navigateToGraph, saveCurrentLocation)
+import           NodeEditor.Action.Basic.ProjectManager      (loadGraph, navigateToGraph, saveSettings)
 import           NodeEditor.Action.Basic.RemoveConnection    (localRemoveConnection, localRemoveConnections,
                                                               localRemoveConnectionsBetweenNodes, removeConnection, removeConnections,
                                                               removeConnectionsBetweenNodes)

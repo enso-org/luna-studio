@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StrictData     #-}
 {-# LANGUAGE TypeFamilies   #-}
 
 module NodeEditor.React.Event.NodeEditor where

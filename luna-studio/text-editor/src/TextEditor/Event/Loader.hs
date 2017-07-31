@@ -14,9 +14,9 @@ withActiveConnection action = do
     isOpen <- WS.isOpen socket
     let onConnectionClosed = putStrLn "ConnectionClosed."
     if isOpen then do
-        action socket >> pushStatus (convert "activate") (convert "") (convert "")
+        action socket >> pushStatus (convert "Init") (convert "") (convert "")
     else do
-        void $ WS.onOpen socket $ action socket >> pushStatus (convert "activate") (convert "") (convert "")
+        void $ WS.onOpen socket $ action socket >> pushStatus (convert "Init") (convert "") (convert "")
         void $ WS.onClose socket $ const onConnectionClosed
         void $ WS.onError socket onConnectionClosed
         void $ WS.connect socket addr

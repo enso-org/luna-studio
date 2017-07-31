@@ -1028,3 +1028,24 @@ spec = around withChannels $ parallel $ do
                 (input, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.connect    loc (outPortRef input [Port.Projection 0]) (InPortRef' $ inPortRef output [])
                 Graph.disconnect loc (inPortRef output [])
+        it "handles collapsing nodes into functions" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = bar
+                    «1»baz = buzz foo
+                    «2»spam = eggs baz
+                    «3»a = baz + 1
+                |]
+            expectedCode = [r|
+                def main:
+                    foo = bar
+                    def node1 foo:
+                        baz = buzz foo
+                        spam = eggs baz
+                        baz
+                    baz = node1 foo
+                    a = baz + 1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
+                Graph.collapseToFunction loc [baz, spam]

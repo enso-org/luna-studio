@@ -6,101 +6,106 @@
 
 module Empire.Server.Graph where
 
-import           Control.Arrow                          ((&&&))
-import           Control.Concurrent.MVar                (readMVar)
-import           Control.Monad.Catch                    (handle, try)
-import           Control.Monad.Reader                   (asks)
-import           Control.Monad.State                    (StateT)
-import qualified Data.Binary                            as Bin
-import           Data.ByteString                        (ByteString)
-import           Data.ByteString.Lazy                   (fromStrict)
-import           Data.Char                              (isUpper)
-import qualified Data.HashMap.Strict                    as HashMap
-import qualified Data.IntMap                            as IntMap
-import           Data.List                              (break, find, partition)
-import           Data.List.Split                        (splitOneOf)
-import qualified Data.Map                               as Map
-import           Data.Maybe                             (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
-import qualified Data.Set                               as Set
-import           Data.Text                              (stripPrefix)
-import qualified Data.Text                              as Text
-import           Data.Traversable                       (forM)
-import           Data.UUID.Types                        (UUID)
-import qualified Data.UUID.Types                        as UUID
-import qualified Data.UUID.V4                           as UUID
-import           Empire.ASTOp                           (runASTOp)
-import qualified Empire.ASTOps.Print                    as Print
-import           Empire.Commands.Autolayout             (autolayoutNodes)
-import qualified Empire.Commands.Graph                  as Graph
-import           Empire.Commands.GraphBuilder           (buildClassGraph, buildConnections, buildGraph, buildNodes, getNodeName)
-import qualified Empire.Commands.GraphUtils             as GraphUtils
-import qualified Empire.Commands.Persistence            as Persistence
-import           Empire.Data.AST                        (SomeASTException, astExceptionFromException, astExceptionToException)
-import           Empire.Data.AST                        (SomeASTException)
-import           Empire.Empire                          (Empire)
-import qualified Empire.Empire                          as Empire
-import           Empire.Env                             (Env)
-import qualified Empire.Env                             as Env
-import           Empire.Server.Server                   (errorMessage, replyFail, replyOk, replyResult, sendToBus')
-import qualified LunaStudio.API.Atom.GetBuffer          as GetBuffer
-import qualified LunaStudio.API.Atom.Substitute         as Substitute
-import qualified LunaStudio.API.Graph.AddConnection     as AddConnection
-import qualified LunaStudio.API.Graph.AddNode           as AddNode
-import qualified LunaStudio.API.Graph.AddPort           as AddPort
-import qualified LunaStudio.API.Graph.AddSubgraph       as AddSubgraph
-import qualified LunaStudio.API.Graph.AutolayoutNodes   as AutolayoutNodes
-import qualified LunaStudio.API.Graph.DumpGraphViz      as DumpGraphViz
-import qualified LunaStudio.API.Graph.GetProgram        as GetProgram
-import qualified LunaStudio.API.Graph.GetSubgraphs      as GetSubgraphs
-import qualified LunaStudio.API.Graph.MovePort          as MovePort
-import qualified LunaStudio.API.Graph.NodeResultUpdate  as NodeResultUpdate
-import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
-import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
-import qualified LunaStudio.API.Graph.RemovePort        as RemovePort
-import qualified LunaStudio.API.Graph.RenameNode        as RenameNode
-import qualified LunaStudio.API.Graph.RenamePort        as RenamePort
-import qualified LunaStudio.API.Graph.Request           as G
-import qualified LunaStudio.API.Graph.Result            as Result
-import qualified LunaStudio.API.Graph.SearchNodes       as SearchNodes
-import qualified LunaStudio.API.Graph.SetNodeExpression as SetNodeExpression
-import qualified LunaStudio.API.Graph.SetNodesMeta      as SetNodesMeta
-import qualified LunaStudio.API.Graph.SetPortDefault    as SetPortDefault
-import qualified LunaStudio.API.Graph.TypeCheck         as TypeCheck
-import           LunaStudio.API.Request                 (Request (..))
-import qualified LunaStudio.API.Response                as Response
-import qualified LunaStudio.API.Topic                   as Topic
-import           LunaStudio.Data.Breadcrumb             (Breadcrumb (..))
-import qualified LunaStudio.Data.Breadcrumb             as Breadcrumb
-import           LunaStudio.Data.Connection             as Connection
-import           LunaStudio.Data.Graph                  (Graph (..))
-import qualified LunaStudio.Data.Graph                  as GraphAPI
-import           LunaStudio.Data.GraphLocation          (GraphLocation)
-import qualified LunaStudio.Data.GraphLocation          as GraphLocation
-import           LunaStudio.Data.LabeledTree            (LabeledTree (LabeledTree))
-import           LunaStudio.Data.Node                   (ExpressionNode (..), NodeId)
-import qualified LunaStudio.Data.Node                   as Node
-import           LunaStudio.Data.NodeLoc                (NodeLoc (..))
-import qualified LunaStudio.Data.NodeLoc                as NodeLoc
-import           LunaStudio.Data.NodeMeta               (NodeMeta)
-import qualified LunaStudio.Data.NodeMeta               as NodeMeta
-import qualified LunaStudio.Data.NodeSearcher           as NS
-import           LunaStudio.Data.NodeValue              (NodeValue (NodeValue), VisualizationValue (..))
-import           LunaStudio.Data.Port                   (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
-                                                         PortState (..), getPortNumber)
-import qualified LunaStudio.Data.Port                   as Port
-import           LunaStudio.Data.PortDefault            (PortValue (..))
-import           LunaStudio.Data.PortRef                (InPortRef (..), OutPortRef (..))
-import           LunaStudio.Data.PortRef                as PortRef
-import           LunaStudio.Data.Position               (Position)
-import           LunaStudio.Data.TypeRep                (TypeRep (TStar))
-import           Prologue                               hiding (Item)
-import           System.Environment                     (getEnv)
-import           System.FilePath                        ((</>))
-import qualified System.Log.MLogger                     as Logger
-import           ZMQ.Bus.Trans                          (BusT (..))
+import           Control.Arrow                           ((&&&))
+import           Control.Concurrent.MVar                 (readMVar)
+import           Control.Monad.Catch                     (handle, try)
+import           Control.Monad.Reader                    (asks)
+import           Control.Monad.State                     (StateT)
+import qualified Data.Binary                             as Bin
+import           Data.ByteString                         (ByteString)
+import           Data.ByteString.Lazy                    (fromStrict)
+import           Data.Char                               (isUpper)
+import qualified Data.HashMap.Strict                     as HashMap
+import qualified Data.IntMap                             as IntMap
+import           Data.List                               (break, find, partition)
+import           Data.List.Split                         (splitOneOf)
+import qualified Data.Map                                as Map
+import           Data.Maybe                              (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
+import qualified Data.Set                                as Set
+import           Data.Text                               (stripPrefix)
+import qualified Data.Text                               as Text
+import           Data.Traversable                        (forM)
+import           Data.UUID.Types                         (UUID)
+import qualified Data.UUID.Types                         as UUID
+import qualified Data.UUID.V4                            as UUID
+import           Empire.ASTOp                            (runASTOp)
+import qualified Empire.ASTOps.Print                     as Print
+import           Empire.Commands.Autolayout              (autolayoutNodes)
+import qualified Empire.Commands.Graph                   as Graph
+import           Empire.Commands.GraphBuilder            (buildClassGraph, buildConnections, buildGraph, buildNodes, getNodeName)
+import qualified Empire.Commands.GraphUtils              as GraphUtils
+import qualified Empire.Commands.Persistence             as Persistence
+import           Empire.Data.AST                         (SomeASTException, astExceptionFromException, astExceptionToException)
+import           Empire.Data.AST                         (SomeASTException)
+import           Empire.Empire                           (Empire)
+import qualified Empire.Empire                           as Empire
+import           Empire.Env                              (Env)
+import qualified Empire.Env                              as Env
+import           Empire.Server.Server                    (errorMessage, replyFail, replyOk, replyResult, sendToBus')
+import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
+import qualified LunaStudio.API.Atom.Substitute          as Substitute
+import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
+import qualified LunaStudio.API.Graph.AddNode            as AddNode
+import qualified LunaStudio.API.Graph.AddPort            as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
+import qualified LunaStudio.API.Graph.Copy               as Copy
+import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram         as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs
+import qualified LunaStudio.API.Graph.MovePort           as MovePort
+import qualified LunaStudio.API.Graph.NodeResultUpdate   as NodeResultUpdate
+import qualified LunaStudio.API.Graph.Paste              as Paste
+import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
+import qualified LunaStudio.API.Graph.Request            as G
+import qualified LunaStudio.API.Graph.Result             as Result
+import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings
+import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes
+import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
+import           LunaStudio.API.Request                  (Request (..))
+import qualified LunaStudio.API.Response                 as Response
+import qualified LunaStudio.API.Topic                    as Topic
+import           LunaStudio.Data.Breadcrumb              (Breadcrumb (..))
+import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
+import           LunaStudio.Data.Connection              as Connection
+import           LunaStudio.Data.Graph                   (Graph (..))
+import qualified LunaStudio.Data.Graph                   as GraphAPI
+import           LunaStudio.Data.GraphLocation           (GraphLocation)
+import qualified LunaStudio.Data.GraphLocation           as GraphLocation
+import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
+import           LunaStudio.Data.Node                    (ExpressionNode (..), NodeId)
+import qualified LunaStudio.Data.Node                    as Node
+import           LunaStudio.Data.NodeLoc                 (NodeLoc (..))
+import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
+import           LunaStudio.Data.NodeMeta                (NodeMeta)
+import qualified LunaStudio.Data.NodeMeta                as NodeMeta
+import qualified LunaStudio.Data.NodeSearcher            as NS
+import           LunaStudio.Data.NodeValue               (NodeValue (NodeValue), VisualizationValue (..))
+import           LunaStudio.Data.Port                    (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
+                                                          PortState (..), getPortNumber)
+import qualified LunaStudio.Data.Port                    as Port
+import           LunaStudio.Data.PortDefault             (PortValue (..))
+import           LunaStudio.Data.PortRef                 (InPortRef (..), OutPortRef (..))
+import           LunaStudio.Data.PortRef                 as PortRef
+import           LunaStudio.Data.Position                (Position)
+import           LunaStudio.Data.Project                 (LocationSettings)
+import qualified LunaStudio.Data.Project                 as Project
+import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
+import           Prologue                                hiding (Item)
+import           System.Environment                      (getEnv)
+import           System.FilePath                         ((</>), replaceFileName)
+import qualified System.Log.MLogger                      as Logger
+import           ZMQ.Bus.Trans                           (BusT (..))
 
-import           GHC.Stack                              (renderStack, whoCreated)
-
+import           GHC.Stack                               (renderStack, whoCreated)
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -225,19 +230,38 @@ getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
 getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
 getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
+saveSettings :: GraphLocation -> LocationSettings -> Empire ()
+saveSettings gl settings = do
+    bc <- Breadcrumb.toNames <$> Graph.decodeLocation gl
+    let filePath = gl ^. GraphLocation.filePath
+    liftIO $ Project.updateLocationSettings (replaceFileName filePath ".config.luna") filePath bc settings
+
 
 -- Handlers
 
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
 handleGetProgram = modifyGraph defInverse action replyResult where
-    action (GetProgram.Request location _) = do
+    action (GetProgram.Request location mayPrevSettings) = do
+        let moduleChanged = isNothing mayPrevSettings || isJust (maybe Nothing (view Project.visMap . snd) mayPrevSettings)
+        withJust mayPrevSettings $ uncurry saveSettings
         code <- Graph.getCode location
-        (graph, crumb) <- handle (\(e :: SomeASTException) -> return (Left $ show e, Breadcrumb [])) $ do
-            graph <- Graph.getGraph location
-            crumb <- Graph.decodeLocation location
-            return (Right graph, crumb)
-        return $ GetProgram.Result graph (Text.pack code) crumb HashMap.empty HashMap.empty def
+        (graph, crumb, typeRepToVisMap, camera) <- handle
+            (\(e :: SomeASTException) -> return (Left $ show e, Breadcrumb [], mempty, def))
+            $ do
+                graph <- Graph.getGraph location
+                crumb <- Graph.decodeLocation location
+                let filePath = location ^. GraphLocation.filePath
+                mayModuleSettings <- liftIO $ Project.getModuleSettings (replaceFileName filePath ".config.luna") filePath
+                let (typeRepToVisMap, camera) = case mayModuleSettings of
+                        Nothing -> (mempty, def)
+                        Just ms -> let visMap = if moduleChanged then Just $ ms ^. Project.typeRepToVisMap else Nothing
+                                       bc     = Breadcrumb.toNames crumb
+                                       bs     = Map.lookup bc $ ms ^. Project.breadcrumbsSettings
+                                       cam    = maybe def (view Project.breadcrumbCameraSettings) bs
+                            in (visMap, cam)
+                return (Right graph, crumb, typeRepToVisMap, camera)
+        return $ GetProgram.Result graph (Text.pack code) crumb typeRepToVisMap camera
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph inverse action replyResult where
@@ -285,6 +309,17 @@ handleAutolayoutNodes = modifyGraph inverse action replyResult where
     action (AutolayoutNodes.Request location nodeLocs) = withDefaultResult location $
         Graph.withGraph location $ runASTOp $ Graph.autolayoutNodes (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
+handleCollapseToFunction :: Request CollapseToFunction.Request -> StateT Env BusT ()
+handleCollapseToFunction = modifyGraph defInverse action replyResult where
+    action (CollapseToFunction.Request location locs) = withDefaultResult location $ do
+        let ids = convert <$> locs
+        Graph.collapseToFunction location ids
+
+handleCopy :: Request Copy.Request -> StateT Env BusT ()
+handleCopy = modifyGraph defInverse action replyResult where
+    action (Copy.Request location nodeLocs) = do
+        Copy.Result <$> Graph.prepareCopy location (convert nodeLocs)
+
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where
     action (DumpGraphViz.Request location) = Graph.dumpGraphViz location
@@ -299,6 +334,11 @@ handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph defInverse action replyResult where
     action (MovePort.Request location portRef newPortPos) = withDefaultResult location $
         Graph.movePort location portRef newPortPos
+
+handlePaste :: Request Paste.Request -> StateT Env BusT ()
+handlePaste = modifyGraph defInverse action replyResult where
+    action (Paste.Request location position string) = withDefaultResult location $ do
+        Graph.paste location position string
 
 data ConnectionDoesNotExistException = ConnectionDoesNotExistException InPortRef
     deriving (Show)
@@ -372,6 +412,10 @@ handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] impl
         return $ RenamePort.Inverse oldName
     action (RenamePort.Request location portRef name) = withDefaultResult location $
         Graph.renamePort location portRef name
+
+handleSaveSettings :: Request SaveSettings.Request -> StateT Env BusT ()
+handleSaveSettings = modifyGraphOk defInverse action where
+    action (SaveSettings.Request gl settings) = saveSettings gl settings
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes = modifyGraph defInverse action replyResult where

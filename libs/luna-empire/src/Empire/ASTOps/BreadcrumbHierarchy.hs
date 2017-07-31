@@ -26,6 +26,7 @@ import           Empire.Data.Layers              (Marker)
 import           LunaStudio.Data.Node            (NodeId)
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
 import           LunaStudio.Data.PortRef         (OutPortRef (..))
+import qualified LunaStudio.Data.Port            as Port
 
 import qualified Luna.IR as IR
 
@@ -75,9 +76,12 @@ lambdaChildren nodeCache ref = IR.matchExpr ref $ \case
         if isJust marker || isN then return Map.empty else childrenFromSeq nodeCache ref
 
 prepareChild :: GraphOp m => NodeCache -> NodeRef -> NodeRef -> m BH.BChild
-prepareChild nodeCache marked ref = do
-    isLambda <- ASTRead.isLambda ref
-    (if isLambda then fmap BH.LambdaChild .: (prepareLambdaChild nodeCache) else prepareExprChild nodeCache) marked ref
+prepareChild nodeCache marked ref = go ref where
+    go r = IR.matchExpr r $ \case
+        IR.Lam {}         -> BH.LambdaChild <$> prepareLambdaChild   nodeCache marked ref
+        IR.ASGFunction {} -> BH.LambdaChild <$> prepareFunctionChild nodeCache marked ref
+        IR.Grouped g      -> go =<< IR.source g
+        _                 -> prepareExprChild nodeCache marked ref
 
 prepareChildWhenLambda :: GraphOp m => NodeCache -> NodeRef -> NodeRef -> m (Maybe BH.LamItem)
 prepareChildWhenLambda nodeCache marked ref = do
@@ -96,6 +100,23 @@ prepareLambdaChild nodeCache marked ref = do
     BH.LamItem mapping self _ body <- use Graph.breadcrumbHierarchy
     Graph.breadcrumbHierarchy .= oldBH
     return $ BH.LamItem mapping self children body
+
+prepareFunctionChild :: GraphOp m => NodeCache -> NodeRef -> NodeRef -> m BH.LamItem
+prepareFunctionChild nodeCache marked ref = do
+    portMapping  <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
+    (args, body) <- IR.matchExpr ref $ \case
+        IR.ASGFunction n as b -> do
+            body <- IR.source b
+            args <- mapM IR.source as
+            return (args, body)
+    forM_ (zip args [0..]) $ \(a, i) -> ASTBuilder.attachNodeMarkers (fst portMapping) [Port.Projection i] a
+    oldBH <- use Graph.breadcrumbHierarchy
+    let workingBH = BH.LamItem portMapping marked def body
+    Graph.breadcrumbHierarchy .= workingBH
+    children <- lambdaChildren nodeCache body
+    BH.LamItem mapping _ _ body <- use Graph.breadcrumbHierarchy
+    Graph.breadcrumbHierarchy .= oldBH
+    return $ BH.LamItem mapping marked children body
 
 prepareExprChild :: GraphOp m => NodeCache -> NodeRef -> NodeRef -> m BH.BChild
 prepareExprChild nodeCache marked ref = do

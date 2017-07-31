@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE StrictData        #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 module NodeEditor.React.Model.Node.ExpressionNode
     ( module NodeEditor.React.Model.Node.ExpressionNode
