@@ -10,7 +10,6 @@ import           LunaStudio.Data.PortRef             (AnyPortRef (InPortRef', Ou
                                                       dstNodeLoc, nodeLoc)
 import           LunaStudio.Data.Position            (Position)
 import           LunaStudio.Data.Project             (LocationSettings)
-import           NodeEditor.Action.Command           (Command)
 import           NodeEditor.Action.UUID              (registerRequest)
 import qualified NodeEditor.Batch.Connector.Commands as BatchCmd
 import           NodeEditor.Batch.Workspace          (Workspace)

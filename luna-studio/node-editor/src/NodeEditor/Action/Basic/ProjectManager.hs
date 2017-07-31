@@ -6,7 +6,6 @@ import qualified JS.Atom                            as Atom
 import           LunaStudio.Data.GraphLocation      (GraphLocation, filePath)
 import           LunaStudio.Data.Project            (LocationSettings (LocationSettings))
 import qualified NodeEditor.Action.Batch            as Batch
-import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getScreenTranform, resetGraph, setGraphStatus)
 import           NodeEditor.Batch.Workspace         (currentLocation)
 import           NodeEditor.React.Model.NodeEditor  (GraphStatus (GraphLoading))
