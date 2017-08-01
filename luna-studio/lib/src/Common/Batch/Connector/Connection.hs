@@ -63,10 +63,10 @@ makeMessage' :: BinaryMessage a => a -> WebMessage
 makeMessage' body = let body' = body in WebMessage (Topic.topic body') (GZip.compress $ Binary.encode body')
 
 sendRequest :: BinaryRequest a => Message a -> IO ()
-sendRequest m = sendMessage $ makeMessage m
+sendRequest = sendMessage . makeMessage
 
 sendUpdate :: BinaryMessage a => a -> IO ()
-sendUpdate m = sendMessage $ makeMessage' m
+sendUpdate = sendMessage . makeMessage'
 
 sendRequests :: BinaryRequest a => [Message a] -> IO ()
 sendRequests msgs = sendMessages $ makeMessage <$> msgs
