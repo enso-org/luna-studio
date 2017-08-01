@@ -58,4 +58,4 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options: -Wall -O2 -threaded # -DDEBUG_PERF
+  ghc-options: -Wall -O2 -threaded -DCOMPRESS_REQUESTS
