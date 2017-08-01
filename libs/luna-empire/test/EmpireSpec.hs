@@ -394,7 +394,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "4" def
-                Graph.addNode top u2 "id node1" $ def & position . Position.x .~ 20.0
+                Graph.addNode top u2 "id number1" $ def & position . Position.x .~ 20.0
                 Graph.renameNode top u1 "node5"
                 graph <- Graph.getGraph top
                 expression <- Graph.withGraph top $ runASTOp $ do
@@ -547,7 +547,7 @@ spec = around withChannels $ parallel $ do
             withResult res $ \nodes -> do
                 let Just plus = find (\a -> view Node.nodeId a == u1) nodes
                 (plus ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «1»a + b node2")
+                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «1»a + b number1")
                     , Port.Port [Port.Arg 0] "a"    TStar Port.Connected
                     , Port.Port [Port.Arg 1] "b"    TStar Port.NotConnected
                     ]
@@ -565,9 +565,9 @@ spec = around withChannels $ parallel $ do
             withResult res $ \n -> do
                 (n ^.. Node.inPorts . traverse) `shouldMatchList` [
                       Port.Port [Port.Self]  "self"  TStar Port.NotConnected
-                    , Port.Port []           "alias"  TStar (Port.WithDefault $ Expression "func node2 node3")
-                    , Port.Port [Port.Arg 0] "node2" TStar Port.Connected
-                    , Port.Port [Port.Arg 1] "node3" TStar Port.Connected
+                    , Port.Port []           "alias"  TStar (Port.WithDefault $ Expression "func number1 number2")
+                    , Port.Port [Port.Arg 0] "number1" TStar Port.Connected
+                    , Port.Port [Port.Arg 1] "number2" TStar Port.Connected
                     ]
         it "connects five nodes to func" $ \env -> do
             u1 <- mkUUID
@@ -594,14 +594,14 @@ spec = around withChannels $ parallel $ do
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
             withResult res $ \n -> do
                 (n ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port [Port.Self]  "self"  TStar Port.NotConnected
-                    , Port.Port []           "alias"  TStar (Port.WithDefault $ Expression "func node2 node3 node4 node5 node6 node7")
-                    , Port.Port [Port.Arg 0] "node2" TStar Port.Connected
-                    , Port.Port [Port.Arg 1] "node3" TStar Port.Connected
-                    , Port.Port [Port.Arg 2] "node4" TStar Port.Connected
-                    , Port.Port [Port.Arg 3] "node5" TStar Port.Connected
-                    , Port.Port [Port.Arg 4] "node6" TStar Port.Connected
-                    , Port.Port [Port.Arg 5] "node7" TStar Port.Connected
+                      Port.Port [Port.Self]  "self"    TStar Port.NotConnected
+                    , Port.Port []           "alias"   TStar (Port.WithDefault $ Expression "func number1 number2 number3 number4 number5 number6")
+                    , Port.Port [Port.Arg 0] "number1" TStar Port.Connected
+                    , Port.Port [Port.Arg 1] "number2" TStar Port.Connected
+                    , Port.Port [Port.Arg 2] "number3" TStar Port.Connected
+                    , Port.Port [Port.Arg 3] "number4" TStar Port.Connected
+                    , Port.Port [Port.Arg 4] "number5" TStar Port.Connected
+                    , Port.Port [Port.Arg 5] "number6" TStar Port.Connected
                     ]
         it "removes empty port on disconnect" $ \env -> do
             u1 <- mkUUID
@@ -631,10 +631,10 @@ spec = around withChannels $ parallel $ do
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u3
             withResult res $ \n -> do
                 (n ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias"  TStar (Port.WithDefault $ Expression "func _ node2")
-                    , Port.Port [Port.Self]  "self"  TStar Port.NotConnected
-                    , Port.Port [Port.Arg 0] "_"     TStar Port.NotConnected
-                    , Port.Port [Port.Arg 1] "node2" TStar Port.Connected
+                      Port.Port []           "alias"   TStar (Port.WithDefault $ Expression "func _ second1")
+                    , Port.Port [Port.Self]  "self"    TStar Port.NotConnected
+                    , Port.Port [Port.Arg 0] "_"       TStar Port.NotConnected
+                    , Port.Port [Port.Arg 1] "second1" TStar Port.Connected
                     ]
         it "disconnects first connection when three connected" $ \env -> do
             u1 <- mkUUID
@@ -653,11 +653,11 @@ spec = around withChannels $ parallel $ do
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u4
             withResult res $ \n -> do
                 (n ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias"  TStar (Port.WithDefault $ Expression "func _ node2 node3")
-                    , Port.Port [Port.Self]  "self"  TStar Port.NotConnected
-                    , Port.Port [Port.Arg 0] "_"     TStar Port.NotConnected
-                    , Port.Port [Port.Arg 1] "node2" TStar Port.Connected
-                    , Port.Port [Port.Arg 2] "node3" TStar Port.Connected
+                      Port.Port []           "alias"   TStar (Port.WithDefault $ Expression "func _ second1 third1")
+                    , Port.Port [Port.Self]  "self"    TStar Port.NotConnected
+                    , Port.Port [Port.Arg 0] "_"       TStar Port.NotConnected
+                    , Port.Port [Port.Arg 1] "second1" TStar Port.Connected
+                    , Port.Port [Port.Arg 2] "third1"  TStar Port.Connected
                     ]
     describe "port manipulation" $ do
         let buildInputEdge' loc nid = Graph.withGraph loc $ runASTOp $ GraphBuilder.buildInputSidebar nid
@@ -769,7 +769,7 @@ spec = around withChannels $ parallel $ do
                 return (node, connections)
             withResult res $ \(node, connections) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: a _ node1")
+                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: a _ func1")
                     , Port.Port [Port.Arg 0] "a"    TStar Port.NotConnected
                     , Port.Port [Port.Arg 1] "b"    TStar Port.Connected
                     ]
@@ -1011,7 +1011,7 @@ spec = around withChannels $ parallel $ do
                           <*> GraphBuilder.buildConnections
                           <*> (ASTRead.getASTPointer u2 >>= ASTRead.varIsPatternMatch)
             withResult res $ \(myVec, pattern, connections, isPatternMatch) -> do
-                myVec ^. Node.name `shouldBe` Just "node1"
+                myVec ^. Node.name `shouldBe` Just "myVec1"
                 pattern ^. Node.name `shouldBe` Just "Vector x y z"
                 pattern ^. Node.outPorts `shouldBe` flip LabeledTree (Port.Port [] "Vector x y z" TStar Port.NotConnected) (OutPorts [
                       LabeledTree def (Port.Port [Port.Projection 0] "x" TStar Port.NotConnected)
@@ -1039,7 +1039,7 @@ spec = around withChannels $ parallel $ do
                           <*> GraphBuilder.buildConnections
                           <*> (ASTRead.getASTPointer u2 >>= ASTRead.varIsPatternMatch)
             withResult res $ \(myVec, pattern, connections, isPatternMatch) -> do
-                myVec   ^.  Node.name       `shouldBe` Just "node1"
+                myVec   ^.  Node.name       `shouldBe` Just "myVec1"
                 pattern ^.  Node.name       `shouldBe` Just "Vector x y z"
                 pattern ^.  Node.expression `shouldBe` "None"
                 pattern ^.. Node.outPorts . traverse  `shouldMatchList` [
@@ -1069,7 +1069,7 @@ spec = around withChannels $ parallel $ do
                           <*> GraphBuilder.buildConnections
                           <*> (ASTRead.getASTPointer u2 >>= ASTRead.varIsPatternMatch)
             withResult res $ \(myVec, pattern, connections, isPatternMatch) -> do
-                myVec   ^. Node.name `shouldBe` Just "node1"
+                myVec   ^. Node.name `shouldBe` Just "myVec1"
                 pattern ^. Node.name `shouldBe` Just "Vector x y z"
                 pattern ^. Node.outPorts `shouldBe` flip LabeledTree (Port.Port [] "Vector x y z" TStar Port.NotConnected) (OutPorts [
                       LabeledTree def (Port.Port [Port.Projection 0] "x" TStar Port.NotConnected)
@@ -1134,7 +1134,7 @@ spec = around withChannels $ parallel $ do
                           <*> GraphBuilder.buildConnections
                           <*> (ASTRead.getASTPointer u2 >>= ASTRead.varIsPatternMatch)
             withResult res $ \(myVec, pattern, connections, isPatternMatch) -> do
-                myVec   ^. Node.name `shouldBe` Just "node1"
+                myVec   ^. Node.name `shouldBe` Just "myVec1"
                 pattern ^. Node.name `shouldBe` Just "SomeCons (Just a) 0 \"foo\" x"
                 pattern ^. Node.outPorts `shouldBe` flip LabeledTree (Port.Port [] "SomeCons (Just a) 0 \"foo\" x" TStar Port.NotConnected) (OutPorts [
                       flip LabeledTree (Port.Port [Port.Projection 0] "Just a"  TStar Port.NotConnected) $ OutPorts [

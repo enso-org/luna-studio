@@ -8,14 +8,13 @@ import           Common.Action.Command   (Command)
 import           Common.Debug            (measureResponseTime)
 import           Common.Prelude
 import qualified Data.Aeson              as JSON (ToJSON)
-import qualified Data.Map                as Map
-import           Data.Time.Clock         (diffUTCTime, getCurrentTime)
 import qualified Data.UUID.Types         as UUID (toString)
 import qualified JS.Debug                as Debug
 import qualified LunaStudio.API.Response as Response
 import qualified LunaStudio.API.Topic    as Topic
 import           NodeEditor.Action.UUID  (isOwnRequest, unregisterRequest)
-import           NodeEditor.State.Global (State, backend, pendingRequests)
+import           NodeEditor.State.Global (State)
+
 
 whenOk :: Response.Response req inv res -> (res -> Command State ()) -> Command State ()
 whenOk (Response.Response _ _ _ _ (Response.Ok    res)) handler = handler res

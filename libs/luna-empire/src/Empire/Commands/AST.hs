@@ -40,9 +40,9 @@ import qualified OCI.IR.Repr.Vis as Vis
 
 import           Web.Browser                       (openBrowser)
 
-addNode :: GraphOp m => NodeId -> Maybe Text -> NodeRef -> m (NodeRef, Maybe Text)
-addNode nid name node = do
-    ASTBuilder.makeNodeRep nid name node
+addNode :: GraphOp m => NodeId -> Maybe Text -> m Text -> NodeRef -> m (NodeRef, Maybe Text)
+addNode nid name genName node = do
+    ASTBuilder.makeNodeRep nid name genName node
 
 readMeta :: (IR.Reader IR.Layer (IR.AnyExpr IR.// Meta) m, IR.MonadRef m) => NodeRef -> m (Maybe NodeMeta)
 readMeta ref = IR.getLayer @Meta ref

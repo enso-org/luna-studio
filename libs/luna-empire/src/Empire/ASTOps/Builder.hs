@@ -368,15 +368,8 @@ flipNode nid = do
     pointer <- ASTRead.getASTPointer nid
     IR.replace uni pointer
 
-generateNodeName :: GraphOp m => m Text
-generateNodeName = do
-    lastNameId <- use Graph.lastNameId
-    let newNameId = lastNameId + 1
-    Graph.lastNameId .= newNameId
-    return $ convert $ "node" <> show newNameId
-
-makeNodeRep :: GraphOp m => NodeId -> Maybe Text -> NodeRef -> m (NodeRef, Maybe Text)
-makeNodeRep marker name node = do
+makeNodeRep :: GraphOp m => NodeId -> Maybe Text -> m Text -> NodeRef -> m (NodeRef, Maybe Text)
+makeNodeRep marker name generateNodeName node = do
     (pat, uni, newName) <- match node $ \case
         Unify l r         -> (, node, Nothing) <$> IR.source l
         ASGFunction n a b -> (, node, Nothing) <$> IR.source n

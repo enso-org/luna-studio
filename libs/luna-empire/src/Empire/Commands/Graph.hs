@@ -78,7 +78,7 @@ import qualified Data.Aeson.Text                  as Aeson
 import           Data.Coerce                      (coerce)
 import           Data.Char                        (isSeparator)
 import           Data.Foldable                    (toList)
-import           Data.List                        (elemIndex, find, group, partition, sortOn)
+import           Data.List                        (elemIndex, find, group, partition, sortOn, nub)
 import qualified Data.List.Split                  as Split
 import           Data.Map                         (Map)
 import qualified Data.Map                         as Map
@@ -262,7 +262,7 @@ addNodeNoTC loc uuid input name meta = do
     parse <- fst <$> ASTParse.runParser propInput
     expr <- runASTOp $ do
         Code.propagateLengths parse
-        (parsedNode, newName) <- AST.addNode uuid name parse
+        (parsedNode, newName) <- AST.addNode uuid name (generateNodeName parse) parse
         index        <- getNextExprMarker
         marker       <- IR.marker' index
         IR.putLayer @SpanLength marker $ convert $ Text.length $ Code.makeMarker index
@@ -1183,7 +1183,7 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
 
 generateCollapsedDefCode :: GraphOp m => [OutPortRef] -> [OutPortRef] -> [NodeId] -> m Text
 generateCollapsedDefCode inputs outputs bodyIds = do
-    inputNames <- forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
+    inputNames <- fmap sort $ forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
         ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
     outputNames <- forM outputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
         ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
@@ -1191,7 +1191,7 @@ generateCollapsedDefCode inputs outputs bodyIds = do
         ref     <- ASTRead.getASTRef nid
         Just cb <- Code.getOffsetRelativeToFile ref
         return (cb, ref)
-    defName            <- ASTBuilder.generateNodeName
+    defName            <- generateNodeNameFromBase "func"
     currentIndentation <- Code.getCurrentIndentationLength
     let indentBy i l = "\n" <> Text.replicate (fromIntegral i) " " <> l
         topIndented  = indentBy currentIndentation
@@ -1230,9 +1230,9 @@ collapseToFunction loc nids = do
         let srcInIds = flip Set.member ids . view PortRef.srcNodeId . fst
             dstInIds = flip Set.member ids . view PortRef.dstNodeId . snd
             inConns  = filter (\x -> dstInIds x && not (srcInIds x)) connections
-            inputs   = fst <$> inConns
+            inputs   = nub $ fst <$> inConns
             outConns = filter (\x -> srcInIds x && not (dstInIds x)) connections
-            outputs  = fst <$> outConns
+            outputs  = nub $ fst <$> outConns
             useSites = outConns ^.. traverse . _2 . PortRef.dstNodeId
         newCode <- generateCollapsedDefCode inputs outputs nids
         insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) newCode
@@ -1322,6 +1322,17 @@ paste loc position (Text.pack -> code) = do
 
 getName :: GraphLocation -> NodeId -> Empire (Maybe Text)
 getName loc nid = withGraph' loc (runASTOp $ GraphBuilder.getNodeName nid) $ use (Graph.clsFuns . ix nid . _1 . packed . re _Just)
+
+generateNodeName :: GraphOp m => NodeRef -> m Text
+generateNodeName = ASTPrint.genNodeBaseName >=> generateNodeNameFromBase
+
+generateNodeNameFromBase :: GraphOp m => Text -> m Text
+generateNodeNameFromBase base = do
+    ids   <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
+    names <- Set.fromList . catMaybes <$> mapM GraphBuilder.getNodeName ids
+    let allPossibleNames = zipWith (<>) (repeat base) (convert . show <$> [1..])
+        Just newName     = find (not . flip Set.member names) allPossibleNames
+    return newName
 
 runTC :: GraphLocation -> Bool -> Command ClsGraph ()
 runTC loc flush = do

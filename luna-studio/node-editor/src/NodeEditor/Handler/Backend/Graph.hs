@@ -269,8 +269,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     SearchNodesResponse response -> handleResponse response success doNothing where
         location       = response ^. Response.request . SearchNodes.location
-        success result = whenM (isCurrentFile location) $
-            localSetSearcherHints $ prepareNSData (result ^. SearchNodes.globalFunctions) (result ^. SearchNodes.globalClasses)
+        success result = localSetSearcherHints $ prepareNSData (result ^. SearchNodes.globalFunctions) (result ^. SearchNodes.globalClasses)
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

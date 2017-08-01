@@ -4,18 +4,15 @@ import           Common.Prelude
 import qualified LunaStudio.Data.Breadcrumb    as Breadcrumb
 import           LunaStudio.Data.GraphLocation (GraphLocation (..))
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
-import           LunaStudio.Data.Node          (ExpressionNode)
 import           LunaStudio.Data.NodeLoc       (HasBreadcrumb (..))
-import           Text.ScopeSearcher.Item       (Items)
 
 
 data Workspace = Workspace { _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe GraphLocation
-                           , _nodeSearcherData :: Items ExpressionNode
                            } deriving (Show, Eq, Generic)
 
 mk :: FilePath -> Workspace
-mk path = Workspace (GraphLocation path def) def def
+mk path = Workspace (GraphLocation path def) def
 
 makeLenses ''Workspace
 

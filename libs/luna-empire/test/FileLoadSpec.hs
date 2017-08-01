@@ -481,7 +481,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = GraphLocation "TestFile" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.addNode top u1 "4" (atXPos (-20.0))
                 Graph.getCode top
-            code `shouldBe` "def main:\n    node1 = 4\n    None"
+            code `shouldBe` "def main:\n    number1 = 4\n    None"
         it "adds one node and updates it" $ \env -> do
             u1 <- mkUUID
             code <- evalEmp env $ do
@@ -489,7 +489,7 @@ spec = around withChannels $ parallel $ do
                 Graph.markerCodeSpan top 0
                 Graph.setNodeExpression top u1 "5"
                 Graph.getCode top
-            code `shouldBe` "def main:\n    node1 = 5\n    None"
+            code `shouldBe` "def main:\n    number1 = 5\n    None"
         it "disconnect updates code at proper range" $ let
             expectedCode = [r|
                 def main:
@@ -520,7 +520,7 @@ spec = around withChannels $ parallel $ do
                     foo = a: b: a + b
                     c = 4
                     bar = foo 8 c
-                    node1 = 4
+                    number1 = 4
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \top -> do
                 u1 <- mkUUID
@@ -528,7 +528,7 @@ spec = around withChannels $ parallel $ do
         it "adds one node to the beginning of the file via node editor" $ let
             expectedCode = [r|
                 def main:
-                    node1 = 4
+                    number1 = 4
                     pi = 3.14
                     foo = a: b: a + b
                     c = 4
@@ -556,7 +556,7 @@ spec = around withChannels $ parallel $ do
                     foo = a: b: a + b
                     c = 4
                     bar = foo 8 c
-                    node1 = 1
+                    number1 = 1
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -568,7 +568,7 @@ spec = around withChannels $ parallel $ do
                     foo = a: b: a + b
                     c = 4
                     bar = foo 8 c
-                    node1 = a:   b:   a   *  b
+                    lambda1 = a:   b:   a   *  b
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -580,7 +580,7 @@ spec = around withChannels $ parallel $ do
                     foo = a: b: a + b
                     c = 4
                     bar = foo 8 c
-                    node1 = x: x
+                    lambda1 = x: x
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -691,7 +691,7 @@ spec = around withChannels $ parallel $ do
                     foo = a: b: a + b
                     c = 4
                     bar = foo 8 c
-                    node1 = 5
+                    number1 = 5
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -704,8 +704,8 @@ spec = around withChannels $ parallel $ do
                     foo = a: b: a + b
                     c = 4
                     bar = foo 8 c
-                    node1 = (foo +  baz)
-                    node2 = add here
+                    sum1 = (foo +  baz)
+                    add1 = add here
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -1039,13 +1039,42 @@ spec = around withChannels $ parallel $ do
             expectedCode = [r|
                 def main:
                     foo = bar
-                    def node1 foo:
+                    def func1 foo:
                         baz = buzz foo
                         spam = eggs baz
                         baz
-                    baz = node1 foo
+                    baz = func1 foo
                     a = baz + 1
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
                 Graph.collapseToFunction loc [baz, spam]
+        it "handles collapsing nodes into functions with multiple uses of an argument" $ let
+            initialCode = [r|
+                def main:
+                    «3»uri = "https://min-api.cryptocompare.com/data/price?fsym="
+                    «5»crypto = "BTC"
+                    «6»withCrypto = uri + crypto
+                    «7»fiat = "USD"
+                    «8»fullUri = withCrypto + "&tsyms=" + fiat
+                    «4»response = Http.getJSON fullUri
+                    «9»result = response . lookupReal fiat
+                    «10»foo = id result
+                |]
+            expectedCode = [r|
+                def main:
+                    crypto = "BTC"
+                    fiat = "USD"
+                    def func1 crypto fiat:
+                        uri = "https://min-api.cryptocompare.com/data/price?fsym="
+                        withCrypto = uri + crypto
+                        fullUri = withCrypto + "&tsyms=" + fiat
+                        response = Http.getJSON fullUri
+                        result = response . lookupReal fiat
+                        result
+                    result = func1 crypto fiat
+                    foo = id result
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [Just uri, Just withCrypto, Just fullUri, Just response, Just result] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [3, 6, 8, 4, 9]
+                Graph.collapseToFunction loc [uri, withCrypto, fullUri, response, result]

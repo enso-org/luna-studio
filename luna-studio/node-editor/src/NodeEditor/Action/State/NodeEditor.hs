@@ -31,7 +31,6 @@ import qualified NodeEditor.Action.Batch                     as Batch
 import           NodeEditor.Action.State.App                 (get, modify, modifyApp)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
 import           NodeEditor.Action.UUID                      (getUUID)
-import           NodeEditor.Batch.Workspace                  (nodeSearcherData)
 import           NodeEditor.Data.Graph                       (Graph (Graph))
 import           NodeEditor.React.Model.App                  (nodeEditor)
 import           NodeEditor.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, HalfConnection, PosConnection,
@@ -51,7 +50,7 @@ import           NodeEditor.React.Model.Searcher             (Searcher)
 import qualified NodeEditor.React.Model.Searcher             as Searcher
 import           NodeEditor.React.Model.Visualization        (NodeVisualizations)
 import qualified NodeEditor.React.Model.Visualization        as Visualization
-import           NodeEditor.State.Global                     (State, preferedVisualizers, visualizers, workspace)
+import           NodeEditor.State.Global                     (State, nodeSearcherData, preferedVisualizers, visualizers)
 import           Text.ScopeSearcher.Item                     (Items, isElement)
 
 
@@ -255,7 +254,7 @@ globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
 
 getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
-getNodeSearcherData = maybe def id <$> preuse (workspace . traverse . nodeSearcherData)
+getNodeSearcherData = use nodeSearcherData
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool

@@ -13,10 +13,9 @@ import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
 import qualified LunaStudio.Data.NodeSearcher       as NS
 import           NodeEditor.Action.State.NodeEditor (getLocalFunctions, getNodeSearcherData, modifySearcher)
-import           NodeEditor.Batch.Workspace         (nodeSearcherData)
 import           NodeEditor.React.Model.Searcher    (allCommands, className, updateCommandsResult, updateNodeResult)
 import qualified NodeEditor.React.Model.Searcher    as Searcher
-import           NodeEditor.State.Global            (State, workspace)
+import           NodeEditor.State.Global            (State, nodeSearcherData)
 import           Text.ScopeSearcher.Item            (Items, isElement, isGroup)
 import           Text.ScopeSearcher.QueryResult     (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult     as Result
@@ -26,7 +25,7 @@ type IsFirstQuery = Bool
 
 localSetSearcherHints :: Items ExpressionNode -> Command State ()
 localSetSearcherHints items' = do
-    workspace . _Just . nodeSearcherData .= items'
+    nodeSearcherData .= items'
     localUpdateSearcherHints
 
 localUpdateSearcherHints :: Command State ()
