@@ -189,8 +189,10 @@ handle (Event.Batch ev) = Just $ case ev of
         request        = response ^. Response.request
         location       = request ^. Copy.location
         success result = inCurrentLocation location $ const $
-            whenM (isOwnRequest requestId) $
-                liftIO $ JS.copyStringToClipboard $ convert $ result ^. Copy.clipboardData
+            whenM (isOwnRequest requestId) $ do
+                let plain = convert $ result ^. Copy.clipboardPlain
+                let meta  = convert $ result ^. Copy.clipboardMeta
+                liftIO $ JS.copyStringToClipboard plain meta
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 

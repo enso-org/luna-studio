@@ -18,7 +18,8 @@ data Request = Request { _location :: GraphLocation
                        , _selected :: [NodeLoc]
                        } deriving (Eq, Generic, NFData, Show)
 
-data Result  = Result  { _clipboardData :: String
+data Result  = Result  { _clipboardPlain :: String
+                       , _clipboardMeta  :: String
                        } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''Request

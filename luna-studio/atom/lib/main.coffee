@@ -107,7 +107,7 @@ module.exports = LunaStudio =
     # clipboard
     @subs.add atom.commands.add '.luna-studio', 'core:copy':  -> pushShortcutEvent("Copy")
     @subs.add atom.commands.add '.luna-studio', 'core:cut':   -> pushShortcutEvent("Cut")
-    @subs.add atom.commands.add '.luna-studio', 'core:paste': -> pushShortcutEvent("Paste", atom.clipboard.read())
+    @subs.add atom.commands.add '.luna-studio', 'core:paste': -> pushShortcutEvent("Paste", atom.clipboard.readWithMetadata().metadata[0])
     # navigation
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:exit-graph':    -> pushShortcutEvent("ExitGraph")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:go-cone-down':  -> pushShortcutEvent("GoConeDown")

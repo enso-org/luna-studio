@@ -318,7 +318,8 @@ handleCollapseToFunction = modifyGraph defInverse action replyResult where
 handleCopy :: Request Copy.Request -> StateT Env BusT ()
 handleCopy = modifyGraph defInverse action replyResult where
     action (Copy.Request location nodeLocs) = do
-        Copy.Result <$> Graph.prepareCopy location (convert nodeLocs)
+        r <- Graph.prepareCopy location (convert nodeLocs)
+        return $ Copy.Result r r --FIXME
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where
