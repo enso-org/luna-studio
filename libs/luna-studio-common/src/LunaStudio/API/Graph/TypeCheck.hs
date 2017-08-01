@@ -10,10 +10,11 @@ import           Prologue
 
 
 data Request = Request { _location :: GraphLocation
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 instance Binary Request
+instance NFData Request
 instance G.GraphRequest Request where location = location
 
 

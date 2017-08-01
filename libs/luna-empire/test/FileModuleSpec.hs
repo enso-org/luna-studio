@@ -6,44 +6,44 @@
 
 module FileModuleSpec (spec) where
 
-import           Data.List                      (find)
-import qualified Data.Map                       as Map
-import qualified Data.Set                       as Set
-import qualified Data.Text                      as Text
-import           Empire.ASTOp                   (runASTOp)
-import           Empire.ASTOps.Parse            (SomeParserException)
-import qualified Empire.Commands.AST            as AST
-import qualified Empire.Commands.Code           as Code
-import qualified Empire.Commands.Graph          as Graph
-import qualified Empire.Commands.GraphBuilder   as GraphBuilder
-import qualified Empire.Commands.Library        as Library
+import           Data.List                       (find)
+import qualified Data.Map                        as Map
+import qualified Data.Set                        as Set
+import qualified Data.Text                       as Text
+import           Empire.ASTOp                    (runASTOp)
+import           Empire.ASTOps.Parse             (SomeParserException)
+import qualified Empire.Commands.AST             as AST
+import qualified Empire.Commands.Code            as Code
+import qualified Empire.Commands.Graph           as Graph
+import qualified Empire.Commands.GraphBuilder    as GraphBuilder
+import qualified Empire.Commands.Library         as Library
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import qualified Empire.Data.Graph              as Graph
-import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..), BreadcrumbItem (..))
-import qualified LunaStudio.Data.Breadcrumb     as Breadcrumb
-import qualified LunaStudio.Data.Graph          as APIGraph
-import           LunaStudio.Data.Constants      (gapBetweenNodes)
-import           LunaStudio.Data.GraphLocation  (GraphLocation (..))
-import qualified LunaStudio.Data.Node           as Node
-import           LunaStudio.Data.NodeMeta       (NodeMeta(..))
-import qualified LunaStudio.Data.NodeMeta       as NodeMeta
-import qualified LunaStudio.Data.Port           as Port
-import           LunaStudio.Data.PortRef        (AnyPortRef(..))
-import qualified LunaStudio.Data.Position       as Position
-import           LunaStudio.Data.TypeRep        (TypeRep(TStar))
-import           LunaStudio.Data.Port           (Port(..), PortState(..))
-import           LunaStudio.Data.PortDefault    (PortDefault(..))
+import qualified Empire.Data.Graph               as Graph
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (..))
+import qualified LunaStudio.Data.Breadcrumb      as Breadcrumb
+import           LunaStudio.Data.Constants       (gapBetweenNodes)
+import qualified LunaStudio.Data.Graph           as APIGraph
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import qualified LunaStudio.Data.Node            as Node
+import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
+import qualified LunaStudio.Data.NodeMeta        as NodeMeta
+import           LunaStudio.Data.Port            (Port (..), PortState (..))
+import qualified LunaStudio.Data.Port            as Port
+import           LunaStudio.Data.PortDefault     (PortDefault (..))
+import           LunaStudio.Data.PortRef         (AnyPortRef (..))
+import qualified LunaStudio.Data.Position        as Position
+import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
 
-import           Luna.Prelude                   (forM, normalizeQQ)
 import           Empire.Empire
 import           Empire.Prelude
+import           Luna.Prelude                    (forM, normalizeQQ)
 
-import           Test.Hspec                     (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
-                                                 shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
+import           Test.Hspec                      (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
+                                                  shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
 
 import           EmpireUtils
 
-import           Text.RawString.QQ              (r)
+import           Text.RawString.QQ               (r)
 
 
 multiFunCode = [r|def foo:

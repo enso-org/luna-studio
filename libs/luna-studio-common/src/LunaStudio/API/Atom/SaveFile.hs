@@ -10,11 +10,11 @@ import           Prologue
 
 
 data Request = Request { _filePath :: FilePath
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 instance Binary Request
-
+instance NFData Request
 
 type Response = Response.SimpleResponse Request ()
 instance Response.ResponseResult Request () ()

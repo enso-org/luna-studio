@@ -7,15 +7,17 @@ import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
 
-data UndoRequest  = UndoRequest deriving (Eq, Generic, NFData, Show)
+data UndoRequest = UndoRequest deriving (Eq, Generic, Show)
 
 data Request = Request { _request :: UndoRequest
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''UndoRequest
 makeLenses ''Request
 instance Binary UndoRequest
+instance NFData UndoRequest
 instance Binary Request
+instance NFData Request
 
 
 type Response = Response.Response Request () ()

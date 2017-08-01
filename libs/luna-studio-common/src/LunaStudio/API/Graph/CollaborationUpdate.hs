@@ -14,17 +14,19 @@ data Event = Modify      [NodeLoc]
            | Touch       [NodeLoc]
            | CancelTouch [NodeLoc]
            | Refresh
-           deriving (Eq, Generic, NFData, Show)
+           deriving (Eq, Generic, Show)
 
 data Update = Update { _location  :: GraphLocation
                      , _clientId  :: ClientId
                      , _event     :: Event
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 makeLenses ''Update
 makeLenses ''Event
 instance Binary Update
+instance NFData Update
 instance Binary Event
+instance NFData Event
 
 
 topicPrefix :: T.Topic

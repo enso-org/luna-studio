@@ -21,7 +21,7 @@ import           Prologue                             hiding (TypeRep)
 
 data Request = Request { _location             :: GraphLocation
                        , _prevLocationSettings :: Maybe (GraphLocation, LocationSettings)
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 type Error = String
 
@@ -30,13 +30,15 @@ data Result  = Result  { _graph           :: Either Error Graph
                        , _breadcrumb      :: Breadcrumb (Named BreadcrumbItem)
                        , _typeRepToVisMap :: Maybe (HashMap TypeRep Visualizer)
                        , _camera          :: CameraTransformation
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 
 instance Binary Request
+instance NFData Request
 instance Binary Result
+instance NFData Result
 instance G.GraphRequest Request where location = location
 
 

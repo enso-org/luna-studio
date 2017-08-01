@@ -13,16 +13,18 @@ import           Prologue
 
 
 data Request = Request { _location :: Maybe GraphLocation
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Result  = Result  { _globalFunctions :: [Text]
                        , _globalClasses   :: Map Text [Text]
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 instance Binary Request
+instance NFData Request
 instance Binary Result
+instance NFData Result
 instance G.GraphRequest Request where location = lens (fromMaybe (GraphLocation def def) . view location) (\r l -> r & location .~ Just l)
 
 

@@ -22,11 +22,12 @@ import           Prologue                             hiding (TypeRep)
 
 data Request = Request { _location        :: GraphLocation
                        , _settings        :: LocationSettings
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 
 instance Binary Request
+instance NFData Request
 instance FromJSON Request where parseJSON = lensJSONParse
 instance ToJSON Request where
     toJSON     = lensJSONToJSON

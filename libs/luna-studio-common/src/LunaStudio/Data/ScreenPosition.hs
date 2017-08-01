@@ -1,14 +1,16 @@
+--TODO: Refactor this file, Position and Vector2 to make more functions common
 {-# LANGUAGE TypeFamilies #-}
-module Data.ScreenPosition
-    ( module Data.ScreenPosition
+module LunaStudio.Data.ScreenPosition
+    ( module LunaStudio.Data.ScreenPosition
     , vector
     , x
     , y
-    )
-where
+    ) where
 
-import           Common.Prelude
 import           LunaStudio.Data.Vector2
+import           Prologue
+
+
 -----------------------------
 -- === ScreenPosition === ---
 -----------------------------
@@ -18,6 +20,8 @@ import           LunaStudio.Data.Vector2
 newtype ScreenPosition = ScreenPosition { fromScreenPosition :: Vector2 Double } deriving (Eq, Show, Generic, Default, NFData, Num)
 makeWrapped ''ScreenPosition
 
+-- instance Num (ScreenPosition) where
+--     (+) = undefined
 
 -- === Instances === --
 

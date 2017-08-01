@@ -16,12 +16,12 @@ import           LunaStudio.Data.TypeRep     (TypeRep)
 import           Prologue                    hiding (TypeRep, head)
 
 
-data InPortIndex = Self | Head | Arg Int                                        deriving (Eq, Generic, NFData, Ord, Read, Show)
-data InPorts s   = InPorts { _self :: Maybe s, _head :: Maybe s, _args :: [s] } deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
+data InPortIndex = Self | Head | Arg Int                                        deriving (Eq, Generic, Ord, Read, Show)
+data InPorts s   = InPorts { _self :: Maybe s, _head :: Maybe s, _args :: [s] } deriving (Eq, Foldable, Functor, Generic, Show, Traversable)
 type InPortId    = [InPortIndex]
 makeLenses ''InPorts
 
-data    OutPortIndex  = Projection Int deriving (Eq, Generic, NFData, Ord, Read, Show)
+data    OutPortIndex  = Projection Int deriving (Eq, Generic, Ord, Read, Show)
 newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
 type    OutPortId     = [OutPortIndex]
 makeWrapped ''OutPorts
@@ -30,6 +30,7 @@ type InPortTree  a = LabeledTree InPorts  a
 type OutPortTree a = LabeledTree OutPorts a
 
 instance Binary   InPortIndex
+instance NFData   InPortIndex
 instance ToJSON   InPortIndex
 instance FromJSON InPortIndex
 instance Binary   s => Binary   (InPorts s)
@@ -37,12 +38,15 @@ instance ToJSON   s => ToJSON   (InPorts s)
 instance FromJSON s => FromJSON (InPorts s)
 
 instance Binary   OutPortIndex
+instance NFData   OutPortIndex
 instance ToJSON   OutPortIndex
 instance FromJSON OutPortIndex
 instance Binary   s => Binary   (OutPorts s)
 instance ToJSON   s => ToJSON   (OutPorts s)
 instance FromJSON s => FromJSON (OutPorts s)
 
+instance Default (InPorts s)
+instance NFData s => NFData (InPorts s)
 type instance Index   (InPorts s) = InPortIndex
 type instance IxValue (InPorts s) = s
 instance Ixed (InPorts s) where
@@ -58,17 +62,17 @@ instance Ixed (OutPorts s) where
 
 data AnyPortId = InPortId'  { inPortId'  :: InPortId  }
                | OutPortId' { outPortId' :: OutPortId }
-               deriving (Generic, Show, Eq, Ord, NFData)
+               deriving (Generic, Show, Eq, Ord)
 makePrisms ''AnyPortId
 
-data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Eq, Generic, NFData, Show)
+data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Eq, Generic, Show)
 
 data Port i = Port
         { _portId     :: i
         , _name       :: Text
         , _valueType  :: TypeRep
         , _state      :: PortState
-        } deriving (Eq, Generic, NFData, Show)
+        } deriving (Eq, Generic, Show)
 
 type InPort  = Port InPortId
 type OutPort = Port OutPortId
@@ -76,8 +80,11 @@ type OutPort = Port OutPortId
 makeLenses ''Port
 makePrisms ''PortState
 instance Binary AnyPortId
+instance NFData AnyPortId
 instance Binary i => Binary (Port i)
+instance NFData i => NFData (Port i)
 instance Binary PortState
+instance NFData PortState
 
 class PortId a where
     isInPort     :: a -> Bool

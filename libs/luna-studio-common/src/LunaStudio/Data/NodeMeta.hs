@@ -9,10 +9,11 @@ import           Prologue
 data NodeMeta = NodeMeta { _position           :: Position
                          , _displayResult      :: Bool
                          , _selectedVisualizer :: Maybe Visualizer
-                         } deriving (Eq, Generic, NFData, Ord, Show)
+                         } deriving (Eq, Generic, Ord, Show)
 
 makeLenses ''NodeMeta
 instance Binary NodeMeta
+instance NFData NodeMeta
 
 instance Default NodeMeta where
     def = NodeMeta def False def

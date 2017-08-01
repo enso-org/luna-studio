@@ -9,10 +9,11 @@ import           Prologue
 
 data Update = Update { _location :: GraphLocation
                      , _monads   :: [MonadPath]
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 makeLenses ''Update
 instance Binary Update
+instance NFData Update
 
 
 topicPrefix :: T.Topic

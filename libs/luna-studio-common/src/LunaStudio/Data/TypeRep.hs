@@ -14,8 +14,9 @@ data TypeRep = TCons String  [TypeRep]
              | TStar
              | TBlank
              | TAcc  String TypeRep
-             deriving (Eq, Generic, NFData, Show)
+             deriving (Eq, Generic, Show)
 
+instance NFData TypeRep
 instance Binary TypeRep
 instance Hashable TypeRep
 instance FromJSON TypeRep
@@ -46,8 +47,9 @@ instance Convertible TypeRep Text where
 
 data ConstructorRep = ConstructorRep { constructor :: Text
                                      , fields      :: [ConstructorRep]
-                                     } deriving (Eq, Generic, NFData, Show)
+                                     } deriving (Eq, Generic, Show)
 
+instance NFData ConstructorRep
 instance ToJSON ConstructorRep
 
 toConstructorRep :: TypeRep -> Maybe ConstructorRep

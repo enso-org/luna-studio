@@ -10,15 +10,17 @@ import           Prologue
 
 
 data Request = Request { _projectId :: ProjectId
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Result = Result { _libraries :: [(LibraryId, Library)]
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 instance Binary Request
+instance NFData Request
 instance Binary Result
+instance NFData Result
 
 
 type Response = Response.Response Request () Result

@@ -12,15 +12,15 @@ module NodeEditor.Action.Camera.Zoom
 import           Common.Action.Command                (Command)
 import           Common.Prelude
 import           Data.Matrix                          (getElem, setElem)
-import           Data.ScreenPosition                  (ScreenPosition, vector, x, y)
 import           LunaStudio.Data.CameraTransformation (logicalToScreen, screenToLogical)
+import           LunaStudio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
+import           LunaStudio.Data.ScreenPosition       (ScreenPosition, vector, x, y)
 import           LunaStudio.Data.Vector2              (Vector2)
 import           NodeEditor.Action.Basic              (modifyCamera)
 import           NodeEditor.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                        updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor   (getNodeEditor, modifyNodeEditor)
 import           NodeEditor.Action.State.Scene        (getScreenCenter)
-import           NodeEditor.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
 import           NodeEditor.React.Model.NodeEditor    (screenTransform)
 import           NodeEditor.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), zoomDragAction,
                                                        zoomDragFixedPoint, zoomDragPreviousPos)

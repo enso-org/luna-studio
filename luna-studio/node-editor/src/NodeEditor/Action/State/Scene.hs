@@ -2,16 +2,16 @@ module NodeEditor.Action.State.Scene where
 
 import           Common.Action.Command              (Command)
 import           Common.Prelude
-import           Data.ScreenPosition                (ScreenPosition (ScreenPosition))
-import qualified Data.ScreenPosition                as ScreenPosition
 import qualified JS.Scene                           as Scene
 import           LunaStudio.Data.Position           (Position)
+import           LunaStudio.Data.ScreenPosition     (ScreenPosition)
+import qualified LunaStudio.Data.ScreenPosition     as ScreenPosition
 import           LunaStudio.Data.Size               (Size)
-import           LunaStudio.Data.Vector2            (scalarProduct, vector, x, y)
+import           LunaStudio.Data.Vector2            (x, y)
 import           NodeEditor.Action.State.App        (renderIfNeeded)
-import           NodeEditor.Action.State.NodeEditor (getScreenTranform, modifyNodeEditor)
+import           NodeEditor.Action.State.NodeEditor (getScreenTransform, modifyNodeEditor)
 import qualified NodeEditor.Action.State.NodeEditor as NE
-import           NodeEditor.React.Model.Layout      (Scene)
+import           NodeEditor.React.Model.Layout      (Scene, screenCenter)
 import qualified NodeEditor.React.Model.Layout      as Scene
 import qualified NodeEditor.React.Model.NodeEditor  as NodeEditor
 import           NodeEditor.React.Model.Sidebar     (InputSidebar, OutputSidebar)
@@ -20,10 +20,10 @@ import           NodeEditor.State.Global            (State)
 
 
 translateToWorkspace :: ScreenPosition -> Command State Position
-translateToWorkspace pos = Scene.translateToWorkspace pos <$> getScreenTranform
+translateToWorkspace pos = Scene.translateToWorkspace pos <$> getScreenTransform <*> getScreenCenter
 
 translateToScreen :: Position -> Command State ScreenPosition
-translateToScreen pos = Scene.translateToScreen pos <$> getScreenTranform
+translateToScreen pos = Scene.translateToScreen pos <$> getScreenTransform
 
 getScene :: Command State (Maybe Scene)
 getScene = NE.getScene >>= maybe (updateScene >> NE.getScene) (return . return . id)
@@ -50,7 +50,7 @@ getScreenLeftCenter :: Command State (Maybe ScreenPosition)
 getScreenLeftCenter = fmap2 (\s -> ScreenPosition.fromDoubles 0 (s ^. y / 2)) getScreenSize
 
 getScreenCenter :: Command State (Maybe ScreenPosition)
-getScreenCenter = fmap2 (ScreenPosition . flip scalarProduct 0.5 . view vector) getScreenSize
+getScreenCenter = fmap2 (view screenCenter) getScene
 
 getInputSidebar :: Command State (Maybe InputSidebar)
 getInputSidebar =  join <$> view Scene.inputSidebar `fmap2` getScene

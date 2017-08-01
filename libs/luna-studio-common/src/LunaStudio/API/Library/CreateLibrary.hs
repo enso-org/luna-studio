@@ -15,22 +15,25 @@ import           Prologue
 data Request = Request { _projectId   :: ProjectId
                        , _libraryName :: Maybe String
                        , _path        :: String
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Result = Result   { _libraryId :: LibraryId
                        , _library   :: Library
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Update = Update   { _libraryId' :: LibraryId
                        , _library'   :: Library
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 makeLenses ''Update
 instance Binary Request
+instance NFData Request
 instance Binary Result
+instance NFData Result
 instance Binary Update
+instance NFData Update
 
 
 type Response = Response.Response Request () Result

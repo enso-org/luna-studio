@@ -5,10 +5,11 @@ import qualified LunaStudio.API.Topic as T
 import           Prologue
 
 
-data Status = Status deriving (Eq, Generic, NFData, Show)
+data Status = Status deriving (Eq, Generic, Show)
 
 makeLenses ''Status
 instance Binary Status
+instance NFData Status
 
 
 instance T.MessageTopic Status where topic _ = "empire.control.started.status"

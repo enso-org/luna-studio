@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections       #-}
 
@@ -19,16 +19,16 @@ import qualified Empire.ASTOps.Parse             as ASTParse
 import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST
-import qualified Empire.Commands.Graph           as Graph
 import qualified Empire.Commands.Code            as Code
+import qualified Empire.Commands.Graph           as Graph
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.Library         as Library
 import           Empire.Data.AST                 (SomeASTException)
-import qualified Empire.Data.Graph               as Graph (code, codeMarkers, breadcrumbHierarchy)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
+import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy, code, codeMarkers)
 import           Empire.Empire                   (CommunicationEnv (..), Empire)
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser (ReparsingChange (..), ReparsingStatus (..))
-import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem(Definition))
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
 import qualified LunaStudio.Data.Node            as Node
@@ -38,15 +38,15 @@ import qualified LunaStudio.Data.NodeMeta        as NodeMeta
 import           LunaStudio.Data.Point           (Point (Point))
 import qualified LunaStudio.Data.Port            as Port
 import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           LunaStudio.Data.Vector2         (Vector2(..))
 import qualified LunaStudio.Data.Position        as Position
 import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
+import           LunaStudio.Data.Vector2         (Vector2 (..))
 
 import           Empire.Prelude
 import           Luna.Prelude                    (normalizeQQ)
 
-import           Test.Hspec                      (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
-                                                  shouldNotBe, shouldSatisfy, shouldStartWith, xit, Expectation)
+import           Test.Hspec                      (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
+                                                  shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, xit)
 
 import           EmpireUtils
 

@@ -11,15 +11,17 @@ import           Prologue
 
 data Request = Request { _filePath :: FilePath
                        , _span     :: Maybe [(Int, Int)]
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Result  = Result { _code             :: Text
-                      } deriving (Eq, Generic, NFData, Show)
+                      } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 instance Binary Request
+instance NFData Request
 instance Binary Result
+instance NFData Result
 
 
 type Response = Response.Response Request () Result

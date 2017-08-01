@@ -6,8 +6,8 @@ module NodeEditor.Action.Sidebar where
 import           Common.Action.Command                   (Command)
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe               (MaybeT (MaybeT), runMaybeT)
-import           Data.ScreenPosition                     (ScreenPosition, y)
 import qualified LunaStudio.Data.PortRef                 as PortRef
+import           LunaStudio.Data.ScreenPosition          (ScreenPosition, y)
 import           NodeEditor.Action.Basic                 (localMovePort, localRemovePort, setInputSidebarPortMode)
 import qualified NodeEditor.Action.Basic                 as Basic
 import qualified NodeEditor.Action.Batch                 as Batch

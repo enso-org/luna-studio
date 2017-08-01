@@ -13,18 +13,19 @@ import           Prologue
 
 data Status a = Ok    { _resultData  :: a }
               | Error { _message     :: String }
-              deriving (Eq, Generic, NFData, Show)
+              deriving (Eq, Generic, Show)
 
 makeLenses ''Status
 makePrisms ''Status
 instance Binary a => Binary (Status a)
+instance NFData a => NFData (Status a)
 
 data Response req inv res = Response { _requestId :: UUID
                                      , _guiID     :: Maybe UUID
                                      , _request   :: req
                                      , _inverse   :: Status inv
                                      , _status    :: Status res
-                                     } deriving (Eq, Generic, NFData, Show)
+                                     } deriving (Eq, Generic, Show)
 
 type SimpleResponse req inv = Response req inv ()
 
@@ -42,3 +43,4 @@ ok (Request uuid guiID req) inv = Response uuid guiID req (Ok inv) (Ok ())
 makeLenses ''Response
 
 instance (Binary req, Binary res, Binary inv) => Binary (Response req inv res)
+instance (NFData req, NFData res, NFData inv) => NFData (Response req inv res)

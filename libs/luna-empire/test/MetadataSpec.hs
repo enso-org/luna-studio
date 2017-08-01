@@ -1,60 +1,60 @@
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE TypeApplications    #-}
 
 module MetadataSpec (spec) where
 
-import           Control.Monad                   (forM)
+import           Control.Monad                    (forM)
 import           Data.Coerce
-import           Data.List                       (find)
-import qualified Data.Map                        as Map
-import           Data.Reflection                 (Given (..), give)
-import qualified Data.Set                        as Set
-import qualified Data.Text                       as Text
-import           Data.Text.Span                  (LeftSpacedSpan (..), SpacedSpan (..))
-import           Empire.ASTOp                    (runASTOp)
-import qualified Empire.ASTOps.Parse             as ASTParse
-import qualified Empire.ASTOps.Print             as ASTPrint
-import qualified Empire.ASTOps.Read              as ASTRead
-import qualified Empire.Commands.AST             as AST
-import qualified Empire.Commands.Graph           as Graph
-import qualified Empire.Commands.Code            as Code
-import qualified Empire.Commands.GraphBuilder    as GraphBuilder
-import qualified Empire.Commands.Library         as Library
-import           Empire.Data.AST                 (SomeASTException)
-import qualified Empire.Data.Graph               as Graph (clsClass, clsFuns, fileOffset, code, codeMarkers, breadcrumbHierarchy)
-import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Empire                   (CommunicationEnv (..), Empire)
+import           Data.List                        (find)
+import qualified Data.Map                         as Map
+import           Data.Reflection                  (Given (..), give)
+import qualified Data.Set                         as Set
+import qualified Data.Text                        as Text
+import           Data.Text.Span                   (LeftSpacedSpan (..), SpacedSpan (..))
+import           Empire.ASTOp                     (runASTOp)
+import qualified Empire.ASTOps.Parse              as ASTParse
+import qualified Empire.ASTOps.Print              as ASTPrint
+import qualified Empire.ASTOps.Read               as ASTRead
+import qualified Empire.Commands.AST              as AST
+import qualified Empire.Commands.Code             as Code
+import qualified Empire.Commands.Graph            as Graph
+import qualified Empire.Commands.GraphBuilder     as GraphBuilder
+import qualified Empire.Commands.Library          as Library
+import           Empire.Data.AST                  (SomeASTException)
+import qualified Empire.Data.BreadcrumbHierarchy  as BH
+import qualified Empire.Data.Graph                as Graph (breadcrumbHierarchy, clsClass, clsFuns, code, codeMarkers, fileOffset)
+import           Empire.Empire                    (CommunicationEnv (..), Empire)
 import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
-import qualified Luna.Syntax.Text.Parser.Parser  as Parser (ReparsingChange (..), ReparsingStatus (..))
-import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem(Definition))
-import qualified LunaStudio.Data.Graph           as Graph
-import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
-import qualified LunaStudio.Data.Node            as Node
-import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
-import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
-import qualified LunaStudio.Data.NodeMeta        as NodeMeta
-import           LunaStudio.Data.Point           (Point (Point))
-import qualified LunaStudio.Data.Port            as Port
-import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           LunaStudio.Data.Vector2         (Vector2(..))
-import qualified LunaStudio.Data.Position        as Position
-import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
+import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingChange (..), ReparsingStatus (..))
+import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem (Definition))
+import qualified LunaStudio.Data.Graph            as Graph
+import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
+import qualified LunaStudio.Data.Node             as Node
+import           LunaStudio.Data.NodeLoc          (NodeLoc (..))
+import           LunaStudio.Data.NodeMeta         (NodeMeta (..))
+import qualified LunaStudio.Data.NodeMeta         as NodeMeta
+import           LunaStudio.Data.Point            (Point (Point))
+import qualified LunaStudio.Data.Port             as Port
+import           LunaStudio.Data.PortRef          (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified LunaStudio.Data.Position         as Position
+import           LunaStudio.Data.TypeRep          (TypeRep (TStar))
+import           LunaStudio.Data.Vector2          (Vector2 (..))
 
 import           Empire.Prelude
-import           Luna.Prelude                    (normalizeQQ)
+import           Luna.Prelude                     (normalizeQQ)
 
-import           Test.Hspec                      (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
-                                                  shouldNotBe, shouldSatisfy, shouldStartWith, xit, Expectation)
+import           Test.Hspec                       (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
+                                                   shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, xit)
 
 import           EmpireUtils
 
-import           Text.RawString.QQ               (r)
+import           Text.RawString.QQ                (r)
 
-import qualified Luna.IR                         as IR
+import qualified Luna.IR                          as IR
 
 codeWithMetadata = [r|def foo:
     «10»pi = 3.14

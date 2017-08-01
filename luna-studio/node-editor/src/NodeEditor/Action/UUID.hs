@@ -8,12 +8,12 @@ module NodeEditor.Action.UUID
 
 import           Common.Action.Command    (Command)
 import           Common.Prelude
+import           Data.Map                 (member)
+import           Data.Time.Clock          (getCurrentTime)
 import           Data.UUID.Types          as X (UUID)
 import           Data.UUID.Types.Internal (buildFromBytes)
 import           NodeEditor.State.Global  (State, backend, nextRandom, pendingRequests)
 
-import           Data.Map                 (member)
-import           Data.Time.Clock          (UTCTime, getCurrentTime)
 
 getUUID :: Command State UUID
 getUUID = do

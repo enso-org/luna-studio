@@ -10,7 +10,8 @@ type ProjectId = Int
 
 data Project = Project { _name     :: String
                        , _libs     :: IntMap Library
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Project
 instance Binary Project
+instance NFData Project

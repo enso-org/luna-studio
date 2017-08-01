@@ -3,8 +3,8 @@
 module NodeEditor.React.Model.Sidebar where
 
 import           Common.Prelude
-import           Data.ScreenPosition              (ScreenPosition)
 import           LunaStudio.Data.Position         (Position, fromDoubles)
+import           LunaStudio.Data.ScreenPosition   (ScreenPosition)
 import           LunaStudio.Data.Size             (Size, width)
 import           NodeEditor.React.Model.Constants (gridSize)
 import           NodeEditor.React.Model.Port      (InPortId, OutPortId, getPortNumber, isSelf)

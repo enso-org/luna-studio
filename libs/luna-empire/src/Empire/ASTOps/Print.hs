@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase           #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Empire.ASTOps.Print where
 
@@ -10,17 +10,18 @@ import           Data.List                      (delete, dropWhileEnd)
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
 import qualified Data.Text                      as Text
-import           Empire.Prelude                 hiding (TypeRep, List)
+import           Empire.Prelude                 hiding (List, TypeRep)
 
-import           Empire.ASTOp                   (ASTOpReq, ASTOp, GraphOp, match)
+import           Empire.ASTOp                   (ASTOp, ASTOpReq, GraphOp, match)
+import qualified Empire.ASTOps.Deconstruct      as ASTDeconstruct
+import qualified Empire.ASTOps.Read             as ASTRead
 import           Empire.Data.AST                (NodeRef)
 import           Empire.Data.Graph              (Graph)
-import qualified Empire.ASTOps.Read             as ASTRead
-import qualified Empire.ASTOps.Deconstruct      as ASTDeconstruct
-import           LunaStudio.Data.Node           (NodeId)
 import qualified Luna.IR                        as IR
-import           LunaStudio.Data.TypeRep
 import           Luna.IR.Term.Uni
+import           LunaStudio.Data.Node           (NodeId)
+import           LunaStudio.Data.TypeRep
+import           LunaStudio.Data.TypeRep
 
 import           Luna.Syntax.Text.Lexer.Name    (isOperator)
 import           Luna.Syntax.Text.Pretty.Pretty as CodeGen

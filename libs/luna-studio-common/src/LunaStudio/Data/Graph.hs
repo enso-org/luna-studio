@@ -12,11 +12,12 @@ data Graph = Graph { _nodes         :: [ExpressionNode]
                    , _inputSidebar  :: Maybe InputSidebar
                    , _outputSidebar :: Maybe OutputSidebar
                    , _monads        :: [MonadPath]
-                   } deriving (Eq, Generic, NFData, Show)
+                   } deriving (Eq, Generic, Show)
 
 makeLenses ''Graph
 
-instance Binary  Graph
+instance Binary Graph
+instance NFData Graph
 
 instance Default Graph where
     def = Graph def def def def def

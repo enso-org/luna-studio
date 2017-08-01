@@ -23,14 +23,27 @@ body { height: 100%; overflow: auto; }
     display: none !important;
 }
 
+.centerContent() {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+}
+.fillSpace() {
+    height: 100%;
+    width:  100%;
+}
+.roundCorners() {
+    border-radius: 1000px;
+}
+
 /////////////////////////////
-//       basic styles      //
+//    atom basic styles    //
 /////////////////////////////
 
 body,
 atom-workspace .luna-studio {
-    font:                   12px/15px @fontDefault;
     .graphBackground;
+    font:                   12px/15px @fontDefault;
     font-weight:            300;
     font-variant-ligatures: contextual;
 }
@@ -49,17 +62,23 @@ atom-workspace .luna-studio {
     }
 }
 
+/////////////////////////////
+//       basic styles      //
+/////////////////////////////
+
 .luna-studio {
+    .fillSpace;
     position: relative; // grouping z-index of
     z-index:  0;        // all graph layers.
-    height:   100%;
-    width:    100%;
     zoom:     reset !important;
+}
+.luna-studio--window {
+    .centerContent;
+    .fillSpace;
 }
 
 .luna-background-text {
-    width:           100%;
-    height:          100%;
+    .fillSpace;
     justify-content: center;
     display:         flex;
     align-items:     center;
@@ -81,16 +100,6 @@ atom-workspace .luna-studio {
 //          layout         //
 /////////////////////////////
 
-.luna-main {
-    display:     flex;
-    align-items: stretch;
-    width:       100%;
-    top:         0;
-    bottom:      0;
-    position:    absolute;
-    overflow:    hidden;
-}
-
 .luna-breadcrumbs {
     font-size:     10px;
     position:      absolute;
@@ -100,7 +109,7 @@ atom-workspace .luna-studio {
     line-height:   16px;
     padding:       0 8px;
     .background(1);
-    border-radius: 100px;
+    .roundCorners;
 }
 
 .luna-breadcrumbs__item {
@@ -121,19 +130,13 @@ atom-workspace .luna-studio {
     }
 }
 
-.luna-graph-editor {
-    flex:     2 auto;
-    position: relative;
-}
-
 .luna-graph {
     .graphBackground; //#1a1a1a;
     .color(8);
     position: relative;
     flex:     none;
     overflow: inherit;
-    width:    100%;
-    height:   100%;
+    .fillSpace;
     z-index:  0;    // puts graph under breadcrumbs
     svg {
         //-webkit-filter: brightness(1.4) grayscale(0.3);
@@ -158,8 +161,7 @@ atom-workspace .luna-studio {
     }
 }
 .luna-plane--canvas {
-    height: 100%;
-    width:  100%;
+    .fillSpace;
 }
 
 // common elements

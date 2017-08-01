@@ -17,7 +17,7 @@ import           Prologue
 
 type NodeId = UUID
 
-data Node = ExpressionNode' ExpressionNode | InputSidebar' InputSidebar | OutputSidebar' OutputSidebar deriving (Eq, Generic, NFData, Show, Typeable)
+data Node = ExpressionNode' ExpressionNode | InputSidebar' InputSidebar | OutputSidebar' OutputSidebar deriving (Eq, Generic, Show, Typeable)
 
 data ExpressionNode = ExpressionNode { _exprNodeId       :: NodeId
                                      , _expression       :: Text
@@ -28,20 +28,20 @@ data ExpressionNode = ExpressionNode { _exprNodeId       :: NodeId
                                      , _outPorts         :: OutPortTree OutPort
                                      , _nodeMeta         :: NodeMeta
                                      , _canEnter         :: Bool
-                                     } deriving (Eq, Generic, NFData, Show, Typeable)
+                                     } deriving (Eq, Generic, Show, Typeable)
 
 data InputSidebar = InputSidebar { _inputNodeId    :: NodeId
                                  , _inputEdgePorts :: [OutPortTree OutPort]
-                                 } deriving (Eq, Generic, NFData, Show, Typeable)
+                                 } deriving (Eq, Generic, Show, Typeable)
 
 data OutputSidebar = OutputSidebar { _outputNodeId    :: NodeId
                                    , _outputEdgePorts :: InPortTree InPort
-                                   } deriving (Eq, Generic, NFData, Show, Typeable)
+                                   } deriving (Eq, Generic, Show, Typeable)
 
 data NodeTypecheckerUpdate = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort, _tcOutPorts :: OutPortTree OutPort }
                            | OutputSidebarUpdate { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort }
                            | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree OutPort] }
-                           deriving (Eq, Generic, NFData, Show, Typeable)
+                           deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''ExpressionNode
 makeLenses ''InputSidebar
@@ -52,10 +52,15 @@ position :: Lens' ExpressionNode Position
 position = nodeMeta . NodeMeta.position
 
 instance Binary ExpressionNode
+instance NFData ExpressionNode
 instance Binary InputSidebar
+instance NFData InputSidebar
 instance Binary OutputSidebar
+instance NFData OutputSidebar
 instance Binary NodeTypecheckerUpdate
+instance NFData NodeTypecheckerUpdate
 instance Binary Node
+instance NFData Node
 
 class HasNodeId a where nodeId :: Lens' a NodeId
 

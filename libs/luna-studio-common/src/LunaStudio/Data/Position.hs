@@ -43,6 +43,7 @@ averagePosition a b =
         ay = (a ^. y + b ^. y) / 2
     in Position (Vector2 ax ay)
 
+-- TODO: -- move :: IsVector a => Vector2 Double -> a -> a
 move :: Vector2 Double -> Position -> Position
 move vec pos = pos & vector +~ vec
 

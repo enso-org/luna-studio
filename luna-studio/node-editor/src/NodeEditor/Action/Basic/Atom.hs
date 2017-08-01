@@ -5,7 +5,7 @@ import           Common.Prelude
 import           LunaStudio.Data.GraphLocation          (filePath)
 import           NodeEditor.Action.Basic.ProjectManager (getSettings, loadGraph, saveSettings)
 import           NodeEditor.Action.State.NodeEditor     (resetApp)
-import           NodeEditor.Batch.Workspace             (currentLocation, lastUILocation)
+import           NodeEditor.Batch.Workspace             (currentLocation)
 import qualified NodeEditor.Batch.Workspace             as Workspace
 import           NodeEditor.State.Global                (State, workspace)
 

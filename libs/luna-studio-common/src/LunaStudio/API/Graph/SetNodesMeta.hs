@@ -16,21 +16,24 @@ type SingleUpdate = (NodeId, NodeMeta)
 
 data Request = Request { _location :: GraphLocation
                        , _updates  :: [SingleUpdate]
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Inverse = Inverse { _prevMeta :: [SingleUpdate]
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Update = Update { _location' :: GraphLocation
                      , _updates'  :: [SingleUpdate]
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Inverse
 makeLenses ''Update
 instance Binary Request
+instance NFData Request
 instance Binary Inverse
+instance NFData Inverse
 instance Binary Update
+instance NFData Update
 instance G.GraphRequest Request where location = location
 
 

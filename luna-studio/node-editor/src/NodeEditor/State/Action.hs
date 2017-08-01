@@ -6,13 +6,13 @@ import           Data.Aeson                           (FromJSON, ToJSON)
 import           Data.Curve                           (Curve)
 import           Data.Dynamic
 import           Data.Map                             (Map)
-import           Data.ScreenPosition                  (ScreenPosition)
 import           Data.Set                             (Set)
 import qualified Data.Set                             as Set
 import           Data.Time.Clock                      (UTCTime)
 import           LunaStudio.Data.NodeLoc              (NodeLoc)
 import           LunaStudio.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef)
 import           LunaStudio.Data.Position             (Position)
+import           LunaStudio.Data.ScreenPosition       (ScreenPosition)
 import           NodeEditor.React.Model.Connection    (ConnectionId)
 import qualified NodeEditor.React.Model.Connection    as Connection
 import           NodeEditor.React.Model.Visualization (VisualizationId, VisualizationMode)

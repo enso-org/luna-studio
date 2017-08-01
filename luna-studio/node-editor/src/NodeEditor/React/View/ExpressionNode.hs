@@ -12,8 +12,8 @@ import qualified Data.Text                                            as Text
 import qualified JS.Config                                            as Config
 import qualified JS.UI                                                as UI
 import qualified LunaStudio.Data.LabeledTree                          as LabeledTree
+import           LunaStudio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
 import qualified LunaStudio.Data.MonadPath                            as MonadPath
-import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
 import qualified NodeEditor.Event.Mouse                               as Mouse
 import qualified NodeEditor.Event.UI                                  as UI
 import qualified NodeEditor.React.Event.Node                          as Node
@@ -65,12 +65,12 @@ handleMouseDown ref nodeLoc e m =
     else []
 
 nodeName_ :: Ref App -> NodeLoc -> Maybe Text -> Maybe Bool -> Maybe Searcher -> ReactElementM ViewEventHandler ()
-nodeName_ ref nl name mayVisualizationVisible mayS = React.viewWithSKey nodeName "node-name" (ref, nl, name, mayVisualizationVisible, mayS) mempty
+nodeName_ ref nl name' mayVisualizationVisible mayS = React.viewWithSKey nodeName "node-name" (ref, nl, name', mayVisualizationVisible, mayS) mempty
 
 nodeName :: ReactView (Ref App, NodeLoc, Maybe Text, Maybe Bool, Maybe Searcher)
-nodeName = React.defineView "node-name" $ \(ref, nl, name, mayVisualizationVisible, mayS) -> do
+nodeName = React.defineView "node-name" $ \(ref, nl, name', mayVisualizationVisible, mayS) -> do
     let regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nl)]
-                                 , elemString . convert $ fromMaybe def name )
+                                 , elemString . convert $ fromMaybe def name' )
         (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
             Searcher.NodeName snl _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
             _                       -> regularHandlersAndElem

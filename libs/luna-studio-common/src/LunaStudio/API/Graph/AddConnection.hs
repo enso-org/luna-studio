@@ -17,15 +17,17 @@ import           Prologue
 data Request = Request { _location :: GraphLocation
                        , _src      :: Either OutPortRef NodeId
                        , _dst      :: Either AnyPortRef NodeLoc
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Inverse = Inverse { _connId :: ConnectionId
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Inverse
 instance Binary Request
+instance NFData Request
 instance Binary Inverse
+instance NFData Inverse
 instance G.GraphRequest Request where location = location
 
 

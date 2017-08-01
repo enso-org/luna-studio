@@ -7,10 +7,11 @@ import           Prologue
 
 data Envelope = Envelope { _version :: Int
                          , _project :: Project
-                         } deriving (Eq, Generic, NFData, Show)
+                         } deriving (Eq, Generic, Show)
 
 makeLenses ''Envelope
 instance Binary Envelope
+instance NFData Envelope
 
 
 pack :: Project -> Envelope

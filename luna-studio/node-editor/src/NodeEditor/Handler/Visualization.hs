@@ -6,8 +6,8 @@ import           Common.Prelude
 import qualified NodeEditor.Action.Visualization      as Visualization
 import           NodeEditor.Event.Event               (Event (Shortcut, UI))
 import qualified NodeEditor.Event.Shortcut            as Shortcut
-import           NodeEditor.Event.UI                  (UIEvent (NodeEditorEvent, VisualizationEvent))
-import qualified NodeEditor.React.Event.NodeEditor    as NodeEditor
+import           NodeEditor.Event.UI                  (UIEvent (AppEvent, VisualizationEvent))
+import qualified NodeEditor.React.Event.App           as App
 import qualified NodeEditor.React.Event.Visualization as Visualization
 import           NodeEditor.React.Model.Visualization (VisualizationMode (Preview))
 import           NodeEditor.State.Action              (continue)
@@ -21,7 +21,7 @@ handle (UI (VisualizationEvent (Visualization.ToggleVisualizations nl)))        
 handle (Shortcut (Shortcut.Event Shortcut.ZoomVisualization _))                    = Just $ Visualization.handleZoomVisualization
 handle (Shortcut (Shortcut.Event Shortcut.OpenVisualizationPreview _))             = Just $ Visualization.enterVisualizationMode Preview
 handle (Shortcut (Shortcut.Event Shortcut.CloseVisualizationPreview _))            = Just $ continue $ Visualization.exitPreviewMode
-handle (UI (NodeEditorEvent    (NodeEditor.Wheel _ _)))                            = Just $ continue $ Visualization.exitVisualizationMode
+handle (UI (AppEvent (App.Wheel _ _)))                                             = Just $ continue $ Visualization.exitVisualizationMode
 handle _                                                                           = Nothing
 
 -- handle :: Event -> Maybe (Command State ())

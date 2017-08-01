@@ -8,7 +8,8 @@
     position: absolute;
     width:    0;
     height:   0;
-    &.luna-hover {
+    &.luna-hover,
+    &:hover {
         .luna-ctrl-icon {
             opacity: 0.8;
             &:hover {
@@ -59,7 +60,7 @@
     .luna-ctrl-icon {
         .graphBackground;
         fill:          @luna-syntax-text-color;
-        border-radius: 0 100px 100px 0;
+        border-radius: 0 1000px 1000px 0;
         opacity:       0;
         position:      absolute;
         width:         24px;
@@ -71,14 +72,14 @@
 
 .luna-node__name--positioner {
     .graphBackground;
-    border-radius: 1000px;
+    .roundCorners;
     line-height:   14px;
     padding:       0 7px 2px 6px;
     margin-top:    3px;
 }
 
 .luna-node__expression {
-    border-radius: 1000px;
+    .roundCorners;
     overflow:      hidden;
     text-overflow: ellipsis;
     padding:       4px 8px;
@@ -148,7 +149,12 @@
 }
 
 .luna-node--collapsed .luna-port--i--constructor circle { cy: 19px !important }
-.luna-node.luna-hover .luna-port--i--constructor { display: block !important }
+.luna-node {
+    &.luna-hover,
+    &:hover {
+        .luna-port--i--constructor { display: block !important }
+    }
+}
 
 // types
 
@@ -170,7 +176,12 @@
     }
 }
 
-.luna-node.luna-hover .luna-port__type { display: inherit }
+.luna-node {
+    &.luna-hover,
+    &:hover {
+        .luna-port__type { display: inherit }
+    }
+}
 .luna-port:hover .luna-port__type { fill: @luna-text-color }
 
 /////////////////////////////
@@ -333,7 +344,7 @@
     cursor:        pointer;
     height:        8rem;
     width:         23rem;
-    border-radius: 1000px;
+    .roundCorners;
     position:      relative;
     display:       flex;
     &::after {
@@ -343,7 +354,7 @@
         content:       " ";
         width:         12rem;
         height:        12rem;
-        border-radius: 1000rem;
+        .roundCorners;
     }
 }
 

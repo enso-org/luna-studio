@@ -1,11 +1,11 @@
 module TextEditor.Action.State.App where
 
-import           Control.Lens.Internal.Zoom          (Focusing)
-import qualified Control.Monad.State                 as M
-import           Common.Action.Command          (Command)
-import           Common.Prelude                 hiding (lens)
-import           TextEditor.React.Model.CodeEditor  (CodeEditor, visible)
-import           TextEditor.State.Global            (State, app)
+import           Common.Action.Command             (Command)
+import           Common.Prelude                    hiding (lens)
+import           Control.Lens.Internal.Zoom        (Focusing)
+import qualified Control.Monad.State               as M
+import           TextEditor.React.Model.CodeEditor (CodeEditor, visible)
+import           TextEditor.State.Global           (State, app)
 
 
 withApp :: (Ref App -> Command State r) -> Command State r

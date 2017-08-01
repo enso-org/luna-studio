@@ -4,13 +4,14 @@ module NodeEditor.React.Model.Layout where
 
 import           Common.Prelude
 import qualified Data.Matrix                          as Matrix
-import           Data.ScreenPosition                  (ScreenPosition (ScreenPosition))
-import qualified Data.ScreenPosition                  as ScreenPosition
 import           LunaStudio.Data.CameraTransformation (CameraTransformation, logicalToScreen, screenToLogical)
 import           LunaStudio.Data.Position             (Position, move, vector)
 import qualified LunaStudio.Data.Position             as Position
+import           LunaStudio.Data.ScreenPosition       (ScreenPosition (ScreenPosition))
+import qualified LunaStudio.Data.ScreenPosition       as ScreenPosition
 import           LunaStudio.Data.Size                 (Size)
-import           LunaStudio.Data.Vector2              (Vector2 (Vector2), x, y)
+import qualified LunaStudio.Data.Size                 as Size
+import           LunaStudio.Data.Vector2              (Vector2 (Vector2), scalarProduct, x, y)
 import           NodeEditor.React.Model.Constants     (gridSize)
 import           NodeEditor.React.Model.Port          (InPort, OutPort, getPositionInSidebar, portId)
 import           NodeEditor.React.Model.Sidebar       (InputSidebar, OutputSidebar, inputSidebarPosition, inputSidebarSize,
@@ -31,12 +32,15 @@ data Scene = Scene
 makeLenses ''Layout
 makeLenses ''Scene
 
+screenCenter :: Getter Scene ScreenPosition
+screenCenter = to $ (ScreenPosition . flip scalarProduct 0.5 . view Size.vector) . view size
 
-translateToWorkspace :: ScreenPosition -> CameraTransformation -> Position
-translateToWorkspace pos screenTransform'  =
-    let transformMatrix = screenTransform' ^. screenToLogical
-        posMatrix      = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
-        posInWorkspace = Matrix.multStd2 posMatrix transformMatrix
+translateToWorkspace :: ScreenPosition -> CameraTransformation -> Maybe ScreenPosition -> Position
+translateToWorkspace pos' screenTransform' mayScreenCenter =
+    let pos             = maybe pos' (pos' -) mayScreenCenter
+        transformMatrix = screenTransform' ^. screenToLogical
+        posMatrix       = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
+        posInWorkspace  = Matrix.multStd2 posMatrix transformMatrix
     in Position.fromDoubles (Matrix.getElem 1 1 posInWorkspace) (Matrix.getElem 1 2 posInWorkspace)
 
 translateToScreen :: Position -> CameraTransformation -> ScreenPosition
@@ -54,7 +58,7 @@ inputSidebarPortPosition p layout = case layout ^? scene . traverse . inputSideb
             siz   = inputSidebar' ^. inputSidebarSize
             pos   = ScreenPosition . view ScreenPosition.vector . move shift $
                 maybe (portPositionInInputSidebar siz pid) id (getPositionInSidebar p)
-        in Just $ translateToWorkspace pos $ layout ^. screenTransform
+        in Just $ translateToWorkspace pos (layout ^. screenTransform) (layout ^? scene . _Just . screenCenter)
     _ -> Nothing
 
 outputSidebarPortPosition :: InPort -> Layout -> Maybe Position
@@ -64,5 +68,5 @@ outputSidebarPortPosition p layout = case layout ^? scene . traverse . outputSid
             shift = outputSidebar' ^. outputSidebarPosition . vector + Vector2 0 gridSize
             pos   = ScreenPosition . view ScreenPosition.vector . move shift $
                 maybe (portPositionInOutputSidebar pid) id (getPositionInSidebar p)
-        in Just $ translateToWorkspace pos $ layout ^. screenTransform
+        in Just $ translateToWorkspace pos (layout ^. screenTransform) (layout ^? scene . _Just . screenCenter)
     _ -> Nothing

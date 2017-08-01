@@ -11,10 +11,11 @@ data Update = Update { _location :: GraphLocation
                      , _nodeId   :: NodeId
                      , _value    :: NodeValue
                      , _execTime :: Integer
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 makeLenses ''Update
 instance Binary Update
+instance NFData Update
 
 
 topicPrefix :: T.Topic

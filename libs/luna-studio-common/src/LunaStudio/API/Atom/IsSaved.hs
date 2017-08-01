@@ -9,19 +9,22 @@ import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
 
-data Saved = True | False deriving (Eq, Generic, NFData, Show)
+data Saved = True | False deriving (Eq, Generic, Show)
 
 data Request = Request { _filePath :: FilePath
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Result  = Result { _status :: Saved
-                      } deriving (Eq, Generic, NFData, Show)
+                      } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 instance Binary Saved
+instance NFData Saved
 instance Binary Request
+instance NFData Request
 instance Binary Result
+instance NFData Result
 
 
 type Response = Response.Response Request () Result

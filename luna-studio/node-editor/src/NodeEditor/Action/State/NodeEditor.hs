@@ -244,8 +244,8 @@ getLayout = view NE.layout <$> getNodeEditor
 getScene :: Command State (Maybe Scene)
 getScene = view Scene.scene <$> getLayout
 
-getScreenTranform :: Command State CameraTransformation
-getScreenTranform = view Scene.screenTransform <$> getLayout
+getScreenTransform :: Command State CameraTransformation
+getScreenTransform = view Scene.screenTransform <$> getLayout
 
 setScreenTransform :: CameraTransformation -> Command State ()
 setScreenTransform camera = modifyNodeEditor $ NE.layout . Scene.screenTransform .= camera

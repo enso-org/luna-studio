@@ -17,11 +17,11 @@ import           Prologue             hiding (Monoid, mappend, mconcat, mempty, 
 data BreadcrumbItem = Definition { _nodeId  :: NodeId }
                     | Lambda     { _nodeId  :: NodeId }
                     | Arg        { _nodeId  :: NodeId, _arg :: Int }
-                    deriving (Eq, Generic, NFData, Ord, Show)
+                    deriving (Eq, Generic, Ord, Show)
 
 data Named a = Named { _name       :: Text
                      , _breadcrumb :: a
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 newtype Breadcrumb a = Breadcrumb { _items :: [a] } deriving (Eq, Generic, NFData, Ord, Show)
 
@@ -30,7 +30,9 @@ makeLenses ''Breadcrumb
 makeLenses ''Named
 instance Binary a => Binary (Breadcrumb a)
 instance Binary a => Binary (Named a)
+instance NFData a => NFData (Named a)
 instance Binary BreadcrumbItem
+instance NFData BreadcrumbItem
 
 instance Monoid (Breadcrumb a) where
     mappend bc1 bc2 = Breadcrumb $ (bc1 ^. items) <> (bc2 ^. items)

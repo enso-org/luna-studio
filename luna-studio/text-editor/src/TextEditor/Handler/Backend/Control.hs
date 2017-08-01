@@ -3,15 +3,12 @@ module TextEditor.Handler.Backend.Control
     ) where
 
 -- import           JS.Atom                    (pushNotification)
-import           TextEditor.Error.Error
-
+import           Common.Action.Command   (Command)
 import           Common.Prelude
-
-import qualified TextEditor.Event.Batch    as Batch
-import           TextEditor.Event.Event    (Event (Batch))
-
-import           Common.Action.Command (Command)
-import           TextEditor.State.Global   (State)
+import           TextEditor.Error.Error
+import qualified TextEditor.Event.Batch  as Batch
+import           TextEditor.Event.Event  (Event (Batch))
+import           TextEditor.State.Global (State)
 
 
 

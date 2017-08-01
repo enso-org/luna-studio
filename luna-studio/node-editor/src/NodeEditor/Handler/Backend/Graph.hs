@@ -54,7 +54,7 @@ import           NodeEditor.Action.Basic.Revert              (revertAddConnectio
 import           NodeEditor.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram)
 import           NodeEditor.Action.State.App                 (setBreadcrumbs)
-import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentFile, isCurrentLocation)
+import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
 import           NodeEditor.Action.State.NodeEditor          (modifyExpressionNode, setGraphStatus, setScreenTransform, updateMonads)
 import           NodeEditor.Action.UUID                      (isOwnRequest)
 import qualified NodeEditor.Batch.Workspace                  as Workspace
@@ -270,7 +270,6 @@ handle (Event.Batch ev) = Just $ case ev of
         success          = applyResult location
 
     SearchNodesResponse response -> handleResponse response success doNothing where
-        location       = response ^. Response.request . SearchNodes.location
         success result = localSetSearcherHints $ prepareNSData (result ^. SearchNodes.globalFunctions) (result ^. SearchNodes.globalClasses)
 
     SetNodeExpressionResponse response -> handleResponse response success failure where

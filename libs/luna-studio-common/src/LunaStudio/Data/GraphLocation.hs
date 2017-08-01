@@ -9,10 +9,11 @@ import           Prologue
 
 data GraphLocation = GraphLocation { _filePath   :: FilePath
                                    , _breadcrumb :: Breadcrumb BreadcrumbItem
-                                   } deriving (Eq, Generic, NFData, Show)
+                                   } deriving (Eq, Generic, Show)
 
 makeLenses ''GraphLocation
 instance Binary   GraphLocation
+instance NFData   GraphLocation
 instance FromJSON GraphLocation where parseJSON = lensJSONParse
 instance ToJSON   GraphLocation where
     toJSON     = lensJSONToJSON

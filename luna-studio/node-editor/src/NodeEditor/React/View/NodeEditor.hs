@@ -6,18 +6,13 @@ import qualified Data.HashMap.Strict                        as HashMap
 import           Data.Matrix                                (Matrix)
 import           Data.Maybe                                 (mapMaybe)
 import qualified Data.Set                                   as Set
-import           JS.Scene                                   (sceneId)
 import qualified LunaStudio.Data.CameraTransformation       as CameraTransformation
+import           LunaStudio.Data.Matrix                     (CameraScale, CameraTranslate, showCameraMatrix, showCameraScale,
+                                                             showCameraTranslate)
+import qualified LunaStudio.Data.Matrix                     as Matrix
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
 import           LunaStudio.Data.NodeLoc                    (NodePath)
 import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef))
-import           NodeEditor.Data.Matrix                     (CameraScale, CameraTranslate, showCameraMatrix, showCameraScale,
-                                                             showCameraTranslate)
-import qualified NodeEditor.Data.Matrix                     as Matrix
-import           NodeEditor.Event.Event                     (Event (Shortcut))
-import qualified NodeEditor.Event.Shortcut                  as Shortcut
-import qualified NodeEditor.Event.UI                        as UI
-import qualified NodeEditor.React.Event.NodeEditor          as NE
 import           NodeEditor.React.Model.App                 (App)
 import qualified NodeEditor.React.Model.Connection          as Connection
 import qualified NodeEditor.React.Model.Node                as Node
@@ -29,13 +24,12 @@ import           NodeEditor.React.Model.Port                (InPortIndex (Self))
 import qualified NodeEditor.React.Model.Searcher            as Searcher
 import           NodeEditor.React.Model.Visualization       (VisualizationMode (Focused, FullScreen, Preview), visPropNodeLoc,
                                                              visPropVisualization, visualizationMode)
-import           NodeEditor.React.Store                     (Ref, dispatch, dispatch')
+import           NodeEditor.React.Store                     (Ref)
 import           NodeEditor.React.View.Connection           (connection_, halfConnection_)
 import           NodeEditor.React.View.ConnectionPen        (connectionPen_)
 import           NodeEditor.React.View.ExpressionNode       (filterOutSearcherIfNotRelated, nodeDynamicStyles_, node_)
 import           NodeEditor.React.View.Monad                (monads_)
-import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_, planeNewConnection_,
-                                                             planeNodes_, svgPlane_)
+import           NodeEditor.React.View.Plane                (planeConnections_, planeMonads_, planeNewConnection_, planeNodes_, svgPlane_)
 import           NodeEditor.React.View.SelectionBox         (selectionBox_)
 import           NodeEditor.React.View.Sidebar              (sidebar_)
 import qualified NodeEditor.React.View.Style                as Style
@@ -95,45 +89,40 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
         nodesWithVis   = Set.fromList $ map (^. visPropNodeLoc) visualizations
     case ne ^. NodeEditor.graphStatus of
         GraphLoaded ->
-            div_
-                [ "className"   $= Style.prefixFromList (["graph"]++if isAnyVisActive then ["graph--has-visualization-active"] else [])
-                , "id"          $= sceneId
-                , "key"         $= "graph"
-                , onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
-                , onDoubleClick $ \_ _   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.ExitGraph def
-                , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
-                , onScroll      $ \e     -> [preventDefault e]
-                ] $ do
+            div_ [ "className" $= Style.prefix "studio--window", "key" $= "studio--window"] $ do
+                div_ [ "className" $= Style.prefix "studio--window__center", "key" $= "studio--window__center" ] $
+                    div_
+                        [ "className"   $= Style.prefixFromList (["graph"]++if isAnyVisActive then ["graph--has-visualization-active"] else [])
+                        , "key"         $= "graph"
+                        ] $ do
 
-                dynamicStyles_ camera $ ne ^. NodeEditor.expressionNodesRecursive
+                        dynamicStyles_ camera $ ne ^. NodeEditor.expressionNodesRecursive
 
-                svgPlane_ $ do
-                    planeMonads_ $
-                        monads_ monads
-                    planeConnections_ $ do
-                        forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref
-                        forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
-                        forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
+                        svgPlane_ $ do
+                            planeMonads_ $
+                                monads_ monads
+                            planeConnections_ $ do
+                                forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref
+                                forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
+                                forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
-                planeNodes_ $ do
-                    forM_ nodes $ \n -> node_ ref
-                                              n
-                                              (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
-                                              (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
-                    forM_ visualizations $ nodeVisualization_ ref
+                        planeNodes_ $ do
+                            forM_ nodes $ \n -> node_ ref
+                                                      n
+                                                      (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
+                                                      (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
+                            forM_ visualizations $ nodeVisualization_ ref
 
-                planeNewConnection_ $ do
-                    forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
+                        planeNewConnection_ $ do
+                            forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
 
                 withJust input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher) n
                 withJust output $ sidebar_ ref Nothing
-
-                planeCanvas_ mempty
+                --planeCanvas_ mempty
 
         GraphLoading   -> noGraph_ True "Loading…"
         NoGraph        -> noGraph_ False ""
         GraphError msg -> noGraph_ True msg
-
 
 noGraph_ :: Bool -> String -> ReactElementM ViewEventHandler ()
 noGraph_ hideLogo msg =
@@ -165,7 +154,6 @@ dynamicScale = React.defineView objDynStyle $ \cameraScale -> do
         [ "key" $= "scale"
         ] $ do
           elemString $ ":root { font-size: " <> show scale <> "px !important }"
-          elemString $ ":root { --scale: "   <> show scale <> " }"
           elemString $ ".luna-camera-scale { transform: "     <> showCameraScale cameraScale <> " }"
 
           elemString $ ".luna-connection__line { stroke-width: "   <> show (1.2 + (1 / scale)) <> " }"

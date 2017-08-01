@@ -5,14 +5,15 @@ module TextEditor.Action.UUID
     , isOwnRequest
     ) where
 
+import           Common.Action.Command    (Command)
 import           Common.Prelude
-import           Data.UUID.Types           (UUID)
-import           Data.UUID.Types.Internal  (buildFromBytes)
-import           Common.Action.Command (Command)
-import           TextEditor.State.Global   (State, nextRandom, pendingRequests)
-
-import           Data.Map                  (member)
-import           Data.Time.Clock           (UTCTime, getCurrentTime)
+import           Data.Map                 (member)
+import           Data.Map                 (member)
+import           Data.Time.Clock          (UTCTime, getCurrentTime)
+import           Data.Time.Clock          (UTCTime, getCurrentTime)
+import           Data.UUID.Types          (UUID)
+import           Data.UUID.Types.Internal (buildFromBytes)
+import           TextEditor.State.Global  (State, nextRandom, pendingRequests)
 
 getUUID :: Command State UUID
 getUUID = do

@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module TextEditor.State.Global where
 
+import           Common.Action.Command                    (Command)
 import           Common.Debug                             (HasRequestTimes, requestTimes)
 import           Common.Prelude
 import           Data.Aeson                               (ToJSON, toJSON)
@@ -12,7 +13,6 @@ import           Data.Word                                (Word8)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           System.Random                            (StdGen)
 import qualified System.Random                            as Random
-import           Common.Action.Command                (Command)
 import           TextEditor.Event.Event                   (Event)
 
 

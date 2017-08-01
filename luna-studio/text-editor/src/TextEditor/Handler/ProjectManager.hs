@@ -2,6 +2,7 @@ module TextEditor.Handler.ProjectManager
     ( handle
     ) where
 
+import           Common.Action.Command             (Command)
 import           Common.Prelude
 import           Data.Char                         (toUpper)
 import           JS.Atom
@@ -9,7 +10,6 @@ import qualified LunaStudio.API.Atom.IsSaved       as IsSaved
 import qualified LunaStudio.API.Atom.OpenFile      as OpenFile
 import qualified LunaStudio.API.Response           as Response
 import qualified TextEditor.Action.Batch           as BatchCmd (closeFile, isSaved, openFile, saveFile, setProject)
-import           Common.Action.Command         (Command)
 import qualified TextEditor.Event.Batch            as Batch
 import           TextEditor.Event.Event            (Event (Atom, Batch))
 import           TextEditor.Event.Internal         (InternalEvent (..))

@@ -24,8 +24,9 @@ type VisualizationId   = UUID
 
 data VisualizerEntry = VisualizerEntry { name :: Maybe VisualizerName
                                        , path :: VisualizerPath
-                                       } deriving (Eq, Generic, NFData, Show)
+                                       } deriving (Eq, Generic, Show)
 
+instance NFData   VisualizerEntry
 instance FromJSON VisualizerEntry
 instance ToJSON   VisualizerEntry
 
@@ -49,14 +50,16 @@ type ShortValue = Text
 data VisualizationValue = Value Text
                         | StreamStart
                         | StreamDataPoint Text
-                        deriving (Eq, Generic, NFData, Show)
+                        deriving (Eq, Generic, Show)
 
 data NodeValue = NodeValue       ShortValue (Maybe VisualizationValue)
                | NodeError       Error
-               deriving (Eq, Generic, NFData, Show)
+               deriving (Eq, Generic, Show)
 
 
 makePrisms ''NodeValue
 makePrisms ''VisualizationValue
 instance Binary NodeValue
+instance NFData NodeValue
 instance Binary VisualizationValue
+instance NFData VisualizationValue

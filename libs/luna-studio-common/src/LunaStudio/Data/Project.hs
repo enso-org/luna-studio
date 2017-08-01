@@ -24,10 +24,11 @@ type ProjectId = UUID
 
 data Project = Project { _name     :: String
                        , _libs     :: IntMap Library
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Project
 instance Binary Project
+instance NFData Project
 
 
 --TODO: Add and handle this: _breadcrumbVisualizerPreferences :: HashMap TypeRep Visualizer
@@ -45,7 +46,7 @@ data ProjectSettings = ProjectSettings { _modulesSettings              :: Map Fi
 
 data LocationSettings = LocationSettings { _visMap   :: Maybe (HashMap TypeRep Visualizer)
                                          , _camera   :: CameraTransformation
-                                         } deriving (Eq, Generic, NFData, Show)
+                                         } deriving (Eq, Generic, Show)
 
 makeLenses ''BreadcrumbSettings
 makeLenses ''ModuleSettings
@@ -53,6 +54,7 @@ makeLenses ''ProjectSettings
 makeLenses ''LocationSettings
 
 instance Binary   LocationSettings
+instance NFData   LocationSettings
 instance FromJSON BreadcrumbSettings where parseJSON = lensJSONParse
 instance FromJSON ModuleSettings     where parseJSON = lensJSONParse
 instance FromJSON ProjectSettings    where parseJSON = lensJSONParse

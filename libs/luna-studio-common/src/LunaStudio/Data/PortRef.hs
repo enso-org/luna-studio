@@ -14,13 +14,13 @@ import           Prologue
 
 data InPortRef  = InPortRef  { _dstNodeLoc :: NodeLoc
                              , _dstPortId :: InPortId
-                             } deriving (Eq, Generic, NFData, Ord, Show)
+                             } deriving (Eq, Generic, Ord, Show)
 
 data OutPortRef = OutPortRef { _srcNodeLoc :: NodeLoc
                              , _srcPortId :: OutPortId
-                             } deriving (Eq, Generic, NFData, Ord, Show)
+                             } deriving (Eq, Generic, Ord, Show)
 
-data AnyPortRef = OutPortRef' OutPortRef | InPortRef' InPortRef deriving (Eq, Generic, NFData, Show)
+data AnyPortRef = OutPortRef' OutPortRef | InPortRef' InPortRef deriving (Eq, Generic, Show)
 
 makeLenses ''AnyPortRef
 makePrisms ''AnyPortRef
@@ -30,8 +30,11 @@ makeLenses ''InPortRef
 makePrisms ''InPortRef
 
 instance Binary AnyPortRef
+instance NFData AnyPortRef
 instance Binary InPortRef
+instance NFData InPortRef
 instance Binary OutPortRef
+instance NFData OutPortRef
 
 instance Ord AnyPortRef where
   (InPortRef'  _)  `compare` (OutPortRef' _) = LT

@@ -14,15 +14,17 @@ import           Prologue
 data Request = Request { _location :: GraphLocation
                        , _nodeId   :: NodeId
                        , _name     :: Text
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Inverse = Inverse { _prevName :: Text
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Inverse
 instance Binary Request
+instance NFData Request
 instance Binary Inverse
+instance NFData Inverse
 instance G.GraphRequest Request where location = location
 
 

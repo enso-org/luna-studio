@@ -1,14 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
-module NodeEditor.Data.Matrix where
+module LunaStudio.Data.Matrix where
 
-import           Common.Prelude
-import           Data.Convert             (Convertible (..))
-import           Data.Matrix              (Matrix)
-import qualified Data.Matrix              as Matrix
-import           Data.ScreenPosition      (ScreenPosition)
-import           LunaStudio.Data.Position (Position, x, y)
-import           LunaStudio.Data.Vector2  (Dim1, Dim2, IsVector, Vector2 (Vector2), VectorOf)
-import           Numeric                  (showFFloat)
+import           Data.Convert                   (Convertible (..))
+import           Data.Matrix                    (Matrix)
+import qualified Data.Matrix                    as Matrix
+import           LunaStudio.Data.Position       (Position, x, y)
+import           LunaStudio.Data.ScreenPosition (ScreenPosition)
+import           LunaStudio.Data.Vector2        (Dim1, Dim2, IsVector, Vector2 (Vector2), VectorOf)
+import           Numeric                        (showFFloat)
+import           Prologue
 
 
 data CameraScale     = CameraScale     { _scale :: Double } deriving (Eq)

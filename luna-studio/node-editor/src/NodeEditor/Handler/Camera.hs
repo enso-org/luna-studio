@@ -2,36 +2,34 @@ module NodeEditor.Handler.Camera
     ( handle
     ) where
 
-import           Common.Action.Command             (Command)
+import           Common.Action.Command      (Command)
 import           Common.Prelude
-import           LunaStudio.Data.Vector2           (Vector2 (Vector2))
-import           NodeEditor.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
-                                                    resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
-                                                    zoomDrag, zoomIn, zoomOut)
-import           NodeEditor.Event.Event            (Event (Shortcut, UI))
-import           NodeEditor.Event.Mouse            (mousePosition)
-import qualified NodeEditor.Event.Mouse            as Mouse
-import qualified NodeEditor.Event.Shortcut         as Shortcut
-import           NodeEditor.Event.UI               (UIEvent (AppEvent, NodeEditorEvent))
-import qualified NodeEditor.React.Event.App        as App
-import qualified NodeEditor.React.Event.NodeEditor as NodeEditor
-import           NodeEditor.State.Action           (Action (continue))
-import           NodeEditor.State.Global           (State)
-import           React.Flux                        (MouseEvent, wheelDeltaX, wheelDeltaY)
-
+import           LunaStudio.Data.Vector2    (Vector2 (Vector2))
+import           NodeEditor.Action.Camera   (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera, resetPan,
+                                             resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom, zoomDrag, zoomIn,
+                                             zoomOut)
+import           NodeEditor.Event.Event     (Event (Shortcut, UI))
+import           NodeEditor.Event.Mouse     (mousePosition)
+import qualified NodeEditor.Event.Mouse     as Mouse
+import qualified NodeEditor.Event.Shortcut  as Shortcut
+import           NodeEditor.Event.UI        (UIEvent (AppEvent))
+import qualified NodeEditor.React.Event.App as App
+import           NodeEditor.State.Action    (Action (continue))
+import           NodeEditor.State.Global    (State)
+import           React.Flux                 (MouseEvent, wheelDeltaX, wheelDeltaY)
 
 
 -- TODO[react]: Consider mac trackpad!!!
 handle :: Event -> Maybe (Command State ())
-handle (Shortcut (Shortcut.Event command _))           = Just $ handleCommand command
-handle (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
-handle (UI (AppEvent (App.MouseMove e _)))             = Just $ handleMouseMove e
-handle (UI (AppEvent (App.MouseUp   _)))               = Just $ continue stopPanDrag >> continue stopZoomDrag
-handle (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ handleMouseWheel m delta where
+handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
+handle (UI (AppEvent (App.MouseDown e _)))   = Just $ handleMouseDown e
+handle (UI (AppEvent (App.MouseMove e _)))   = Just $ handleMouseMove e
+handle (UI (AppEvent (App.MouseUp   _)))     = Just $ continue stopPanDrag >> continue stopZoomDrag
+handle (UI (AppEvent (App.Wheel m w)))       = Just $ handleMouseWheel m delta where
     deltaX = fromIntegral $ -(wheelDeltaX w)
     deltaY = fromIntegral $ -(wheelDeltaY w)
     delta  = Vector2 deltaX deltaY
-handle _                                               = Nothing
+handle _                                     = Nothing
 
 
 -- TODO consider using state and below approach

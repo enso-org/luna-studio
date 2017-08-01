@@ -18,19 +18,21 @@ data Request = Request { _location :: GraphLocation
                        , _end      :: Point
                        , _newText  :: Text
                        , _cursor   :: Maybe Point
-                       } deriving (Eq, Generic, NFData, Show)
+                       } deriving (Eq, Generic, Show)
 
 data Update = Update { _filePath' :: FilePath
                      , _start'    :: Point
                      , _end'      :: Point
                      , _newText'  :: Text
                      , _cursor'   :: Maybe Point
-                     } deriving (Eq, Generic, NFData, Show)
+                     } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Update
 instance Binary Request
+instance NFData Request
 instance Binary Update
+instance NFData Update
 instance G.GraphRequest Request where location = location
 
 
