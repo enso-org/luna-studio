@@ -10,7 +10,7 @@ module.exports = function (type) {
                                           ]
                            };
     var histogramPattern = { constructor: ["List"]
-                           , fields:      [ { constructor: ["Pair"]
+                           , fields:      [ { constructor: ["Tuple2"]
                                             , fields: [ { constructor: ["Text", "Int", "Real"]
                                                         , fields: { any: true } }
                                                       , { constructor: ["Int", "Real"]
