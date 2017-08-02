@@ -3,6 +3,8 @@ machine:
         version: 3.5.1
     node:
         version: 6.9.4
+    environment:
+        GHCRTS: '-M2G'
 
 dependencies:
     pre:
