@@ -62,37 +62,29 @@ def ghcjs_code():
     prepare_ghcjs('../luna-studio/atom/lib/gen/node-editor-ghcjs.js', '../luna-studio/node-editor/env-node-editor.ghcjs', node_editor_js[0])
     prepare_ghcjs('../luna-studio/atom/lib/gen/text-editor-ghcjs.js', '../luna-studio/text-editor/env-text-editor.ghcjs', text_editor_js[0])
 
-def cp_fonts(output, font_files):
-    distutils.dir_util.copy_tree(prep_path(font_files), prep_path(output))
-
-def cp_less(output, less_files):
-    distutils.dir_util.copy_tree(prep_path(less_files), prep_path(output))
+def cp_helper(output_path, input_path):
+    distutils.dir_util.copy_tree(prep_path(input_path), prep_path(output_path))
 
 def cp_files():
-    distutils.dir_util.copy_tree(prep_path('../luna-studio/node-editor/js'), prep_path('../luna-studio/atom/lib/gen'))
-    for path in ('../luna-studio/text-editor/js/atom-callback-text-editor.js', '../luna-studio/text-editor/js/app-text-editor.coffee', '../luna-studio/node-editor/config.release.js', '../luna-studio/node-editor/config.debug.js'):
+    cp_helper('../luna-studio/node-editor/js', '../luna-studio/atom/lib/gen')
+    paths = [
+        '../luna-studio/text-editor/js/atom-callback-text-editor.js',
+        '../luna-studio/text-editor/js/app-text-editor.coffee',
+        '../luna-studio/node-editor/config.release.js',
+        '../luna-studio/node-editor/config.debug.js',
+    ]
+    for path in paths:
         shutil.copy(prep_path(path), prep_path('../luna-studio/atom/lib/gen'))
 
 def run():
-    if system.system == system.systems.WINDOWS:
-        return ()
-    elif system.system == system.systems.LINUX:
+    if system.unix():
         rm_old()
         create_dirs()
         ghcjs_code()
         #prepare_css('../atom/styles/app.css', '../node-editor/styles/app.less')
-        cp_fonts('../luna-studio/atom/styles/fonts', '../luna-studio/node-editor/assets/fonts')
-        cp_less('../luna-studio/atom/styles/gen', '../luna-studio/node-editor/styles')
+        cp_helper('../luna-studio/atom/styles/fonts', '../luna-studio/node-editor/assets/fonts')
+        cp_helper('../luna-studio/atom/styles/gen', '../luna-studio/node-editor/styles')
         cp_files()
-    elif system.system == system.systems.DARWIN:
-        rm_old()
-        create_dirs()
-        ghcjs_code()
-        #prepare_css('../atom/styles/app.css', '../node-editor/styles/app.less')
-        cp_fonts('../luna-studio/atom/styles/fonts', '../luna-studio/node-editor/assets/fonts')
-        cp_less('../luna-studio/atom/styles/gen', '../luna-studio/node-editor/styles')
-        cp_files()
-    else: print("unknown system")
 
 
 if __name__ == '__main__':

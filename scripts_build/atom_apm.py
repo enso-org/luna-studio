@@ -53,7 +53,7 @@ apm_path = get_path('apm')
 oniguruma_path = get_path('oniguruma')
 
 
-apm_packages = {
+atom_packages = {
     'luna-syntax': 'git@github.com:luna/luna-studio-syntax-theme.git',
     'luna-dark-ui': 'git@github.com:luna/luna-studio-ui-theme.git',
     'luna-dpi': 'git@github.com:luna/luna-studio-dpi.git',
@@ -87,13 +87,13 @@ def run_apm(command, path, *args):
 
 
 def copy_studio (package_path):
-    if system.system == system.systems.WINDOWS:
+    if system.windows():
         r = requests.get(url)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         z.extractall(package_path)
         return
 
-    distutils.dir_util.copy_tree(studio_atom_source_path, package_path)
+    dir_util.copy_tree(studio_atom_source_path, package_path)
 
 
 def apm_luna_atom_package (package_name, package_address):
@@ -113,8 +113,9 @@ def apm_luna_local_atom_package (package_name, package_path):
     print(output3)
 
 
-def apm(link):
+def init_apm(link):
     package_path = atom_home_path + '/packages/' + studio_package_name
+    print("Initializing APM in: {}".format(package_path))
     oniguruma_package_path = package_path + '/node_modules/oniguruma'
     if link:
         os.chdir(studio_atom_source_path)
@@ -124,8 +125,8 @@ def apm(link):
         print(output2)
     else:
         os.makedirs(package_path, exist_ok=True)
-        copy_studio(studio_atom_source_path, package_path)
-        distutils.dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
+        copy_studio(package_path)
+        dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
         os.chdir(package_path)
         output = run_apm('install', '.')
         print(output)
@@ -136,26 +137,28 @@ def list_packages():
 
 
 def apm_package(package_name, package_version):
+    print("Installing Atom package: {} (version: {})".format(package_name, package_version))
     output = run_apm('install', package_name + '@' + package_version)
     print(output)
 
 
 def apm_packages():
-    installed_packages = list_packages(third_party_path, atom_home_path)
+    installed_packages = list_packages()
     with open(package_config_path) as f:
         packages_list = f.read().splitlines()
         for package in packages_list:
             [pkg_name, pkg_ver] = package.split()
-            if str.encode(pkg_name) not in installed_packages:
+            if pkg_name not in installed_packages:
                 apm_package(pkg_name, pkg_ver)
-            elif str.encode(pkg_name + '@' + pkg_ver) not in installed_packages:
+            elif (pkg_name + '@' + pkg_ver) not in installed_packages:
                     run_apm('uninstall', pkg_name)
                     apm_package(pkg_name, pkg_ver)
 
 
 def run(link=False):
-    apm(link)
-    for pkg_name, pkg_url in apm_packages.items():
+    print("Installing Atom packages")
+    init_apm(link)
+    for pkg_name, pkg_url in atom_packages.items():
         apm_luna_atom_package(pkg_name, pkg_url)
     apm_packages()
 

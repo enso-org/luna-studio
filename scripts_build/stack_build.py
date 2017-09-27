@@ -19,11 +19,8 @@ def create_bin_dirs():
 
 def build_ghcjs(frontend_args):
     os.chdir(frontend_dir)
-    if system.system == system.systems.WINDOWS:
-        return ()
-    elif system.system == system.systems.LINUX or system.system == system.systems.DARWIN:
+    if system.unix():
         subprocess.check_output(['stack', 'build', '--install-ghc'] + frontend_args)
-    else: print("unknown system")
 
 def build_runner(runner, runner_args):
     os.chdir(runner)
@@ -31,30 +28,22 @@ def build_runner(runner, runner_args):
     runnerPath = runner + '/src/StudioRunner.hs'
     hostPath = runner + '/src/System/Host.hs'
     resPath = runner + '/../resources/my.res'
-    if system.system == system.systems.WINDOWS:
-
+    if system.windows():
         subprocess.check_output(['stack', 'build'])
         os.system('stack exec ghc -- ' + runnerPath + ' ' + hostPath + ' ' + resPath)
-    elif system.system == system.systems.LINUX:
-        subprocess.check_output(['stack', 'build'] + runner_args)
-    elif system.system == system.systems.DARWIN:
-        subprocess.check_output(['stack', 'build'] + runner_args)
-    else: print("unknown system")
+        return
+
+    subprocess.check_output(['stack', 'build'] + runner_args)
 
 def build_backend(backend_args):
     os.chdir(backend_dir)
     subprocess.check_output(['stack', 'build'] + backend_args)
 
 def mv_runner(runner):
-    if system.system == system.systems.WINDOWS:
+    if system.windows():
         runner_src = runner + '/src/' + '/StudioRunner.exe'
         runner_dst = ap.prep_path('../dist/bin/public/luna-studio/luna-studio.exe')
         os.rename(runner_src, runner_dst)
-    elif system.system == system.systems.LINUX:
-        return ()
-    elif system.system == system.systems.DARWIN:
-        return ()
-    else: print("unknown system")
 
 
 def link_main_bin ():
@@ -63,14 +52,9 @@ def link_main_bin ():
     for src_path in glob('public/luna-studio/*'):
         dst_path = os.path.join('main', os.path.basename(src_path))
         if os.path.isfile(dst_path):
-            if os.path.isfile(src_path):
-                os.remove(dst_path)
-                os.symlink(os.path.relpath(src_path,'main/'),os.path.join('main', os.path.basename(src_path)))
-            else: return ()
-        else:
-            if os.path.isfile(src_path):
-                os.symlink(os.path.relpath(src_path,'main/'),os.path.join('main', os.path.basename(src_path)))
-            else: return ()
+            os.remove(dst_path)
+        if os.path.isfile(src_path):
+                os.symlink(os.path.relpath(src_path,'main/'), dst_path)
 
 
     # os.symlink('./public/luna-studio', 'main', target_is_directory=True)
