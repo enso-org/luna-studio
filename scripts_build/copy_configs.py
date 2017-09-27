@@ -2,11 +2,12 @@
 
 from . import atom_prepare as ap
 import os
-import distutils import dir_util
+from distutils import dir_util
 from glob import glob
 import shutil
 import subprocess
 from . import system as system
+from .common import working_directory
 
 
 resources_dir = ap.prep_path('../resources')
@@ -32,14 +33,14 @@ def copy_resources(resources):
     dir_util.copy_tree(resources, resources_path)
 
 def link_resources ():
-    os.chdir(ap.prep_path('../dist/bin'))
-    os.makedirs('main/resources', exist_ok=True)
-    for src_path2 in glob('public/luna-studio/resources/*'):
-        dst_path = os.path.join('main/resources', os.path.basename(src_path2))
-        if os.path.isfile(dst_path):
-            os.remove(dst_path)
-        if os.path.isfile(src_path2):
-            os.symlink(os.path.relpath(src_path2,'main/resources/'), dst_path)
+    with working_directory(ap.prep_path('../dist/bin')):
+        os.makedirs('main/resources', exist_ok=True)
+        for src_path2 in glob('public/luna-studio/resources/*'):
+            dst_path = os.path.join('main/resources', os.path.basename(src_path2))
+            if os.path.isfile(dst_path):
+                os.remove(dst_path)
+            if os.path.isfile(src_path2):
+                os.symlink(os.path.relpath(src_path2,'main/resources/'), dst_path)
 
 
 def copy_atom_configs ():
@@ -50,7 +51,7 @@ def copy_atom_configs ():
         '../config/snippets.cson',
         '../config/styles.cson',
     ]
-    for config in :
+    for config in configs_files:
         shutil.copy(ap.prep_path(config), dst_path)
 
 def run():

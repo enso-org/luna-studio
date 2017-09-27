@@ -14,6 +14,7 @@ import zipfile
 import io
 import sys
 from . import system as system
+from .common import working_directory
 
 #########################################################
 #                     PATHS                             #
@@ -97,20 +98,21 @@ def copy_studio (package_path):
 
 
 def apm_luna_atom_package (package_name, package_address):
-    os.chdir(packages_path)
-    output = run_process('git', 'clone', package_address, package_name)
-    print(output)
-    os.chdir(package_name)
-    output2 = run_apm('install', '.')
-    print(output2)
+    with working_directory(packages_path):
+        output = run_process('git', 'clone', package_address, package_name)
+        print(output)
+
+    with working_directory(package_name):
+        output2 = run_apm('install', '.')
+        print(output2)
 
 
 def apm_luna_local_atom_package (package_name, package_path):
-    os.chdir(package_path)
-    output2 = run_apm('install', '.')
-    print(output2)
-    output3 = run_apm('link', '.')
-    print(output3)
+    with working_directory(package_path):
+        output2 = run_apm('install', '.')
+        print(output2)
+        output3 = run_apm('link', '.')
+        print(output3)
 
 
 def init_apm(link):
@@ -118,18 +120,18 @@ def init_apm(link):
     print("Initializing APM in: {}".format(package_path))
     oniguruma_package_path = package_path + '/node_modules/oniguruma'
     if link:
-        os.chdir(studio_atom_source_path)
-        output = run_apm('install', '.')
-        print(output)
-        output2 = run_apm('link', '.')
-        print(output2)
+        with working_directory(studio_atom_source_path):
+            output = run_apm('install', '.')
+            print(output)
+            output2 = run_apm('link', '.')
+            print(output2)
     else:
         os.makedirs(package_path, exist_ok=True)
         copy_studio(package_path)
         dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
-        os.chdir(package_path)
-        output = run_apm('install', '.')
-        print(output)
+        with working_directory(package_path):
+            output = run_apm('install', '.')
+            print(output)
 
 
 def list_packages():

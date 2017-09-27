@@ -14,7 +14,6 @@ backend_dir  = atom_prepare.prep_path('../build-config/backend')
 frontend_dir = atom_prepare.prep_path('../luna-studio')
 
 
-
 def build_app (backend_args, frontend_args, runner_args, dev_mode=False):
     try:
         stack_build.run(backend_args, frontend_args, runner_args)
