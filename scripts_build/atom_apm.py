@@ -102,9 +102,9 @@ def apm_luna_atom_package (package_name, package_address):
         output = run_process('git', 'clone', package_address, package_name)
         print(output)
 
-    with working_directory(package_name):
-        output2 = run_apm('install', '.')
-        print(output2)
+        with working_directory(package_name):
+            output2 = run_apm('install', '.')
+            print(output2)
 
 
 def apm_luna_local_atom_package (package_name, package_path):
