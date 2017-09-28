@@ -36,10 +36,6 @@ import           System.Host
 
 default (T.Text)
 
-puts :: (MonadIO m, Show s) => s -> m ()
-puts x = liftIO $ do
-    print x
-    IO.hFlush IO.stdout
 
 data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _mainHomeDir            :: FilePath
@@ -115,8 +111,8 @@ relativeToDir basePath segmentAccessors = do
     return $ foldl (</>) base pathSegments
 
 relativeToMainDir, relativeToHomeDir :: MonadRun m => [Getting FilePath RunnerConfig FilePath] -> m FilePath
-relativeToMainDir segmentAccessors = relativeToDir mainAppDir segmentAccessors
-relativeToHomeDir segmentAccessors = relativeToDir (decodeString <$> (liftIO $ getHomeDirectory)) (mainHomeDir : segmentAccessors)
+relativeToMainDir = relativeToDir mainAppDir
+relativeToHomeDir = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) . (mainHomeDir :)
 
 version :: MonadRun m => m FilePath
 version = do
@@ -144,11 +140,7 @@ userLogsDirectory     = relativeToHomeDir [logsFolder,       appName] >>= (\p ->
 copyLunaStudio :: MonadRun m => m ()
 copyLunaStudio = do
     packageAtomHome <- packageStudioAtomHome
-    atomHome <- userStudioAtomHome
-    puts "[copyLunaStudio] packageAtomHome"
-    puts packageAtomHome
-    puts "[copyLunaStudio] atomHome"
-    puts atomHome
+    atomHome        <- userStudioAtomHome
     Shelly.shelly $ Shelly.mkdir_p atomHome
     Shelly.shelly $ Shelly.cp_r packageAtomHome atomHome
 
@@ -160,10 +152,7 @@ checkLunaHome = do
     runnerCfg       <- get @RunnerConfig
     userAtomHome    <- userStudioAtomHome
     let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder) </> (runnerCfg ^. atomPackageName)
-    puts "[checkLunaHome] pathLunaPackage"
-    puts pathLunaPackage
-    testDirectory pathLunaPackage >>= \exists ->
-        unless exists $ puts "[!!!!] Creating a directory" >> copyLunaStudio
+    testDirectory pathLunaPackage >>= \exists -> unless exists copyLunaStudio
 
 setEnv :: MonadRun m => String -> FilePath -> m ()
 setEnv name path = liftIO $ Environment.setEnv name $ encodeString path
@@ -172,6 +161,10 @@ unixOnly :: MonadRun m => m () -> m ()
 unixOnly act = case currentHost of
     Windows -> liftIO $ putStrLn "Unsupported system (Windows)"
     _       -> act
+
+windows, unix :: Bool
+windows = currentHost == Windows
+unix    = not windows
 
 -- run functions --
 runLunaEmpire :: MonadRun m => FilePath -> m ()
@@ -203,39 +196,28 @@ runBackend = do
     setEnv "LUNA_STUDIO_CONFIG_PATH"  =<< configPath
     unixOnly $ runLunaEmpire "supervisord.conf"
 
-runLocal :: MonadRun m => m ()
-runLocal = do
+runApp :: MonadRun m => Bool -> Maybe String -> m ()
+runApp develop atom = do
     runnerCfg <- get @RunnerConfig
-    setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" =<< packageStudioAtomHome
-    setEnv "LUNA_STUDIO_LOG_PATH"        =<< localLogsDirectory
-    setEnv "LUNA_STUDIO_BACKEND_PATH"    =<< backendBinsPath
-    setEnv "LUNA_STUDIO_GUI_PATH"        =<< atomAppPath
-    setEnv "LUNA_STUDIO_CONFIG_PATH"     =<< configPath
-    setEnv "LUNA_STUDIO_KILL_PATH"       =<< killSupervisorBinPath
-    unixOnly $ runLunaEmpire $ runnerCfg ^. supervisordConfig
+    liftIO $ Environment.setEnv "LUNA_STUDIO_ATOM_ARG" (fromMaybe " " atom)
 
-runPackage :: MonadRun m => m ()
-runPackage = case currentHost of
-    Windows -> do
+    when windows $ do
         atom <- atomAppPath
         setEnv "ATOM_HOME" =<< ((</> "atom") <$> userStudioAtomHome)
         checkLunaHome
         Shelly.shelly $ Shelly.cmd atom
-    _ -> do
-        runnerCfg <- get @RunnerConfig
-        setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" =<< ((</> "atom") <$> userStudioAtomHome)
-        setEnv "LUNA_STUDIO_LOG_PATH"        =<< userLogsDirectory
-        setEnv "LUNA_STUDIO_BACKEND_PATH"    =<< backendBinsPath
-        setEnv "LUNA_STUDIO_GUI_PATH"        =<< atomAppPath
-        setEnv "LUNA_STUDIO_CONFIG_PATH"     =<< configPath
-        setEnv "LUNA_STUDIO_KILL_PATH"       =<< killSupervisorBinPath
-        checkLunaHome
-        runLunaEmpire $ runnerCfg ^. supervisordConfig
 
-runApp :: MonadRun m => Bool -> Maybe String -> m ()
-runApp develop atom = do
-    liftIO $ Environment.setEnv "LUNA_STUDIO_ATOM_ARG" (fromMaybe " " atom)
-    if develop then runLocal else runPackage
+    when unix $ do
+      setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" =<< packageStudioAtomHome
+      setEnv "LUNA_STUDIO_LOG_PATH"        =<< localLogsDirectory
+      setEnv "LUNA_STUDIO_BACKEND_PATH"    =<< backendBinsPath
+      setEnv "LUNA_STUDIO_GUI_PATH"        =<< atomAppPath
+      setEnv "LUNA_STUDIO_CONFIG_PATH"     =<< configPath
+      setEnv "LUNA_STUDIO_KILL_PATH"       =<< killSupervisorBinPath
+      unless develop $ do
+          setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" =<< ((</> "atom") <$> userStudioAtomHome)
+          checkLunaHome
+      runLunaEmpire $ runnerCfg ^. supervisordConfig
 
 
 run :: MonadIO m => Options -> m ()
