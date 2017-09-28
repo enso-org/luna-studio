@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
 
-import scripts_build.atom_prepare
-import scripts_build.atom_apm
-import scripts_build.copy_configs
-import scripts_build.stack_build
+from scripts_build import atom_prepare
+from scripts_build import atom_apm
+from scripts_build import copy_configs
+from scripts_build import stack_build
 import argparse
 import os
 import subprocess
 import sys
 
-app_dir      = scripts_build.atom_prepare.prep_path('..')
-backend_dir  = scripts_build.atom_prepare.prep_path('../build-config/backend')
-frontend_dir = scripts_build.atom_prepare.prep_path('../luna-studio')
+app_dir      = atom_prepare.prep_path('..')
+backend_dir  = atom_prepare.prep_path('../build-config/backend')
+frontend_dir = atom_prepare.prep_path('../luna-studio')
 
 
-
-def build_app (backend_args, frontend_args, runner_args, link):
+def build_app (backend_args, frontend_args, runner_args, dev_mode=False):
     try:
-        scripts_build.stack_build.run(backend_args, frontend_args, runner_args)
-        scripts_build.atom_prepare.run()
-        scripts_build.atom_apm.run(link) # RENAME: LunaStudioInstallInAtom ?
-        scripts_build.copy_configs.run()
+        stack_build.run(backend_args, frontend_args, runner_args)
+        atom_prepare.run()
+        atom_apm.run(dev_mode) # RENAME: LunaStudioInstallInAtom ?
+        copy_configs.run()
 
     except subprocess.CalledProcessError:
         print("Status : FAIL")
@@ -28,21 +27,21 @@ def build_app (backend_args, frontend_args, runner_args, link):
 
 def build_backend (backend_args):
     try:
-        scripts_build.stack_build.create_bin_dirs()
-        scripts_build.stack_build.build_backend(backend_args)
-        scripts_build.stack_build.link_main_bin ()
-        scripts_build.stack_build.copy_std_lib ()
+        stack_build.create_bin_dirs()
+        stack_build.build_backend(backend_args)
+        stack_build.link_main_bin ()
+        stack_build.copy_std_lib ()
 
     except subprocess.CalledProcessError:
         print("Status : FAIL")
         sys.exit(1)
 
-def build_frontend (frontend_args, link):
+def build_frontend (frontend_args, dev_mode=False):
     try:
-        scripts_build.stack_build.create_bin_dirs()
-        scripts_build.stack_build.build_ghcjs(frontend_args)
-        scripts_build.atom_apm.run(link)
-        scripts_build.copy_configs.run()
+        stack_build.create_bin_dirs()
+        stack_build.build_ghcjs(frontend_args)
+        atom_apm.run(dev_mode)
+        copy_configs.run()
 
     except subprocess.CalledProcessError:
         print("Status : FAIL")
@@ -61,7 +60,7 @@ def main ():
     if args.backend:
         build_backend (args.stack_backend_args)
     elif args.frontend:
-        build_frontend (args.stack_frontend_args, not args.release) # FIXME: "not ..." is not a proper way to handle this flag
+        build_frontend (args.stack_frontend_args, dev_mode=(not args.release)) # FIXME: "not ..." is not a proper way to handle this flag
     else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, not args.release)
 
 main()

@@ -25,3 +25,9 @@ elif osname == 'Darwin':
 else:
     print_error ("Unsupported system '%s'" % osname)
     sys.exit(1)
+
+def unix():
+    return system in [systems.LINUX, systems.DARWIN]
+
+def windows():
+    return system == systems.WINDOWS
