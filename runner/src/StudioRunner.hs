@@ -1,38 +1,39 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE ExtendedDefaultRules  #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
+
 module Main where
 
-import Prelude hiding (FilePath)
-import Control.Monad
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Lens.Aeson
-import Control.Lens
-import Control.Monad.State.Layered
-import Data.ByteString.Lazy  (unpack)
-import Data.List.Split
-import qualified Data.List as List
-import Data.Semigroup ((<>))
-import Filesystem.Path
-import Options.Applicative
-import System.Directory (doesDirectoryExist, setCurrentDirectory, getHomeDirectory, getCurrentDirectory, createDirectoryIfMissing)
-import System.Exit (ExitCode)
-import System.Process.Typed (shell, runProcess, runProcess_, setWorkingDir, setEnv, readProcess_)
-import System.Environment (getExecutablePath, getArgs)
-import qualified System.Environment  as Environment
-import qualified System.IO as IO
-import Data.Maybe (fromMaybe)
-import Filesystem.Path.CurrentOS (decodeString, encodeString, fromText)
-import qualified Shelly.Lifted as Shelly
-import System.Host
+import           Prelude                       hiding (FilePath)
+import           Control.Lens.Aeson
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad.IO.Class        (MonadIO, liftIO)
+import           Control.Monad.State.Layered
+import           Data.ByteString.Lazy          (unpack)
+import           Data.List.Split
+import qualified Data.List                     as List
+import           Data.Maybe                    (fromMaybe, maybeToList)
+import           Data.Semigroup                ((<>))
+import qualified Data.Text                     as T
+import           Filesystem.Path
+import           Filesystem.Path.CurrentOS     (decodeString, encodeString, fromText)
+import           Options.Applicative
+import           System.Directory              (doesDirectoryExist, setCurrentDirectory, getHomeDirectory, getCurrentDirectory, createDirectoryIfMissing)
+import           System.Exit                   (ExitCode)
+import           System.Process.Typed          (shell, runProcess, runProcess_, setWorkingDir, readProcess_)
+import           System.Environment            (getExecutablePath, getArgs)
+import qualified System.Environment            as Environment
+import qualified System.IO                     as IO
+import qualified Shelly.Lifted                 as Shelly
+import           System.Host
 
-import qualified Data.Text as T
 default (T.Text)
 
 
@@ -43,8 +44,8 @@ data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _configHomeFolder       :: FilePath
                                  , _studioHome             :: FilePath
                                  , _logsFolder             :: FilePath
-                                 , _atomPackageName        :: T.Text
-                                 , _appName                :: T.Text
+                                 , _atomPackageName        :: FilePath
+                                 , _appName                :: FilePath
                                  , _supervisorFolder       :: FilePath
                                  , _supervisordFolder      :: FilePath
                                  , _supervisordBin         :: FilePath
@@ -55,6 +56,7 @@ data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _packageFolder          :: FilePath
                                  , _supervisorKillFolder   :: FilePath
                                  , _supervisorKillBin      :: FilePath
+                                 , _atomBinPath            :: FilePath
                                  }
 
 makeLenses ''RunnerConfig
@@ -82,120 +84,78 @@ instance Monad m => MonadHostConfig RunnerConfig 'Linux arch m where
         , _packageFolder          = "packages"
         , _supervisorKillFolder   = "kill"
         , _supervisorKillBin      = "kill"
+        , _atomBinPath            = "atom" </> "usr" </> "bin" </> "atom"
         }
 
 instance Monad m => MonadHostConfig RunnerConfig 'Darwin arch m where
     defaultHostConfig = reconfig <$> defaultHostConfigFor @Linux where
-        reconfig cfg = cfg
+        reconfig cfg = cfg & atomBinPath .~ ("Atom.app" </> "Contents" </> "MacOS" </> "Atom")
 
 instance Monad m => MonadHostConfig RunnerConfig 'Windows arch m where
     defaultHostConfig = reconfig <$> defaultHostConfigFor @Linux where
-        reconfig cfg = cfg
+        reconfig cfg = cfg & atomBinPath .~ ("Atom" </> "atom.exe")
 
+-- path helpers --
+scriptDir, mainAppDir :: MonadIO m => m FilePath
+scriptDir  = (directory . decodeString) <$> liftIO getExecutablePath
+mainAppDir = (parent . parent . parent) <$> scriptDir
 
+relativeToDir :: MonadRun m => m FilePath -> [Getting FilePath RunnerConfig FilePath] -> m FilePath
+relativeToDir basePath segmentAccessors = do
+    runnerCfg <- get @RunnerConfig
+    base      <- basePath
+    let pathSegments = map (runnerCfg ^.) segmentAccessors
+    return $ foldl (</>) base pathSegments
 
-scriptDir :: MonadIO m => m FilePath
-scriptDir = do
-    localExePath <- liftIO $ getExecutablePath
-    return $ directory $ decodeString $ localExePath
+relativeToMainDir, relativeToHomeDir :: MonadRun m => [Getting FilePath RunnerConfig FilePath] -> m FilePath
+relativeToMainDir = relativeToDir mainAppDir
+relativeToHomeDir = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) . (mainHomeDir :)
 
-mainAppDir :: MonadIO m => m FilePath
-mainAppDir = liftIO $ do
-    scriptPath <- scriptDir
-    return $ parent $ parent $ parent scriptPath
-
-version :: MonadRun m => m T.Text
+version :: MonadRun m => m FilePath
 version = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    let versionFilePath = main </> (runnerCfg ^. configFolder) </> (runnerCfg ^. versionFile)
-    version <- liftIO $ readFile $ encodeString versionFilePath
-    return $ T.pack $ version
+    versionFilePath <- relativeToMainDir [configFolder, versionFile]
+    versionStr      <- liftIO $ readFile $ encodeString versionFilePath
+    return . fromText . T.pack $ versionStr
 
-backendBinsPath :: MonadRun m => m FilePath
-backendBinsPath = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    return $ main </> (runnerCfg ^. binsFolder) </> (runnerCfg ^. backendBinsFolder)
+-- paths --
+backendBinsPath, configPath, atomAppPath, backendDir             :: MonadRun m => m FilePath
+supervisordBinPath, killSupervisorBinPath, packageStudioAtomHome :: MonadRun m => m FilePath
+userStudioAtomHome, localLogsDirectory, userLogsDirectory        :: MonadRun m => m FilePath
 
-configPath :: MonadRun m => m FilePath
-configPath = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    return $ main </> (runnerCfg ^. configFolder)
-
-atomAppPath :: MonadRun m => m FilePath
-atomAppPath = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    case currentHost of
-        Linux   -> return $ main </> (runnerCfg ^. thirdPartyFolder) </> "atom" </> "usr" </> "bin" </> "atom"
-        Darwin  -> return $ main </> (runnerCfg ^. thirdPartyFolder) </> "Atom.app" </> "Contents" </> "MacOS" </> "Atom"
-        Windows -> return $ main </> (runnerCfg ^. thirdPartyFolder) </> "Atom" </> "atom.exe"
-
-backendDir :: MonadRun m => m FilePath
-backendDir = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    return $ main </> (runnerCfg ^. configFolder) </> (runnerCfg ^. supervisorFolder)
-
-supervisordBinPath :: MonadRun m => m FilePath
-supervisordBinPath = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    return $ main </> (runnerCfg ^. thirdPartyFolder) </> (runnerCfg ^. supervisordFolder) </> (runnerCfg ^. supervisordBin)
-
-killSupervisorBinPath :: MonadRun m => m FilePath
-killSupervisorBinPath = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    return $ main </> (runnerCfg ^. thirdPartyFolder) </> (runnerCfg ^. supervisorKillFolder) </> (runnerCfg ^. supervisorKillBin)
-
-packageStudioAtomHome :: MonadRun m => m FilePath
-packageStudioAtomHome = do
-    runnerCfg <- get @RunnerConfig
-    main <- mainAppDir
-    return $ main </> (runnerCfg ^. userConfigFolder) </> (runnerCfg ^. studioHome)
-
-userStudioAtomHome :: MonadRun m => m FilePath
+backendBinsPath       = relativeToMainDir [binsFolder, backendBinsFolder]
+configPath            = relativeToMainDir [configFolder]
+atomAppPath           = relativeToMainDir [thirdPartyFolder, atomBinPath]
+backendDir            = relativeToMainDir [configFolder, supervisorFolder]
+supervisordBinPath    = relativeToMainDir [thirdPartyFolder, supervisordFolder,    supervisordBin]
+killSupervisorBinPath = relativeToMainDir [thirdPartyFolder, supervisorKillFolder, supervisorKillBin]
+packageStudioAtomHome = relativeToMainDir [userConfigFolder, studioHome]
+localLogsDirectory    = relativeToMainDir [logsFolder]
+userLogsDirectory     = relativeToHomeDir [logsFolder,       appName] >>= (\p -> (fmap (p </>) version))
 userStudioAtomHome = do
     runnerCfg <- get @RunnerConfig
-    home      <- liftIO $ getHomeDirectory
-    v         <- version
-    return $ decodeString home </> (runnerCfg ^. mainHomeDir) </> (runnerCfg ^. configHomeFolder) </> fromText (runnerCfg ^. appName) </> fromText v </> (runnerCfg ^. studioHome)
+    baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= (\p -> (fmap (p </>) version))
+    return $ baseDir </> (runnerCfg ^. studioHome)
 
-localLogsDirectory :: MonadRun m => m FilePath
-localLogsDirectory = do
-    main <- mainAppDir
-    return $  main </> decodeString "logs"
-
-
-userLogsDirectory :: MonadRun m => m FilePath
-userLogsDirectory = do
-    runnerCfg <- get @RunnerConfig
-    home      <- liftIO $ getHomeDirectory
-    v         <- version
-    return $ decodeString home </> (runnerCfg ^. mainHomeDir) </> (runnerCfg ^. logsFolder) </> fromText (runnerCfg ^. appName) </> fromText v
-
+-- misc runner utils --
 copyLunaStudio :: MonadRun m => m ()
 copyLunaStudio = do
     packageAtomHome <- packageStudioAtomHome
     atomHomeParent  <- parent <$> userStudioAtomHome
-    Shelly.shelly $ Shelly.mkdir_p $ atomHomeParent
-    Shelly.shelly $ Shelly.cp_r packageAtomHome $ atomHomeParent
+    liftIO $ putStrLn $ "packageAtomHome " <> (show packageAtomHome)
+    liftIO $ putStrLn $ "atomHomeParent "  <> (show atomHomeParent)
+    Shelly.shelly $ Shelly.mkdir_p atomHomeParent
+    Shelly.shelly $ Shelly.cp_r packageAtomHome atomHomeParent
 
 testDirectory :: MonadIO m => FilePath -> m Bool
 testDirectory path = Shelly.shelly $ Shelly.test_d path
-
 
 checkLunaHome :: MonadRun m => m ()
 checkLunaHome = do
     runnerCfg       <- get @RunnerConfig
     userAtomHome    <- userStudioAtomHome
-    let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder) </> fromText (runnerCfg ^. atomPackageName)
-    testDirectory pathLunaPackage >>= \case
-        True -> return ()
-        False -> copyLunaStudio
+    let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder) </> (runnerCfg ^. atomPackageName)
+    liftIO $ putStrLn $ "pathLunaPackage " <> (show pathLunaPackage)
+    testDirectory pathLunaPackage >>= (\exists -> unless exists copyLunaStudio)
 
 runLunaEmpireMacOS :: MonadRun m => FilePath -> T.Text -> m ()
 runLunaEmpireMacOS logs configFile = do
@@ -216,10 +176,10 @@ runLunaEmpire logs configFile = do
 
 runFrontend :: MonadRun m => Maybe T.Text -> m ()
 runFrontend args = do
-    atomHome    <- packageStudioAtomHome
-    atom        <- atomAppPath
+    atomHome <- packageStudioAtomHome
+    atom     <- atomAppPath
     liftIO $ Environment.setEnv "LUNA_STUDIO_DEVELOP" "True"
-    liftIO $ Environment.setEnv "ATOM_HOME" (encodeString $ atomHome )
+    liftIO $ Environment.setEnv "ATOM_HOME" (encodeString atomHome)
     case currentHost of
         Darwin -> case args of
             Just arg -> Shelly.shelly $ Shelly.cmd atom "-w" arg
@@ -274,6 +234,11 @@ runPackage = case currentHost of
         atom        <- atomAppPath
         config      <- configPath
         kill        <- killSupervisorBinPath
+        liftIO $ putStrLn $ "atomHome " <> (show atomHome)
+        liftIO $ putStrLn $ "logs " <> (show logs)
+        liftIO $ putStrLn $ "backendBins " <> (show backendBins)
+        liftIO $ putStrLn $ "atom " <> (show atom)
+        liftIO $ putStrLn $ "config " <> (show config)
         liftIO $ Environment.setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" (encodeString atomHome)
         liftIO $ Environment.setEnv "LUNA_STUDIO_LOG_PATH" (encodeString logs)
         liftIO $ Environment.setEnv "LUNA_STUDIO_BACKEND_PATH" (encodeString backendBins)
@@ -289,7 +254,7 @@ runPackage = case currentHost of
         atom        <- atomAppPath
         config      <- configPath
         kill        <- killSupervisorBinPath
-        liftIO $ Environment.setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" (encodeString $ atomHome </> "atom")
+        liftIO $ Environment.setEnv "LUNA_STUDIO_GUI_CONFIG_PATH" (encodeString atomHome)
         liftIO $ Environment.setEnv "LUNA_STUDIO_LOG_PATH" (encodeString logs)
         liftIO $ Environment.setEnv "LUNA_STUDIO_BACKEND_PATH" (encodeString backendBins)
         liftIO $ Environment.setEnv "LUNA_STUDIO_GUI_PATH" (encodeString atom)
@@ -302,7 +267,7 @@ runPackage = case currentHost of
         atomHome <- userStudioAtomHome
         atom <- atomAppPath
         checkLunaHome
-        liftIO $ Environment.setEnv "ATOM_HOME" (encodeString $ atomHome </> "atom")
+        liftIO $ Environment.setEnv "ATOM_HOME" (encodeString atomHome)
         Shelly.shelly $ Shelly.cmd atom
 
 runApp :: MonadRun m => Bool -> Maybe String -> m ()
@@ -315,7 +280,7 @@ runApp develop atom = do
 data Options = Options
     { frontend :: Bool
     , backend  :: Bool
-    , develop    :: Bool
+    , develop  :: Bool
     , atom     :: Maybe String} deriving Show
 
 
