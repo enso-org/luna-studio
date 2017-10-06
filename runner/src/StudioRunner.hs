@@ -21,6 +21,8 @@ import           Data.List.Split
 import qualified Data.List                     as List
 import           Data.Maybe                    (fromMaybe, maybeToList)
 import           Data.Semigroup                ((<>))
+import qualified Data.Set                      as Set
+import           Data.Set                      (Set)
 import qualified Data.Text                     as T
 import           Filesystem.Path
 import           Filesystem.Path.CurrentOS     (decodeString, encodeString, fromText)
@@ -50,6 +52,7 @@ data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _supervisorFolder       :: FilePath
                                  , _supervisordFolder      :: FilePath
                                  , _supervisordBin         :: FilePath
+                                 , _supervisorctlBin       :: FilePath
                                  , _supervisordConfig      :: FilePath
                                  , _atomFolder             :: FilePath
                                  , _thirdPartyFolder       :: FilePath
@@ -80,6 +83,7 @@ instance Monad m => MonadHostConfig RunnerConfig 'Linux arch m where
         , _supervisorFolder       = "supervisor"
         , _supervisordFolder      = "supervisord"
         , _supervisordBin         = "supervisord"
+        , _supervisorctlBin       = "supervisorctl"
         , _supervisordConfig      = "supervisord-package.conf"
         , _atomFolder             = "atom"
         , _thirdPartyFolder       = "third-party"
@@ -122,16 +126,17 @@ version = do
     return . fromText . T.pack $ versionStr
 
 -- paths --
-backendBinsPath, configPath, atomAppPath, backendDir             :: MonadRun m => m FilePath
-supervisordBinPath, killSupervisorBinPath, packageStudioAtomHome :: MonadRun m => m FilePath
-userStudioAtomHome, localLogsDirectory, userLogsDirectory        :: MonadRun m => m FilePath
-userdataStorageDirectory, localdataStorageDirectory              :: MonadRun m => m FilePath
+backendBinsPath, configPath, atomAppPath, backendDir                   :: MonadRun m => m FilePath
+supervisordBinPath, supervisorctlBinPath, killSupervisorBinPath        :: MonadRun m => m FilePath
+packageStudioAtomHome, userStudioAtomHome, localLogsDirectory          :: MonadRun m => m FilePath
+userLogsDirectory, userdataStorageDirectory, localdataStorageDirectory :: MonadRun m => m FilePath
 
 backendBinsPath           = relativeToMainDir [binsFolder, backendBinsFolder]
 configPath                = relativeToMainDir [configFolder]
 atomAppPath               = relativeToMainDir [thirdPartyFolder, atomBinPath]
 backendDir                = relativeToMainDir [configFolder, supervisorFolder]
 supervisordBinPath        = relativeToMainDir [thirdPartyFolder, supervisordFolder, supervisordBin]
+supervisorctlBinPath      = relativeToMainDir [thirdPartyFolder, supervisordFolder, supervisorctlBin]
 killSupervisorBinPath     = relativeToMainDir [thirdPartyFolder, supervisorKillFolder, supervisorKillBin]
 packageStudioAtomHome     = relativeToMainDir [userConfigFolder, studioHome]
 localLogsDirectory        = relativeToMainDir [logsFolder]
@@ -187,17 +192,44 @@ checkLunaHome = do
     let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder) </> (runnerCfg ^. atomPackageName)
     testDirectory pathLunaPackage >>= (\exists -> unless exists copyLunaStudio)
 
-runLunaEmpire :: MonadRun m => FilePath -> FilePath -> m ()
-runLunaEmpire logs configFile = do
-    lunaSupervisor <- backendDir
-    supervisord    <- supervisordBinPath
-    Shelly.shelly $ Shelly.mkdir_p logs
-    when darwin $
-        -- done with system.process.typed because with shelly clicking on app in launchpad returned abnormal exit code
-        runProcess_ $ setWorkingDir (encodeString lunaSupervisor)
-                    $ shell ((encodeString supervisord) ++ " -n -c " ++ (encodeString configFile))
-    when linux $ Shelly.shelly
-               $ Shelly.chdir lunaSupervisor $ Shelly.cmd supervisord "-n" "-c" configFile
+-- supervisord --
+supervisorctl :: MonadRun m => [T.Text] -> m T.Text
+supervisorctl args = do
+    supervisorBinPath <- supervisorctlBinPath
+    supervisorDir     <- backendDir
+    Shelly.shelly $ Shelly.chdir supervisorDir
+                  $ Shelly.run supervisorBinPath args
+
+supervisord :: MonadRun m => FilePath -> m ()
+supervisord configFile = do
+    supervisorBinPath <- supervisordBinPath
+    supervisorDir     <- backendDir
+    runProcess_ $ setWorkingDir (encodeString supervisorDir)
+                $ shell $ (encodeString supervisorBinPath) ++ "-n -c" ++ (encodeString configFile)
+
+stopSupervisor :: MonadRun m => m ()
+stopSupervisor = void $ supervisorctl ["shutdown"]
+
+testIfRunning :: MonadRun m => m Bool
+testIfRunning = do
+    -- TODO[piotrMocz]: we'll need a more robust method eventually
+    -- this merely check if there's any luna-related app running
+    let lunaApps = Set.fromList ["broker", "ws-connector", "luna-empire", "luna-atom", "undo-redo"] :: Set T.Text
+    runningApps <- Set.fromList . T.words <$> supervisorctl ["status", "all"]
+    return . not . Set.null $ Set.intersection runningApps lunaApps
+
+-- runner functions --
+runLunaEmpire :: MonadRun m => FilePath -> FilePath -> Bool -> m ()
+runLunaEmpire logs configFile forceRun = do
+    -- NOTE[piotrMocz]: when the `forceRun` flag is set, we will stop any
+    -- running instances of supervisord and proceed. If not, they will prevent
+    -- the application from running
+    running <- testIfRunning
+    if running && (not forceRun) then liftIO $ putStrLn "LunaStudio is already running"
+    else do
+        when running stopSupervisor
+        Shelly.shelly $ Shelly.mkdir_p logs
+        supervisord configFile
 
 runFrontend :: MonadRun m => Maybe T.Text -> m ()
 runFrontend args = do
@@ -208,16 +240,16 @@ runFrontend args = do
     setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory True
     unixOnly $ Shelly.shelly $ Shelly.run_ atom $ "-w" : maybeToList args
 
-runBackend :: MonadRun m => m ()
-runBackend = do
+runBackend :: MonadRun m => Bool -> m ()
+runBackend forceRun = do
     logs <- localLogsDirectory
     setEnv "LUNA_STUDIO_LOG_PATH"     =<< localLogsDirectory
     setEnv "LUNA_STUDIO_BACKEND_PATH" =<< backendBinsPath
     setEnv "LUNA_STUDIO_CONFIG_PATH"  =<< configPath
-    unixOnly $ runLunaEmpire logs "supervisord.conf"
+    unixOnly $ runLunaEmpire logs "supervisord.conf" forceRun
 
-runPackage :: MonadRun m => Bool -> m ()
-runPackage develop = case currentHost of
+runPackage :: MonadRun m => Bool -> Bool -> m ()
+runPackage develop forceRun = case currentHost of
     Windows -> do
         atom <- atomAppPath
         checkLunaHome
@@ -240,36 +272,35 @@ runPackage develop = case currentHost of
         when develop   $ liftIO $ Environment.setEnv "LUNA_STUDIO_DEVELOP" "True"
         createStorageDataDirectory develop
         unless develop $ checkLunaHome
-        runLunaEmpire logs supervisorConf
+        runLunaEmpire logs supervisorConf forceRun
 
-runApp :: MonadRun m => Bool -> Maybe String -> m ()
-runApp develop atom = do
+runApp :: MonadRun m => Bool -> Bool -> Maybe String -> m ()
+runApp develop forceRun atom = do
     liftIO $ Environment.setEnv "LUNA_STUDIO_ATOM_ARG" (fromMaybe " " atom)
-    runPackage develop
+    runPackage develop forceRun
 
 data Options = Options
     { frontend :: Bool
     , backend  :: Bool
     , develop  :: Bool
+    , forceRun :: Bool
     , atom     :: Maybe String} deriving Show
-
 
 optionParser :: Parser Options
 optionParser = Options
-    <$> switch (long "frontend" <> short 'f')
-    <*> switch (long "backend" <> short 'b')
-    <*> switch (long "develop" <> short 'd')
+    <$> switch (long "frontend"   <> short 'f')
+    <*> switch (long "backend"    <> short 'b')
+    <*> switch (long "develop"    <> short 'd')
+    <*> switch (long "force--run" <> short 'r')
     <*> (optional $ strOption $ long "atom" <> short 'a')
 
-
-
 run :: MonadIO m => Options -> m ()
-run (Options frontend backend develop atom) = evalDefHostConfigs @'[RunnerConfig] $
+run (Options frontend backend develop forceRun atom) = evalDefHostConfigs @'[RunnerConfig] $
     if  frontend
     then runFrontend $ T.pack <$> atom
     else if backend
-    then runBackend
-    else runApp develop atom
+    then runBackend forceRun
+    else runApp develop forceRun atom
 
 filterArg :: String -> Bool
 filterArg = not . List.isInfixOf "-psn"

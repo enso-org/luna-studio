@@ -5,6 +5,7 @@ maintainer:         New Byte Order <contact@newbyteorder.com>
 
 dependencies:
     - base
+    - containers
     - dependent-state
     - prologue
     - typelevel
