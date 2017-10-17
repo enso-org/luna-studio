@@ -206,7 +206,7 @@ supervisord configFile = do
     supervisorBinPath <- supervisordBinPath
     supervisorDir     <- backendDir
     runProcess_ $ setWorkingDir (encodeString supervisorDir)
-                $ shell $ (encodeString supervisorBinPath) ++ "-n -c" ++ (encodeString configFile)
+                $ shell $ (encodeString supervisorBinPath) ++ " -n -c " ++ (encodeString configFile)
 
 stopSupervisor :: MonadRun m => m ()
 stopSupervisor = void $ supervisorctl ["shutdown"]
@@ -292,7 +292,7 @@ optionParser = Options
     <$> switch (long "frontend"   <> short 'f')
     <*> switch (long "backend"    <> short 'b')
     <*> switch (long "develop"    <> short 'd')
-    <*> switch (long "force--run" <> short 'r')
+    <*> switch (long "force-run"  <> short 'r')
     <*> (optional $ strOption $ long "atom" <> short 'a')
 
 run :: MonadIO m => Options -> m ()
