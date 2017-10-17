@@ -197,8 +197,9 @@ supervisorctl :: MonadRun m => [T.Text] -> m T.Text
 supervisorctl args = do
     supervisorBinPath <- supervisorctlBinPath
     supervisorDir     <- backendDir
-    Shelly.shelly $ Shelly.chdir supervisorDir
-                  $ Shelly.run supervisorBinPath args
+    let runSupervisorctl  = Shelly.chdir supervisorDir $ Shelly.run supervisorBinPath args
+        supressErrors act = Shelly.catchany act (\_ -> return "Unable to run supervisorctl")
+    liftIO . Shelly.shelly $ supressErrors runSupervisorctl
 
 supervisord :: MonadRun m => FilePath -> m ()
 supervisord configFile = do
