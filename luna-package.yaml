@@ -15,7 +15,7 @@ packages:
           path: ./
           deps:
           - zmq-1.0.0
-          - supervisord-1.0.0
+          - supervisord-0.0.4.dev
           - atom-1.18.0
           - kill-1.0.0
         windows.x64:
@@ -46,6 +46,13 @@ packages:
           1.0.0:
               linux.x64:
                   path: https://s3-eu-west-1.amazonaws.com/supervisord-bin-packages/supervisord.tar.gz
+                  deps: []
+              darwin.x64:
+                  path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/studio/supervisord/supervisord.zip
+                  deps: []
+          0.0.4.dev:
+              linux.x64:
+                  path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/supervisord/4.0.0dev/supervisord.tar.gz
                   deps: []
               darwin.x64:
                   path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/studio/supervisord/supervisord.zip
