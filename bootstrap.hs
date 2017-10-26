@@ -67,9 +67,6 @@ sanityCheck command params = Shelly.silently $ do
     exit <- Shelly.lastExitCode
     when (exit /= 0) $ Shelly.errorExit (Shelly.toTextIgnore command)
 
-pythonLibs :: [T.Text]
-pythonLibs = ["requests"]
-
 installPython :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
 installPython = do
     Shelly.echo "installing python locally"
@@ -93,7 +90,7 @@ installPython = do
                 Shelly.setenv "LDFLAGS" $ "-L" <> opensslPath <> "/lib"
             Shelly.cmd "pyenv" "install" supportedPythonVersion
         Shelly.cmd "pyenv" "local" supportedPythonVersion
-        Shelly.cmd "pip" $ "install" : pythonLibs
+        Shelly.cmd "pip" "install" "requirements.txt"
 
 installNode :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
 installNode = do
@@ -168,20 +165,20 @@ generateLunaShellScript :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m 
 generateLunaShellScript = do
     Shelly.echo "generate luna shell"
     current <- currentPath
-    shellCmd <- checkShell
     stackPaths <- getStackPaths
     let lbsPath            = current </> libs
-        pyenvShimsFolder   = current </> tools </> "python" </> "pyenv" </> "shims"
-        pyenvBinFolder     = current </> tools </> "python" </> "pyenv" </> "bin"
+        pyenvEnviromentVar = "export PYENV_ROOT=" <> (Shelly.toTextIgnore $ current </> tools </> "python" </> "pyenv")
+        pyenvShimsFolder   = "${PYENV_ROOT}" </> "shims"
+        pyenvBinFolder     = "${PYENV_ROOT}" </> "bin"
         stackPath          = current </> (parent stack)
         nodeBinPath        = current </> tools </> "node" </> supportedNodeVersion </> "bin"
-        addLdLibraryPath   = "export LD_LIBRARY_PATH=" <> Shelly.toTextIgnore lbsPath
+        addLdLibraryPath   = "export LD_LIBRARY_PATH=" <> Shelly.toTextIgnore lbsPath <> ":${LD_LIBRARY_PATH}"
         paths              = preparePaths [stackPath, pyenvShimsFolder, pyenvBinFolder, nodeBinPath]
         addPath            = "export PATH=" <> paths <> ":" <> T.strip stackPaths <> ":$PATH"
-        pyenvEnviromentVar = "export PYENV_ROOT=" <> (Shelly.toTextIgnore $ current </> tools </> "python" </> "pyenv")
+        initPyenv          = "eval \"$(pyenv init -)\""
         loadPython         = "pyenv" <>  " local " <> Shelly.toTextIgnore supportedPythonVersion
         lunaShellPath      = current </> lunaShell
-        fullCode           = T.unlines ["#!/bin/sh", addLdLibraryPath, addPath, pyenvEnviromentVar, loadPython, shellCmd]
+        fullCode           = T.unlines [addLdLibraryPath, addPath, pyenvEnviromentVar, loadPython]
     liftIO $ Data.Text.IO.writeFile (encodeString lunaShellPath) fullCode
 
 stackSetupForLunaStudio :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
