@@ -1,1 +1,1 @@
-python build --release
+python scripts_build/build.py --release
