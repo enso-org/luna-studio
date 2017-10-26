@@ -2,4 +2,4 @@
 
 [ -f "luna-shell.sh" ] && source "luna-shell.sh"
 
-python scripts_build/build.py $@
+python scripts_build/build.py "$@"
