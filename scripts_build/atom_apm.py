@@ -89,10 +89,9 @@ def run_apm(command, *args):
 
 
 def copy_studio (package_path, gui_url, frontend_args):
-    print (gui_url)
     if gui_url:
         try:
-            r = requests.get(gui_url[0])
+            r = requests.get(gui_url)
             z = zipfile.ZipFile(io.BytesIO(r.content))
             z.extractall(package_path)
         except:
