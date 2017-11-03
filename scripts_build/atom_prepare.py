@@ -76,8 +76,8 @@ def cp_files():
     for path in paths:
         shutil.copy(prep_path(path), prep_path('../luna-studio/atom/lib/gen'))
 
-def run():
-    if system.unix():
+def run(dev_mode=False):
+    if dev_mode:
         rm_old()
         create_dirs()
         ghcjs_code()

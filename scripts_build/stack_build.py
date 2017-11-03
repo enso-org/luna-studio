@@ -17,9 +17,9 @@ def create_bin_dirs():
     for path in ('../dist/bin/private', '../dist/bin/public/luna-studio'):
         os.makedirs(ap.prep_path(path), exist_ok=True)
 
-def build_ghcjs(frontend_args):
+def build_ghcjs(frontend_args, dev_mode):
     with working_directory(frontend_dir):
-        if system.unix():
+        if dev_mode:
             subprocess.check_output(['stack', 'build'] + frontend_args)
 
 def build_runner(runner, runner_args):

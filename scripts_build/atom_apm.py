@@ -15,6 +15,8 @@ import io
 import sys
 import system as system
 from common import working_directory
+import stack_build
+import atom_prepare
 
 #########################################################
 #                     PATHS                             #
@@ -26,7 +28,6 @@ studio_package_name = "luna-studio"
 studio_atom_source_path = ap.prep_path("../luna-studio/atom")
 package_config_path = ap.prep_path("../config/packages")
 packages_path = atom_home_path + '/packages/'
-url = "http://10.62.1.34:8000/studio.zip"
 
 paths = {
     system.systems.WINDOWS: {
@@ -87,12 +88,22 @@ def run_apm(command, *args):
     return run_process(apm_path, command, *args)
 
 
-def copy_studio (package_path):
-    if system.windows():
-        r = requests.get(url)
-        z = zipfile.ZipFile(io.BytesIO(r.content))
-        z.extractall(package_path)
-        return
+def copy_studio (package_path, gui_url, frontend_args):
+    print (gui_url)
+    if gui_url:
+        print ("if gui_url")
+        try:
+            r = requests.get(gui_url[0])
+            z = zipfile.ZipFile(io.BytesIO(r.content))
+            z.extractall(package_path)
+        except:
+            print("can not download gui from given url")
+            print("build frontend")
+            stack_build.build_ghcjs(frontend_args, dev_mode=True)
+            atom_prepare.run(dev_mode=True)
+    else:
+        stack_build.build_ghcjs(frontend_args, dev_mode=True)
+        atom_prepare.run(dev_mode=True)
 
     dir_util.copy_tree(studio_atom_source_path, package_path)
 
@@ -115,7 +126,7 @@ def apm_luna_local_atom_package (package_name, package_path):
         print(output3)
 
 
-def init_apm(link):
+def init_apm(gui_url, frontend_args, link):
     package_path = atom_home_path + '/packages/' + studio_package_name
     print("Initializing APM in: {}".format(package_path))
     oniguruma_package_path = package_path + '/node_modules/oniguruma'
@@ -127,7 +138,7 @@ def init_apm(link):
             print(output2)
     else:
         os.makedirs(package_path, exist_ok=True)
-        copy_studio(package_path)
+        copy_studio(package_path, gui_url, frontend_args)
         dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
         with working_directory(package_path):
             output = run_apm('install', '.')
@@ -158,13 +169,13 @@ def apm_packages():
                     apm_package(pkg_name, pkg_ver)
 
 
-def run(link=False):
+def run(gui_url, frontend_args, link=False):
     print("Installing Atom packages")
-    init_apm(link)
+    init_apm(gui_url, frontend_args, link)
     for pkg_name, pkg_url in atom_packages.items():
         apm_luna_atom_package(pkg_name, pkg_url)
     apm_packages()
 
 
-if __name__ == '__main__':
-    run()
+# if __name__ == '__main__':
+#     run()
