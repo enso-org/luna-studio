@@ -91,14 +91,13 @@ def run_apm(command, *args):
 def copy_studio (package_path, gui_url, frontend_args):
     print (gui_url)
     if gui_url:
-        print ("if gui_url")
         try:
             r = requests.get(gui_url[0])
             z = zipfile.ZipFile(io.BytesIO(r.content))
             z.extractall(package_path)
         except:
-            print("can not download gui from given url")
-            print("build frontend")
+            print("Can not download gui from given url")
+            print("Building frontend")
             stack_build.build_ghcjs(frontend_args, dev_mode=True)
             atom_prepare.run(dev_mode=True)
     else:

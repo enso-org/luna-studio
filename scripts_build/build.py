@@ -28,7 +28,7 @@ def build_app (backend_args, frontend_args, runner_args, gui_url, dev_mode=False
 
 def build_backend (backend_args):
     try:
-        print ("build backend")
+        print ("Building backend")
         stack_build.create_bin_dirs()
         stack_build.build_backend(backend_args)
         stack_build.link_main_bin()
@@ -40,9 +40,7 @@ def build_backend (backend_args):
 
 def build_frontend (frontend_args, gui_url, dev_mode):
     try:
-        print("build frontend")
-        print (gui_url)
-        print (dev_mode)
+        print("Building frontend")
         stack_build.create_bin_dirs()
         stack_build.build_ghcjs(frontend_args, dev_mode)
         atom_prepare.run(dev_mode)
