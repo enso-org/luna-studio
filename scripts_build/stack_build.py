@@ -22,18 +22,19 @@ def build_ghcjs(frontend_args, dev_mode):
         if dev_mode:
             subprocess.check_output(['stack', 'build'] + frontend_args)
 
-def build_runner(runner, runner_args):
-    with working_directory(runner):
+def build_runner(runner_args):
+    with working_directory(runner_dir):
         print ("build runner")
-        runnerPath = runner + '/src/StudioRunner.hs'
-        hostPath = runner + '/src/System/Host.hs'
-        resPath = runner + '/../resources/my.res'
+        runnerPath = runner_dir + '/src/StudioRunner.hs'
+        hostPath = runner_dir + '/src/System/Host.hs'
+        resPath = runner_dir + '/../resources/my.res'
         if system.windows():
             subprocess.check_output(['stack', 'build'])
             os.system('stack exec ghc -- ' + runnerPath + ' ' + hostPath + ' ' + resPath)
             return
 
         subprocess.check_output(['stack', 'build'] + runner_args)
+    mv_runner(runner_dir)
 
 def build_backend(backend_args):
     with working_directory(backend_dir):
@@ -66,8 +67,7 @@ def copy_std_lib ():
 
 def run(backend_args, frontend_args, runner_args):
     create_bin_dirs()
-    build_runner(runner_dir, runner_args)
-    mv_runner(runner_dir)
+    build_runner(runner_args)
     build_ghcjs(frontend_args)
     build_backend(backend_args)
     link_main_bin ()
