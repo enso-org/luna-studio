@@ -115,13 +115,12 @@ replaceWithLam parent name lam = do
             IR.matchExpr newLam $ \case
                 Lam _ b -> IR.putLayer @SpanOffset b oldEdgeOffset
             IR.putLayer @SpanOffset e 2
-            IR.replaceSource (IR.generalize newLam) e
-        Nothing -> substitute (IR.generalize newLam) lam
+            IR.replaceSource newLam e
+        Nothing -> substitute newLam lam
     IR.replace lam tmpBlank
-    Code.gossipLengthsChanged =<< case parent of
-        Just p -> IR.readTarget p
-        _      -> pure lam
-    Code.gossipLengthsChanged newLam
+    Code.gossipLengthsChangedBy (argLen + 2) $ case parent of
+        Just e -> newLam
+        _      -> lam
     return ()
 
 addLambdaArg' :: GraphOp m => Int -> String -> Maybe EdgeRef -> NodeRef -> m ()
