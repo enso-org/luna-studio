@@ -237,7 +237,7 @@ parsePortDefault (Constant (IntValue  i))
     | otherwise = do
         number <- IR.generalize <$> IR.number (fromIntegral (abs i)) `withLength` (length $ show $ abs i)
         minus  <- IR.generalize <$> IR.var Parser.uminusName `withLength` 1
-        app    <- IR.generalize <$> IR.app minus number
+        app    <- IR.generalize <$> IR.app minus number `withLength` (1 + length (show (abs i)))
         return app
 parsePortDefault (Constant (TextValue s)) = IR.generalize <$> IR.string s                  `withLength` (length s)
 parsePortDefault (Constant (RealValue d)) = IR.generalize <$> IR.number (Lit.fromDouble d) `withLength` (length $ show d)

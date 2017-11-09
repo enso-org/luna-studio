@@ -1682,5 +1682,6 @@ makeWhole srcAst dst = do
         newExpr   <- ASTPrint.printFullExpression srcAst
         Code.applyDiff dstBeg (dstBeg + oldLen) newExpr
         GraphUtils.rewireNode dst srcAst
-        dstTarget <- ASTRead.getASTTarget dst
-        Code.gossipLengthsChanged dstTarget
+        let lenDiff = fromIntegral (Text.length newExpr) - oldLen
+        dstPointer <- ASTRead.getASTPointer dst
+        Code.gossipLengthsChangedBy lenDiff dstPointer
