@@ -783,11 +783,13 @@ spec = around withChannels $ parallel $ do
             expectedCode = [r|
                 def main:
                     Just a = 4
-                    bar = foo 8 c
+                    bar = foo 7 c
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 Graph.renameNode loc c "Just a"
+                Just bar <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 3
+                Graph.setNodeExpression loc bar "foo 7 c"
         it "renames used node in code to pattern with already used var name" $ let
             mainCondensed = [r|
                 def main:
@@ -1936,15 +1938,19 @@ spec = around withChannels $ parallel $ do
                 def main:
                     «0»x = 10
                     «1»y = x
+                    «2»c = 1000
                 |]
             expectedCode = [r|
                 def main:
                     x = 10
                     y = None
+                    d = 1000
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [(outRef, inRef)] <- Graph.getConnections loc
                 Graph.disconnect loc inRef
+                Just c <- find (\n -> n ^. Node.name == Just "c") <$> Graph.getNodes loc
+                Graph.renameNode loc (c ^. Node.nodeId) "d"
         it "shows connection for alias after disconnecting self" $ let
             initialCode = [r|
                 def main:

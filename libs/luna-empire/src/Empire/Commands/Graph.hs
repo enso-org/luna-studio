@@ -879,9 +879,10 @@ renameNode loc nid name
                     ref      <- ASTRead.getASTPointer nid
                     Just beg <- Code.getOffsetRelativeToFile ref
                     varLen   <- IR.getLayer @SpanLength v
+                    patLen   <- IR.getLayer @SpanLength pat
                     vEdge    <- ASTRead.getVarEdge nid
                     IR.replaceSource pat vEdge
-                    Code.gossipLengthsChanged pat
+                    Code.gossipLengthsChangedBy (patLen - varLen) pat
                     void $ Code.applyDiff beg (beg + varLen) name
             runAliasAnalysis
         resendCode loc
@@ -1656,8 +1657,9 @@ setToNothing dst = do
         oldLen    <- IR.getLayer @SpanLength dstTarget
         Code.applyDiff dstBeg (dstBeg + oldLen) nothingExpr
         GraphUtils.rewireNode dst nothing
-        dstTarget <- ASTRead.getASTTarget dst
-        Code.gossipLengthsChanged dstTarget
+        let lenDiff = fromIntegral (Text.length nothingExpr) - oldLen
+        dstPointer <- ASTRead.getASTPointer dst
+        Code.gossipLengthsChangedBy lenDiff dstPointer
 
 removeInternalConnection :: GraphOp m => NodeId -> InPortId -> m ()
 removeInternalConnection nodeId port = do
