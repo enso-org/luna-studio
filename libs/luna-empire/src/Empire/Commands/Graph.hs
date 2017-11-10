@@ -342,14 +342,16 @@ setSeqOffsets node loff roff = do
     IR.putLayer @SpanOffset r roff
 
 insertAfter :: GraphOp m => NodeRef -> Maybe NodeRef -> NodeRef -> Delta -> Text -> m (NodeRef, Bool)
-insertAfter s after new textBeginning code = IR.matchExpr s $ \case
+insertAfter s after new textBeginning code = do
+    indentBy <- Code.getCurrentIndentationLength
+    IR.matchExpr s $ \case
         IR.Seq l r -> do
             rt <- IR.source r
             if Just rt == after
                 then do
-                    indentBy <- Code.getCurrentIndentationLength
                     Code.insertAt (fromIntegral textBeginning) ("\n" <> Text.replicate (fromIntegral indentBy) " " <> code)
                     newSeq <- IR.generalize <$> IR.seq s new
+                    IR.putLayer @SpanLength newSeq =<< IR.getLayer @SpanLength s
                     setSeqOffsets newSeq 0 (indentBy + 1)
                     return (newSeq, True)
                 else do
@@ -360,19 +362,28 @@ insertAfter s after new textBeginning code = IR.matchExpr s $ \case
                     when shouldUpdate (IR.replaceSource res l)
                     return (res, False)
         _ -> do
-            indentBy <- Code.getCurrentIndentationLength
             if after == Just s
                 then do
                     Code.insertAt (fromIntegral textBeginning) ("\n" <> Text.replicate (fromIntegral indentBy) " " <> code)
                     newSeq <- IR.generalize <$> IR.seq s new
+                    IR.putLayer @SpanLength newSeq =<< IR.getLayer @SpanLength s
                     setSeqOffsets newSeq 0 (indentBy + 1)
-                    return $ (newSeq, True)
+                    return (newSeq, True)
                 else do
                     slen <- IR.getLayer @SpanLength s
                     Code.insertAt (fromIntegral $ textBeginning - slen) (code <> "\n" <> Text.replicate (fromIntegral indentBy) " ")
                     newSeq <- IR.generalize <$> IR.seq new s
+                    IR.putLayer @SpanLength newSeq =<< IR.getLayer @SpanLength s
                     setSeqOffsets newSeq 0 (indentBy + 1)
-                    return $ (newSeq, True)
+                    return (newSeq, True)
+
+insertAfterAndUpdate :: GraphOp m => NodeRef -> Maybe NodeRef -> NodeRef -> Delta -> Text -> m ()
+insertAfterAndUpdate s after new textBeginning code = do
+    (newS, shouldUpdate) <- insertAfter s after new textBeginning code
+    when shouldUpdate $ updateGraphSeq $ Just newS
+    indentBy <- Code.getCurrentIndentationLength
+    newLen <- IR.getLayer @SpanLength new
+    Code.gossipLengthsChangedBy (newLen + indentBy + 1) newS
 
 getCurrentFunctionOutput :: GraphOp m => m NodeRef
 getCurrentFunctionOutput = do
@@ -392,9 +403,7 @@ putInSequence ref code meta = do
     currentOutput      <- getCurrentFunctionOutput
     anonOutput         <- ASTRead.isAnonymous currentOutput
     none               <- isNone currentOutput
-    (newS, shouldUpdate) <- insertAfter oldSeq nearestNode ref blockEnd code
-    when shouldUpdate (updateGraphSeq $ Just newS)
-    Code.gossipLengthsChanged newS
+    insertAfterAndUpdate oldSeq nearestNode ref blockEnd code
     when (Just currentOutput == nearestNode && anonOutput && not none) $ do
         Just nid <- GraphBuilder.getNodeIdWhenMarked currentOutput
         ASTBuilder.ensureNodeHasName generateNodeName nid
