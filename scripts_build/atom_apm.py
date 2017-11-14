@@ -105,10 +105,10 @@ def copy_studio (package_path, gui_url, frontend_args):
             print ("Preparing gui package")
             os.makedirs(dist_package_folder, exist_ok=True)
             with zipfile.ZipFile (gui_package_path, 'w') as zf:
-                os.chdir(studio_folder)
-                for dirname, subdirs, files in os.walk('./'):
-                    for filename in files:
-                        zf.write(os.path.join(dirname, filename))
+                with working_directory(studio_folder):
+                    for dirname, subdirs, files in os.walk('./'):
+                        for filename in files:
+                            zf.write(os.path.join(dirname, filename))
 
     else:
         stack_build.build_ghcjs(frontend_args, dev_mode=True)
