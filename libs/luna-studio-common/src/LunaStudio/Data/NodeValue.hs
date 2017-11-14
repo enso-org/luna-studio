@@ -1,4 +1,5 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 module LunaStudio.Data.NodeValue where
 
 import qualified Data.Aeson                 as Aeson
@@ -11,7 +12,7 @@ import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
 import           Data.UUID.Types            (UUID)
 import           LunaStudio.Data.Error      (Error)
-import           LunaStudio.Data.TypeRep    (TypeRep, toConstructorRep)
+import           LunaStudio.Data.TypeRep    (TypeRep (TCons), toConstructorRep)
 import           Prologue                   hiding (Text, TypeRep)
 
 
@@ -43,7 +44,11 @@ applyType :: MonadIO m => TypeRep -> Map VisualizerName VisualizerMatcher -> m (
 applyType tpe = fmap (Map.fromList . concat) . liftIO . mapM applyToEntry . Map.toList where
     applyToEntry (k, f) = liftIO $ map (convertToEntry k) <$> f tpe
     convertToEntry k (VisualizerEntry Nothing  p) = (k, p)
-    convertToEntry k (VisualizerEntry (Just n) p) = (Text.concat [k, convert ": ", n], p)
+    convertToEntry k (VisualizerEntry (Just n) p) = (Text.concat [k, ": ", n], p)
+
+getMdVis :: MonadIO m => Map VisualizerName VisualizerMatcher -> m (Maybe Visualizer)
+getMdVis visMap = fmap (mdVisName,) . Map.lookup mdVisName <$> applyType (TCons "Text" def) visMap
+    where mdVisName = "base: markdown"
 
 type ShortValue = Text
 

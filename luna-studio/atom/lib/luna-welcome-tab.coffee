@@ -84,8 +84,7 @@ class LunaWelcomeTab extends View
         @privateItems = []
         @privateNew = new ProjectItem({name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
-            projects.temporaryProject.open()
-            @detach())
+            projects.temporaryProject.open())
         @communityItems = []
         @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, comunnityNewClasses, (progress, finalize) =>
             finalize()
@@ -106,7 +105,6 @@ class LunaWelcomeTab extends View
                 projects.closeAllFiles()
                 atom.project.setPaths [recentProjectPath]
                 finalize()
-                @detach()
             @privateItems.push(item)
             @privateContainer.append(item.element)
 
@@ -119,10 +117,8 @@ class LunaWelcomeTab extends View
             else
                 if @tutorialsContainer[0].innerText is @noTutorialsMsg
                     @tutorialsContainer[0].innerText = ''
-                item = new ProjectItem(tutorial, tutorialClasses, (progress, finalize) =>
-                    projects.tutorial.open(tutorial, progress, =>
-                        finalize()
-                        @detach()))
+                item = new ProjectItem tutorial, tutorialClasses, (progress, finalize) =>
+                    projects.tutorial.open tutorial, progress, finalize
                 @tutorialItems.push(item)
                 @tutorialsContainer.append(item.element)
 

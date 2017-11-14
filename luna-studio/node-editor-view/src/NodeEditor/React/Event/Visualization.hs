@@ -4,12 +4,12 @@
 module NodeEditor.React.Event.Visualization where
 
 import           Common.Prelude
-import           LunaStudio.Data.NodeValue   (VisualizationId, VisualizerName)
-import           NodeEditor.React.Model.Node (NodeLoc)
+import           LunaStudio.Data.NodeValue            (VisualizationId, VisualizerName)
+import           NodeEditor.React.Model.Visualization (VisualizationParent)
 
 
 
-data Event = Focus                NodeLoc VisualizationId
-           | SelectVisualizer     NodeLoc VisualizationId VisualizerName
-           | ToggleVisualizations NodeLoc
+data Event = Focus                VisualizationParent VisualizationId
+           | SelectVisualizer     VisualizationParent VisualizationId VisualizerName
+           | ToggleVisualizations VisualizationParent
            deriving (Show, Generic, NFData, Typeable)

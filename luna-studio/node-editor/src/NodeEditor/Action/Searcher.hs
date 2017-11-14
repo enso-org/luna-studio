@@ -4,21 +4,25 @@ module NodeEditor.Action.Searcher where
 
 import           Common.Action.Command                      (Command)
 import           Common.Prelude
+import           Common.Report                              (warning)
+import qualified Data.Map                                   as Map
 import qualified Data.Text                                  as Text
 import qualified JS.Searcher                                as Searcher
+import           JS.Visualizers                             (registerVisualizerFrame, sendVisualizationData)
 import           Luna.Syntax.Text.Lexer                     (evalDefLexer)
 import           LunaStudio.Data.Geometry                   (snap)
 import           LunaStudio.Data.Matrix                     (invertedTranslationMatrix, translationMatrix)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import qualified LunaStudio.Data.NodeSearcher               as NS
+import           LunaStudio.Data.NodeValue                  (getMdVis)
 import           LunaStudio.Data.PortRef                    (OutPortRef (OutPortRef))
 import           LunaStudio.Data.ScreenPosition             (move, x, y)
 import           LunaStudio.Data.Size                       (height, width)
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
 import           LunaStudio.Data.Vector2                    (Vector2 (Vector2))
 import           NodeEditor.Action.Basic                    (createNode, localClearSearcherHints, localUpdateSearcherHints, modifyCamera,
-                                                             renameNode, renamePort, setNodeExpression)
+                                                             renameNode, renamePort, setNodeExpression, updateDocs)
 import qualified NodeEditor.Action.Basic                    as Basic
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
@@ -35,9 +39,11 @@ import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import qualified NodeEditor.React.Model.Port                as Port
 import qualified NodeEditor.React.Model.Searcher            as Searcher
+import           NodeEditor.React.Model.Visualization       (RunningVisualization (RunningVisualization))
 import qualified NodeEditor.React.View.App                  as App
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
 import           NodeEditor.State.Global                    (State)
+import           NodeEditor.State.Global                    (visualizers)
 import qualified NodeEditor.State.Global                    as Global
 import qualified NodeEditor.State.UI                        as UI
 import           Text.Read                                  (readMaybe)
@@ -49,6 +55,12 @@ instance Action (Command State) Searcher where
     update   = updateActionWithKey   searcherAction
     end      = close
 
+mkDocVis :: Command State (Maybe RunningVisualization)
+mkDocVis = getUUID >>= \uuid -> do
+    mayVis <- use visualizers >>= getMdVis
+    when (isNothing mayVis) $ warning "Documentation unavailable. Cannot find markdown visualizer."
+    liftIO $ registerVisualizerFrame uuid
+    return $ RunningVisualization uuid def <$> mayVis
 
 editExpression :: NodeLoc -> Command State ()
 editExpression nodeLoc = do
@@ -56,8 +68,9 @@ editExpression nodeLoc = do
             Just (TCons cn _) -> Just $ convert cn
             _                 -> Nothing
     mayN <- getExpressionNode nodeLoc
+    mayDocVis <- mkDocVis
     withJust mayN $ \n -> do
-        openWith (n ^. ExpressionNode.code) $ Searcher.Node nodeLoc (Searcher.NodeModeInfo (getClassName n) def def) def
+        openWith (n ^. ExpressionNode.code) $ Searcher.Node nodeLoc (Searcher.NodeModeInfo (getClassName n) def def mayDocVis) def
 
 editName :: NodeLoc -> Command State ()
 editName nodeLoc = do
@@ -82,7 +95,8 @@ open = do
             pos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
             return $ (def, Searcher.NewNode (snap pos) def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
-    openWith "" $ Searcher.Node nl (Searcher.NodeModeInfo className (Just nn) def) def
+    mayDocVis <- mkDocVis
+    openWith "" $ Searcher.Node nl (Searcher.NodeModeInfo className (Just nn) def mayDocVis) def
 
 openWith :: Text -> Searcher.Mode -> Command State ()
 openWith input mode = do
@@ -93,7 +107,7 @@ openWith input mode = do
             maySearcherBottom <- mapM translateToScreen . fmap (view ExpressionNode.topPosition) =<< getExpressionNode nl
             let maySearcherTop = move (Vector2 0 (-2 * searcherHeight)) <$> maySearcherBottom
             return $ (,) <$> maySearcherBottom <*> maySearcherTop
-        Searcher.Node nl (Searcher.NodeModeInfo _ mayNewNodeData _) _ -> do
+        Searcher.Node nl (Searcher.NodeModeInfo _ mayNewNodeData _ _) _ -> do
             maySearcherBottom <- mapM translateToScreen =<< case mayNewNodeData of
                 Nothing -> (view ExpressionNode.topPosition) `fmap2` getExpressionNode nl
                 Just (Searcher.NewNode pos _) -> return . Just $ ExpressionNode.toNodeTopPosition pos
@@ -184,11 +198,11 @@ accept scheduleEvent action = whenM (updateInputWithSelectedHint action) $
     withJustM getSearcher $ \searcher -> do
         let inputText = searcher ^. Searcher.inputText
         case searcher ^. Searcher.mode of
-            Searcher.Command                                           _ -> execCommand action scheduleEvent $ convert inputText
-            Searcher.Node     nl (Searcher.NodeModeInfo _ (Just nn) _) _ -> createNode (nl ^. NodeLoc.path) (nn ^. Searcher.position) inputText False >> close action
-            Searcher.Node     nl _                                     _ -> setNodeExpression nl inputText >> close action
-            Searcher.NodeName nl                                       _ -> renameNode nl inputText >> close action
-            Searcher.PortName portRef                                  _ -> renamePort portRef inputText >> close action
+            Searcher.Command                                             _ -> execCommand action scheduleEvent $ convert inputText
+            Searcher.Node     nl (Searcher.NodeModeInfo _ (Just nn) _ _) _ -> createNode (nl ^. NodeLoc.path) (nn ^. Searcher.position) inputText False >> close action
+            Searcher.Node     nl _                                       _ -> setNodeExpression nl inputText >> close action
+            Searcher.NodeName nl                                         _ -> renameNode nl inputText >> close action
+            Searcher.PortName portRef                                    _ -> renamePort portRef inputText >> close action
 
 execCommand :: Searcher -> (Event -> IO ()) -> String -> Command State ()
 execCommand action scheduleEvent inputText = case readMaybe inputText of
@@ -210,11 +224,15 @@ close _ = do
     App.focus
 
 selectNextHint :: Searcher -> Command State ()
-selectNextHint _ = modifySearcher $ use (Searcher.hints . to length) >>= \hintsLen ->
-    Searcher.selected %= min hintsLen . succ
+selectNextHint _ = do
+    modifySearcher $ use (Searcher.hints . to length) >>= \hintsLen ->
+        Searcher.selected %= min hintsLen . succ
+    updateDocs
 
 selectPreviousHint :: Searcher -> Command State ()
-selectPreviousHint _ = modifySearcher $ Searcher.selected %= max 0 . pred
+selectPreviousHint _ = do
+    modifySearcher $ Searcher.selected %= max 0 . pred
+    updateDocs
 
 acceptWithHint :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
 acceptWithHint scheduleEvent hintNum' action = let hintNum = (hintNum' - 1) `mod` 10 in

@@ -152,7 +152,7 @@ spec = around withChannels $ parallel $ do
                 Graph.loadCode loc codeWithMetadata
                 Graph.dumpMetadata "TestPath"
             length metadata `shouldBe` 12
-        it "metadata node is deleted on file load" $ \env -> do
+        it "gets metadata expr" $ \env -> do
             meta <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
@@ -160,7 +160,7 @@ spec = around withChannels $ parallel $ do
                 Graph.withUnit loc $ runASTOp $ do
                     cls <- use Graph.clsClass
                     ASTRead.getMetadataRef cls
-            meta `shouldSatisfy` isNothing
+            meta `shouldSatisfy` isJust
         it "shows no metadata if code doesn't have any" $ \env -> do
             meta <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -170,35 +170,26 @@ spec = around withChannels $ parallel $ do
                     cls <- use Graph.clsClass
                     ASTRead.getMetadataRef cls
             meta `shouldSatisfy` isNothing
-        it "addMetadataToCode does not overwrite current code" $ \env -> do
-            (meta, code) <- evalEmp env $ do
+        it "puts updated metadata in code" $ \env -> do
+            (prevMeta, meta) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc codeWithMetadata
+                prevMeta <- Graph.dumpMetadata "TestPath"
                 Graph.addMetadataToCode "TestPath"
                 Graph.FileMetadata meta <- Graph.readMetadata "TestPath"
-                code <- Graph.withUnit loc $ use Graph.code
-                return (meta, code)
-            meta `shouldMatchList` []
-            code `shouldBe` Graph.stripMetadata codeWithMetadata
-        it "addMetadataToCode adds metadata to code without it" $ \env -> do
-            code <- evalEmp env $ do
+                return (prevMeta, meta)
+            prevMeta `shouldMatchList` meta
+        it "puts metadata in code without metadata" $ \env -> do
+            (prevMeta, meta) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.loadCode loc crypto
-                code <- Graph.addMetadataToCode "TestPath"
-                return $ Text.unpack code
-            code `shouldStartWith` [r|def getCurrentPrices crypto fiat:
-    «0»baseUri = "https://min-api.cryptocompare.com/data/price?"
-    «3»withFsym = baseUri + "fsym=" + crypto
-    «4»withTsym = withFsym + "&tsyms=" + fiat
-    «5»result = Http.getJSON withTsym . lookupReal fiat
-    result
-
-def main:
-    «2»node1 = every 500.miliseconds (getCurrentPrices "BTC" "USD")
-
-### META|]
+                Graph.loadCode loc withoutMetadata
+                prevMeta <- Graph.dumpMetadata "TestPath"
+                Graph.addMetadataToCode "TestPath"
+                Graph.FileMetadata meta <- Graph.readMetadata "TestPath"
+                return (prevMeta, meta)
+            prevMeta `shouldMatchList` meta
         it "loads metadata from a file" $ \env -> do
             (zeroMeta, oneMeta) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -231,13 +222,17 @@ def main:
                 Graph.loadCode loc oneNode
                 nodes <- Graph.getNodes loc
                 let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
                 Just pi <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
                     Graph.getNodeIdForMarker 0
                 Graph.removeNodes (loc |>= main ^. Node.nodeId) [pi]
                 Graph.getCode loc
-            Text.unpack code `shouldBe` [r|def main:
-    None
-|]
+            Text.unpack code `shouldBe` normalizeQQ [r|
+                def main:
+                    None
+
+                |]
         it "copies nodes with metadata" $ \env -> do
             code <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -489,7 +484,7 @@ def main:
                 Graph.loadCode loc testLuna
                 --FIXME[MM]: we need this test to behave like Atom, so end column is
                 --           4 characters further than it is in the file
-                Graph.substituteCodeFromPoints "TestPath" $ [Diff (Just (Point 4 12, Point 36 14)) "5" Nothing]
+                Graph.substituteCodeFromPoints "TestPath" $ [Diff (Point 4 12) (Point 36 14) "5" Nothing]
                 Graph.withUnit loc $ use Graph.code
             code `shouldBe` [r|def main:
     «0»pi = 3.14
@@ -504,6 +499,8 @@ def main:
     «2»c = 4.0
 
     «14»5
+
+### META {"metas":[]}
 |]
         it "removes nodes in a function in a file with imports" $ \env -> do
             code <- evalEmp env $ do
@@ -519,4 +516,5 @@ def main:
 
 def bar:
     None
-|]
+
+### META {"metas":[{"marker":37,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":0,"_vector2_x":0}}}},{"marker":38,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":0,"_vector2_x":176}}}},{"marker":39,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":176,"_vector2_x":176}}}}]}|]

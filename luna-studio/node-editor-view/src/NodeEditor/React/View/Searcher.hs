@@ -2,20 +2,22 @@
 module NodeEditor.React.View.Searcher where
 
 import           Common.Prelude
-import qualified Data.Text                       as Text
-import           JS.Searcher                     (searcherId)
-import           LunaStudio.Data.NodeSearcher    (Match, Range)
-import qualified LunaStudio.Data.NodeSearcher    as NS
-import qualified NodeEditor.Event.Keys           as Keys
-import qualified NodeEditor.Event.UI             as UI
-import qualified NodeEditor.React.Event.App      as App
+import qualified Data.Text                           as Text
+import           JS.Searcher                         (searcherId)
+import           LunaStudio.Data.NodeSearcher        (Match, Range)
+import qualified LunaStudio.Data.NodeSearcher        as NS
+import qualified NodeEditor.Event.Keys               as Keys
+import qualified NodeEditor.Event.UI                 as UI
+import qualified NodeEditor.React.Event.App          as App
 import           NodeEditor.React.Event.Searcher
-import           NodeEditor.React.IsRef          (IsRef, dispatch)
-import           NodeEditor.React.Model.Searcher (Searcher)
-import qualified NodeEditor.React.Model.Searcher as Searcher
-import qualified NodeEditor.React.View.Style     as Style
+import           NodeEditor.React.IsRef              (IsRef, dispatch)
+import           NodeEditor.React.Model.Searcher     (Searcher)
+import qualified NodeEditor.React.Model.Searcher     as Searcher
+import qualified NodeEditor.React.View.Style         as Style
+import           NodeEditor.React.View.Visualization (docVisualization_)
 import           React.Flux
-import qualified React.Flux                      as React
+import qualified React.Flux                          as React
+
 
 name :: JSString
 name = "searcher"
@@ -30,8 +32,8 @@ handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
             UI.AppEvent $ App.KeyDown k
         else UI.SearcherEvent $ KeyDown k
 
-searcher :: IsRef ref => ReactView (ref, Searcher)
-searcher =  React.defineView name $ \(ref, s) -> do
+searcher :: IsRef ref => ReactView (ref, Searcher, FilePath)
+searcher =  React.defineView name $ \(ref, s, visLibPath) -> do
     let mode        = s ^. Searcher.mode
         -- nodePos     = s ^. Searcher.position
         -- nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
@@ -41,6 +43,7 @@ searcher =  React.defineView name $ \(ref, s) -> do
             Searcher.NodeName {} -> [ "searcher--node-name"]
             Searcher.PortName {} -> [ "searcher--port-name"]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.inputText)] else []
+        docPresent = maybe False (not . Text.null) $ s ^? Searcher.selectedMatch . _Just . NS.doc
     div_
         [ "key"       $= name
         , "className" $= className
@@ -48,10 +51,11 @@ searcher =  React.defineView name $ \(ref, s) -> do
         , onMouseUp     $ \e _ -> [stopPropagation e]
         , onClick       $ \e _ -> [stopPropagation e]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ do
+        ] $ do 
+        let inputClasses = Style.prefixFromList $ "searcher__input" : (if s ^. Searcher.selected == 0 then ["searcher__input--selected"] else [])
         input_ (
             [ "key"         $= "searchInput"
-            , "className"   $= Style.prefix "searcher__input"
+            , "className"   $= inputClasses
             , "id"          $= searcherId
             , onKeyDown     $ handleKeyDown ref
             , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
@@ -68,14 +72,11 @@ searcher =  React.defineView name $ \(ref, s) -> do
             let selected = s ^. Searcher.selected
             case s ^. Searcher.mode of
                 Searcher.Command    results -> do results_   ref selected results
-                                                  resultDoc_ ref selected results
-                Searcher.Node   _ _ results -> do results_   ref selected results
-                                                  resultDoc_ ref selected results
+                Searcher.Node _ nmi results -> do results_   ref selected results
+                                                  withJust (s ^. Searcher.docVis) $ docVisualization_ ref docPresent visLibPath
                 Searcher.NodeName _ results -> do results_   ref selected results
-                                                  resultDoc_ ref selected results
                 Searcher.PortName _ results -> do results_   ref selected results
-                                                  resultDoc_ ref selected results
-                
+
 
     -- div_
         --     [ "key"       $= "searcherPreview"
@@ -83,11 +84,11 @@ searcher =  React.defineView name $ \(ref, s) -> do
         --     ] $ withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
                                               -- . (Node.isExpandedControls .~ True)
 
-searcher_ :: IsRef ref => ref -> Searcher -> ReactElementM ViewEventHandler ()
-searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
+searcher_ :: IsRef ref => ref -> Searcher -> FilePath -> ReactElementM ViewEventHandler ()
+searcher_ ref model visLibPath = React.viewWithSKey searcher name (ref, model, visLibPath) mempty
 
 results_ :: IsRef ref => ref -> Int -> [Match] -> ReactElementM ViewEventHandler ()
-results_ ref selected results = 
+results_ ref selected results =
     div_
         [ "key"       $= "searcherResultsList"
         , "className" $= Style.prefix "searcher__results__list"
@@ -125,16 +126,3 @@ highlighted_ result = prefixElem >> highlighted_' 0 highlights where
                   , "className" $= Style.prefix "searcher__hl" ]
                 $ elemString highlighted
             highlighted_' (start + len) rest
-
-resultDoc_ :: IsRef ref => ref -> Int -> [Match] -> ReactElementM ViewEventHandler ()
-resultDoc_ ref selected results = do
-    let r   = drop (selected - 1) results
-        doc' = case r of
-                   []    -> ""
-                   (x:_) -> case Text.unpack $ x ^. NS.doc of
-                                 [] -> "No documentation."
-                                 _  -> Text.unpack $ x ^. NS.doc
-    div_
-        [ "key"       $= "doc"
-        , "className" $= Style.prefix "searcher__doc"
-        ] $ elemString doc'

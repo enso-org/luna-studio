@@ -73,7 +73,6 @@ module Empire.Commands.Graph
     , getImports
     , getAvailableImports
     , setInterpreterState
-    , stripMetadata
     ) where
 
 import           Control.Arrow                    ((&&&), (***))
@@ -88,7 +87,7 @@ import qualified Data.Aeson.Text                  as Aeson
 import           Data.Coerce                      (coerce)
 import           Data.Char                        (isSeparator)
 import           Data.Foldable                    (toList)
-import           Data.List                        ((++), elemIndex, find, group, partition, sortOn, nub, head)
+import           Data.List                        (elemIndex, find, group, partition, sortOn, nub, head)
 import qualified Data.List.Split                  as Split
 import           Data.Map                         (Map)
 import qualified Data.Map                         as Map
@@ -812,7 +811,16 @@ getNodeMeta loc = withGraph loc . runASTOp . AST.getNodeMeta
 
 getCode :: GraphLocation -> Empire Text
 getCode loc@(GraphLocation file _) = do
-    code <- withUnit (GraphLocation file (Breadcrumb [])) $ use Graph.code
+    code <- withUnit (GraphLocation file (Breadcrumb [])) $ runASTOp $ do
+        unit     <- use Graph.clsClass
+        metaRef  <- ASTRead.getMetadataRef unit
+        case metaRef of
+            Just meta -> do
+                metaStart <- Code.functionBlockStartRef meta
+                LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan meta
+                Code.getAt 0 (metaStart - off)
+            _         ->
+                use Graph.code
     return $ Code.removeMarkers code
 
 getBuffer :: FilePath -> Empire Text
@@ -944,6 +952,7 @@ substituteCode path changes = do
     handle (\(e :: SomeException) -> withUnit loc $ Graph.clsParseError ?= e) $ do
         withUnit loc $ do
             Graph.code .= newCode
+            Graph.clsParseError .= Nothing
         reloadCode loc newCode
 
 lamItemToMapping :: ((NodeId, Maybe Int), BH.LamItem) -> ((NodeId, Maybe Int), (NodeId, NodeId))
@@ -1001,32 +1010,6 @@ markNode nodeId = do
     var <- ASTRead.getASTMarkerPosition nodeId
     ASTBuilder.attachNodeMarkers nodeId [] var
 
-stripMetadata :: Text -> Text
-stripMetadata text = flip Text.append "\n" $ Text.stripEnd $ convert withoutMeta
-    where
-        lexerStream  = Lexer.evalDefLexer (convert text)
-        code         = takeWhile (\(Lexer.Token _ _ s) -> isNothing $ Lexer.matchMetadata s) lexerStream
-        textTree     = SpanTree.buildSpanTree (convert text) $ code ++ [Lexer.Token 0 0 Lexer.ETX]
-        withoutMeta  = SpanTree.foldlSpans (\t (Spanned _ t1) -> t <> t1) "" textTree
-
-removeMetadataNode :: ClassOp m => m ()
-removeMetadataNode = do
-    unit <- use Graph.clsClass
-    IR.matchExpr unit $ \case
-        IR.Unit _ _ klass -> do
-            klass' <- IR.source klass
-            newLinks <- IR.matchExpr klass' $ \case
-                IR.ClsASG _ _ _ _ funs -> do
-                    funs' <- mapM IR.source funs
-                    catMaybes <$> forM funs (\f -> do
-                        f' <- IR.source f
-                        IR.matchExpr f' $ \case
-                            IR.Metadata{} -> return Nothing
-                            _             -> return (Just f))
-            Just (klass'' :: IR.Expr (IR.ClsASG)) <- IR.narrow klass'
-            IR.modifyExprTerm klass'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize newLinks :: [IR.Link (IR.Expr IR.Draft) (IR.Expr Term.ClsASG)])
-
-
 loadCode :: GraphLocation -> Text -> Empire ()
 loadCode (GraphLocation file _) code = do
     let loc = GraphLocation file def
@@ -1037,21 +1020,11 @@ loadCode (GraphLocation file _) code = do
     funs <- use $ activeFiles . at file . traverse . Library.body . Graph.clsFuns
     let funsUUIDs = Map.fromList $ map (\(k, fun) -> (fun ^. Graph.funName, k)) $ Map.assocs funs
     activeFiles . at file . traverse . Library.body . Graph.clsFuns .= Map.empty
-    (codeHadMeta, prevParseError) <- withUnit (GraphLocation file (Breadcrumb [])) $ do
-        prevParseError <- use $ Graph.clsParseError
-        Graph.clsParseError .= Nothing
+    withUnit (GraphLocation file (Breadcrumb [])) $ do
         putNewIRCls ir
         FileMetadata fileMetadata <- runASTOp $ readMetadata'
         let savedNodeMetas = Map.fromList $ map (\(MarkerNodeMeta m meta) -> (m, meta)) fileMetadata
         Graph.nodeCache . Graph.nodeMetaMap %= (\cache -> Map.union cache savedNodeMetas)
-        runASTOp $ do
-            let codeWithoutMeta = stripMetadata code
-            Graph.code .= codeWithoutMeta
-            metaRef  <- ASTRead.getMetadataRef unit
-            removeMetadataNode
-            forM_ metaRef IR.deepDelete
-            return $ (codeWithoutMeta /= code, prevParseError)
-    when (codeHadMeta && isJust prevParseError) $ resendCode loc
     functions <- withUnit loc $ do
         klass <- use Graph.clsClass
         runASTOp $ do
@@ -1207,15 +1180,43 @@ dumpMetadata file = do
         return [ MarkerNodeMeta marker meta | (marker, (Just meta, _)) <- oldMetas ]
     return $ concat metas
 
-addMetadataToCode :: FilePath -> Empire Text
+addMetadataToCode :: FilePath -> Empire ()
 addMetadataToCode file = do
     metadata <- FileMetadata <$> dumpMetadata file
     let metadataJSON           = (TL.toStrict . Aeson.encodeToLazyText . Aeson.toJSON) metadata
         metadataJSONWithHeader = Lexer.mkMetadata (Text.cons ' ' metadataJSON)
-    withUnit (GraphLocation file (Breadcrumb [])) $ do
-        code <- use Graph.code
-        let metadataJSONWithHeaderAndOffset = Text.cons '\n' metadataJSONWithHeader
-        return $ Text.concat [code, metadataJSONWithHeaderAndOffset]
+    withUnit (GraphLocation file (Breadcrumb [])) $ runASTOp $ do
+        unit     <- use Graph.clsClass
+        metaRef  <- ASTRead.getMetadataRef unit
+        case metaRef of
+            Just meta -> do
+                metaStart <- Code.functionBlockStartRef meta
+                LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan meta
+                Code.applyDiff metaStart (metaStart + len) metadataJSONWithHeader
+                IR.putLayer @CodeSpan meta $ CodeSpan.mkRealSpan $ LeftSpacedSpan (SpacedSpan off (fromIntegral $ Text.length metadataJSONWithHeader))
+            Nothing   -> do
+                mayLastFun <- Safe.lastMay <$> ASTRead.classFunctions unit
+                case mayLastFun of
+                    Just lastFun -> do
+                        lastFunStart <- Code.functionBlockStartRef lastFun
+                        LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan lastFun
+                        let metaOffset = 2
+                            metaStart  = lastFunStart + len
+                            metadataJSONWithHeaderAndOffset = Text.concat [Text.replicate metaOffset "\n", metadataJSONWithHeader]
+                        Code.insertAt metaStart metadataJSONWithHeaderAndOffset
+                        meta <- IR.metadata (convert metadataJSONWithHeader)
+                        IR.putLayer @CodeSpan meta $ CodeSpan.mkRealSpan $ LeftSpacedSpan (SpacedSpan (fromIntegral metaOffset) (fromIntegral $ Text.length metadataJSONWithHeader))
+
+                        IR.matchExpr unit $ \case
+                            IR.Unit _ _ cls -> do
+                                cls' <- IR.source cls
+                                Just (cls'' :: IR.Expr (IR.ClsASG)) <- IR.narrow cls'
+                                l <- IR.unsafeGeneralize <$> IR.link meta cls''
+                                links <- IR.matchExpr cls' $ \case
+                                    IR.ClsASG _ _ _ _ decls -> return decls
+                                newFuns <- putNewFunctionRef l (Just lastFun) links
+                                IR.modifyExprTerm cls'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize newFuns :: [IR.Link (IR.Expr IR.Draft) (IR.Expr Term.ClsASG)])
+                    Nothing      -> return ()
 
 parseMetadata :: MonadIO m => Text -> m FileMetadata
 parseMetadata meta =
@@ -1494,14 +1495,14 @@ pasteText loc@(GraphLocation file _) ranges (Text.concat -> text) = do
         (updatedMetas, cursors) <- unzip <$> (runASTOp $ forM rangesReversed $ \(start, end) -> do
             (snippet, metas) <- remarkerSnippet m $ convert withoutMeta
             Code.applyDiff start end snippet
-            code' <- use Graph.code
+            code <- use Graph.code
             let endPosition = start + fromIntegral (Text.length snippet)
-                cursorPos   = Code.deltaToPoint endPosition code'
+                cursorPos   = Code.deltaToPoint endPosition code
             return (metas, cursorPos))
         code           <- use Graph.code
         return (code, concat updatedMetas, cursors)
     reloadCode (GraphLocation file (Breadcrumb [])) code `catch` \(e::ASTParse.SomeParserException) ->
-        withUnit (GraphLocation file (Breadcrumb [])) (Graph.code .= code >> Graph.clsParseError ?= toException e)
+        withUnit (GraphLocation file (Breadcrumb [])) (Graph.code .= code)
     funs <- withUnit (GraphLocation file (Breadcrumb [])) $ do
         funs <- use Graph.clsFuns
         return $ Map.keys funs
@@ -1531,7 +1532,6 @@ getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Bread
                                 IR.matchExpr a' $ \case
                                     IR.UnresolvedImportSrc n -> case n of
                                         Term.Absolute n -> return $ convert n
-            IR.ClsASG{} -> return [] -- why does it put ClsASG and not Unit when file does not parse???
     let implicitImports = Set.fromList [nativeModuleName, "Std.Base"]
         resultSet       = Set.fromList explicitImports `Set.union` implicitImports
     return $ Set.toList resultSet

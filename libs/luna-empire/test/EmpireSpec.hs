@@ -1053,13 +1053,13 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = (Just x): y: z: x + y" def
                 Graph.withGraph top $ use Graph.code
-            res `shouldBe` "def main:\n    «0»foo = (Just x): y: z: «1»x + y\n    None\n"
+            res `shouldBe` "def main:\n    «0»foo = (Just x): y: z: «1»x + y\n    None"
         it "adds a marker in a proper place in lambda pattern-matching on an argument 2" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = (Just (Just (Foo x b c))): y: z: x + y" def
                 Graph.withGraph top $ use Graph.code
-            res `shouldBe` "def main:\n    «0»foo = (Just (Just (Foo x b c))): y: z: «1»x + y\n    None\n"
+            res `shouldBe` "def main:\n    «0»foo = (Just (Just (Foo x b c))): y: z: «1»x + y\n    None"
         it "connects two outputs when one of them is pattern match" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID

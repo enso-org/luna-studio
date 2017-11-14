@@ -161,19 +161,6 @@ spec = around withChannels $ parallel $ do
             Code.deltaToPoint 13 code `shouldBe` (Point 3 2)
             Code.deltaToPoint 0  code `shouldBe` (Point 0 0)
             Code.deltaToPoint 23 code `shouldBe` (Point 4 4)
-    describe "removes meta" $ do
-        it "removes meta" $ \_ -> do
-            let code = [r|def main:
-    «0»pi = 3.14
-    None
-
-### META {"metas":[]}
-|]
-                expectedCode = [r|def main:
-    «0»pi = 3.14
-    None
-|]
-            Graph.stripMetadata code `shouldBe` expectedCode
     describe "code marker removal" $ do
         it "removes markers" $ \env -> do
             let code = Text.unlines [ "def main:"
@@ -570,7 +557,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = GraphLocation "/TestFile" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.addNode top u1 "4" (atXPos (-20.0))
                 Graph.getCode top
-            code `shouldBe` "def main:\n    number1 = 4\n    None\n"
+            code `shouldBe` "def main:\n    number1 = 4\n    None"
         it "adds one node and updates it" $ \env -> do
             u1 <- mkUUID
             code <- evalEmp env $ do
@@ -578,7 +565,7 @@ spec = around withChannels $ parallel $ do
                 Graph.markerCodeSpan top 0
                 Graph.setNodeExpression top u1 "5"
                 Graph.getCode top
-            code `shouldBe` "def main:\n    number1 = 5\n    None\n"
+            code `shouldBe` "def main:\n    number1 = 5\n    None"
         it "disconnect updates code at proper range" $ let
             expectedCode = [r|
                 def main:
@@ -1835,8 +1822,8 @@ spec = around withChannels $ parallel $ do
                 Graph.pasteText loc [Range 50 60] [code]
                 Graph.substituteCode "/TestPath" [(55, 59, "")]
         it "sends update with proper code points after paste" $ \env -> do
-            let initialCode = "def main:\n\n    print 3.14\n"
-                expectedCode = "def main:\n3.14\n    print 3.14\n"
+            let initialCode = "def main:\n\n    print 3.14"
+                expectedCode = "def main:\n3.14\n    print 3.14"
             (start, end, code) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
@@ -1847,7 +1834,7 @@ spec = around withChannels $ parallel $ do
                 return (Code.deltaToPoint 0 codeAfter, Code.deltaToPoint (fromIntegral $ Text.length codeAfter) codeAfter, codeAfter)
             liftIO $ do
                 start `shouldBe` Point 0 0
-                end `shouldBe` Point 14 2
+                end `shouldBe` Point 13 2
                 code `shouldBe` expectedCode
         it "pastes code with meta" $ let
             initialCode = [r|
@@ -2166,8 +2153,8 @@ def main:
     bar = foo 8 c
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                Graph.substituteCodeFromPoints "/TestPath" [ Diff (Just (Point 0 2, Point 0 3)) "" Nothing
-                                                           , Diff (Just (Point 0 4, Point 0 4)) "    foo = a: b: a + b\n" Nothing
+                Graph.substituteCodeFromPoints "/TestPath" [ Diff (Point 0 2) (Point 0 3) "" Nothing
+                                                           , Diff (Point 0 4) (Point 0 4) "    foo = a: b: a + b\n" Nothing
                                                            ]
         it "rename from tuple to var" $ let
             initialCode = [r|

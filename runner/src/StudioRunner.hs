@@ -223,6 +223,8 @@ supervisord :: MonadRun m => FilePath -> m ()
 supervisord configFile = do
     supervisorBinPath <- supervisordBinPath
     supervisorDir     <- backendDir
+    ldLibPath <- Shelly.shelly $ Shelly.get_env "LD_LIBRARY_PATH"
+    setEnv "OLD_LIBPATH" $ fromText $ fromMaybe "\"\"" ldLibPath
     runProcess_ $ setWorkingDir (encodeString supervisorDir)
                 $ shell $ (encodeString supervisorBinPath) ++ " -n -c " ++ (encodeString configFile)
 
@@ -294,12 +296,13 @@ runPackage develop forceRun = case currentHost of
         setEnv "LUNA_STUDIO_GUI_PATH"        =<< atomAppPath
         setEnv "LUNA_STUDIO_CONFIG_PATH"     =<< configPath
         setEnv "LUNA_STUDIO_KILL_PATH"       =<< killSupervisorBinPath
-        setEnv "LUNA_TMP"              =<< lunaTmpPath
-        setEnv "LUNA_PROJECT"          =<< lunaProjectsPath
-        setEnv "LUNA_TUTORIALS"        =<< lunaTutorialsPath
+        setEnv "LUNA_TMP"                    =<< lunaTmpPath
+        setEnv "LUNA_PROJECT"                =<< lunaProjectsPath
+        setEnv "LUNA_TUTORIALS"              =<< lunaTutorialsPath
         when develop   $ liftIO $ Environment.setEnv "LUNA_STUDIO_DEVELOP" "True"
         createStorageDataDirectory develop
         unless develop $ checkLunaHome
+
         runLunaEmpire logs supervisorConf forceRun
 
 runApp :: MonadRun m => Bool -> Bool -> Maybe String -> m ()

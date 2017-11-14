@@ -4,20 +4,21 @@ module NodeEditor.React.View.PortControl
     ) where
 
 import           Common.Prelude              hiding (group)
+import           JS.Key                      (toKey)
 import qualified JS.Mount                    as Mount
 import           LunaStudio.Data.Port        (InPortIndex (Arg))
 import qualified LunaStudio.Data.Port        as PortAPI
 import qualified LunaStudio.Data.PortDefault as PortDefault
 import           LunaStudio.Data.PortRef     (InPortRef (InPortRef))
 import           LunaStudio.Data.TypeRep     (TypeRep (TCons))
+import           NodeEditor.Data.Slider      (InitValue (Continous, Discrete))
 import qualified NodeEditor.Event.UI         as UI
 import qualified NodeEditor.React.Event.Node as Node
+import           NodeEditor.React.IsRef      (IsRef, dispatch)
 import           NodeEditor.React.Model.Node (NodeLoc)
 import           NodeEditor.React.Model.Port (InPort)
 import qualified NodeEditor.React.Model.Port as Port
-import           NodeEditor.React.IsRef      (IsRef, dispatch)
 import qualified NodeEditor.React.View.Style as Style
-import           NodeEditor.Data.Slider      (InitValue (Continous, Discrete))
 import           React.Flux                  as React
 
 
@@ -57,31 +58,32 @@ isExpNotation a =
         'e':_ -> True
         _:xs  -> isExpNotation xs
 
-portControlId, labelPrefix, controlPrefix :: JSString
-portControlId = Mount.prefix "focus-portcontrol"
+labelPrefix, controlPrefix :: JSString
 labelPrefix   = Mount.prefix "label-"
 controlPrefix = Mount.prefix "control-"
 
-portControl_ :: IsRef r => r -> NodeLoc -> InPort -> ReactElementM ViewEventHandler ()
-portControl_ ref' nl' port' = React.viewWithSKey portControl (jsShow $ port' ^. Port.portId) (ref', nl', port') mempty
+portControlId :: InPortRef -> JSString
+portControlId portRef = Mount.prefix "focus-portcontrol" <> toKey portRef
 
-portControl :: IsRef r => ReactView (r, NodeLoc, InPort)
-portControl = React.defineView "portControl" $ \(ref, nl, port) -> 
-    
+portControl_ :: IsRef r => r -> NodeLoc -> InPort -> Bool -> ReactElementM ViewEventHandler ()
+portControl_ ref' nl' port' isTextEdited = React.viewWithSKey portControl (jsShow $ port' ^. Port.portId) (ref', nl', port', isTextEdited) mempty
+
+portControl :: IsRef r => ReactView (r, NodeLoc, InPort, Bool)
+portControl = React.defineView "portControl" $ \(ref, nl, port, isTextEdited) ->
     case port ^. Port.portId of
         [Arg _] -> row ["node__control"] $ do
                         div_
                            [ "key"       $= (labelPrefix <> jsShow (port ^. Port.portId))
                            , "className" $= Style.prefix "node__label"
                            ] $ elemString . convert $ port ^. Port.name
-                        portCtrl ref nl port False
+                        portCtrl ref nl port isTextEdited False
 
         []      -> row ["node__control", "node__control--alias"] $ do
                         div_
                            [ "key"       $= "alias-label"
                            , "className" $= Style.prefix "node__label"
                            ] $ elemString "alias"
-                        portCtrl ref nl port True
+                        portCtrl ref nl port isTextEdited True
         _       -> row ["node__control", "node__control--self"] $ do
                         div_
                            [ "key"       $= "self-label"
@@ -92,7 +94,7 @@ portControl = React.defineView "portControl" $ \(ref, nl, port) ->
     where
         row classList = div_ [ "className" $= Style.prefixFromList classList ]
 
-        portCtrl ref nl port isAlias = do
+        portCtrl ref nl port isTextEdited isAlias = do
             let valueClass  = case port ^. Port.state of
                     PortAPI.NotConnected  -> "node__ctrl--not-connected"
                     PortAPI.Connected     -> "node__ctrl--connected"
@@ -100,7 +102,7 @@ portControl = React.defineView "portControl" $ \(ref, nl, port) ->
                 portRef = InPortRef nl $ port ^. Port.portId
             div_
                 [ "key"       $= (controlPrefix <> jsShow (port ^. Port.portId))
-                , "className" $= Style.prefixFromList [ "node__ctrl", valueClass, if isAlias then "node__ctrl--alias" else "" ]
+                , "className" $= ("native-key-bindings " <> Style.prefixFromList [ "node__ctrl", valueClass, if isAlias then "node__ctrl--alias" else "" ])
                 ] $ case port ^. Port.state of
                     PortAPI.NotConnected -> do
                         let tConsElem :: PortDefault.PortValue -> ReactElementM ViewEventHandler ()
@@ -134,15 +136,19 @@ portControl = React.defineView "portControl" $ \(ref, nl, port) ->
                                     div_ [ "className" $= Style.prefix "ctrl--slider__left"  ] $ elemString $ integer val
                                     div_ [ "className" $= Style.prefix "ctrl--slider__right" ] $ elemString $ (if isExpNotation val then fractionalExp else fractional) val
                         TCons "Text" _ -> do
-                            let value = fromMaybe "" $ defVal ^? PortDefault._Constant . PortDefault._TextValue
+                            let value            = fromMaybe "" $ defVal ^? PortDefault._Constant . PortDefault._TextValue
                                 defaultValue val = PortDefault.Constant $ PortDefault.TextValue val
+                                className        = Style.prefixFromList ["ctrl--text", "input"]
+                                valProp          = if isTextEdited then "defaultValue" else "value"
                             input_
-                                [ "id" $= portControlId
-                                , "className" $= Style.prefix "ctrl--text"
-                                , "value" $= convert value
+                                [ "id"        $= portControlId portRef
+                                , "className" $= className
+                                , valProp     $= convert value
                                 , onMouseDown $ \e _ -> [stopPropagation e]
-                                , onKeyDown   $ \e k -> let val = target e "value" in stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortApplyString k portRef $ defaultValue val)
-                                , onChange    $ \e   -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.PortEditString portRef $ defaultValue val
+                                , onFocus     $ \e _ -> dispatch ref (UI.NodeEvent $ Node.EditTextPortControl portRef (convert value))
+                                , onChange    $ \e   -> let val = target e "value" in
+                                                     dispatch ref (UI.NodeEvent $ Node.EditTextPortControl portRef val)
+                                , onBlur      $ \e _ -> dispatch ref (UI.NodeEvent Node.EditTextPortControlBlur)
                                 ]
                         TCons "Bool" _ -> do
                             let value = fromMaybe True $ defVal ^? PortDefault._Constant . PortDefault._BoolValue

@@ -32,8 +32,6 @@
   'ctrl-z'          : 'native!'
   'delete'          : 'native!'
   'down'            : 'native!'
-  'enter'           : 'native!'
-  'esc'             : 'native!'
   'f'               : 'native!'
   'h'               : 'native!'
   'l'               : 'native!'
@@ -48,6 +46,8 @@
   'shift-up'        : 'native!'
   'space'           : 'native!'
   'up'              : 'native!'
+  'enter'           : 'core:accept'
+  'escape'          : 'core:cancel'
 
 '.luna-searcher__input':
   'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher HintShortcut 0

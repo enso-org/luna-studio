@@ -33,6 +33,7 @@ class LunaNodeEditorTab extends View
     handleEvents: =>
         atom.commands.add @element,
             'core:cancel':              -> pushShortcutEvent("Cancel")
+            'core:accept':              -> pushShortcutEvent("Accept")
             'core:close': (e)           => @handleClose(e)
             'core:save': (e)            => @handleSave(e)
             # camera

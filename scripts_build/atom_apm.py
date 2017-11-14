@@ -137,10 +137,10 @@ def init_apm(gui_url, frontend_args, link):
     else:
         os.makedirs(package_path, exist_ok=True)
         copy_studio(package_path, gui_url, frontend_args)
-        dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
         with working_directory(package_path):
             output = run_apm('install', '.')
             print(output)
+        dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
 
 
 def list_packages():

@@ -53,7 +53,7 @@ deltaToPoint :: Delta -> Text -> Point
 deltaToPoint delta code = Point col row where
     codePrefix = Text.take (fromIntegral delta + 1) code
     row = pred $ length $ Text.lines codePrefix
-    col = Text.length $ Text.takeWhileEnd (/= '\n') $ Text.init codePrefix
+    col = pred $ Text.length $ Text.takeWhileEnd (/= '\n') codePrefix
 
 removeMarkers :: Text -> Text
 removeMarkers (convert -> code) = convertVia @String $ SpanTree.foldlSpans concatNonMarker "" spanTree where

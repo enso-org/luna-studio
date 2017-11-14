@@ -27,26 +27,25 @@ import           React.Flux                                 (MouseEvent, mouseBu
 
 
 handle :: Event -> Maybe (Command State ())
-handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
-handle (UI (NodeEvent    (Node.MouseDown            mevt nl ))) = Just $ handleMouseDown mevt nl
-handle (UI (AppEvent     (App.MouseMove             mevt _  ))) = Just $ handleMouseMove mevt
-handle (UI (SidebarEvent (Sidebar.MouseMove         mevt _ _))) = Just $ handleMouseMove mevt
-handle (UI (AppEvent     (App.Movement              move    ))) = Just $ handleMovement move
-handle (UI (AppEvent     (App.MouseUp               mevt    ))) = Just $ handleMouseUp   mevt
-handle (UI (NodeEvent    (Node.Enter                     nl ))) = Just $ withJustM (getExpressionNode nl) enterNode
-handle (UI (NodeEvent    (Node.EditExpression            nl ))) = Just $ Node.editExpression nl
-handle (UI (NodeEvent    (Node.EditName                  nl ))) = Just $ Node.editName nl
-handle (UI (NodeEvent    (Node.Select               kevt nl ))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nl
+handle (Shortcut (Shortcut.Event command _))                        = Just $ handleCommand command
+handle (UI (NodeEvent    (Node.MouseDown            mevt nl )))     = Just $ handleMouseDown mevt nl
+handle (UI (AppEvent     (App.MouseMove             mevt _  )))     = Just $ handleMouseMove mevt
+handle (UI (SidebarEvent (Sidebar.MouseMove         mevt _ _)))     = Just $ handleMouseMove mevt
+handle (UI (AppEvent     (App.Movement              move    )))     = Just $ handleMovement move
+handle (UI (AppEvent     (App.MouseUp               mevt    )))     = Just $ handleMouseUp   mevt
+handle (UI (NodeEvent    (Node.Enter                     nl )))     = Just $ withJustM (getExpressionNode nl) enterNode
+handle (UI (NodeEvent    (Node.EditExpression            nl )))     = Just $ Node.editExpression nl
+handle (UI (NodeEvent    (Node.EditName                  nl )))     = Just $ Node.editName nl
+handle (UI (NodeEvent    (Node.Select               kevt nl )))     = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nl
 handle (UI (NodeEvent    (Node.SetExpression             nl expr))) = Just $ setNodeExpression nl expr
-handle (UI (NodeEvent    (Node.PortEditString            portRef portDef)))    = Just $ void $ localSetPortDefault portRef portDef
-handle (UI (NodeEvent    (Node.PortApplyString      kevt portRef portDef)))    = Just $ when (Keys.withoutMods kevt Keys.enter) $ setPortDefault portRef portDef
+handle (UI (NodeEvent    (Node.EditTextPortControlBlur )))                     = Just $ continue PortControl.acceptEditTextPortControl
+handle (UI (NodeEvent    (Node.EditTextPortControl       portRef val)))        = Just $ PortControl.editTextPortControl portRef val
 handle (UI (NodeEvent    (Node.PortSetPortDefault        portRef portDef)))    = Just $ setPortDefault portRef portDef
 handle (UI (NodeEvent    (Node.PortInitSlider       _    portRef sliderInit))) = Just $ PortControl.startMoveSlider portRef sliderInit
 handle (UI (NodeEvent    (Node.MouseEnter                nl))) = Just $ Node.handleMouseEnter nl
 handle (UI (NodeEvent    (Node.MouseLeave                nl))) = Just $ Node.handleMouseLeave nl
 handle (UI (NodeEvent    (Node.ShowFullError             nl))) = Just $ Node.showFullError nl
 handle _ = Nothing
-
 
 handleCommand :: Shortcut.Command -> Command State ()
 handleCommand = \case
@@ -58,6 +57,7 @@ handleCommand = \case
     Shortcut.RemoveSelectedNodes     -> removeSelectedNodes
     Shortcut.SelectAll               -> selectAll
     Shortcut.UnfoldSelectedNodes     -> toggleSelectedNodesUnfold
+    Shortcut.Accept                  -> continue PortControl.acceptEditTextPortControl >> PortControl.unfocusEditTextPortControl
     _                                -> return ()
 
 handleMouseDown :: MouseEvent -> NodeLoc -> Command State ()

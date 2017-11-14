@@ -81,17 +81,20 @@ isTemporary = (projectPath) -> projectPath.startsWith temporaryPath
 
 selectLunaProject = (e) ->
     e.stopImmediatePropagation()
-    atom.pickFolder (paths) =>
-        if paths?
-            closeAllFiles()
-            atom.project.setPaths paths
-            openMainIfExists()
+    atom.pickFolder openLunaProject
+
+openLunaProject = (paths) ->
+    if paths?
+        closeAllFiles()
+        atom.project.setPaths [paths[0]]
+        openMainIfExists
 
 
 module.exports =
     closeAllFiles: closeAllFiles
     openMainIfExists: openMainIfExists
     selectLunaProject: selectLunaProject
+    openLunaProject: openLunaProject
 
     temporaryProject:
         path: temporaryProject.path

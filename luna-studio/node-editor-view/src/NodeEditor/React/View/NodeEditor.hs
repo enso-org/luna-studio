@@ -12,6 +12,7 @@ import qualified LunaStudio.Data.Matrix                     as Matrix
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
 import           LunaStudio.Data.NodeLoc                    (NodePath)
 import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef))
+import           NodeEditor.React.IsRef                     (IsRef)
 import qualified NodeEditor.React.Model.Connection          as Connection
 import qualified NodeEditor.React.Model.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode)
@@ -20,15 +21,15 @@ import           NodeEditor.React.Model.NodeEditor          (GraphStatus (..), N
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.React.Model.Port                (InPortIndex (Self))
 import qualified NodeEditor.React.Model.Searcher            as Searcher
-import           NodeEditor.React.Model.Visualization       (VisualizationMode (Focused, FullScreen, Preview),
-                                                            visPropNodeLoc, visPropVisualization, visualizationMode)
-import           NodeEditor.React.IsRef                     (IsRef)
+import           NodeEditor.React.Model.Visualization       (VisualizationMode (Focused, FullScreen, Preview), visPropNodeLoc,
+                                                             visPropVisualization, visualizationMode)
 import           NodeEditor.React.View.Connection           (connection_, halfConnection_)
 import           NodeEditor.React.View.ConnectionPen        (connectionPen_)
-import           NodeEditor.React.View.ExpressionNode       (filterOutSearcherIfNotRelated, nodeDynamicStyles_, node_)
+import           NodeEditor.React.View.ExpressionNode       (filterOutEditedTextControlIfNotRelated, filterOutSearcherIfNotRelated,
+                                                             nodeDynamicStyles_, node_)
 import           NodeEditor.React.View.Monad                (monads_)
-import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_,
-                                                            planeNewConnection_, planeNodes_)
+import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_, planeNewConnection_,
+                                                             planeNodes_)
 import           NodeEditor.React.View.SelectionBox         (selectionBox_)
 import           NodeEditor.React.View.Sidebar              (sidebar_)
 import qualified NodeEditor.React.View.Style                as Style
@@ -64,10 +65,10 @@ applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
     updateNode    nl n ne'            = maybe ne' (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne'
     moveNodeToTop n                   = n & ExpressionNode.zPos .~ (ne ^. NodeEditor.topZIndex) + 1
     replaceNode   s                   = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
-        (Searcher.Node nl (Searcher.NodeModeInfo _ Nothing   _) _, Just n) -> updateNode nl n ne
-        (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
-        (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (moveNodeToTop $ ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
-        _                                                                  -> ne
+        (Searcher.Node nl (Searcher.NodeModeInfo _ Nothing   _ _) _, Just n) -> updateNode nl n ne
+        (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _ _) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
+        (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _ _) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (moveNodeToTop $ ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
+        _                                                                    -> ne
 
 nodeEditor_ :: IsRef r => r -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
@@ -82,13 +83,14 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
         lookupNode m     = ( m ^. MonadPath.monadType
                            , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads           = map lookupNode $ ne ^. NodeEditor.monads
-        maybeSearcher    = ne ^. NodeEditor.searcher
         visLibPath       = ne ^. NodeEditor.visualizersLibPath
+        maybeSearcher    = (,visLibPath) <$> ne ^. NodeEditor.searcher
         visualizations   = NodeEditor.getVisualizations ne
         isAnyVisActive   = any (\visProp -> elem (visProp ^. visPropVisualization . visualizationMode) [Preview, FullScreen, Focused]) visualizations
         isAnyFullscreen  = any (\visProp -> elem (visProp ^. visPropVisualization . visualizationMode) [Preview, FullScreen]) visualizations
         nodesWithVis     = Set.fromList $ map (^. visPropNodeLoc) visualizations
         visWithSelection = map (\vis -> (vis, NodeEditor.isVisualizationNodeSelected vis ne)) visualizations
+        mayEditedTextPortControlPortRef = ne ^. NodeEditor.textControlEditedPortRef
     case ne ^. NodeEditor.graphStatus of
         GraphLoaded ->
             div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
@@ -114,6 +116,7 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
                                                       n
                                                       (not . null $ ne ^. NodeEditor.posHalfConnections)
                                                       (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher)
+                                                      (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)
                                                       (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
                             planeConnections_ $ do
                                 forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref

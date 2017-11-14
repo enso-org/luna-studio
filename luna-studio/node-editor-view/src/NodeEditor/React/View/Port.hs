@@ -25,14 +25,9 @@ import qualified React.Flux                       as React
 name :: JSString
 name = "port"
 
-typeOffsetX :: Double
+typeOffsetX, typeOffsetY :: Double
 typeOffsetX = 36
-
-typeOffsetY1, typeOffsetY2, typeOffsetY3, typeOffsetY :: Double
-typeOffsetY1 = (-3.5)
-typeOffsetY2 = 4.5
-typeOffsetY3 = 12.5
-typeOffsetY  = 20.5
+typeOffsetY = (-3.5)
 
 selectAreaWidth :: Double
 selectAreaWidth = 8
@@ -45,7 +40,7 @@ modeClass Highlighted    = ["port--highlighted"]
 modeClass _              = []
 
 jsShow2 :: Double -> JSString
-jsShow2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal numbers
+jsShow2 a = convert $ showFFloat (Just 2) a "" -- limits Double to two decimal numbers
 
 handleMouseDown :: IsRef r => r -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref portRef e m =
@@ -171,7 +166,7 @@ portSingle = React.defineView "port-single" $ \(ref, nl, p) -> do
         text_
             [ "className" $= Style.prefixFromList ([ "port__type", "noselect" ] <> modeClass (p ^. Port.mode))
             , "key"       $= (jsShow portId <> "-type")
-            , "y"         $= jsShow2 (-typeOffsetY1)
+            , "y"         $= jsShow2 (-typeOffsetY)
             , "x"         $= jsShow2 (if isInput then (-typeOffsetX) else typeOffsetX)
             ] $ elemString portType
         path_
@@ -199,11 +194,7 @@ portIO = React.defineView "port-io" $ \(ref, nl, p, num, numOfArgs) -> do
         svgFlag1 = if isInput then "1"  else "0"
         svgFlag2 = if isInput then "0"  else "1"
         mode     = if isInput then -1.0 else 1.0
-        adjust
-            | numOfArgs == 1 = typeOffsetY1
-            | numOfArgs == 2 = typeOffsetY2
-            | numOfArgs == 3 = typeOffsetY3
-            | otherwise      = typeOffsetY
+        adjust = typeOffsetY + fromIntegral ((min 3 (numOfArgs - 1)) * 8)
         startPortArcX isShape r = r * sin(portAngleStart isShape num numOfArgs r * mode)
         startPortArcY isShape r = r * cos(portAngleStart isShape num numOfArgs r * mode)
         stopPortArcX  isShape r = r * sin(portAngleStop  isShape num numOfArgs r * mode)
