@@ -284,8 +284,8 @@ getLocalFunctions = do
     functionsNames  <- Set.toList . Set.fromList . map (view Port.name) . concatMap outPortsList <$> getAllNodes
     searcherMode    <- fmap2 (view Searcher.mode) $ getSearcher
     let lambdaArgsNames = case searcherMode of
-            Just (Searcher.Node _ (Searcher.NodeModeInfo _ _ argNames) _) -> argNames
-            _                                                             -> []
+            Just (Searcher.Node _ (Searcher.NodeModeInfo _ _ argNames _) _) -> argNames
+            _                                                               -> []
     return $ functionsNames <> lambdaArgsNames
 
 getVisualizationsBackupMap :: Command State (Map NodeLoc VisualizationBackup)

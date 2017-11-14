@@ -392,30 +392,35 @@ svg.luna-node__ports {
 }
 
 .luna-ctrl--slider--int {
-    display:               grid;
-    grid-template-columns: 100%;
+    //display:               grid;
+    //grid-template-columns: 100%;
+    display:         flex;
+    justify-content: center;
 }
 
 .luna-ctrl--slider--real {
-    display:               grid;
-    grid-template-columns: 54% 46%;
+    //display:               grid;
+    //grid-template-columns: 54% 46%;
+    display:         flex;
+    justify-content: center;
+
+
 }
 
 .luna-ctrl--slider__right {
+    text-align:    left;
     overflow:      hidden;
     text-overflow: ellipsis;
+    width:         46%;
 }
 
 .luna-ctrl--slider__left {
     text-align: right;
+    width:      54%;
     &::after {
         content: ".";
         opacity: .3;
     }
-}
-
-.luna-ctrl--slider__right {
-    text-align: left;
 }
 
 .luna-ctrl--bool--True,

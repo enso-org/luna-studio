@@ -42,23 +42,24 @@ data GraphStatus = GraphLoaded
                  | GraphError Error
                  deriving (Eq, Generic)
 
-data NodeEditor = NodeEditor { _expressionNodes      :: ExpressionNodesMap
-                             , _inputNode            :: Maybe InputNode
-                             , _outputNode           :: Maybe OutputNode
-                             , _monads               :: [MonadPath]
-                             , _connections          :: ConnectionsMap
-                             , _visualizersLibPath   :: FilePath
-                             , _nodeVisualizations   :: Map NodeLoc NodeVisualizations
-                             , _visualizationsBackup :: VisualizationsBackupMap
+data NodeEditor = NodeEditor { _expressionNodes          :: ExpressionNodesMap
+                             , _inputNode                :: Maybe InputNode
+                             , _outputNode               :: Maybe OutputNode
+                             , _monads                   :: [MonadPath]
+                             , _connections              :: ConnectionsMap
+                             , _visualizersLibPath       :: FilePath
+                             , _nodeVisualizations       :: Map NodeLoc NodeVisualizations
+                             , _visualizationsBackup     :: VisualizationsBackupMap
 
-                             , _halfConnections      :: [HalfConnection]
-                             , _connectionPen        :: Maybe ConnectionPen
-                             , _selectionBox         :: Maybe SelectionBox
-                             , _searcher             :: Maybe Searcher
+                             , _halfConnections          :: [HalfConnection]
+                             , _connectionPen            :: Maybe ConnectionPen
+                             , _selectionBox             :: Maybe SelectionBox
+                             , _searcher                 :: Maybe Searcher
+                             , _textControlEditedPortRef :: Maybe InPortRef
 
-                             , _graphStatus          :: GraphStatus
-                             , _layout               :: Layout
-                             , _topZIndex            :: Int
+                             , _graphStatus              :: GraphStatus
+                             , _layout                   :: Layout
+                             , _topZIndex                :: Int
                              } deriving (Eq, Generic)
 
 data VisualizationBackup = ValueBackup Text | StreamBackup [Text] deriving (Generic)
@@ -68,21 +69,22 @@ instance Eq VisualizationsBackupMap where _ == _ = True
 
 instance Default NodeEditor where
     def = NodeEditor
-        {- expressionNodes      -} def
-        {- inputNode            -} def
-        {- outputNode           -} def
-        {- monads               -} def
-        {- connections          -} def
-        {- visualizersLibPath   -} def
-        {- visualizations       -} def
-        {- visualizationsBackup -} def
-        {- halfConnections      -} def
-        {- connectionPen        -} def
-        {- selectionBox         -} def
-        {- searcher             -} def
-        {- graphStatus          -} NoGraph
-        {- layout               -} def
-        {- topZIndex            -} def
+        {- expressionNodes          -} def
+        {- inputNode                -} def
+        {- outputNode               -} def
+        {- monads                   -} def
+        {- connections              -} def
+        {- visualizersLibPath       -} def
+        {- visualizations           -} def
+        {- visualizationsBackup     -} def
+        {- halfConnections          -} def
+        {- connectionPen            -} def
+        {- selectionBox             -} def
+        {- searcher                 -} def
+        {- textControlEditedPortRef -} def
+        {- graphStatus              -} NoGraph
+        {- layout                   -} def
+        {- topZIndex                -} def
 
 makeLenses ''VisualizationsBackupMap
 makeLenses ''NodeEditor

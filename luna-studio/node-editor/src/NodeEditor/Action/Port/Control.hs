@@ -4,23 +4,33 @@ module NodeEditor.Action.Port.Control
     ( startMoveSlider
     , moveSlider
     , stopMoveSlider
+    , editTextPortControl
+    , acceptEditTextPortControl
+    , unfocusEditTextPortControl
+    , rollbackEditTextPortControl
     ) where
 
 import           Common.Action.Command              (Command)
 import           Common.Prelude
 import           Data.Time.Clock                    (UTCTime)
 import qualified Data.Time.Clock                    as Clock
+import           JS.Scene                           (appId)
 import qualified JS.UI                              as JS
-import           LunaStudio.Data.PortDefault        (PortDefault (Constant), PortValue (IntValue, RealValue))
+import           LunaStudio.Data.PortDefault        (PortDefault (Constant), PortValue (IntValue, RealValue, TextValue))
 import           LunaStudio.Data.PortRef            (InPortRef)
 import           LunaStudio.Data.ScreenPosition     (ScreenPosition, x)
-import           NodeEditor.Action.Basic            (localSetPortDefault)
+import           NodeEditor.Action.Basic            (localSetPortDefault, setPortDefault)
 import qualified NodeEditor.Action.Batch            as Batch
-import           NodeEditor.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
-import           NodeEditor.Action.State.NodeEditor (getPortDefault)
+import           NodeEditor.Action.State.Action     (beginActionWithKey, checkAction, continueActionWithKey, removeActionFromState,
+                                                     updateActionWithKey)
+import           NodeEditor.Action.State.App        (renderIfNeeded)
+import           NodeEditor.Action.State.NodeEditor (getPortDefault, modifyNodeEditor)
 import           NodeEditor.Data.Slider             (InitValue (Continous, Discrete))
-import           NodeEditor.State.Action            (Action (begin, continue, end, update), SliderDrag (SliderDrag), sliderDragAction,
-                                                    sliderDragInitValue, sliderDragPortRef, sliderDragStartTime)
+import qualified NodeEditor.React.Model.NodeEditor  as NE
+import           NodeEditor.State.Action            (Action (begin, continue, end, update), SliderDrag (SliderDrag),
+                                                     TextPortControlEdit (TextPortControlEdit), sliderDragAction, sliderDragInitValue,
+                                                     sliderDragPortRef, sliderDragStartTime, textPortControlEditAction,
+                                                     textPortControlEditPortRef, textPortControlEditValue)
 import           NodeEditor.State.Global            (State)
 
 
@@ -35,6 +45,18 @@ instance Action (Command State) SliderDrag where
         withJust mayDefVal $ void <$> localSetPortDefault portRef
         removeActionFromState sliderDragAction
 
+instance Action (Command State) TextPortControlEdit where
+    begin action = do
+        beginActionWithKey textPortControlEditAction action
+        modifyNodeEditor $ NE.textControlEditedPortRef ?= action ^. textPortControlEditPortRef
+    continue   = continueActionWithKey textPortControlEditAction
+    update     = updateActionWithKey   textPortControlEditAction
+    end action = do
+        let portRef       = action ^. textPortControlEditPortRef
+            portDef       = Constant . TextValue . convert $ action ^. textPortControlEditValue
+        modifyNodeEditor $ NE.textControlEditedPortRef .= def
+        setPortDefault portRef portDef
+        removeActionFromState textPortControlEditAction
 
 startMoveSlider :: InPortRef -> InitValue -> Command State ()
 startMoveSlider portRef initVal = do
@@ -92,3 +114,40 @@ toPortValue :: InitValue -> PortDefault
 toPortValue = Constant . \case
     Continous val -> RealValue val
     Discrete  val -> IntValue  val
+
+
+editTextPortControl :: InPortRef -> Text -> Command State ()
+editTextPortControl portRef val = do
+    mayCurrentPortRef <- view textPortControlEditPortRef `fmap2` checkAction textPortControlEditAction
+    let updateAction  = update $ TextPortControlEdit portRef val
+        replaceAction = do
+            continue (end :: TextPortControlEdit -> Command State ())
+            begin $ TextPortControlEdit portRef val
+    if (mayCurrentPortRef /= Just portRef) then replaceAction else updateAction
+
+acceptEditTextPortControl :: TextPortControlEdit -> Command State ()
+acceptEditTextPortControl = end
+
+unfocusEditTextPortControl :: Command State ()
+unfocusEditTextPortControl = JS.focus appId
+
+rollbackEditTextPortControl :: TextPortControlEdit -> Command State ()
+rollbackEditTextPortControl action = do
+    modifyNodeEditor $ NE.textControlEditedPortRef .= def
+    removeActionFromState textPortControlEditAction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

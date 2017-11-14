@@ -8,8 +8,7 @@ import           LunaStudio.Data.Point         (Point)
 
 
 data Diff = Diff
-    { _start    :: Point
-    , _end      :: Point
+    { _range    :: Maybe (Point, Point)
     , _newText  :: Text
     , _cursor   :: Maybe Point
     } deriving (Binary, Eq, Generic, NFData, Show)

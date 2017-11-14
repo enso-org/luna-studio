@@ -24,6 +24,10 @@ data VisualizationStatus = Ready
                          | Outdated
                          deriving (Eq, Generic, NFData, Show)
 
+data VisualizationParent = Node NodeLoc
+                         | Searcher
+                         deriving (Eq, Generic, NFData, Show)
+
 
 data RunningVisualization = RunningVisualization { _visualizationId   :: VisualizationId
                                                  , _visualizationMode :: VisualizationMode
@@ -49,6 +53,7 @@ data VisualizationProperties = VisualizationProperties { _visPropNodeLoc        
 
 makePrisms ''VisualizationStatus
 makePrisms ''VisualizationMode
+makePrisms ''VisualizationParent
 makeLenses ''RunningVisualization
 makeLenses ''IdleVisualization
 makeLenses ''NodeVisualizations

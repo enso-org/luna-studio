@@ -415,7 +415,7 @@ buildInPorts nid ref currentPort portName = do
 buildDummyOutPort :: GraphOp m => NodeRef -> m (OutPortTree OutPort)
 buildDummyOutPort ref = do
     tp <- followTypeRep ref
-    pure $ LabeledTree (Port.OutPorts []) (Port [] "Output" tp NotConnected)
+    pure $ LabeledTree (Port.OutPorts []) (Port [] "output" tp NotConnected)
 
 buildOutPortTree :: GraphOp m => OutPortId -> NodeRef -> m (OutPortTree OutPort)
 buildOutPortTree portId ref' = do

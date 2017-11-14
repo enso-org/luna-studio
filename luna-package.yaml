@@ -3,19 +3,19 @@ apps:
 packages:
   luna-studio:
     versions:
-      0.9.1:
+      0.9.4-build:
         darwin.x64:
           path: ./
           deps:
           - zmq-1.0.0
-          - supervisord-0.0.4
+          - supervisord-4.0.0
           - atom-1.18.0
           - kill-1.0.0
         linux.x64:
           path: ./
           deps:
           - zmq-1.0.0
-          - supervisord-0.0.4
+          - supervisord-4.0.0
           - atom-1.18.0
           - kill-1.0.0
         windows.x64:
@@ -43,12 +43,12 @@ packages:
       synopsis: zmq synopsis
   supervisord:
       versions:
-          0.0.4.dev:
+          4.0.0:
               linux.x64:
-                  path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/supervisord/0.0.4.dev/supervisord.tar.gz
+                  path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/supervisord/4.0.0.dev/supervisord.tar.gz
                   deps: []
               darwin.x64:
-                  path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/supervisord/0.0.4.dev/supervisord.tar.gz
+                  path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/supervisord/4.0.0.dev/supervisord.tar.gz
                   deps: []
       appType: BatchApp
       synopsis: supervisord synopsis

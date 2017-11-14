@@ -1,26 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.Action.Basic.UpdateSearcherHints where
 
-import           Common.Action.Command              (Command)
+import           Common.Action.Command                (Command)
 import           Common.Prelude
-import           Control.Monad.Extra                (mapMaybeM)
-import qualified Control.Monad.State.Lazy           as S
-import           Data.Map                           (Map)
-import qualified Data.Map                           as Map
-import           Data.Set                           (Set)
-import qualified Data.Set                           as Set
-import           Data.Text                          (Text)
-import qualified Data.Text                          as Text
-import           LunaStudio.Data.Node               (ExpressionNode)
-import           LunaStudio.Data.NodeSearcher       (EntryType (Function), ImportName, ImportsHints, Match (Match),
-                                                     ModuleHints (ModuleHints), RawEntry (RawEntry), TypePreferation (TypePreferation),
-                                                     currentImports, imports, missingImports)
-import qualified LunaStudio.Data.NodeSearcher       as NS
-import           NodeEditor.Action.Batch            (searchNodes)
-import           NodeEditor.Action.State.NodeEditor (getLocalFunctions, getNodeSearcherData, getSearcher, modifySearcher)
-import           NodeEditor.React.Model.Searcher    (NodeModeInfo, Searcher, allCommands, className, updateCommandsResult, updateNodeResult)
-import qualified NodeEditor.React.Model.Searcher    as Searcher
-import           NodeEditor.State.Global            (State, nodeSearcherData)
+import           Control.Monad.Extra                  (mapMaybeM)
+import qualified Control.Monad.State.Lazy             as S
+import qualified Data.Aeson                           as Aeson
+import qualified Data.ByteString.Lazy.Char8           as BS
+import           Data.Map                             (Map)
+import qualified Data.Map                             as Map
+import           Data.Set                             (Set)
+import qualified Data.Set                             as Set
+import           Data.Text                            (Text)
+import qualified Data.Text                            as Text
+import           JS.Visualizers                       (sendVisualizationData)
+import           LunaStudio.Data.Node                 (ExpressionNode)
+import           LunaStudio.Data.NodeSearcher         (EntryType (Function), ImportName, ImportsHints, Match (Match),
+                                                       ModuleHints (ModuleHints), RawEntry (RawEntry), TypePreferation (TypePreferation),
+                                                       currentImports, imports, missingImports)
+import qualified LunaStudio.Data.NodeSearcher         as NS
+import           LunaStudio.Data.TypeRep              (ConstructorRep (ConstructorRep))
+import           NodeEditor.Action.Batch              (searchNodes)
+import           NodeEditor.Action.State.NodeEditor   (getLocalFunctions, getNodeSearcherData, getSearcher, modifySearcher)
+import           NodeEditor.React.Model.Searcher      (NodeModeInfo, Searcher, allCommands, className, updateCommandsResult,
+                                                       updateNodeResult)
+import qualified NodeEditor.React.Model.Searcher      as Searcher
+import           NodeEditor.React.Model.Visualization (visualizationId)
+import           NodeEditor.State.Global              (State, nodeSearcherData)
 
 
 type IsFirstQuery         = Bool
@@ -49,17 +55,27 @@ setCurrentImports importNames = do
     imps' <- (^. missingImports) <$> use nodeSearcherData
     when (not $ null imps') $ searchNodes imps'
 
+updateDocs :: Command State ()
+updateDocs = withJustM getSearcher $ \s -> withJust (s ^. Searcher.docVis) $ \docVis -> do
+    let doc = maybe def (view NS.doc) $ s ^. Searcher.selectedMatch
+    unless (Text.null doc) . liftIO $ do
+        sendVisualizationData (docVis ^. visualizationId) (ConstructorRep "Text" def) (Text.pack . BS.unpack $ Aeson.encode doc)
+
 localUpdateSearcherHintsPreservingSelection :: Command State ()
 localUpdateSearcherHintsPreservingSelection = do
     maySelected <- maybe def (view Searcher.selectedMatch) <$> getSearcher
-    localUpdateSearcherHints
+    localUpdateSearcherHints'
     withJust maySelected $ \selected -> do
         let equals e1 e2 = (e1 ^. NS.name == e2 ^. NS.name) && (e1 ^. NS.entryType == e2 ^. NS.entryType)
         entries <- maybe def (view Searcher.hints) <$> getSearcher
         withJust (findIndex (equals selected) entries) $ selectHint . (+1)
+    updateDocs
 
 localUpdateSearcherHints :: Command State ()
-localUpdateSearcherHints = do
+localUpdateSearcherHints = localUpdateSearcherHints' >> updateDocs
+
+localUpdateSearcherHints' :: Command State ()
+localUpdateSearcherHints' = do
     nsData'        <- getNodeSearcherData
     localFunctions <- getLocalFunctions
     let nsData = Map.insert "Local" (ModuleHints ((,def) <$> localFunctions) def) nsData'
@@ -92,14 +108,16 @@ localUpdateSearcherHints = do
         Searcher.mode          .= mode
 
 localClearSearcherHints :: Command State ()
-localClearSearcherHints = modifySearcher $ do
-    Searcher.selected      .= def
-    Searcher.rollbackReady .= False
-    Searcher.mode          %= \case
-        Searcher.Command         _ -> Searcher.Command def
-        Searcher.Node     nl nmi _ -> Searcher.Node nl nmi def
-        Searcher.NodeName nl     _ -> Searcher.NodeName nl def
-        Searcher.PortName pr     _ -> Searcher.PortName pr def
+localClearSearcherHints = do
+    modifySearcher $ do
+        Searcher.selected      .= def
+        Searcher.rollbackReady .= False
+        Searcher.mode          %= \case
+            Searcher.Command         _ -> Searcher.Command def
+            Searcher.Node     nl nmi _ -> Searcher.Node nl nmi def
+            Searcher.NodeName nl     _ -> Searcher.NodeName nl def
+            Searcher.PortName pr     _ -> Searcher.PortName pr def
+    updateDocs
 
 getWeights :: IsFirstQuery -> SearchForMethodsOnly -> NodeModeInfo -> Text -> TypePreferation
 getWeights _     True _   q = TypePreferation 0 0 (def, def) 1 0

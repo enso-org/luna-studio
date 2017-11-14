@@ -79,9 +79,23 @@ openMainIfExists = ->
 
 isTemporary = (projectPath) -> projectPath.startsWith temporaryPath
 
+selectLunaProject = (e) ->
+    e.stopImmediatePropagation()
+    atom.pickFolder openLunaProject
+
+openLunaProject = (paths) ->
+    if paths?
+        closeAllFiles()
+        atom.project.setPaths [paths[0]]
+        openMainIfExists
+
+
 module.exports =
     closeAllFiles: closeAllFiles
     openMainIfExists: openMainIfExists
+    selectLunaProject: selectLunaProject
+    openLunaProject: openLunaProject
+
     temporaryProject:
         path: temporaryProject.path
         open: (callback) =>
@@ -134,6 +148,9 @@ module.exports =
                                         description: repo.description
                                         uri: repo.html_url
                                         thumb: 'data:image/png;base64,' + parsed.content
+                    else
+                        callback
+                            error: 'Cannot download tutorial list.'
             catch error
                 atom.confirm
                     message: "Error while getting tutorials"

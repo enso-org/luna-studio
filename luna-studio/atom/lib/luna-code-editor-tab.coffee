@@ -85,11 +85,14 @@ module.exports =
                         @diffToOmit.delete(change.newText)
                     else
                         @setModified(true)
+                        start = change.oldRange.start
+                        end   = change.oldRange.end
+                        cursor = @.getCursorBufferPosition()
                         diff =
-                            start: change.oldRange.start
-                            end:   change.oldRange.end
-                            text:  change.newText
-                            cursor: @.getCursorBufferPosition()
+                            _range:   [{_column: start.column, _row: start.row },
+                                       {_column: end.column  , _row: end.row}]
+                            _newText: change.newText
+                            _cursor:  {_column: cursor.column, _row: cursor.row}
                           #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
                         diffs.push diff
                 if diffs.length > 0
@@ -116,12 +119,12 @@ module.exports =
                 'core:paste': (e) => @handlePaste(e)
                 'core:save':  (e) => @handleSave(e)
 
-        spans: =>
+        spans: (markWholeLines) =>
             buffer = @getBuffer()
             for s in @getSelections()
                 head = s.marker.oldHeadBufferPosition
                 tail = s.marker.oldTailBufferPosition
-                if head.isEqual tail
+                if markWholeLines and head.isEqual tail
                     head.column = 0
                     tail.column = 0
                     tail.row += 1
@@ -131,10 +134,10 @@ module.exports =
         handleCopy: (e) =>
             e.preventDefault()
             e.stopImmediatePropagation()
-            @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans())
+            @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans(true))
 
         handleCut: (e) =>
-            @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans())
+            @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans(true))
 
         handlePaste: (e) =>
             cbd = atom.clipboard.readWithMetadata()
@@ -157,10 +160,19 @@ module.exports =
             projects.temporaryProject.save (newPath) =>
                 @codeEditor.pushInternalEvent(tag: 'MoveProject', _oldPath : oldPath, _newPath: newPath)
 
-        insertCode: (uri, start, end, text, cursor) =>
+        insertCode: (uri, diffs) =>
             if @uri == uri
-                @omitDiff(text)
-                @getBuffer().setText(text)
+                selections = []
+                for {_newText: text, _range: range, _cursor: cursor} in diffs
+                    @omitDiff(text)
+                    if range?
+                        @setTextInBufferRange(range, text)
+                    else
+                        @setText(text)
+                    if cursor?
+                        selections.push([[cursor._row, cursor._column], [cursor._row, cursor._column]])
+                if selections.length > 0
+                    @setSelectedBufferRanges(selections)
 
         setClipboard: (uri, text) =>
             if @uri == uri
@@ -176,7 +188,9 @@ module.exports =
                         break
                 unless @getBuffer().getText() is text
                     @omitDiff(text)
+                    selections = @getSelectedBufferRanges()
                     @getBuffer().setText(text)
+                    @setSelectedBufferRanges(selections)
                     console.log "setBuffer"
 
         setModified: (modified) =>

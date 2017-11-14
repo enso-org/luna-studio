@@ -8,7 +8,7 @@ var sendToFrame = function (id, data) {
 var flushAll = function (id) {
   var queue = knownFrames[id];
   delete knownFrames[id];
-  queue.forEach(function (data) { sendToFrame(id, data); });
+  if (queue) queue.forEach(function (data) { sendToFrame(id, data); });
 };
 
 var queueMsg = function (id, data) {

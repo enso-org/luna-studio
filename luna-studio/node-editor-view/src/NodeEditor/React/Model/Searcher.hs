@@ -23,6 +23,7 @@ import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Model
 import qualified NodeEditor.React.Model.Port                as Port
+import           NodeEditor.React.Model.Visualization       (RunningVisualization)
 import           Prologue                                   (unsafeFromJust)
 
 
@@ -33,6 +34,7 @@ data NewNode = NewNode { _position    :: Position
 data NodeModeInfo = NodeModeInfo { _className   :: Maybe Text
                                  , _newNodeData :: Maybe NewNode
                                  , _argNames    :: [Text]
+                                 , _docVisInfo  :: Maybe RunningVisualization
                                  } deriving (Eq, Generic, Show)
 makeLenses ''NewNode
 makeLenses ''NodeModeInfo
@@ -70,7 +72,13 @@ instance Default Input where def = Raw def
 
 predNl :: Getter Searcher (Maybe NodeLoc)
 predNl = to predNl' where
-  predNl' s = s ^? mode . _Node . _2 . newNodeData . _Just . predPortRef . _Just . PortRef.nodeLoc
+    predNl' s = s ^? mode . _Node . _2 . newNodeData . _Just . predPortRef . _Just . PortRef.nodeLoc
+
+docVis :: Getter Searcher (Maybe RunningVisualization)
+docVis = to docVis' where
+    docVis' s = case s ^. mode of
+      Node _ nmi _ -> nmi ^. docVisInfo
+      _            -> Nothing
 
 inputText :: Getter Searcher Text
 inputText = to (toText . view input)
@@ -181,7 +189,7 @@ updateNodeResult r (Node nl nmi _) = Node nl nmi r
 updateNodeResult _ m               = m
 
 updateNodeArgs :: [Text] -> Mode -> Mode
-updateNodeArgs args (Node nl (NodeModeInfo cn nnd _) r) = (Node nl (NodeModeInfo cn nnd args) r)
+updateNodeArgs args (Node nl (NodeModeInfo cn nnd _ vis) r) = (Node nl (NodeModeInfo cn nnd args vis) r)
 updateNodeArgs _ m                                      = m
 
 updateCommandsResult :: [Match] -> Mode -> Mode

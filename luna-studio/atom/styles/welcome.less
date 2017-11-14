@@ -20,6 +20,7 @@
 @tile-bg-hover:         rgba(255,255,255,0.12);
 
 @caption-height:        @grid*2;
+@sub-caption-height:    @grid*2;
 @width:                 52.5*@grid;
 @padding:               2*@grid;
 
@@ -36,6 +37,17 @@ atom-panel.modal.overlay.from-top::before { // TODO: Make it more specific - use
 atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a global class?
 	max-width: @width + 20px;
 
+}
+
+.luna-welcome-background {
+	background:      rgba(0,0,0,0);
+	position:        fixed !important;
+	top:             0;
+	left:            0;
+	right:           0;
+	bottom:          0;
+	display:         flex;
+	justify-content: center;
 }
 
 .luna-welcome-scroll {
@@ -159,7 +171,7 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 
 .luna-welcome__tile {
 	width:         @tile-size !important;
-	height:        @tile-size + @caption-height;
+	height:        @tile-size + @caption-height + @sub-caption-height;
 	position:      relative;
 	margin-right:  1.5*@grid;
 	margin-bottom: 1.5*@grid;
@@ -201,11 +213,18 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 	height:     @tile-size;
 
 }
+
 .luna-project-caption {
 	height:        @caption-height;
 	line-height:   @caption-height; 
 	text-align:    center;
 	text-overflow: ellipsis;
 	overflow:      hidden;
+}
+
+.luna-project-description {
+	opacity:    0.3;
+	text-align: center;
+	font-size:  10px;
 }
 

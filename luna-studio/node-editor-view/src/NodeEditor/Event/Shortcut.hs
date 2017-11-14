@@ -7,6 +7,7 @@ import           Data.Aeson       (FromJSON)
 
 
 data Command = Cancel
+             | Accept
              | OpenSearcher
              -- camera
              | CenterGraph

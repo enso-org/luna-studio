@@ -5,15 +5,17 @@ const Spinner = require('./spinner');
 var ProjectItem;
 
 etch = require('etch');
+path = require('path');
 
 module.exports = ProjectItem = class ProjectItem {
     constructor(project, classes = "", onOpen) {
         this.update = this.update.bind(this);
         this.render = this.render.bind(this);
         this.thumbLogo = this.thumbLogo.bind(this);
-        this.name = project.name != undefined ? project.name : "(unnamed)";
+        this.uri = project.uri;
+        this.name = project.name != undefined ? project.name :
+            (project.uri != undefined ? path.basename(project.uri) : '(Unnamed)');
         this.description = project.description != undefined ? project.description : "";
-        this.uri = project.uri != undefined ? project.uri : project.name;
         this.classes = classes;
         this.onOpen = function() {
             spinner = new Spinner(progress = 0)

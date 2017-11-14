@@ -68,8 +68,14 @@ module.exports = LunaStudio =
             if atom.config.get('luna-studio.showWelcomeScreen') and atom.project.getPaths().length == 0
                 @welcome.attach()
             if atom.config.get('luna-studio.resetProjects') and atom.project.getPaths().length == 0
+                @openProjectInBackground = true
                 projects.temporaryProject.open (err) =>
                     if err then throw err
+        atom.reopenProjectMenuManager.open = projects.openLunaProject
+        atom.commands.add 'atom-workspace',
+            'application:add-project-folder': projects.selectLunaProject
+            'application:open':               projects.selectLunaProject
+            'application:open-folder':        projects.selectLunaProject
         atom.commands.add 'body',
             'luna-studio:welcome': => @welcome.attach()
             'core:cancel': => @welcome.detach()
@@ -97,9 +103,9 @@ module.exports = LunaStudio =
 
     lunaOpener: (uri) ->
         if uri is LUNA_STUDIO_URI
-              new LunaNodeEditorTab(null, nodeEditor, codeEditor)
+            new LunaNodeEditorTab null, nodeEditor, codeEditor
         else if path.extname(uri) is '.luna'
-              new LunaCodeEditorTab(uri, codeEditor)
+            new LunaCodeEditorTab uri, codeEditor
 
     deactivate: ->
         stats.finalize()
@@ -151,7 +157,10 @@ module.exports = LunaStudio =
         if projectPath?
             projects.recent.add projectPath
             codeEditor.pushInternalEvent(tag: "SetProject", _path: projectPath)
-
+            if @openProjectInBackground
+                @openProjectInBackground = false
+            else
+                @welcome.detach()
         if @moving
             @moving = false
         else

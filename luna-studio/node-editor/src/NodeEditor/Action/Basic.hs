@@ -61,6 +61,7 @@ module NodeEditor.Action.Basic
     , moveNodes
     , movePort
     , navigateToGraph
+    , redo
     , removeConnection
     , removeConnections
     , removeConnectionsBetweenNodes
@@ -89,6 +90,7 @@ module NodeEditor.Action.Basic
     , toggleSelect
     , toggleSelectedNodesMode
     , toggleSelectedNodesUnfold
+    , undo
     , unselectAll
     , unsetFile
     , updateAllPortsMode
@@ -96,6 +98,7 @@ module NodeEditor.Action.Basic
     , updateClient
     , updateCollaboration
     , updateConnection
+    , updateDocs
     , updateFilePath
     , updateGraph
     , updateNodeZOrder
@@ -109,7 +112,7 @@ import           NodeEditor.Action.Basic.AddConnection       (connect, localAddC
 import           NodeEditor.Action.Basic.AddNode             (createNode, localAddExpressionNode)
 import           NodeEditor.Action.Basic.AddPort             (addPort, localAddPort)
 import           NodeEditor.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
-import           NodeEditor.Action.Basic.Atom                (setFile, updateFilePath, unsetFile)
+import           NodeEditor.Action.Basic.Atom                (setFile, unsetFile, updateFilePath)
 import           NodeEditor.Action.Basic.CollapseToFunction  (collapseToFunction)
 import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph)
 import           NodeEditor.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
@@ -136,6 +139,7 @@ import           NodeEditor.Action.Basic.SetNodeMeta         (localMoveNode, loc
 import           NodeEditor.Action.Basic.SetNodeMode         (toggleSelectedNodesMode, toggleSelectedNodesUnfold)
 import           NodeEditor.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
 import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPortMode, setOutputSidebarPortMode)
+import           NodeEditor.Action.Basic.Undo                (redo, undo)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
 import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodePreventingPorts,
@@ -144,6 +148,6 @@ import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpress
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode)
 import           NodeEditor.Action.Basic.UpdateNodeValue     (setNodeProfilingData, updateNodeValueAndVisualization)
 import           NodeEditor.Action.Basic.UpdateSearcherHints (localAddSearcherHints, localClearSearcherHints, localUpdateSearcherHints,
-                                                              selectHint, setCurrentImports)
+                                                              selectHint, setCurrentImports, updateDocs)
 import           NodeEditor.Action.State.Model               (isArgConstructorConnectSrc, updateAllPortsMode, updateArgConstructorMode,
                                                               updatePortMode, updatePortsModeForNode)

@@ -22,9 +22,9 @@ module.exports = function () {
         onInsertCode: function (listener) {
             listeners.insertonInsertCode.push(listener);
         },
-        insertCode: function(uri_send, start_send, end_send, text) {
+        insertCode: function(uri, diffs) {
             listeners.insertonInsertCode.forEach(function(listener) {
-                listener(uri_send, start_send, end_send, text);
+                listener(uri, diffs);
             });
         },
 

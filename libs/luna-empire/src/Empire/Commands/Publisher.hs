@@ -35,9 +35,9 @@ notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocati
 notifyResultUpdate loc nid v t =
     sendUpdate $ ResultUpdate $ NodeResult.Update loc nid v t
 
-notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Point -> Point -> Text -> Maybe Point -> m ()
-notifyCodeUpdate path start end code cursor =
-    sendUpdate $ CodeUpdate $ Substitute.Update path [Diff start end code cursor]
+notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Text -> Maybe Point -> m ()
+notifyCodeUpdate path code cursor =
+    sendUpdate $ CodeUpdate $ Substitute.Update path [Diff Nothing code cursor]
 
 notifyInterpreterUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => Text -> m ()
 notifyInterpreterUpdate msg =

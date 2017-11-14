@@ -15,7 +15,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text as T
 import Data.Text.IO (writeFile)
 import Data.Monoid ((<>))
-import Filesystem.Path.CurrentOS (parent, encodeString)
+import Filesystem.Path.CurrentOS (parent, encodeString, fromText)
 import System.IO (BufferMode(LineBuffering), hSetBuffering, stdout)
 import qualified System.Directory as System
 default (T.Text)
@@ -71,7 +71,7 @@ installPython :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
 installPython = do
     Shelly.echo "installing python locally"
     current <- currentPath
-    let pythonFolder = current </> tools </> "python"
+    let pythonFolder   = current </> tools </> "python"
     Shelly.chdir_p pythonFolder $ do
         pyenvPresent <- Shelly.test_d "pyenv"
         unless pyenvPresent $ Shelly.cmd "git" "clone" "https://github.com/pyenv/pyenv.git"
@@ -90,7 +90,7 @@ installPython = do
                 Shelly.setenv "LDFLAGS" $ "-L" <> opensslPath <> "/lib"
             Shelly.cmd "pyenv" "install" supportedPythonVersion
         Shelly.cmd "pyenv" "local" supportedPythonVersion
-        Shelly.cmd "pip" "install" "requirements.txt"
+        Shelly.chdir (fromText current) $ Shelly.cmd "pip" "install" "--user" "-r" "requirements.txt"
 
 installNode :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
 installNode = do
