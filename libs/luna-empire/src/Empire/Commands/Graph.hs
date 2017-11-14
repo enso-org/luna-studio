@@ -452,7 +452,11 @@ updateGraphSeq newOut = do
     Just outLink <- ASTRead.getFirstNonLambdaLink currentTgt
     oldSeq       <- IR.source outLink
     case newOut of
-        Just o  -> IR.replaceSource o outLink
+        Just o  -> do
+            oldSeqLen <- IR.getLayer @SpanLength oldSeq
+            newSeqLen <- IR.getLayer @SpanLength o
+            Code.gossipLengthsChangedBy (newSeqLen - oldSeqLen) =<< IR.readTarget outLink
+            IR.replaceSource o outLink
         Nothing -> do
             none <- IR.generalize <$> IR.cons_ "None"
             let noneLen = fromIntegral $ length ("None"::String)

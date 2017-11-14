@@ -2153,8 +2153,8 @@ def main:
     bar = foo 8 c
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                Graph.substituteCodeFromPoints "/TestPath" [ Diff (Point 0 2) (Point 0 3) "" Nothing
-                                                           , Diff (Point 0 4) (Point 0 4) "    foo = a: b: a + b\n" Nothing
+                Graph.substituteCodeFromPoints "/TestPath" [ Diff (Just (Point 0 2, Point 0 3)) "" Nothing
+                                                           , Diff (Just (Point 0 4, Point 0 4)) "    foo = a: b: a + b\n" Nothing
                                                            ]
         it "rename from tuple to var" $ let
             initialCode = [r|
