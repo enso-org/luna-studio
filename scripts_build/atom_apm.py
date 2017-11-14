@@ -111,7 +111,6 @@ def copy_studio (package_path, gui_url, frontend_args):
                         zf.write(os.path.join(dirname, filename))
 
     else:
-        print ("buduje bez opcji")
         stack_build.build_ghcjs(frontend_args, dev_mode=True)
         atom_prepare.run(dev_mode=True)
     dir_util.copy_tree(studio_atom_source_path, package_path)
