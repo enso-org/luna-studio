@@ -287,9 +287,6 @@ computeLength ref = do
             lens <- mapM (IR.getLayer @SpanLength <=< IR.source) ins
             return $ mconcat offs <> mconcat lens
 
-recomputeLength :: GraphOp m => NodeRef -> m ()
-recomputeLength ref = IR.putLayer @SpanLength ref =<< computeLength ref
-
 functionBlockStart :: ClassOp m => NodeId -> m Delta
 functionBlockStart funUUID = do
     unit <- use Graph.clsClass
@@ -365,9 +362,6 @@ propagateOffsets edge = do
     IR.putLayer @SpanOffset edge off
     propagateLengths =<< IR.readSource edge
 
-gossipUsesChanged :: GraphOp m => NodeRef -> m ()
-gossipUsesChanged ref = mapM_ gossipLengthsChanged =<< mapM IR.readTarget =<< (Set.toList <$> IR.getLayer @IR.Succs ref)
-
 gossipUsesChangedBy :: GraphOp m => Delta -> NodeRef -> m ()
 gossipUsesChangedBy delta ref = mapM_ (gossipLengthsChangedBy delta) =<< mapM IR.readTarget =<< (Set.toList <$> IR.getLayer @IR.Succs ref)
 
@@ -380,13 +374,6 @@ gossipLengthsChangedBy delta ref = do
     succs     <- Set.toList <$> IR.getLayer @IR.Succs ref
     succNodes <- mapM IR.readTarget succs
     mapM_ (gossipLengthsChangedBy delta) succNodes
-
-gossipLengthsChanged :: GraphOp m => NodeRef -> m ()
-gossipLengthsChanged ref = do
-    recomputeLength ref
-    succs     <- Set.toList <$> IR.getLayer @IR.Succs ref
-    succNodes <- mapM IR.readTarget succs
-    mapM_ gossipLengthsChanged succNodes
 
 makeMarker :: Word64 -> Text
 makeMarker s = Text.pack $ "«" <> show s <> "»"

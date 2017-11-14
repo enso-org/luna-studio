@@ -17,7 +17,9 @@ import Luna.Pass.Data.ExprRoots
 import OCI.Pass.Manager
 import           Empire.Data.Layers   (Marker, Meta, TypeLayer, attachEmpireLayers, SpanLength, SpanOffset)
 import           Data.Text.Position      (Delta)
-
+import           Data.Text.Span          (LeftSpacedSpan(..), SpacedSpan(..), leftSpacedSpan)
+import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
+import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan, realSpan)
 import Data.TypeDesc
 
 import qualified Data.Map   as Map
@@ -29,7 +31,7 @@ import System.Log
 data PatternTransformation
 type instance Abstract         PatternTransformation = PatternTransformation
 type instance Inputs     Net   PatternTransformation = '[AnyExpr, AnyExprLink]
-type instance Inputs     Layer PatternTransformation = '[AnyExpr // Model, AnyExprLink // Model, AnyExpr // Type, AnyExpr // Succs, AnyExpr // SpanLength, AnyExprLink // SpanOffset]
+type instance Inputs     Layer PatternTransformation = '[AnyExpr // Model, AnyExpr // CodeSpan, AnyExprLink // Model, AnyExpr // Type, AnyExpr // Succs, AnyExpr // SpanLength, AnyExprLink // SpanOffset]
 type instance Inputs     Attr  PatternTransformation = '[ExprRoots]
 type instance Inputs     Event PatternTransformation = '[]
 
@@ -53,53 +55,22 @@ dumpConsApplication expr = matchExpr expr $ \case
         arg <- source a
         return (n, arg : args, a:links)
 
--- computeLength :: GraphOp m => NodeRef -> m Delta
-computeLength ref = do
-    ins  <- inputs ref
-    case ins of
-        [] -> getLayer @SpanLength ref
-        _  -> do
-            ownLen <- matchExpr ref $ \case
-                Cons n _ -> return $ length $ nameToString n
-            offs <- P.mapM (getLayer @SpanOffset) ins
-            lens <- P.mapM (getLayer @SpanLength <=< source) ins
-            return $ fromIntegral ownLen <> mconcat offs <> mconcat lens
-
--- recomputeLength :: GraphOp m => NodeRef -> m ()
-recomputeLength ref = putLayer @SpanLength ref =<< computeLength ref
-
-gossipLengthsChanged :: (MonadRef m, MonadPassManager m) => SomeExpr -> SubPass PatternTransformation m ()
-gossipLengthsChanged ref = do
-    recomputeLength ref
-    succs     <- Set.toList <$> getLayer @Succs ref
-    succNodes <- mapM readTarget succs
-    mapM_ gossipLengthsChanged succNodes
-
--- addToLength :: GraphOp m => NodeRef -> Delta -> m ()
-addToLength ref delta = modifyLayer_ @SpanLength ref (+ delta)
-
-gossipLengthsChangedBy :: (MonadRef m, MonadPassManager m) => Delta -> SomeExpr -> SubPass PatternTransformation m ()
-gossipLengthsChangedBy delta ref = do
-    addToLength ref delta
-    succs     <- Set.toList <$> getLayer @Succs ref
-    succNodes <- mapM readTarget succs
-    mapM_ (gossipLengthsChangedBy delta) succNodes
-
 flattenPattern :: (MonadRef m, MonadPassManager m) => Expr Draft -> SubPass PatternTransformation m (Expr Draft)
 flattenPattern expr = matchExpr expr $ \case
     Grouped g -> do
         a <- flattenPattern =<< source g
-        gossipLengthsChangedBy 2 $ generalize a
+        putLayer @SpanLength a =<< getLayer @SpanLength expr
         return a
     Var{}     -> return expr
     Cons{}    -> return expr
     App{}     -> do
         (name, children, links) <- dumpConsApplication expr
-        flatChildren     <- mapM flattenPattern $ reverse children
-        res <- generalize <$> cons name flatChildren
-        childLinks <- inputs res
+        flatChildren            <- mapM flattenPattern $ reverse children
+        res                     <- generalize <$> cons name flatChildren
+        childLinks              <- inputs res
         P.forM (zip (reverse links) childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
-        gossipLengthsChanged $ generalize res
+        LeftSpacedSpan (SpacedSpan _off len) <- fmap (view CodeSpan.realSpan) $ getLayer @CodeSpan expr
+        putLayer @SpanLength res len
         return res
     _         -> return expr
 

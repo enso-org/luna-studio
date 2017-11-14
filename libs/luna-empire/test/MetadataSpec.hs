@@ -512,8 +512,8 @@ def main:
                 Graph.loadCode loc metaWithImports
                 nodes <- Graph.getNodes loc
                 let Just (view Node.nodeId -> bar) = find (\n -> n ^. Node.name == Just "bar") nodes
-                nodesInBar <- map (view Node.nodeId) <$> Graph.getNodes (loc |>= bar)
-                Graph.removeNodes (loc |>= bar) nodesInBar
+                [Just a, Just b, Just c] <- Graph.withGraph (loc |>= bar) $ runASTOp $ mapM Graph.getNodeIdForMarker [37,38,39]
+                Graph.removeNodes (loc |>= bar) [b,a,c] -- this order unveiled a bug before
                 Graph.withUnit loc $ use Graph.code
             code `shouldBe` [r|import Std.Base
 

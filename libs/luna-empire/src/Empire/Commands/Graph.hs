@@ -446,7 +446,6 @@ setOutputTo out = do
     blockEnd <- Code.getCurrentBlockEnd
     newSeq   <- reconnectOut oldSeq out blockEnd
     traverse_ (updateGraphSeq . Just) newSeq
-    traverse_ Code.gossipUsesChanged  newSeq
 
 updateGraphSeq :: GraphOp m => Maybe NodeRef -> m ()
 updateGraphSeq newOut = do
@@ -458,11 +457,11 @@ updateGraphSeq newOut = do
         Nothing -> do
             none <- IR.generalize <$> IR.cons_ "None"
             let noneLen = fromIntegral $ length ("None"::String)
-            IR.putLayer @SpanLength none noneLen
             IR.replaceSource none outLink
+            Code.gossipLengthsChangedBy noneLen none
             blockEnd <- Code.getCurrentBlockEnd
             Code.insertAt (blockEnd - noneLen) "None"
-            Code.gossipLengthsChanged none
+            return ()
     IR.deepDeleteWithWhitelist oldSeq $ Set.fromList $ maybeToList newOut
     oldRef <- use $ Graph.breadcrumbHierarchy . BH.self
     when (oldRef == oldSeq) $ for_ newOut (Graph.breadcrumbHierarchy . BH.self .=)
@@ -601,6 +600,9 @@ removeSequenceElement seq ref = IR.matchExpr seq $ \case
                 recur <- removeSequenceElement lt ref
                 case recur of
                     (Just newRef, True) -> do -- left child changed
+                        len    <- IR.getLayer @SpanLength ref
+                        indent <- Code.getCurrentIndentationLength
+                        Code.gossipLengthsChangedBy (negate $ len + indent + 1) lt
                         IR.replace newRef lt
                         return (Just newRef, False)
                     (Nothing, True)     -> do -- left child removed, right child replaces whole seq
@@ -621,7 +623,6 @@ removeFromSequence ref = do
     oldSeq <- ASTRead.getCurrentBody
     (newS, shouldUpdate) <- removeSequenceElement oldSeq ref
     when shouldUpdate (updateGraphSeq newS)
-    traverse_ Code.gossipLengthsChanged newS
 
 removePort :: GraphLocation -> OutPortRef -> Empire ()
 removePort loc portRef = do
@@ -891,7 +892,7 @@ renameNode loc nid name
                     patLen   <- IR.getLayer @SpanLength pat
                     vEdge    <- ASTRead.getVarEdge nid
                     IR.replaceSource pat vEdge
-                    Code.gossipLengthsChangedBy (patLen - varLen) pat
+                    Code.gossipLengthsChangedBy (patLen - varLen) ref
                     void $ Code.applyDiff beg (beg + varLen) name
             runAliasAnalysis
         resendCode loc
