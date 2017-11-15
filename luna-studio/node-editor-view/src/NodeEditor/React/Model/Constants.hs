@@ -13,7 +13,7 @@ lineHeight      = gridSize
 connectionWidth = 2.2
 
 nodeRadius, nodeRadius', portRadius, portAliasRadius :: Double
-nodeRadius      = 20
+nodeRadius      = 17
 nodeRadius'     = nodeRadius - connectionWidth
 portRadius      = nodeRadius - connectionWidth/2
 portAliasRadius = 8

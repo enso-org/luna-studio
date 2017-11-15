@@ -14,6 +14,7 @@ import           LunaStudio.Data.NodeLoc                    (NodePath)
 import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef))
 import           NodeEditor.React.IsRef                     (IsRef)
 import qualified NodeEditor.React.Model.Connection          as Connection
+import           NodeEditor.React.Model.Constants           (nodeRadius)
 import qualified NodeEditor.React.Model.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
@@ -161,6 +162,7 @@ dynamicScale_ cameraScale = React.viewWithSKey dynamicScale keyDynScale cameraSc
 dynamicScale :: ReactView CameraScale
 dynamicScale = React.defineView objDynStyle $ \cameraScale -> do
     let scale = cameraScale ^. Matrix.scale
+        opticalCorrection = 0.8
     style_
         [ "key" $= "scale"
         ] $ do
@@ -173,8 +175,8 @@ dynamicScale = React.defineView objDynStyle $ \cameraScale -> do
           elemString $ ".luna-connection__select { stroke-width: " <> show (10/scale)          <> " }"
 
           --collapsed nodes
-          elemString $ ".luna-port-io-shape-mask { r: "  <> show (19.2 + (0.8 / scale)) <> "px }"
-          elemString $ ".luna-port-io-select-mask { r: " <> show (19.2 + (0.8 / scale)) <> "px }"
+          elemString $ ".luna-port-io-shape-mask { r: "  <> show (nodeRadius - opticalCorrection + (opticalCorrection / scale)) <> "px }"
+          elemString $ ".luna-port-io-select-mask { r: " <> show (nodeRadius - opticalCorrection + (opticalCorrection / scale)) <> "px }"
 
           --expanded nodes
           elemString $ "circle.luna-port__shape { r: " <> show (3 + (1 / scale)) <> "px }"

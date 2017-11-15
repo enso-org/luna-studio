@@ -4,11 +4,10 @@
 //     selection mark      //
 /////////////////////////////
 
-
 .luna-selection {
     width:          100%;
     height:         100%;
-    border:         1px solid orange;
+    border:         1px solid @luna-text-accent-color; //orange
     left:           0;
     top:            0;
     position:       absolute;
@@ -25,15 +24,15 @@
     .luna-selection {
         width:   auto;
         height:  auto;
-        left:   -8rem;
-        right:  -8rem;
-        bottom: -8rem;
-        top:    -8rem;
+        left:   -@luna-selection-padding * 1rem;
+        right:  -@luna-selection-padding * 1rem;
+        bottom: -@luna-selection-padding * 1rem;
+        top:    -@luna-selection-padding * 1rem;
         opacity: 1;
     }
     &.luna-node--expanded {
         .luna-selection {
-            border-radius: 10rem;
+            border-radius: @luna-border-radius-expanded-node-selection * 1rem;
         }
     }
 }
@@ -66,6 +65,6 @@
         background-position: center center;
     }
     &.luna-node--expanded .luna-error {
-        border-radius: 10px;
+        border-radius: @luna-border-radius-expanded-node-selection * 1rem;
     }
 }

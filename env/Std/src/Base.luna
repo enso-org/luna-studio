@@ -16,6 +16,10 @@ native class Int:
     def <  that: primIntLt       self that
     ## Integer equality. `a.== b` returns True when `a` equals `b`.
     def == that: primIntEquals   self that
+    ## Lesser than or equal to operator.
+    def <= that: self<that . or self==that
+    ## Greater than or equal to operator.
+    def >= that: self>that . or self==that
 
     ## Integer negation. `a.negate == -1 * a`.
     def negate: primIntNegate self
@@ -60,6 +64,10 @@ native class Real:
     def <  that: primRealLt       self that
     ## Tests whether `self` is equal to the argument.
     def == that: primRealEquals   self that
+    ## Lesser than or equal to operator.
+    def <= that: self<that . or self==that
+    ## Greater than or equal to operator.
+    def >= that: self>that . or self==that
 
     ## Negation. `a.negate == -1.0 * a`
     def negate:     primRealNegate self
@@ -93,6 +101,10 @@ native class Text:
     def <  that: primTextLt     self that
     ## Tests wheter two texts are equal.
     def == that: primTextEquals self that
+    ## Lesser than or equal to operator.
+    def <= that: self<that . or self==that
+    ## Greater than or equal to operator.
+    def >= that: self>that . or self==that
 
     ## Tests whether the text is empty (equal to `""`).
     def isEmpty: primTextIsEmpty self
@@ -271,7 +283,8 @@ class Tuple2 a b:
     Tuple2 a b
 
     ## Short Text representation of a pair.
-    def shortRep: "(" + a.shortRep + ", " + b.shortRep + ")"
+    def shortRep: case self of
+        Tuple2 a b: "(" + a.shortRep + ", " + b.shortRep + ")"
 
     ## Converts a pair into a `JSON` object.
     def toJSON: case self of
@@ -591,7 +604,7 @@ class List a:
     def shortRep: "List<" + self.length.shortRep + ">"
 
     ## Text represenation of a list.
-    def toText: self.shortRep
+    def toText: "[" + (self . makeText ", ") + "]"
 
     ## Private.
     def prependAll it: case (self) of
@@ -938,6 +951,16 @@ def streamFrom act:
     head = act
     fork (var.put (streamFrom act))
     Stream head var.read
+
+## Repeat an action while predicate returns `True`. Returns a List of all the values for which predicate returned `True`.
+def repeatWhile act predicate:
+    last = act
+    case predicate last of
+        True:
+            rest = repeatWhile act predicate
+            Prepend last rest
+        False:
+            Empty
 
 ## Executes an action in a separate thread, after waiting the specified time interval.
 def delayAsync time act:

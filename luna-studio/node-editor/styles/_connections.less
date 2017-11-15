@@ -8,7 +8,7 @@
     z-index: @luna-zindex-new-connection;
     .luna-connection__line {
         pointer-events: none;
-        stroke: #fff !important;
+        stroke: #ccc !important;
     }
 }
 
@@ -24,15 +24,15 @@
     stroke-dasharray: 5, 5;
 }
 .luna-connection__line {
-    stroke-width: @strokeWidth;
+    stroke-width: @luna-connection-width * 1rem;
 }
 .luna-connection__src,
 .luna-connection__dst {
     :first-child {
-        stroke: rgba(255,255,255,0);
+        stroke: rgba(255,255,255,0); // TODO: transparent?
     }
     &:hover :first-child {
-        stroke: #fff;
+        stroke: #ccc;
     }
     line {
         opacity:        1;

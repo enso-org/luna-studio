@@ -28,6 +28,9 @@ studio_package_name = "luna-studio"
 studio_atom_source_path = ap.prep_path("../luna-studio/atom")
 package_config_path = ap.prep_path("../config/packages")
 packages_path = atom_home_path + '/packages/'
+dist_package_folder = ap.prep_path('../dist-package')
+gui_package_path = ap.prep_path('../dist-package/gui.zip')
+studio_folder = ap.prep_path('../luna-studio/atom')
 
 paths = {
     system.systems.WINDOWS: {
@@ -99,10 +102,17 @@ def copy_studio (package_path, gui_url, frontend_args):
             print("Building frontend")
             stack_build.build_ghcjs(frontend_args, dev_mode=True)
             atom_prepare.run(dev_mode=True)
+            print ("Preparing gui package")
+            os.makedirs(dist_package_folder, exist_ok=True)
+            with zipfile.ZipFile (gui_package_path, 'w') as zf:
+                with working_directory(studio_folder):
+                    for dirname, subdirs, files in os.walk('./'):
+                        for filename in files:
+                            zf.write(os.path.join(dirname, filename))
+
     else:
         stack_build.build_ghcjs(frontend_args, dev_mode=True)
         atom_prepare.run(dev_mode=True)
-
     dir_util.copy_tree(studio_atom_source_path, package_path)
 
 
@@ -110,7 +120,6 @@ def apm_luna_atom_package (package_name, package_address):
     with working_directory(packages_path):
         output = run_process('git', 'clone', package_address, package_name)
         print(output)
-
         with working_directory(package_name):
             output2 = run_apm('install', '.')
             print(output2)

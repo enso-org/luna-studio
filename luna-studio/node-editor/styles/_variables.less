@@ -49,7 +49,7 @@
 @syntax-text-color:       #abb2bf; // default
 
 @luna-font-size:          12px;
-@luna-line-height:        @gridSizePx;
+@luna-line-height:        @luna-grid-size * 1px;
 
 
 /////////////////////////////
@@ -62,12 +62,13 @@
 @luna-syntax-text-color:         @syntax-text-color;
 @luna-text-color:                @syntax-text-color;
 @luna-text-hl-color:             @syntax-text-color;
+@luna-text-accent-color:         #a76624;
 
 @colorTextMinor:                 #68858a;
 
 @colorSelect:                    orange;
 @colorText:                      #ccc;
-@colorTextHighlighted:           #fff;
+@colorTextHighlighted:           #aaa;
 @colorTextUneditable:            darken(@colorText, 50%);
 @colorTextDisabled:              darken(@colorText, 80%);
 
@@ -96,21 +97,26 @@
 //           grid          //
 /////////////////////////////
 
-@gridSize:       16rem;
-@gridSizePx:     16px;
+@luna-connection-width: 2.2;
+@luna-grid-size:        16;
+@luna-node-radius:      17;
+@luna-border-radius:    @luna-grid-size;
 
-@lineHeight:     @gridSize;
-@borderRadius:   3rem;
-@borderRadiusPx: 3px;
+@luna-superline-height:       1.5 * @luna-grid-size;
 
-@luna-border-radius-S: 3;
-@luna-border-radius-M: 10;
+@luna-searcher-border-radius: @luna-superline-height/2;
 
+@luna-border-radius-expanded-node: @luna-border-radius;
 
-@expandedNodeWidth:   160rem;
-@expandedNodeWidthPx: 160px;
-@expandedNodePadding: 12rem;
+@luna-selection-padding: 8;
 
+@luna-border-radius-expanded-node-selection: @luna-border-radius-expanded-node + @luna-selection-padding;
+
+@luna-expanded-node-width:      160;
+@luna-expanded-node-padding:    @luna-grid-size/2;
+
+@luna-node-control-line-height: 12;
+@luna-node-control-padding:     (@luna-grid-size - @luna-node-control-line-height)/2;
 
 /////////////////////////////
 //        animation        //
@@ -124,5 +130,3 @@
 /////////////////////////////
 //          other          //
 /////////////////////////////
-
-@strokeWidth: 2.6rem;

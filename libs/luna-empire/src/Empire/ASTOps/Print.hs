@@ -55,11 +55,11 @@ printNodeTarget ref = match ref $ \case
 
 genOperatorName :: IR.Name -> Text
 genOperatorName op = operatorNamesMap ^. at op . non "operator" where
-    operatorNamesMap = Map.fromList [ ("+",       "sum")
-                                    , ("*",       "product")
-                                    , ("-",       "difference")
-                                    , ("/",       "quotient")
-                                    , ("#minus#", "negation")
+    operatorNamesMap = Map.fromList [ ("+",        "sum")
+                                    , ("*",        "product")
+                                    , ("-",        "difference")
+                                    , ("/",        "quotient")
+                                    , ("#uminus#", "negation")
                                     ]
 
 genNodeBaseName :: GraphOp m => NodeRef -> m Text
@@ -79,4 +79,4 @@ genNodeBaseName ref = match ref $ \case
     Acc t n           -> return $ genOp n
     _                 -> return $ "expr"
     where recurOn a = genNodeBaseName =<< IR.source a
-          genOp   n = if isOperator n then genOperatorName n else convert n
+          genOp   n = if isOperator n  || n == "#uminus#" then genOperatorName n else convert n

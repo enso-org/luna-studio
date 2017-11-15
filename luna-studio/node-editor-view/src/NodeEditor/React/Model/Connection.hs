@@ -164,7 +164,7 @@ instance Convertible Connection Empire.Connection where
 argConstructorConnectionPos :: ExpressionNode -> Position
 argConstructorConnectionPos n = if n ^. ExpressionNode.mode == ExpressionNode.Collapsed
     then n ^. position & y %~ (+ portRadius)
-    else move (Vector2 (-nodeExpandedWidth/2) (argumentConstructorOffsetY $ countVisibleArgPorts n)) $ n ^. position
+    else move (Vector2 (-nodeExpandedWidth/2) (argumentConstructorOffsetY $ countVisibleInPorts n)) $ n ^. position
 
 connectionPositions :: Node -> OutPort -> Node -> InPort -> Layout -> Maybe (Position, Position)
 connectionPositions srcNode' srcPort dstNode' dstPort layout = case (srcNode', dstNode') of
@@ -271,12 +271,12 @@ connectionAngle srcPos' dstPos' num numOfSameTypePorts =
 
 -- TODO[JK]: dst numOfInputs
 connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsOnly -> Position
-connectionSrc src' dst' isSrcExpanded _isDstExpanded num numOfSameTypePorts isSingle =
-    if isSrcExpanded then move (Vector2 (nodeExpandedWidth/2) 0) src'
+connectionSrc src' dst' isSrcExpanded _isDstExpanded outNum allOuts isSingle =
+    if isSrcExpanded then move (Vector2 (nodeExpandedWidth/2) (lineHeight * (fromIntegral outNum))) src'
     else move (Vector2 (portRadius * cos t) (portRadius * sin t)) src' where
         t = if isSingle
             then nodeToNodeAngle src' dst'
-            else connectionAngle src' dst' (numOfSameTypePorts - num - 1) numOfSameTypePorts
+            else connectionAngle src' dst' (allOuts - outNum - 1) allOuts
 
 connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> IsAlias -> Position
 connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf' isAlias = do
