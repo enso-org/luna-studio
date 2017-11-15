@@ -255,15 +255,8 @@ moveLambdaArg p@(Port.Projection port : []) newPosition lambda = match lambda $ 
                 landingLenMay <- for landingVar (\l -> IR.source l >>= IR.getLayer @SpanLength)
                 maybe (throwM $ PortDoesNotExistException [Port.Projection newPosition]) pure landingLenMay
             code      <- Code.getAt (initialOffset - ownOff) (initialOffset + ownLen)
-            let changes = if newPosition < port
-                          then [ (initialOffset - ownOff, initialOffset + ownLen, "")
-                               , (newOffset     - ownOff, newOffset - ownOff, code)
-                               ]
-                          else
-                              [ (initialOffset - ownOff , initialOffset + ownLen, "")
-                              , (newOffset     + landingLen, newOffset + landingLen, code)
-                              ]
-            Code.applyMany changes
+            Code.applyDiff (initialOffset - ownOff) (initialOffset + ownLen) ""
+            Code.applyDiff (newOffset     - ownOff) (newOffset - ownOff) code
     _ -> throwM $ NotLambdaException lambda
 
 renameLambdaArg :: GraphOp m => Port.OutPortId -> String -> NodeRef -> m ()

@@ -820,3 +820,20 @@ spec = around withChannels $ parallel $ do
                 Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 1
                 clipboard <- Graph.copyText loc [Range 14 36]
                 Graph.paste loc (Position.fromTuple (1000, 0)) $ Text.unpack clipboard
+        it "moves ports on top-level def" $
+            let initialCode = [r|
+                    def main:
+                        4
+                    |]
+                expectedCode = [r|
+                    def main b foobar:
+                        4
+                    |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                (input, _) <- Graph.withGraph loc $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.addPort loc (outPortRef input [Port.Projection 0])
+                Graph.addPort loc (outPortRef input [Port.Projection 1])
+                Graph.renamePort loc (outPortRef input [Port.Projection 0]) "foobar"
+                Graph.movePort loc (outPortRef input [Port.Projection 0]) 1
+                Graph.movePort loc (outPortRef input [Port.Projection 1]) 0
+                Graph.movePort loc (outPortRef input [Port.Projection 1]) 0
