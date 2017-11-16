@@ -324,14 +324,14 @@ detachNodeMarkers ref' = do
 
 attachNodeMarkers :: GraphOp m => NodeId -> Port.OutPortId -> NodeRef -> m ()
 attachNodeMarkers marker port ref' = go port ref' where
-    goOn args = zipWithM_ go ((port <>) . pure . Port.Projection <$> [0..]) args
+    goOn port args = zipWithM_ go ((port <>) . pure . Port.Projection <$> [0..]) args
     go port ref' = do
         ref <- ASTRead.cutThroughGroups ref'
         match ref $ \case
-            Cons _ as -> goOn =<< mapM IR.source as
-            App{}     -> goOn =<< extractAppPorts ref
-            Tuple as  -> goOn =<< mapM IR.source as
-            List  as  -> goOn =<< mapM IR.source as
+            Cons _ as -> goOn port =<< mapM IR.source as
+            App{}     -> goOn port =<< extractAppPorts ref
+            Tuple as  -> goOn port =<< mapM IR.source as
+            List  as  -> goOn port =<< mapM IR.source as
             _         -> IR.putLayer @Marker ref $ Just $ OutPortRef (NodeLoc def marker) port
 
 detachNodeMarkersForArgs :: GraphOp m => NodeRef -> m ()

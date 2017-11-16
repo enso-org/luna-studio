@@ -1224,6 +1224,15 @@ spec = around withChannels $ parallel $ do
                       (outPortRef u1 [], inPortRef u2 [])
                     , (outPortRef u2 [Port.Projection 0], inPortRef u3 [Port.Arg 0])
                     ]
+        it "returns correct connections for nested pattern use" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "(a, b, (c, d)) = (1, 2, (3, 4))" def
+                Graph.addNode top u2 "c" def
+                Graph.withGraph top $ runASTOp GraphBuilder.buildConnections
+            withResult res $ \connections -> do
+                connections `shouldMatchList` [(outPortRef u1 [Port.Projection 2, Port.Projection 0], inPortRef u2 [])]
         it "connects two outputs when one of them is nested pattern match with literals" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID

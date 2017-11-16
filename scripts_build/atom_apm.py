@@ -76,7 +76,7 @@ def run_process(*pargs):
 
     The stdout is utf-8-decoded for convenience.
     """
-    proc = subprocess.Popen(pargs, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     proc.wait()
     output = proc.stdout.read()
     return output.decode('utf-8')
@@ -146,9 +146,11 @@ def init_apm(gui_url, frontend_args, link):
     else:
         os.makedirs(package_path, exist_ok=True)
         copy_studio(package_path, gui_url, frontend_args)
+        dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
         with working_directory(package_path):
             output = run_apm('install', '.')
             print(output)
+        dir_util.remove_tree(oniguruma_package_path)
         dir_util.copy_tree(oniguruma_path, oniguruma_package_path)
 
 

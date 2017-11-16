@@ -65,13 +65,13 @@ module.exports = LunaStudio =
         atom.project.onDidChangePaths (projectPaths) => @handleProjectPathsChange(projectPaths)
         atom.workspace.open(LUNA_STUDIO_URI, {split: atom.config.get('luna-studio.preferredNodeEditorPosition')})
         atom.packages.onDidActivateInitialPackages =>
+            atom.reopenProjectMenuManager.open = projects.openLunaProject
             if atom.config.get('luna-studio.showWelcomeScreen') and atom.project.getPaths().length == 0
                 @welcome.attach()
             if atom.config.get('luna-studio.resetProjects') and atom.project.getPaths().length == 0
                 @openProjectInBackground = true
                 projects.temporaryProject.open (err) =>
                     if err then throw err
-        atom.reopenProjectMenuManager.open = projects.openLunaProject
         atom.commands.add 'atom-workspace',
             'application:add-project-folder': projects.selectLunaProject
             'application:open':               projects.selectLunaProject

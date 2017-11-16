@@ -24,7 +24,7 @@ def put_ghcjs(output, content, str_to_change):
 
 def prepare_ghcjs(output, placeholder, ghcjs):
     uuid = prep_path('../luna-studio/vendor/uuid.js')
-    imports = prep_path('../luna-studio/script/imports.js')
+    imports = prep_path('../luna-studio/vendor/imports.js')
     output_abs = prep_path(output)
     placeholder_abs = prep_path(placeholder)
     ghcjs_abs = prep_path(ghcjs)

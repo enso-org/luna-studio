@@ -47,8 +47,8 @@ import qualified Empire.Empire                           as Empire
 import           Empire.Env                              (Env)
 import qualified Empire.Env                              as Env
 import           Empire.Server.Server                    (defInverse, errorMessage, modifyGraph, modifyGraphOk, prettyException, replyFail,
-                                                          replyOk, replyResult, sendToBus', withDefaultResult, withDefaultResultTC,
-                                                          webGUIHack)
+                                                          replyOk, replyResult, sendToBus', webGUIHack, withDefaultResult,
+                                                          withDefaultResultTC)
 import           Luna.Project                            (findProjectFileForFile, getRelativePathForModule)
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
@@ -349,7 +349,7 @@ handleRemovePort = modifyGraph inverse action replyResult where
         let conns = flip filter connections $ (== portRef) . fst
         return $ RemovePort.Inverse oldName $ map (uncurry Connection) conns
     action (RemovePort.Request location portRef) = withDefaultResult location $ do
-        maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraph location
+        maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
         when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
         Graph.removePort location portRef
 

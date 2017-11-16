@@ -120,16 +120,17 @@ nodeExpression = React.defineView "node-expression" $ \(ref, nl, expr, mayS) -> 
         , "key"       $= "nodeExpression" ] <> handlers
         ) nameElement
 
-node_ :: IsRef ref => ref -> ExpressionNode -> Bool -> Maybe (Searcher, FilePath) -> Maybe InPortRef -> Set NodeLoc -> ReactElementM ViewEventHandler ()
-node_ ref model performConnect s mayEditedTextPortControlPortRef relatedNodesWithVis =
-    React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, performConnect, s, mayEditedTextPortControlPortRef, relatedNodesWithVis) mempty
+node_ :: IsRef ref => ref -> ExpressionNode -> Bool -> Bool -> Maybe (Searcher, FilePath) -> Maybe InPortRef -> Set NodeLoc -> ReactElementM ViewEventHandler ()
+node_ ref model isTopLevel performConnect s mayEditedTextPortControlPortRef relatedNodesWithVis =
+    React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, isTopLevel, performConnect, s, mayEditedTextPortControlPortRef, relatedNodesWithVis) mempty
 
-node :: IsRef ref => ReactView (ref, ExpressionNode, Bool, Maybe (Searcher, FilePath), Maybe InPortRef, Set NodeLoc)
-node = React.defineView name $ \(ref, n, performConnect, maySearcher, mayEditedTextPortControlPortRef, relatedNodesWithVis) -> case n ^. Node.mode of
-    Node.Expanded (Node.Function fs) -> nodeContainer_ ref performConnect maySearcher mayEditedTextPortControlPortRef relatedNodesWithVis $ Map.elems fs
+node :: IsRef ref => ReactView (ref, ExpressionNode, Bool, Bool, Maybe (Searcher, FilePath), Maybe InPortRef, Set NodeLoc)
+node = React.defineView name $ \(ref, n, isTopLevel, performConnect, maySearcher, mayEditedTextPortControlPortRef, relatedNodesWithVis) -> case n ^. Node.mode of
+    Node.Expanded (Node.Function fs) -> nodeContainer_ ref isTopLevel performConnect maySearcher mayEditedTextPortControlPortRef relatedNodesWithVis $ Map.elems fs
     _ -> do
         let nodeId        = n ^. Node.nodeId
             nodeLoc       = n ^. Node.nodeLoc
+            isDef         = n ^. Node.isDefinition
             nodeLimit     = 10000::Int
             zIndex        = n ^. Node.zPos
             z             = zIndex + 11::Int --if isCollapsed n then zIndex else zIndex + nodeLimit
@@ -167,7 +168,7 @@ node = React.defineView name $ \(ref, n, performConnect, maySearcher, mayEditedT
                 , "key"       $= "nodeText"
                 ] $ do
                 nodeName_ ref nodeLoc (n ^. Node.name) mayVisVisible maySearcher
-                nodeExpression_ ref nodeLoc expression maySearcher
+                unless (isTopLevel && isDef) $ nodeExpression_ ref nodeLoc expression maySearcher
             nodeBody_ ref n mayEditedTextPortControlPortRef
             when showValue $ nodeValue_ ref n
             nodePorts_ ref n hasAlias hasSelf
@@ -260,12 +261,12 @@ nodePorts = React.defineView objNamePorts $ \(ref, n, hasAlias, hasSelf) -> do
 
             argumentConstructor_ ref (argumentConstructorRef n) (countVisibleInPorts n) (n ^. Node.argConstructorMode == Port.Highlighted) hasAlias hasSelf
 
-nodeContainer_ :: IsRef ref => ref -> Bool -> Maybe (Searcher, FilePath) -> Maybe InPortRef -> Set NodeLoc -> [Subgraph] -> ReactElementM ViewEventHandler ()
-nodeContainer_ ref performConnect maySearcher mayEditedTextPortControlPortRef nodesWithVis subgraphs =
-    React.viewWithSKey nodeContainer "node-container" (ref, performConnect, maySearcher, mayEditedTextPortControlPortRef, nodesWithVis, subgraphs) mempty
+nodeContainer_ :: IsRef ref => ref -> Bool -> Bool -> Maybe (Searcher, FilePath) -> Maybe InPortRef -> Set NodeLoc -> [Subgraph] -> ReactElementM ViewEventHandler ()
+nodeContainer_ ref isTopLevel performConnect maySearcher mayEditedTextPortControlPortRef nodesWithVis subgraphs =
+    React.viewWithSKey nodeContainer "node-container" (ref, isTopLevel, performConnect, maySearcher, mayEditedTextPortControlPortRef, nodesWithVis, subgraphs) mempty
 
-nodeContainer :: IsRef ref => ReactView (ref, Bool, Maybe (Searcher, FilePath), Maybe InPortRef, Set NodeLoc, [Subgraph])
-nodeContainer = React.defineView name $ \(ref, performConnect, maySearcher, mayEditedTextPortControlPortRef, nodesWithVis, subgraphs) -> do
+nodeContainer :: IsRef ref => ReactView (ref, Bool, Bool, Maybe (Searcher, FilePath), Maybe InPortRef, Set NodeLoc, [Subgraph])
+nodeContainer = React.defineView name $ \(ref, isTopLevel, performConnect, maySearcher, mayEditedTextPortControlPortRef, nodesWithVis, subgraphs) -> do
     div_
         [ "className" $= Style.prefix "subgraphs"
         ] $ forM_ subgraphs $ \subgraph -> do
@@ -278,6 +279,7 @@ nodeContainer = React.defineView name $ \(ref, performConnect, maySearcher, mayE
             ] $ do
             forM_ nodes $ \n -> node_ ref
                                       n
+                                      isTopLevel
                                       performConnect
                                       (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
                                       (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)

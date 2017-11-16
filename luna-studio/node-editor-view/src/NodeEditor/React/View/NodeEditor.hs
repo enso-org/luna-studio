@@ -71,11 +71,11 @@ applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
         (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _ _) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (moveNodeToTop $ ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
         _                                                                    -> ne
 
-nodeEditor_ :: IsRef r => r -> NodeEditor -> ReactElementM ViewEventHandler ()
-nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
+nodeEditor_ :: IsRef r => r -> NodeEditor -> Bool -> ReactElementM ViewEventHandler ()
+nodeEditor_ ref ne isTopLevel = React.viewWithSKey nodeEditor name (ref, ne, isTopLevel) mempty
 
-nodeEditor :: IsRef r => ReactView (r, NodeEditor)
-nodeEditor = React.defineView name $ \(ref, ne') -> do
+nodeEditor :: IsRef r => ReactView (r, NodeEditor, Bool)
+nodeEditor = React.defineView name $ \(ref, ne', isTopLevel) -> do
     let ne               = applySearcherHints ne'
         camera           = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         nodes            = ne ^. NodeEditor.expressionNodes . to HashMap.elems
@@ -115,6 +115,7 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
 
                             forM_ nodes $ \n -> node_ ref
                                                       n
+                                                      isTopLevel
                                                       (not . null $ ne ^. NodeEditor.posHalfConnections)
                                                       (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher)
                                                       (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)

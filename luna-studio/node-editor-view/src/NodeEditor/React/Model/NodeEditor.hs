@@ -174,36 +174,25 @@ instance GetPort OutPortRef OutPort where
 instance GetPort AnyPortRef AnyPort where
     getPort portRef ne = getNode (portRef ^. PortRef.nodeLoc) ne >>= flip lookupPort (portRef ^. PortRef.portId)
 
-atMostFirstLevel :: [a] -> [a]
-atMostFirstLevel [] = []
-atMostFirstLevel (h:_) = [h]
-
-
-atMostFirstLevel' :: AnyPortId -> AnyPortId
-atMostFirstLevel' (InPortId'  p) = InPortId'  $ atMostFirstLevel p
-atMostFirstLevel' (OutPortId' p) = OutPortId' $ atMostFirstLevel p
-
 
 toPosConnection :: NodeEditor -> Connection -> Maybe PosConnection
 toPosConnection ne connection = do
     let src         = connection ^. Connection.src
         dst         = connection ^. Connection.dst
-        srcPortRef  = src & PortRef.srcPortId %~ atMostFirstLevel
-        dstPortRef  = dst & PortRef.dstPortId %~ atMostFirstLevel
-        srcNodeLoc  = srcPortRef ^. PortRef.srcNodeLoc
-        dstNodeLoc  = dstPortRef ^. PortRef.dstNodeLoc
-        dstPortId   = dstPortRef ^. PortRef.dstPortId
+        srcNodeLoc  = src ^. PortRef.srcNodeLoc
+        dstNodeLoc  = dst ^. PortRef.dstNodeLoc
+        dstPortId   = dst ^. PortRef.dstPortId
         mode        = connection ^. Connection.mode
         sidebarConn = connection ^. Connection.sidebarConn
     srcNode <- getNode srcNodeLoc ne
     dstNode <- getNode dstNodeLoc ne
-    srcPort <- getPort srcPortRef ne
+    srcPort <- getPort src ne
     if hasPort dstPortId dstNode then do
-        dstPort <- getPort dstPortRef ne
+        dstPort <- getPort dst ne
         (srcPos, dstPos) <- Connection.connectionPositions srcNode srcPort dstNode dstPort (ne ^. layout)
         return $ PosConnection src dst srcPos dstPos sidebarConn mode (srcPort ^. Port.color)
     else if countArgPorts dstNode == getPortNumber dstPortId then case dstNode of
-        Expression n -> fmap (Connection.toPosConnection srcPortRef dstPortRef) $
+        Expression n -> fmap (Connection.toPosConnection src dst) $
             toPosHalfConnection ne $ HalfConnection (OutPortRef' src) (Connection.argConstructorConnectionPos n) sidebarConn mode
         _            -> Nothing
     else Nothing

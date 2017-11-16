@@ -3,7 +3,7 @@ apps:
 packages:
   luna-studio:
     versions:
-      0.9.4-build:
+      0.9.7.2:
         darwin.x64:
           path: ./
           deps:

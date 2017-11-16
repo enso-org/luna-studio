@@ -27,7 +27,7 @@
         "jquery": "3.2.x",
         "js-yaml": "3.9.x",
         "mixpanel": "0.7.x",
-        "nodegit": "0.19.x",
+        "nodegit": "0.20.x",
         "pako": "1.0.x",
         "react-dom": "15.6.x",
         "react": "15.6.x",
