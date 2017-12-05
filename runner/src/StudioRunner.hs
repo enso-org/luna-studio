@@ -7,8 +7,8 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE PackageImports#-}
-
+{-# LANGUAGE PackageImports        #-}
+{-# LANGUAGE FlexibleContexts      #-}
 
 module Main where
 
