@@ -39,6 +39,7 @@ def build_backend (backend_args):
         sys.exit(1)
 
 def build_frontend (frontend_args, gui_url, dev_mode):
+    print(dev_mode)
     try:
         print("Building frontend")
         stack_build.create_bin_dirs()
@@ -74,7 +75,7 @@ def main ():
     if args.backend:
         build_backend (args.stack_backend_args)
     elif args.frontend:
-        build_frontend (args.stack_frontend_args, args.gui_url, dev_mode=(not args.release)) # FIXME: "not ..." is not a proper way to handle this flag
+        build_frontend (args.stack_frontend_args, args.gui_url, not args.release) # FIXME: "not ..." is not a proper way to handle this flag
     else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, args.gui_url, not args.release)
 
 main()

@@ -19,8 +19,10 @@ def create_bin_dirs():
 
 def build_ghcjs(frontend_args, dev_mode):
     with working_directory(frontend_dir):
+        print("build_ghcjs")
         if dev_mode:
-            subprocess.check_output(['stack', 'build'] + frontend_args)
+            print(dev_mode)
+            #subprocess.check_output(['stack', 'build'] + frontend_args)
 
 def build_runner(runner_args):
     with working_directory(runner_dir):
