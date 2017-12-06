@@ -1203,6 +1203,30 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
                 Graph.collapseToFunction loc [baz, spam]
+        it "handles collapsing nodes with pattern matching into functions" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = bar
+                    «1»(a, b) = (1, 2)
+                    «2»baz = a + b
+                    «3»c = baz + 1
+                |]
+            expectedCode = [r|
+                def func1:
+                    (a, b) = (1, 2)
+                    baz = a + b
+                    baz
+
+                def main:
+                    foo = bar
+                    baz = func1
+                    c = baz + 1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.getNodes loc
+                let Just ab  = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "(a, b)") nodes
+                    Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
+                Graph.collapseToFunction loc [ab, baz]
         it "handles collapsing nodes into functions without use of an argument" $ let
             initialCode = [r|
                 def main:

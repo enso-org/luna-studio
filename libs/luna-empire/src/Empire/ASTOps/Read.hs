@@ -89,7 +89,10 @@ getNodeId :: ASTOp g m => NodeRef -> m (Maybe NodeId)
 getNodeId node = do
     rootNodeId <- preview (_Just . PortRef.srcNodeLoc . NodeLoc.nodeId) <$> IR.getLayer @Marker node
     varNodeId  <- (getVarNode node >>= getNodeId) `catch` (\(_e :: NotUnifyException) -> return Nothing)
-    return $ rootNodeId <|> varNodeId
+    varsInside <- (getVarsInside =<< getVarNode node) `catch` (\(_e :: NotUnifyException) -> return [])
+    varsNodeIds <- mapM getNodeId varsInside
+    let leavesNodeId = foldl' (<|>) Nothing varsNodeIds
+    return $ rootNodeId <|> varNodeId <|> leavesNodeId
 
 getPatternNames :: GraphOp m => NodeRef -> m [String]
 getPatternNames node = match node $ \case
@@ -117,7 +120,7 @@ getVarName' node = match node $ \case
 getVarName :: ASTOp a m => NodeRef -> m String
 getVarName = fmap nameToString . getVarName'
 
-getVarsInside :: GraphOp m => NodeRef -> m [NodeRef]
+getVarsInside :: ASTOp g m => NodeRef -> m [NodeRef]
 getVarsInside e = do
     isVar <- isJust <$> IRExpr.narrowTerm @IR.Var e
     if isVar then return [e] else concat <$> (mapM (getVarsInside <=< IR.source) =<< IR.inputs e)

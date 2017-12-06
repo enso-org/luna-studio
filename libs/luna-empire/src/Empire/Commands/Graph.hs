@@ -1425,6 +1425,7 @@ collapseToFunction loc@(GraphLocation file _) nids = do
         return defCode
     code <- insertCodeBeforeFunction loc defCode
     reloadCode  loc code
+    withTC' (GraphLocation file def) False (return ()) (return ())
     removeNodes loc nids
 
 
