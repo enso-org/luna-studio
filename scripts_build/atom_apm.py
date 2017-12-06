@@ -186,8 +186,7 @@ def apm_packages():
 
 def modify_atom_package_json():
     json = get_path('package_json')
-    
-    # replace('"name":"atom","productName":"Atom"','"name":"luna-studio","productName":"LunaStudio"', json)
+    replace('"name":"atom","productName":"Atom"','"name":"luna-studio","productName":"LunaStudio"', json)
             # sources.write(re.sub(r'"name":"atom","productName":"Atom"', r'"name":"luna-studio","productName":"LunaStudio"', line))
     # run_process('sed', '-i', 's/"name":"atom"/"name":"LunaStudio"/g ; s/"productName":"Atom"/"productName":"LunaStudio"/g',json)
 
