@@ -1341,6 +1341,11 @@ findRefToInsertAfter beforeNodes afterNodes ref = do
                  then throwM ImpossibleToCollapse
                  else return Nothing
 
+insertCodeBeforeCurrentFunction :: GraphOp m => Text -> m Text
+insertCodeBeforeCurrentFunction codeToInsert = do
+    fo <- use Graph.fileOffset
+    Code.insertAt fo (Text.snoc (Text.snoc codeToInsert '\n') '\n')
+
 insertCodeBetween :: GraphOp m => [NodeId] -> [NodeId] -> Text -> m Text
 insertCodeBetween beforeNodes afterNodes codeToInsert = do
     beforeRefs <- fmap Set.fromList $ forM beforeNodes ASTRead.getASTRef
@@ -1355,7 +1360,7 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
             return $ beg + len
     Code.insertAt insertPos codeToInsert
 
-generateCollapsedDefCode :: GraphOp m => [OutPortRef] -> [OutPortRef] -> [NodeId] -> m Text
+generateCollapsedDefCode :: GraphOp m => [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text)
 generateCollapsedDefCode inputs outputs bodyIds = do
     inputNames <- fmap (map (view _2) . sortOn fst) $ forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) -> do
         position <- fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
@@ -1370,15 +1375,15 @@ generateCollapsedDefCode inputs outputs bodyIds = do
     defName            <- generateNodeNameFromBase "func"
     currentIndentation <- Code.getCurrentIndentationLength
     let indentBy i l = "\n" <> Text.replicate (fromIntegral i) " " <> l
-        topIndented  = indentBy currentIndentation
-        bodyIndented = indentBy (currentIndentation + Code.defaultIndentationLength)
+        bodyIndented = indentBy (Code.defaultIndentationLength)
+        retIndented  = indentBy currentIndentation
     newCodeBlockBody <- fmap Text.concat $ forM codeBegs $ \(beg, ref) -> do
         len  <- IR.getLayer @SpanLength ref
         code <- Code.getAt beg (beg + len)
         return $ bodyIndented code
-    let header = topIndented $  "def "
-                             <> Text.unwords (defName : fmap convert inputNames)
-                             <> ":"
+    let header =  "def "
+               <> Text.unwords (defName : fmap convert inputNames)
+               <> ":"
     returnBody <- case outputNames of
         []  -> do
             let lastNode = snd $ unsafeLast codeBegs
@@ -1389,12 +1394,10 @@ generateCollapsedDefCode inputs outputs bodyIds = do
             Just n -> bodyIndented n
             _      -> ""
     let defCode = header <> newCodeBlockBody <> returnLine
-    let useLine = case outputNames of
-            [] -> ""
-            _  -> topIndented $ unsafeFromJust returnBody
+    let useLine = retIndented $ unsafeFromJust returnBody
                               <> " = "
                               <> Text.unwords (defName : fmap convert inputNames)
-    return $ defCode <> useLine
+    return (defCode, useLine)
 
 
 collapseToFunction :: GraphLocation -> [NodeId] -> Empire ()
@@ -1410,8 +1413,9 @@ collapseToFunction loc nids = do
             outConns = filter (\x -> srcInIds x && not (dstInIds x)) connections
             outputs  = nub $ fst <$> outConns
             useSites = outConns ^.. traverse . _2 . PortRef.dstNodeId
-        newCode <- generateCollapsedDefCode inputs outputs nids
-        insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) newCode
+        (defCode, useCode) <- generateCollapsedDefCode inputs outputs nids
+        insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) useCode
+        insertCodeBeforeCurrentFunction defCode
     reloadCode  loc code
     removeNodes loc nids
 
