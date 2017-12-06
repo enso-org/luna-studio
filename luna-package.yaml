@@ -16,7 +16,7 @@ packages:
     versions:
       1.18.0:
         windows.x64:
-          path: https://github.com/atom/atom/releases/download/v1.18.0/atom-windows.zip
+          path: https://s3-us-west-2.amazonaws.com/packages-luna/windows/tmp/atom-windows.tar.gz
           deps: []
         darwin.x64:
           path: https://github.com/atom/atom/releases/download/v1.18.0/atom-mac.zip
