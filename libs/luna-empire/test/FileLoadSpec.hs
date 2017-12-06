@@ -1854,7 +1854,6 @@ spec = around withChannels $ parallel $ do
                     request = Http.get url
                     response = request . perform
                     None
-
                 def main:
                     None
                 |]
@@ -1948,7 +1947,6 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
                 code <- Graph.copyText (GraphLocation file def) [Range 19 189]
                 Graph.pasteText (GraphLocation file def) [Range 19 19] [code]
-                Graph.substituteCode "/TestPath" [(212, 212, "\n")]
                 Graph.getGraph loc
         it "sends update with proper code points after paste" $ \env -> do
             let initialCode = "def main:\n\n    print 3.14\n"

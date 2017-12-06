@@ -1341,10 +1341,13 @@ findRefToInsertAfter beforeNodes afterNodes ref = do
                  then throwM ImpossibleToCollapse
                  else return Nothing
 
-insertCodeBeforeCurrentFunction :: GraphOp m => Text -> m Text
-insertCodeBeforeCurrentFunction codeToInsert = do
-    fo <- use Graph.fileOffset
-    Code.insertAt fo (Text.snoc (Text.snoc codeToInsert '\n') '\n')
+insertCodeBeforeFunction :: GraphLocation -> Text -> Empire Text
+insertCodeBeforeFunction loc@(GraphLocation file _) codeToInsert = do
+    let nodeId = topLevelFunctionID loc
+    withUnit (GraphLocation file def) $ runASTOp $ do
+        ref <- ASTRead.getFunByNodeId nodeId
+        fo <- Code.functionBlockStartRef ref
+        Code.insertAt fo (Text.snoc (Text.snoc codeToInsert '\n') '\n')
 
 insertCodeBetween :: GraphOp m => [NodeId] -> [NodeId] -> Text -> m Text
 insertCodeBetween beforeNodes afterNodes codeToInsert = do
@@ -1369,7 +1372,7 @@ generateCollapsedDefCode inputs outputs bodyIds = do
     outputNames <- forM outputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
         ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
     codeBegs <- fmap (sortOn fst) $ forM bodyIds $ \nid -> do
-        ref     <- ASTRead.getASTRef nid
+        ref     <- ASTRead.getASTPointer nid
         Just cb <- Code.getOffsetRelativeToFile ref
         return (cb, ref)
     defName            <- generateNodeNameFromBase "func"
@@ -1399,11 +1402,15 @@ generateCollapsedDefCode inputs outputs bodyIds = do
                               <> Text.unwords (defName : fmap convert inputNames)
     return (defCode, useLine)
 
+topLevelFunctionID :: GraphLocation -> NodeId
+topLevelFunctionID (GraphLocation _ (Breadcrumb (Breadcrumb.Definition nodeId:_))) = nodeId
 
 collapseToFunction :: GraphLocation -> [NodeId] -> Empire ()
-collapseToFunction loc nids = do
+collapseToFunction loc@(GraphLocation file _) nids = do
+    code <- withGraph loc $ use Graph.code
+    nodes <- getNodes (GraphLocation file def)
     when (null nids) $ throwM ImpossibleToCollapse
-    code <- withGraph loc $ runASTOp $ do
+    defCode <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids
         connections <- GraphBuilder.buildConnections
         let srcInIds = flip Set.member ids . view PortRef.srcNodeId . fst
@@ -1415,7 +1422,8 @@ collapseToFunction loc nids = do
             useSites = outConns ^.. traverse . _2 . PortRef.dstNodeId
         (defCode, useCode) <- generateCollapsedDefCode inputs outputs nids
         insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) useCode
-        insertCodeBeforeCurrentFunction defCode
+        return defCode
+    code <- insertCodeBeforeFunction loc defCode
     reloadCode  loc code
     removeNodes loc nids
 
