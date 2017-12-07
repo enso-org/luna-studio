@@ -64,6 +64,7 @@ def build_runner(runner_args):
 def main ():
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", help="Build backend only", action="store_true")
+    parser.add_argument("--runner", help="Build runner only", action="store_true")
     parser.add_argument("--frontend", help="Build frontend only", action="store_true")
     parser.add_argument("--release", help="Build package in release mode", action="store_true")
     parser.add_argument("--gui_url", help="Path to uploaded gui")
@@ -74,6 +75,8 @@ def main ():
 
     if args.backend:
         build_backend (args.stack_backend_args)
+    elif args.runner:
+        build_runner (args.stack_runner_args)
     elif args.frontend:
         build_frontend (args.stack_frontend_args, args.gui_url, not args.release) # FIXME: "not ..." is not a proper way to handle this flag
     else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, args.gui_url, not args.release)
