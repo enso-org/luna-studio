@@ -2272,7 +2272,7 @@ spec = around withChannels $ parallel $ do
                         setEnv "LUNAROOT" lunaroot
                         (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
                         putMVar imports $ unwrap std
-                        runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True
+                        runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True False
             let updates = env ^. to _updatesChan
             ups <- atomically $ unfoldM (tryReadTChan updates)
             let _ResultUpdate = prism ResultUpdate $ \n -> case n of

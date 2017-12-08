@@ -1425,7 +1425,7 @@ collapseToFunction loc@(GraphLocation file _) nids = do
         return defCode
     code <- insertCodeBeforeFunction loc defCode
     reloadCode  loc code
-    withTC' (GraphLocation file def) False (return ()) (return ())
+    typecheckWithRecompute (GraphLocation file def)
     removeNodes loc nids
 
 
@@ -1699,20 +1699,24 @@ generateNewFunctionName forbiddenNames base =
         Just newName     = find (not . flip Set.member forbiddenNames) allPossibleNames
     in newName
 
-runTC :: GraphLocation -> Bool -> Bool -> Command ClsGraph ()
-runTC loc flush interpret = do
+runTC :: GraphLocation -> Bool -> Bool -> Bool -> Command ClsGraph ()
+runTC loc flush interpret recompute = do
     g <- get
-    Publisher.requestTC loc g flush interpret
+    Publisher.requestTC loc g flush interpret recompute
+
+typecheckWithRecompute :: GraphLocation -> Empire ()
+typecheckWithRecompute loc@(GraphLocation file _) = do
+    withGraph' (GraphLocation file def) (return ()) (runTC loc True True True)
 
 runInterpreter :: GraphLocation -> Empire ()
 runInterpreter loc@(GraphLocation file _) = do
-    withGraph' (GraphLocation file def) (return ()) (runTC loc True True)
+    withGraph' (GraphLocation file def) (return ()) (runTC loc True True False)
 
 withTC' :: GraphLocation -> Bool -> Command Graph a -> Command ClsGraph a -> Empire a
 withTC' loc@(GraphLocation file bs) flush actG actC = do
     res       <- withGraph' loc actG actC
     interpret <- use activeInterpreter
-    withGraph' (GraphLocation file def) (return ()) (runTC loc flush interpret)
+    withGraph' (GraphLocation file def) (return ()) (runTC loc flush interpret False)
     return res
 
 withTCUnit :: GraphLocation -> Bool -> Command ClsGraph a -> Empire a
