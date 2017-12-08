@@ -14,7 +14,7 @@
 
   <env name="LUNAROOT" value="%BASE%\..\env" />
 
-  <logpath>%LOGSDIR%</logpath>
+  <logpath>%LUNA_STUDIO_LOG_PATH%</logpath>
   <log mode="roll">
   </log>
 </configuration>
