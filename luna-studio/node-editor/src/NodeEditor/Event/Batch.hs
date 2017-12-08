@@ -3,7 +3,8 @@ module NodeEditor.Event.Batch where
 
 import           Common.Prelude
 
-import           Common.Analytics                           (IsTrackedEvent (..))
+import           Common.Analytics                           (IsTrackedEvent (isTracked))
+import           Common.Data.Event                          (EventName)
 import qualified LunaStudio.API.Atom.MoveProject            as MoveProject
 import qualified LunaStudio.API.Atom.Paste                  as AtomPaste
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
@@ -36,6 +37,7 @@ import qualified LunaStudio.API.Graph.SetNodesMeta          as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault        as SetPortDefault
 import qualified LunaStudio.API.Graph.TypeCheck             as TypeCheck
 import qualified LunaStudio.API.Graph.Undo                  as Undo
+
 
 data Event = UnknownEvent                             String
            | AddConnectionResponse             AddConnection.Response
@@ -74,6 +76,8 @@ data Event = UnknownEvent                             String
            | UndoResponse                               Undo.Response
            deriving (Eq, Show, Generic, NFData)
 
+instance EventName Event
+
 instance IsTrackedEvent Event where
-    eventName (UnknownEvent _) = Nothing
-    eventName e = Just $ head $ words $ show e
+    isTracked (UnknownEvent _) = False
+    isTracked e                = True

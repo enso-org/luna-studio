@@ -4,6 +4,7 @@ fuzzyFilter = null # defer until used
 ProjectItem = require './project-item'
 projects = require './projects'
 analytics = require './gen/analytics'
+report = require './report'
 
 projectClasses = "luna-welcome__tile "
 tutorialClasses = projectClasses + "luna-welcome__tile--tutorial"
@@ -78,11 +79,7 @@ class LunaWelcomeTab extends View
         @communityItems = []
         @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, comunnityNewClasses, (progress, finalize) =>
             finalize()
-            atom.confirm
-                message: "Not supported yet"
-                detailedMessage: "Community projects are not supported yet."
-                buttons:
-                    Ok: -> )
+            report.displayError 'Not supported yet', 'Community projects are not supported yet')
         @welcomePanel.on 'click', (e) -> e.stopPropagation()
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search

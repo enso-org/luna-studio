@@ -5,7 +5,6 @@ module NodeEditor.State.Global where
 import           Common.Action.Command                    (Command)
 import           Common.Debug                             (HasRequestTimes, requestTimes)
 import           Common.Prelude
-import           Data.DateTime                            (DateTime)
 import           Data.HashMap.Lazy                        (HashMap)
 import           Data.Map                                 (Map)
 import           Data.Set                                 (Set)
@@ -40,7 +39,6 @@ data State = State
         , _waitingForTc         :: Bool
         , _preferedVisualizers  :: HashMap TypeRep Visualizer
         , _visualizers          :: Map VisualizerName VisualizerMatcher
-        , _lastEventTimestamp   :: DateTime
         , _random               :: StdGen
         }
 
@@ -65,7 +63,7 @@ makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerName VisualizerMatcher -> DateTime -> StdGen -> State
+mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerName VisualizerMatcher -> StdGen -> State
 mkState ref clientId' = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')

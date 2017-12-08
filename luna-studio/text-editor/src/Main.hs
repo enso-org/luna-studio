@@ -5,7 +5,6 @@ import           Common.Prelude
 import           Control.Concurrent.Chan (Chan)
 import qualified Control.Concurrent.Chan as Chan
 import           Control.Concurrent.MVar
-import           Data.DateTime           (getCurrentTime)
 import           System.Random           (newStdGen)
 
 import           JS.Lexer                (installLexer)
@@ -19,11 +18,10 @@ runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     random       <- newStdGen
     clientId             <- generateUUID
-    initTime             <- getCurrentTime
     mdo
         let loop = LoopRef chan state
         Engine.scheduleInit loop
-        let initState = mkState initTime clientId random
+        let initState = mkState clientId random
         state <- newMVar initState
         Engine.connectEventSources socket loop
 

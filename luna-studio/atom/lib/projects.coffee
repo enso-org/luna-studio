@@ -5,16 +5,16 @@ path    = require 'path'
 request = require 'request'
 yaml    = require 'js-yaml'
 InputView = require './input-view'
+report = require './report'
 
 recentProjectsPath    = process.env.LUNA_STUDIO_DATA_PATH + '/recent-projects.yml'
-defaultProjectPath    = process.env.LUNA_PROJECTS  or path.join(fs.getHomeDirectory(), 'projects')
-temporaryPath         = process.env.LUNA_TEMP      or '/tmp'
-tutorialsDownloadPath = process.env.LUNA_TUTORIALS or '/tmp/tutorials'
-devMode               = process.env.LUNA_STUDIO_DEVELOP?
+defaultProjectPath    = process.env.LUNA_PROJECTS
+temporaryPath         = process.env.LUNA_TMP
+tutorialsDownloadPath = process.env.LUNA_TUTORIALS
 
 temporaryProject = {
-    name: 'unsaved-luna-project',
-    path: '/tmp/unsaved-luna-project',
+    name: 'unsaved-luna-project'
+    path: path.join temporaryPath, 'unsaved-luna-project'
     srcDir: 'src'
     mainFile: 'Main.luna'
     mainContent: 'def main:\n    None'
@@ -51,7 +51,7 @@ loadRecentNoCheck = (callback) =>
 
 createTemporary = (callback) =>
     fse.remove temporaryProject.path, (err) =>
-        fs.mkdir temporaryProject.path, (err) =>
+        fse.mkdirs temporaryProject.path, (err) =>
             if err then throw err
             srcPath = path.join temporaryProject.path, temporaryProject.srcDir
             fs.mkdir srcPath, (err) =>
@@ -77,7 +77,7 @@ openMainIfExists = ->
     if fs.existsSync mainLocation
         atom.workspace.open(mainLocation, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
 
-isTemporary = (projectPath) -> projectPath.startsWith temporaryPath
+isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith tutorialsDownloadPath)
 
 selectLunaProject = (e) ->
     e.stopImmediatePropagation()
@@ -156,11 +156,7 @@ module.exports =
                         callback
                             error: 'Cannot download tutorial list.'
             catch error
-                atom.confirm
-                    message: "Error while getting tutorials"
-                    detailedMessage: error.message
-                    buttons:
-                        Ok: ->
+                report.displayError 'Error while getting tutorials', error.message
 
         open: (tutorial, progress, finalize) ->
             dstPath = tutorialsDownloadPath + '/' + tutorial.name
@@ -184,11 +180,7 @@ module.exports =
                 atom.project.setPaths [dstPath]
                 finalize()
             cloneError = (err) =>
-                atom.confirm
-                    message: "Error while cloning tutorial"
-                    detailedMessage: err
-                    buttons:
-                        Ok: ->
+                report.displayError 'Error while cloning tutorial', err
                 finalize()
             closeAllFiles()
             fse.remove dstPath, (err) =>

@@ -5,7 +5,6 @@ import           Common.Action.Command                    (Command)
 import           Common.Debug                             (HasRequestTimes, requestTimes)
 import           Common.Prelude
 import           Data.Aeson                               (ToJSON, toJSON)
-import           Data.DateTime                            (DateTime)
 import           Data.Map                                 (Map)
 import           Data.Time.Clock                          (UTCTime)
 import           Data.UUID.Types                          (UUID)
@@ -19,7 +18,6 @@ import           TextEditor.Event.Event                   (Event)
 data State = State { _lastEvent            :: Maybe Event
                    , _eventNum             :: Int
                    , _pendingRequests      :: Map UUID UTCTime
-                   , _lastEventTimestamp   :: DateTime
                    , _clientId             :: ClientId
                    , _random               :: StdGen
                    }
@@ -29,7 +27,7 @@ instance ToJSON StdGen where
 
 makeLenses ''State
 
-mkState :: DateTime -> ClientId -> StdGen -> State
+mkState :: ClientId -> StdGen -> State
 mkState = State def def def
 
 nextRandom :: Command State Word8

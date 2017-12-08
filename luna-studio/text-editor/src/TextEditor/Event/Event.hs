@@ -3,7 +3,8 @@ module TextEditor.Event.Event where
 
 import           Data.Aeson                  (ToJSON)
 
-import           Common.Analytics            (IsTrackedEvent (..), (<.$>))
+import           Common.Analytics            (IsTrackedEvent (isTracked))
+import           Common.Data.Event           (EventName(eventName), consName)
 import           Common.Prelude
 import           TextEditor.Event.Batch      (BatchEvent)
 import qualified TextEditor.Event.Connection as Connection
@@ -26,9 +27,17 @@ name = to $ head . words . show
 
 
 instance IsTrackedEvent Event where
-    eventName event = ("TextEditor.Event." <> (event ^. name)) <.$> case event of
-        Init -> Just ""
-        Atom a       -> eventName a
-        Batch b      -> eventName b
-        Connection c -> eventName c
-        Text t       -> eventName t
+    isTracked = \case
+        Init          -> True
+        Atom       ev -> isTracked ev
+        Batch      ev -> isTracked ev
+        Connection ev -> isTracked ev
+        Text       ev -> isTracked ev
+
+instance EventName Event where
+    eventName event = "TextEditor.Event." <> consName event <> case event of
+        Init         -> def
+        Atom a       -> "." <> eventName a
+        Batch b      -> "." <> eventName b
+        Connection c -> "." <> eventName c
+        Text t       -> "." <> eventName t

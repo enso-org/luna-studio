@@ -3,6 +3,7 @@
 module NodeEditor.React.Event.Node where
 
 import           Common.Prelude
+import           Common.Data.Event           (EventName)
 import           LunaStudio.Data.NodeLoc     (NodeLoc)
 import           LunaStudio.Data.PortDefault (PortDefault)
 import           LunaStudio.Data.PortRef     (InPortRef)
@@ -25,3 +26,5 @@ data Event = EditExpression                     NodeLoc
            | MouseLeave                         NodeLoc
            | ShowFullError                      NodeLoc
             deriving (Show, Generic, NFData, Typeable)
+
+instance EventName Event

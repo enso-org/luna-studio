@@ -40,7 +40,8 @@ cancelAllActions :: Command State [ActionRep]
 cancelAllActions = do
     tpcePerforming <- checkIfActionPerfoming textPortControlEditAction
     if not tpcePerforming then endAllActions else do
-        continue PortControl.rollbackEditTextPortControl >> PortControl.unfocusEditTextPortControl
+        continue PortControl.rollbackEditTextPortControl
+        PortControl.unfocusEditTextPortControl
         (textPortControlEditAction :) <$> endAllActions
 
 handleCommand :: Shortcut.Command -> Command State ()

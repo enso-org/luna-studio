@@ -116,7 +116,7 @@ class HttpRequest:
     ## does not matter).
     def addHeader key val: case self of
         HttpRequest uri method _ auth oauth1 params body:
-            HttpRequest uri method (headers.insert key val) auth oauth1 params body
+            HttpRequest uri method (self.headers.insert key val) auth oauth1 params body
 
     ## Use the provided username and password as `HttpBasicAuth`.
     def setBasicAuth username password: case self of

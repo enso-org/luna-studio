@@ -5,6 +5,7 @@ import           Common.Prelude
 import           Data.Aeson                           (ToJSON)
 
 import           Common.Analytics                     (IsTrackedEvent(..))
+import           Common.Data.Event                    (EventName)
 import qualified LunaStudio.API.Atom.CloseFile        as CloseFile
 import qualified LunaStudio.API.Atom.Copy             as Copy
 import qualified LunaStudio.API.Atom.GetBuffer        as GetBuffer
@@ -16,6 +17,7 @@ import qualified LunaStudio.API.Atom.SetProject       as SetProject
 import qualified LunaStudio.API.Atom.Substitute       as Substitute
 import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
 import qualified LunaStudio.API.Control.Interpreter   as Interpreter
+
 
 data BatchEvent
         = UnknownEvent String
@@ -36,7 +38,8 @@ data BatchEvent
         | SubstituteUpdate                       Substitute.Update
         deriving (Eq, Show, Generic, NFData)
 
+instance EventName BatchEvent
 instance ToJSON BatchEvent
 instance IsTrackedEvent BatchEvent where
-    eventName (UnknownEvent _) = Nothing
-    eventName event = Just $ head $ words $ show event
+    isTracked (UnknownEvent _) = False
+    isTracked _                = True

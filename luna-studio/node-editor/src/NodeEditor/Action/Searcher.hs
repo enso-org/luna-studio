@@ -16,6 +16,7 @@ import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import qualified LunaStudio.Data.NodeSearcher               as NS
 import           LunaStudio.Data.NodeValue                  (getMdVis)
 import           LunaStudio.Data.PortRef                    (OutPortRef)
+import           LunaStudio.Data.Position                   (Position)
 import           LunaStudio.Data.ScreenPosition             (move, x, y)
 import           LunaStudio.Data.Size                       (height, width)
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
@@ -96,15 +97,15 @@ editPortName portRef = do
     withJust mayP $ \p -> do
         openWith (p ^. Port.name) $ Searcher.PortName portRef def
 
-open :: Command State ()
-open = do
+open :: Maybe Position -> Command State ()
+open mayPosition = do
     (className, nn) <- getSelectedNodes >>= \case
         [n] -> do
             pos <- findSuccessorPosition n
             let (className, predPortRef) = Searcher.getPredInfo n
             return $ (className, Searcher.NewNode (snap pos) predPortRef)
         _   -> do
-            pos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
+            pos <- maybe (translateToWorkspace =<< use (Global.ui . UI.mousePos)) return mayPosition
             return $ (def, Searcher.NewNode (snap pos) def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
     mayDocVis <- mkDocVis

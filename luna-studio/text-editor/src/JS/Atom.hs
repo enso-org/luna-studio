@@ -15,11 +15,9 @@ module JS.Atom
 import           Common.Data.JSON              (fromJSONVal, toJSONVal)
 import           Common.Prelude                hiding (toList)
 import           Control.Monad.Trans.Maybe     (MaybeT (MaybeT), runMaybeT)
-import qualified Data.Text                     as Text
 import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure            (PFromJSVal (pFromJSVal), PToJSVal (pToJSVal))
+import           GHCJS.Marshal.Pure            (PToJSVal (pToJSVal))
 import           LunaStudio.Data.Diff          (Diff)
-import qualified LunaStudio.Data.Diff          as Diff
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.Point         (Point)
 import           TextEditor.Event.Internal     (InternalEvent, InternalEvent (..))

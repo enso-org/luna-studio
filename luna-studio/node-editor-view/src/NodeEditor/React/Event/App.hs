@@ -4,6 +4,7 @@
 
 module NodeEditor.React.Event.App where
 
+import           Common.Data.Event              (EventName)
 import           Common.Prelude
 import           Data.Timestamp                 (Timestamp)
 import           LunaStudio.Data.ScreenPosition (ScreenPosition)
@@ -21,3 +22,5 @@ data Event = Click
            | Resize
            | Wheel         MouseEvent WheelEvent
            deriving (Show, Generic, NFData, Typeable)
+
+instance EventName Event

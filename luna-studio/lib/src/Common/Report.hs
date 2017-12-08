@@ -5,6 +5,7 @@ module Common.Report where
 import           Atom                       (pushNotification)
 import           Data.Aeson                 (ToJSON, toJSON)
 import           Common.Analytics
+import           Common.Data.Event          (EventName(eventName))
 import           Common.Data.Notification   (Notification(Notification))
 import qualified Common.Data.Notification   as Notification
 import           Common.Prelude
@@ -15,8 +16,10 @@ data ErrorEvent = Fatal   { contents :: String }
                 | Warning { contents :: String }
         deriving (Generic, Show, ToJSON)
 
+instance EventName ErrorEvent where
+    eventName = const "LunaStudio.Error"
+
 instance IsTrackedEvent ErrorEvent where
-    eventName = const $ Just "LunaStudio.Error"
     eventData = toJSON
 
 error :: MonadIO m => String -> m ()

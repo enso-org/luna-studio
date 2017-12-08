@@ -44,3 +44,9 @@ TODO: GHC reqs
     FileNotFoundError: [Errno 2] No such file or directory: 'PATH_TO_LUNA_STUDIO/dist/third-party/Atom.app/Contents/Resources/app/apm/bin/apm'
     ```
     Please do: `luna-manager develop luna-studio --path $LUNA_STUDIO_DEV --download-dependencies`.
+    
+* [Linux] App image requires FUSE to run. While most Linux distributions have it pre-installed, it can be missing in your specific case. If your distro happens to lack FUSE, you can either install it or mount the AppImage yourself with:
+    ```
+    sudo mount -o loop Some.AppImage /mnt
+    /mnt/AppRun
+    ```

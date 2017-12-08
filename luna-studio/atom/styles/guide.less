@@ -7,13 +7,21 @@
 @textColor: rgba(0,0,0,.7);
 @guideColor: lighten(@accentColor,10%); //darken(orange,10%);
 
+.luna-guide__message-positioner {
+	position: fixed;
+	bottom: 3.5*@gridSize;
+	width: 100%;
+	z-index: 10000;
+	display: flex;
+	justify-content: center;
+	pointer-events: none;
+}
+
 .luna-guide__message {
+	position: relative;
 	color: @textColor;
 	width: 260px !important;
 	@a: 1px;
-	pointer-events: none;
-	position: fixed;
-	z-index: 10000;
 	background: @backgroundColor;
 	padding: @gridSize/@a @gridSize @gridSize - @gridSize/@a + @gridSize;
 	box-sizing: content-box;
@@ -24,8 +32,6 @@
 	top: inherit !important;
 	left: inherit !important;
 
-	bottom: 3.5*@gridSize;
-	right:  1.5*@gridSize;
 }
 
 .luna-guide__title {
@@ -101,10 +107,13 @@
 .luna-guide__close-icon {
 	background: none;
 	position: absolute;
-	top: @gridSize;
-	right: @gridSize;
-	width: @gridSize;
-	opacity: 0.8;
+	top: @gridSize*0.95;
+	right: @gridSize*0.75;
+	cursor: pointer;
+	pointer-events: all;
+	text-shadow: none;
+	opacity: .7;
+
 }
 
 @keyframes pulsing {

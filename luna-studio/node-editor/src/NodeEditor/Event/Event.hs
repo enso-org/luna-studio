@@ -2,14 +2,14 @@
 {-# LANGUAGE StrictData     #-}
 module NodeEditor.Event.Event where
 
-import           Common.Analytics            (IsTrackedEvent (..), (<.$>))
+import           Common.Analytics            (IsTrackedEvent (isTracked))
+import           Common.Data.Event           (EventName (eventName), consName)
 import           Common.Prelude
 import qualified NodeEditor.Event.Atom       as Atom
 import qualified NodeEditor.Event.Batch      as Batch
 import qualified NodeEditor.Event.Connection as Connection
 import           NodeEditor.Event.Shortcut   (ShortcutEvent)
 import           NodeEditor.Event.UI         (UIEvent)
-
 
 data Event = Init
            | Batch            Batch.Event
@@ -21,14 +21,21 @@ data Event = Init
 
 makeLenses ''Event
 
-name :: Getter Event String
-name = to $ head . words . show
 
 instance IsTrackedEvent Event where
-    eventName event = ("NodeEditor.Event." <> (event ^. name)) <.$> case event of
-        Init         -> Just ""
-        Batch b      -> eventName b
-        Connection c -> eventName c
-        Atom a       -> eventName a
-        Shortcut s   -> eventName s
-        UI u         -> eventName u
+    isTracked = \case
+        Init          -> True
+        Batch      ev -> isTracked ev
+        Connection ev -> isTracked ev
+        Atom       ev -> isTracked ev
+        Shortcut   ev -> isTracked ev
+        UI         ev -> isTracked ev
+
+instance EventName Event where
+    eventName event = "NodeEditor.Event." <> consName event <> case event of
+        Init         -> def
+        Batch b      -> "." <> eventName b
+        Connection c -> "." <> eventName c
+        Atom a       -> "." <> eventName a
+        Shortcut s   -> "." <> eventName s
+        UI u         -> "." <> eventName u

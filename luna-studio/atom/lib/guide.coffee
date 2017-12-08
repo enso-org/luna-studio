@@ -4,6 +4,9 @@ fs        = require 'fs-plus'
 path      = require 'path'
 yaml      = require 'js-yaml'
 {VM}      = require 'vm2'
+showdown  = require 'showdown'
+converter = new showdown.Converter()
+report    = require './report'
 
 vm     = new VM
             timeout: 1000
@@ -25,60 +28,66 @@ module.exports =
         @content: ->
             @div =>
                 @div class: 'luna-guide__pointer', outlet: 'pointer'
-                @div class: 'luna-guide__message', outlet: 'messageBox', =>
-                    @div
-                        class: 'luna-guide__title'
-                        outlet: 'guideTitle'
-                    @div
-                        class: 'luna-guide__description'
-                        outlet: 'guideDescription'
-                    @button
-                        outlet: 'buttonHide'
-                        class: 'luna-guide__close-icon'
-                        'x'
-                    @div class: 'luna-guide__buttons', =>
+                @div class: 'luna-guide__message-positioner', =>
+                    @div class: 'luna-guide__message', outlet: 'messageBox', =>
+                        @div
+                            class: 'luna-guide__title'
+                            outlet: 'guideTitle'
+                        @div
+                            class: 'luna-guide__description'
+                            outlet: 'guideDescription'
                         @button
-                            outlet: 'buttonContinue'
-                            class: 'luna-guide__button luna-guide__button--continue'
-                            'Next'
-                        @button
-                            outlet: 'buttonDoIt'
-                            class: 'luna-guide__button luna-guide__button--doit'
-                            'Next'
-                        # @button
-                        #     outlet: 'buttonDisable'
-                        #     class: 'luna-guide__button luna-guide__button--disable luna-guide__button--link'
-                        #     'Do not show again'
+                            outlet: 'buttonHide'
+                            class: 'luna-guide__close-icon close icon icon-x'
+                        @div class: 'luna-guide__buttons', =>
+                            @button
+                                outlet: 'buttonContinue'
+                                class: 'luna-guide__button luna-guide__button--continue'
+                                'Next'
+                            @button
+                                outlet: 'buttonDoIt'
+                                class: 'luna-guide__button luna-guide__button--doit'
+                                'Next'
+                            # @button
+                            #     outlet: 'buttonDisable'
+                            #     class: 'luna-guide__button luna-guide__button--disable luna-guide__button--link'
+                            #     'Do not show again'
 
         initialize: =>
             @buttonHide.on 'click', @detach
             # @buttonDisable.on 'click', @disable
-            @buttonContinue.on 'click', =>
-                @nextStep()
-                @buttonContinue.hide()
+            @buttonContinue.on 'click', (e) =>
+                if e.ctrlKey and e.shiftKey
+                    @fastForward()
+                @proceed()
             @buttonContinue.hide()
-            @buttonDoIt.on 'click', =>
+            @buttonDoIt.on 'click', (e) =>
+                if e.ctrlKey and e.shiftKey
+                    @fastForward()
                 @buttonDoIt.hide()
                 @doIt()
             @buttonDoIt.hide()
 
-        nextStep: =>
+        nextStep: (nextStepNo) =>
+            if nextStepNo != @nextStepNo
+                return
+
             if @currentStep? and @currentStep.after?
                 try
                     vm.run @currentStep.after
                 catch error
-                    console.error error
+                    report.silentError 'Error while running guide "after" step', error
 
             @unsetHighlightedElem()
 
             projectPath = atom.project.getPaths()[0]
             projectPath ?= '(None)'
             analytics.track 'LunaStudio.Guide.Step',
-                number: @currentStepNo
+                number: @nextStepNo
                 name: path.basename projectPath
                 path: projectPath
-            @currentStep = @guide.steps[@currentStepNo]
-            @currentStepNo++
+            @currentStep = @guide.steps[@nextStepNo]
+            @nextStepNo++
 
             if @currentStep?
                 @target = @currentStep.target
@@ -108,8 +117,8 @@ module.exports =
                             targetedElem = targetedElem.getElementsByClassName(t)[0]
                         else
                             targetedElem = document.getElementsByClassName(t)[0]
-                            unless targetedElem?
-                                break
+                        unless targetedElem?
+                            break
             else if @target.id
                 targetedElem = document.getElementById(@target.id)
             else if @target.custom
@@ -131,6 +140,7 @@ module.exports =
         installHandlers: =>
             if @highlightedElem?
                 hgElem = @highlightedElem
+                nextStepNo = @nextStepNo
                 highlightedRect = hgElem.getBoundingClientRect()
                 if highlightedRect.width != 0 and highlightedRect.height != 0
                     if @target.action is 'value'
@@ -139,44 +149,51 @@ module.exports =
                         hgElem.oninput = =>
                             if hgElem? and (hgElem.value is @target.value)
                                 hgElem.oninput = oldHandlers
-                                @nextStep()
+                                setTimeout => @nextStep nextStepNo
                     else if @target.action.includes ':'
                         @buttonDoIt.show()
                         handler = {}
                         handler[@target.action] = =>
                             @disposable.dispose()
-                            @nextStep()
+                            setTimeout => @nextStep nextStepNo
                         @disposable = atom.commands.add hgElem, handler
                     else if hgElem?
                         @buttonDoIt.show()
                         oldHandlers = hgElem[@target.action]
                         hgElem[@target.action] = =>
-
                             if hgElem?
                                 hgElem[@target.action] = oldHandlers
-                                @nextStep()
+                                setTimeout => @nextStep nextStepNo
+
+        proceed: =>
+            @buttonContinue.hide()
+            @nextStep @nextStepNo
 
         doIt: =>
-            if @highlightedElem?
+            mkEvent = (name) => new Event name,
+                                    view: window
+                                    bubbles: true
+                                    cancelable: true
+            if @target.action is 'proceed'
+                @proceed()
+            else if @highlightedElem?
                 if @target.action is 'value'
-                    event = new Event 'input',
-                                        bubbles: true
+                    event = mkEvent 'input',
                     @highlightedElem.value = @target.value
                     event.simulated = true
                     @highlightedElem.dispatchEvent(event)
                 else if @target.action.includes ':'
                     view = atom.views.getView @highlightedElem
-                    atom.commands.dispatch view, @target.action
+                    atom.commands.dispatch view, @target.action, @target.payload
                 else if @highlightedElem?
                     if @target.action.startsWith 'on'
                         action = @target.action.slice 2
                     else
                         action = @target.action
-                    event = new Event action,
-                                        view: window
-                                        bubbles: true
-                                        cancelable: true
-                    @highlightedElem.dispatchEvent(event)
+                    if action is 'click'
+                        @highlightedElem.dispatchEvent mkEvent 'mousedown'
+                        @highlightedElem.dispatchEvent mkEvent 'mouseup'
+                    @highlightedElem.dispatchEvent mkEvent action
 
         displayStep: (retry = false) =>
             @setHighlightedElem()
@@ -201,7 +218,7 @@ module.exports =
             @installHandlers()
 
             @guideTitle[0].innerText = @currentStep.title
-            @guideDescription[0].innerText = @currentStep.description
+            @guideDescription[0].innerHTML = converter.makeHtml @currentStep.description
             msgBoxRect = @messageBox[0].getBoundingClientRect()
             # msgBoxLeft = (windowRect.width - msgBoxRect.width)/2
             # msgBoxTop  = (windowRect.height - msgBoxRect.height)/2
@@ -241,16 +258,16 @@ module.exports =
                     @pointer[0].classList.add pointerWindowClass
                 else
                     @pointer[0].classList.remove pointerWindowClass
-                highlightedRect = @highlightedElem.getBoundingClientRect()
-                unless highlightedRect.width is 0 or highlightedRect.height is 0
+                if @isVisible()
+                    highlightedRect = @highlightedElem.getBoundingClientRect()
                     @pointer.show()
                     @pointer[0].style.width  = highlightedRect.width + 'px'
                     @pointer[0].style.height = highlightedRect.height + 'px'
                     @pointer[0].style.top  = highlightedRect.top + 'px'
                     @pointer[0].style.left = highlightedRect.left + 'px'
-                    window.requestAnimationFrame @updatePointer
                 else
                     @pointer.hide()
+                window.requestAnimationFrame @updatePointer
             else
                 @pointer.hide()
 
@@ -282,13 +299,39 @@ module.exports =
                 data = yaml.safeDump(@guide)
                 fs.writeFile @guidePath, data, encoding, (err) =>
                 if err?
-                    console.error err
+                    report.silentError 'Error when disabling guide', err
             else
                 atom.config.set('luna-studio.showWelcomeGuide', false)
 
 
         start: (@guide, @guidePath) =>
             @guide ?= welcomeGuide
-            @currentStepNo = 0
+            @nextStepNo = 0
             @attach()
-            @nextStep()
+            @nextStep 0
+
+        isVisible: =>
+            elem = @highlightedElem
+            style = getComputedStyle elem
+            if style.display is 'none' then return false
+            if style.visibility isnt 'visible' then return false
+            if style.opacity < 0.1 then return false
+            if (elem.offsetWidth + elem.offsetHeight + elem.getBoundingClientRect().height + elem.getBoundingClientRect().width is 0)
+                return false
+            elemCenter =
+                x: elem.getBoundingClientRect().left + elem.offsetWidth / 2
+                y: elem.getBoundingClientRect().top  + elem.offsetHeight / 2
+            if elemCenter.x < 0 then return false
+            if elemCenter.x > (document.documentElement.clientWidth || window.innerWidth) then return false
+            if elemCenter.y < 0 then return false
+            if elemCenter.y > (document.documentElement.clientHeight || window.innerHeight) then return false
+            pointContainer = document.elementFromPoint elemCenter.x, elemCenter.y
+            while true
+                if pointContainer is elem then return true
+                break unless pointContainer = pointContainer.parentNode
+            return false
+
+        fastForward: =>
+            @doIt()
+            if @nextStepNo < @guide.steps.length
+                setTimeout @fastForward, 100

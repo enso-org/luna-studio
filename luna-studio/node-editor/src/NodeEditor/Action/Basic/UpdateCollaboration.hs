@@ -12,7 +12,7 @@ import           NodeEditor.Data.Color                      (Color (Color), from
 import           NodeEditor.React.Model.Node.ExpressionNode (modify, nodeLoc, touch)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.State.Collaboration             (Client (Client), colorId, knownClients, lastSeen)
-import           NodeEditor.State.Global                    (State, collaboration, lastEventTimestamp)
+import           NodeEditor.State.Global                    (State, collaboration)
 
 updateCollaboration :: Command State ()
 updateCollaboration = expireTouchedNodes >> everyNSeconds refreshTime touchCurrentlySelected
@@ -20,7 +20,7 @@ updateCollaboration = expireTouchedNodes >> everyNSeconds refreshTime touchCurre
 updateClient :: ClientId -> Command State Color
 updateClient clId = do
     mayCurrentData <- use $ collaboration . knownClients . at clId
-    currentTime    <- use lastEventTimestamp
+    currentTime    <- liftIO DT.getCurrentTime
     zoom collaboration $ case mayCurrentData of
         Just currentData -> do
             knownClients . ix clId . lastSeen .= currentTime
@@ -40,13 +40,13 @@ touchCurrentlySelected = (map (view nodeLoc) <$> getSelectedNodes) >>= Batch.col
 
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
-    currentTime  <- use lastEventTimestamp
+    currentTime  <- liftIO DT.getCurrentTime
     let update = ( Node.collaboration . touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0) )
                . ( Node.collaboration . modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0) )
     modifyExpressionNodes_ $ M.modify update
 
 everyNSeconds :: Integer -> Command State () -> Command State ()
-everyNSeconds interval action = use lastEventTimestamp >>= \currentTime ->
+everyNSeconds interval action = liftIO DT.getCurrentTime >>= \currentTime ->
     when (DT.toSeconds currentTime `mod` interval == 0) action
 
 bumpTime :: DT.DateTime -> Color -> Maybe (DT.DateTime, Color) -> Maybe (DT.DateTime, Color)

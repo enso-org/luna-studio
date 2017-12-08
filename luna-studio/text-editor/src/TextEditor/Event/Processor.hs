@@ -2,7 +2,6 @@ module TextEditor.Event.Processor where
 
 import           Control.Concurrent.MVar
 import           Control.Exception                   (handle)
-import           Data.DateTime                       (getCurrentTime)
 import           Data.Monoid                         (Last (..))
 import           GHCJS.Prim                          (JSException)
 
@@ -20,7 +19,6 @@ import qualified TextEditor.Handler.Control          as Control
 import qualified TextEditor.Handler.ProjectManager   as ProjectManager
 import qualified TextEditor.Handler.Text             as Text
 import           TextEditor.State.Global             (State)
-import qualified TextEditor.State.Global             as Global
 import           WebSocket                           (WebSocket)
 
 
@@ -43,10 +41,8 @@ processEvent :: LoopRef -> Event -> IO ()
 processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
     realEvent <- preprocessEvent ev
     Analytics.track realEvent
-    timestamp <- getCurrentTime
-    let state' = state & Global.lastEventTimestamp .~ timestamp
     handle (handleExcept state realEvent) $
-        execCommand (runCommands (actions loop) realEvent ) state'
+        execCommand (runCommands (actions loop) realEvent ) state
 
 connectEventSources :: WebSocket -> LoopRef -> IO ()
 connectEventSources conn loop = do

@@ -1,9 +1,10 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.Event.Shortcut where
 
-import           Common.Analytics (IsTrackedEvent (..))
+import           Common.Analytics  (IsTrackedEvent)
 import           Common.Prelude
-import           Data.Aeson       (FromJSON)
+import           Common.Data.Event (EventName (eventName))
+import           Data.Aeson        (FromJSON)
 
 
 data Command = Cancel
@@ -65,5 +66,7 @@ data ShortcutEvent = Event
 
 makeLenses ''ShortcutEvent
 
-instance IsTrackedEvent ShortcutEvent where
-    eventName = Just . head . words . show . view shortcut
+instance EventName ShortcutEvent where
+    eventName = head . words . show . view shortcut
+
+instance IsTrackedEvent ShortcutEvent

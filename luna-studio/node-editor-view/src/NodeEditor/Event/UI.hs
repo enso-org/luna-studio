@@ -5,6 +5,7 @@ module NodeEditor.Event.UI where
 import           Common.Prelude
 
 import           Common.Analytics                     (IsTrackedEvent (..))
+import           Common.Data.Event                    (EventName (eventName), consName)
 import qualified NodeEditor.React.Event.App           as App
 import qualified NodeEditor.React.Event.Breadcrumbs   as Breadcrumbs
 import qualified NodeEditor.React.Event.Connection    as Connection
@@ -25,5 +26,16 @@ data UIEvent = AppEvent           App.Event
              | VisualizationEvent Visualization.Event
              deriving (Generic, NFData, Show, Typeable)
 
+instance EventName UIEvent where
+    eventName event = consName event <> "." <> case event of
+        AppEvent           ev -> eventName ev
+        BreadcrumbsEvent   ev -> eventName ev
+        ConnectionEvent    ev -> eventName ev
+        NodeEvent          ev -> eventName ev
+        PortEvent          ev -> eventName ev
+        SearcherEvent      ev -> eventName ev
+        SidebarEvent       ev -> eventName ev
+        VisualizationEvent ev -> eventName ev
+
 instance IsTrackedEvent UIEvent where
-    eventName _ = Nothing
+    isTracked _ = False

@@ -4,10 +4,10 @@
 
 module NodeEditor.React.Event.Searcher where
 
+import           Common.Data.Event (EventName)
 import           Common.Prelude
-import           Data.Aeson     (FromJSON)
-import           React.Flux     (KeyboardEvent)
-
+import           Data.Aeson        (FromJSON)
+import           React.Flux        (KeyboardEvent)
 
 
 data Event = InputChanged Text Int Int
@@ -22,3 +22,5 @@ data Event = InputChanged Text Int Int
            | KeyDown KeyboardEvent
            | KeyUp   KeyboardEvent
             deriving (FromJSON, Generic, NFData, Show, Typeable)
+
+instance EventName Event

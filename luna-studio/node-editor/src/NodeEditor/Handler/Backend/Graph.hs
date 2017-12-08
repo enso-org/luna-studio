@@ -38,8 +38,7 @@ import qualified LunaStudio.API.Graph.SetNodesMeta           as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault         as SetPortDefault
 import qualified LunaStudio.API.Response                     as Response
 import           LunaStudio.Data.Breadcrumb                  (containsNode)
-import           LunaStudio.Data.Error                       (Error, GraphError (BreadcrumbDoesNotExist, Other), errorType,
-                                                              _BreadcrumbDoesNotExist)
+import           LunaStudio.Data.Error                       (Error, GraphError (BreadcrumbDoesNotExist, Other), errorType)
 import qualified LunaStudio.Data.Graph                       as Graph
 import           LunaStudio.Data.GraphLocation               (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation               as GraphLocation
@@ -202,7 +201,7 @@ handle (Event.Batch ev) = Just $ case ev of
             touchNodes nodeLocs setter = forM_ nodeLocs $ \nl ->
                 modifyExpressionNode (prependPath path nl) setter
         myClientId  <- use $ Global.backend . Global.clientId
-        currentTime <- use Global.lastEventTimestamp
+        currentTime <- liftIO DT.getCurrentTime
         when (clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of

@@ -2,7 +2,6 @@ module NodeEditor.Event.Processor where
 
 import           Control.Concurrent.MVar
 import           Control.Exception                      (SomeException, handle)
-import           Data.DateTime                          (getCurrentTime)
 import           Data.Monoid                            (Last (..))
 import           GHCJS.Prim                             (JSException)
 
@@ -37,7 +36,6 @@ import qualified NodeEditor.Handler.Sidebar             as Sidebar
 import qualified NodeEditor.Handler.Undo                as Undo
 import qualified NodeEditor.Handler.Visualization       as Visualization
 import           NodeEditor.State.Global                (State)
-import qualified NodeEditor.State.Global                as Global
 import           WebSocket                              (WebSocket)
 
 
@@ -75,10 +73,8 @@ processEvent :: LoopRef -> Event -> IO ()
 processEvent loop ev = handle handleAnyException $ modifyMVar_ (loop ^. Loop.state) $ \state -> do
     realEvent <- preprocessEvent ev
     Analytics.track realEvent
-    timestamp <- getCurrentTime
-    let state' = state & Global.lastEventTimestamp .~ timestamp
     handle (handleExcept state realEvent) $
-        execCommand (runCommands (actions loop) realEvent >> renderIfNeeded) state'
+        execCommand (runCommands (actions loop) realEvent >> renderIfNeeded) state
 
 connectEventSources :: WebSocket -> LoopRef -> IO ()
 connectEventSources conn loop = do
