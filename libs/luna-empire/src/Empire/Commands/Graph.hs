@@ -1542,6 +1542,7 @@ getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Bread
     explicitImports <- runASTOp $ do
         unit <- use Graph.clsClass
         IR.matchExpr unit $ \case
+            IR.ClsASG{} -> return [] -- [MM]: unparseable file has clsasg at graph root instead of unit
             IR.Unit imps _ _ -> do
                 imps' <- IR.source imps
                 IR.matchExpr imps' $ \case
