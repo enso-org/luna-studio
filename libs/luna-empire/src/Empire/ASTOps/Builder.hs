@@ -96,6 +96,9 @@ getArgumentOf fun beg = IR.matchExpr fun $ \case
         off <- Code.getOffsetRelativeToTarget g
         g'  <- IR.source g
         getArgumentOf g' (beg + off)
+    Tuple l -> do
+        off <- Code.getOffsetRelativeToTarget $ last l
+        return (last l, beg + off)
     f -> error $ show f
 
 getOrCreateArgument :: GraphOp m => EdgeRef -> Delta -> Int -> Int -> m (EdgeRef, Delta)
@@ -106,6 +109,10 @@ getOrCreateArgument currentFun codeBegin currentArgument neededArgument
     | otherwise = do
         fun <- IR.source currentFun
         IR.matchExpr fun $ \case
+            Tuple l -> do
+                let arg = l !! neededArgument
+                foff <- Code.getOffsetRelativeToTarget arg
+                return (arg, codeBegin + foff)
             Grouped g -> do
                 foff <- Code.getOffsetRelativeToTarget g
                 getOrCreateArgument g (codeBegin + foff) currentArgument neededArgument

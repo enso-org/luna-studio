@@ -2314,3 +2314,21 @@ def main:
                 node <- Graph.addNode loc u2 "Just [(i,  Foo  b) ] =a" def
                 (_, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.connect loc (outPortRef u2 [Port.Projection 0, Port.Projection 0, Port.Projection 1, Port.Projection 0]) (InPortRef' $ inPortRef output [])
+        it "sets tuple port defaults" $ let
+            initialCode = [r|
+                def main:
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    tuple1 = (False, False)
+                    tuple2 = ( 1, 2,   100)
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                u1 <- mkUUID
+                u2 <- mkUUID
+                Graph.addNode loc u1 "(True, False)" def
+                Graph.addNode loc u2 "( 1, 2,   3)" def
+                Graph.setPortDefault loc (inPortRef u1 [Port.Arg 0]) (Just (PortDefault.Constant (PortDefault.BoolValue False)))
+                Graph.setPortDefault loc (inPortRef u2 [Port.Arg 2]) (Just (PortDefault.Constant (PortDefault.IntValue 100)))
