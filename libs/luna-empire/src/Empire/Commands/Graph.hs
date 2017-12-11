@@ -533,7 +533,7 @@ addSubgraph loc@(GraphLocation _ (Breadcrumb [])) nodes _ = do
     return res
 addSubgraph loc nodes conns = do
     newNodes <- withTC loc False $ do
-        newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.name) (n ^. Node.nodeMeta)
+        newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.code) (n ^. Node.name) (n ^. Node.nodeMeta)
         for_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
         return newNodes
     resendCode loc
