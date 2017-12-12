@@ -255,7 +255,7 @@ addFunNode :: GraphLocation -> FunctionParsing -> NodeId -> Text -> NodeMeta -> 
 addFunNode loc parsing uuid expr meta = withUnit loc $ do
     (parse, code) <- ASTParse.runFunHackParser expr parsing
     when (meta /= def) $ runASTOp $ AST.writeMeta parse meta
-    name <- runASTOp $ IR.matchExpr parse $ \case
+    name <- runASTOp $ ASTRead.cutThroughDocAndMarked parse >>= \x -> IR.matchExpr x $ \case
         IR.ASGRootedFunction n _ -> do
             name <- ASTRead.getVarName' =<< IR.source n
             return $ nameToString name
@@ -558,7 +558,7 @@ removeNodes loc@(GraphLocation file (Breadcrumb [])) nodeIds = do
                     IR.ClsASG _ _ _ _ f -> do
                         links <- mapM (\link -> (link,) <$> IR.source link) f
                         forM links $ \(link, fun) -> do
-                            fun' <- ASTRead.cutThroughMarked fun
+                            fun' <- ASTRead.cutThroughDocAndMarked fun
                             IR.matchExpr fun' $ \case
                                 IR.ASGRootedFunction n _ -> do
                                     name <- ASTRead.getVarName' =<< IR.source n
@@ -890,10 +890,9 @@ renameNode loc nid name
             oldName <- use $ Graph.clsFuns . ix nid . Graph.funName
             Graph.clsFuns %= Map.adjust (Graph.funName .~ (Text.unpack stripped)) nid
             runASTOp $ do
-                fun     <- ASTRead.getFunByName oldName >>= ASTRead.cutThroughMarked
+                fun     <- ASTRead.getFunByName oldName >>= ASTRead.cutThroughDocAndMarked
                 IR.matchExpr fun $ \case
                     IR.ASGRootedFunction n _ -> flip ASTModify.renameVar (convert stripped) =<< IR.source n
-                    _                        -> return ()
         withGraph (GraphLocation f (Breadcrumb [Breadcrumb.Definition nid])) $ runASTOp $ do
             self <- use $ Graph.breadcrumbHierarchy . BH.self
             v    <- ASTRead.getVarNode self
@@ -1050,7 +1049,7 @@ loadCode (GraphLocation file _) code = do
         klass <- use Graph.clsClass
         runASTOp $ do
             funs <- ASTRead.classFunctions klass
-            forM funs $ \f -> ASTRead.cutThroughMarked f >>= \fun -> IR.matchExpr fun $ \case
+            forM funs $ \f -> ASTRead.cutThroughDocAndMarked f >>= \fun -> IR.matchExpr fun $ \case
                 IR.ASGRootedFunction n _ -> do
                     name <- ASTRead.getVarName' =<< IR.source n
                     return (convert name, f)

@@ -64,7 +64,7 @@ makeGraphCls :: NodeRef -> Maybe NodeId -> Command Graph.ClsGraph (NodeId, Graph
 makeGraphCls fun lastUUID = do
     pmState   <- liftIO Graph.defaultPMState
     nodeCache <- use Graph.clsNodeCache
-    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ ASTRead.cutThroughMarked fun >>= \f -> IR.matchExpr f $ \case
+    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ ASTRead.cutThroughDocAndMarked fun >>= \f -> IR.matchExpr f $ \case
         IR.ASGRootedFunction n root -> do
             offset <- functionBlockStartRef f
             name   <- ASTRead.getVarName' =<< IR.source n
@@ -135,7 +135,7 @@ withRootedFunction uuid act = do
     diffs <- runASTOp $ do
         cls <- use Graph.clsClass
         funs <- ASTRead.classFunctions cls
-        forM funs $ \fun -> ASTRead.cutThroughMarked fun >>= \f -> IR.matchExpr f $ \case
+        forM funs $ \fun -> ASTRead.cutThroughDocAndMarked fun >>= \f -> IR.matchExpr f $ \case
             IR.ASGRootedFunction n _ -> do
                 name <- ASTRead.getVarName' =<< IR.source n
                 if (nameToString name == funName) then do

@@ -176,7 +176,7 @@ runFunParser expr = do
             IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ClsGraph @ParserPass inits
     run $ do
-        Parsing.parsingPassM Parsing.rootedRawFunc `catchAll` (\e -> throwM $ SomeParserException e)
+        Parsing.parsingPassM (Parsing.possiblyDocumented $ (Parsing.rootedRawFunc <|> Parsing.func)) `catchAll` (\e -> throwM $ SomeParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         return (unwrap' res, exprMap)
