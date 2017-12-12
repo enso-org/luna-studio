@@ -39,7 +39,6 @@ def build_backend (backend_args):
         sys.exit(1)
 
 def build_frontend (frontend_args, gui_url, dev_mode):
-    print(dev_mode)
     try:
         print("Building frontend")
         stack_build.create_bin_dirs()
