@@ -12,9 +12,9 @@ import           NodeEditor.Event.Shortcut   (ShortcutEvent)
 import           NodeEditor.Event.UI         (UIEvent)
 
 data Event = Init
+           | Atom              Atom.Event
            | Batch            Batch.Event
            | Connection  Connection.Event
-           | Atom              Atom.Event
            | Shortcut       ShortcutEvent
            | UI                   UIEvent
            deriving (Generic, Show, NFData)
@@ -34,8 +34,8 @@ instance IsTrackedEvent Event where
 instance EventName Event where
     eventName event = "NodeEditor.Event." <> consName event <> case event of
         Init         -> def
+        Atom a       -> "." <> eventName a
         Batch b      -> "." <> eventName b
         Connection c -> "." <> eventName c
-        Atom a       -> "." <> eventName a
         Shortcut s   -> "." <> eventName s
         UI u         -> "." <> eventName u

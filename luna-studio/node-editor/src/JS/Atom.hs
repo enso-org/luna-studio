@@ -1,8 +1,10 @@
 {-# LANGUAGE JavaScriptFFI #-}
 module JS.Atom
-    ( setActiveLocation
+    ( acceptEvent
+    , setActiveLocation
     , onEvent
     ) where
+import           Common.Data.Event             (EventName (eventName))
 import           Common.Prelude
 import           Common.Report                 (error)
 import           Data.Aeson                    (Result (Success), fromJSON)
@@ -23,6 +25,9 @@ foreign import javascript safe "$1.unOnEvent()"
 foreign import javascript safe "atomCallback.setActiveLocation($1)"
     setActiveLocation' :: JSVal -> IO ()
 
+foreign import javascript safe "atomCallback.acceptEvent($1)"
+    acceptEvent' :: JSString -> Bool
+
 onEvent :: (Event -> IO ()) -> IO (IO ())
 onEvent callback = do
     wrappedCallback <- syncCallback1 ContinueAsync $ mapM_ callback <=< parseEvent
@@ -40,3 +45,6 @@ parseEvent jsval = do
 
 setActiveLocation :: MonadIO m => GraphLocation -> m ()
 setActiveLocation gl = liftIO $ setActiveLocation' =<< toJSVal_aeson gl
+
+acceptEvent :: EventName e => e -> Bool
+acceptEvent = acceptEvent' . convert . eventName

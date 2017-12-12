@@ -99,27 +99,27 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     res <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ do
-        (parseError, code) <- Graph.withUnit (GraphLocation inPath (Breadcrumb [])) $ do
-            (,) <$> use Graph.clsParseError <*> use Graph.code
-        case parseError of
-            Just _ -> return code
-            _      -> Graph.addMetadataToCode inPath
+        parseError <- Graph.withUnit (GraphLocation inPath (Breadcrumb [])) $ use Graph.clsParseError
+        when (isNothing parseError) $ Graph.addMetadataToCode inPath
     case res of
         Left (exc :: SomeASTException) ->
             let err = displayException exc in replyFail logger err req (Response.Error err)
-        Right (source, _newEmpireEnv) -> do
-            -- we ignore the resulting state so addMetadataToCode can't mess with our code in buffer
-            -- only result is useful so it's ok
-            path <- Path.parseAbsFile inPath
-            let dir  = Path.toFilePath $ Path.parent path
-                file = Path.toFilePath $ Path.filename path
-            liftIO $ Temp.withTempFile dir (file <> ".tmp") $ \tmpFile handle -> do
-                Text.hPutStr handle source
-                let backupFile = Path.toFilePath path <> ".backup"
-                Dir.renameFile (Path.toFilePath path) backupFile
-                Dir.renameFile tmpFile (Path.toFilePath path)
-                Dir.removeFile backupFile
-            replyOk req ()
+        Right (_, newEmpireEnv) -> do
+            Env.empireEnv .= newEmpireEnv
+            maySource <- preuse (Env.empireEnv . Empire.activeFiles . at inPath . traverse . Library.body . Graph.code)
+            case maySource of
+                Nothing     -> logger Logger.error $ errorMessage <> inPath <> " is not open"
+                Just source -> do
+                    path <- Path.parseAbsFile inPath
+                    let dir  = Path.toFilePath $ Path.parent path
+                        file = Path.toFilePath $ Path.filename path
+                    liftIO $ Temp.withTempFile dir (file <> ".tmp") $ \tmpFile handle -> do
+                        Text.hPutStr handle source
+                        let backupFile = Path.toFilePath path <> ".backup"
+                        Dir.renameFile (Path.toFilePath path) backupFile
+                        Dir.renameFile tmpFile (Path.toFilePath path)
+                        Dir.removeFile backupFile
+                    replyOk req ()
 
 handleCloseFile :: Request CloseFile.Request -> StateT Env BusT ()
 handleCloseFile (Request _ _ (CloseFile.Request path)) = do

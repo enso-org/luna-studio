@@ -1,12 +1,12 @@
 var analytics        = require('./analytics')
     app              = require('./app'),
-    atomCallback     = require('./atom-callback')();
+    atomCallback     = require('./atom-callback'),
     common           = require('./common'),
-    config           = require('./config');
-    fontSize         = require('./font-size');
+    config           = require('./config'),
+    fontSize         = require('./font-size'),
+    gzip             = require('./gzip'),
     init             = require('./init'),
-    lexerClasses     = require('./lexer-classes'),
-    gzip             = require('./gzip')
+    lexerClasses     = require('./lexer-classes');
 
 
 var run = function(maybe_url, maybe_mountPoint, websocket) {
@@ -21,4 +21,5 @@ return { start     : function(url, mount) { run(url, mount);}
        , pushEvent : function(data) { atomCallback.pushEvent(data); }
        , notificationListener : function(callback) {atomCallback.notificationListener(callback);}
        , connector(otherGlobal) { atomCallback.connector(otherGlobal); }
+       , setEventFilter: atomCallback.setEventFilter
        }

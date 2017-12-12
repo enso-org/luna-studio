@@ -19,10 +19,8 @@ def create_bin_dirs():
 
 def build_ghcjs(frontend_args, dev_mode):
     with working_directory(frontend_dir):
-        print("build_ghcjs")
         if dev_mode:
-            print(dev_mode)
-            #subprocess.check_output(['stack', 'build'] + frontend_args)
+            subprocess.check_output(['stack', 'build'] + frontend_args)
 
 def build_runner(runner_args):
     with working_directory(runner_dir):
@@ -42,9 +40,7 @@ def build_backend(backend_args):
         subprocess.check_output(['stack', 'build'] + backend_args)
 
 def mv_runner(runner):
-    print("1")
     if system.windows():
-        print("mv_runner")
         runner_src = runner + '/src/' + '/StudioRunner.exe'
         runner_dst = ap.prep_path('../dist/bin/public/luna-studio/luna-studio.exe')
         os.replace(runner_src, runner_dst)

@@ -17,7 +17,7 @@ import system as system
 from common import working_directory
 import stack_build
 import atom_prepare
-from pysed import replace
+import re, tempfile
 
 #########################################################
 #                     PATHS                             #
@@ -184,12 +184,20 @@ def apm_packages():
                     apm_package(pkg_name, pkg_ver)
 
 
+def sed_inplace(filename, pattern, repl):
+    pattern_compiled = re.compile(pattern)
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+        with open(filename) as src_file:
+            for line in src_file:
+                tmp_file.write(pattern_compiled.sub(repl, line))
+    shutil.copystat(filename, tmp_file.name)
+    shutil.move(tmp_file.name, filename)
+
+
 def modify_atom_package_json():
     json = get_path('package_json')
-    replace('"name":"atom","productName":"Atom"','"name":"luna-studio","productName":"LunaStudio"', json)
-            # sources.write(re.sub(r'"name":"atom","productName":"Atom"', r'"name":"luna-studio","productName":"LunaStudio"', line))
-    # run_process('sed', '-i', 's/"name":"atom"/"name":"LunaStudio"/g ; s/"productName":"Atom"/"productName":"LunaStudio"/g',json)
-
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"luna-studio\"')
+    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"LunaStudio\"')
 
 
 def run(gui_url, frontend_args, link=False):

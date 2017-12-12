@@ -1,7 +1,6 @@
-Mixpanel = require 'mixpanel'
+mixpanel = require 'mixpanel-browser'
 
-mixpanel = Mixpanel.init "0d906436719b047c86b7fee8ae550601",
-    protocol: 'https'
+mixpanel.init '0d906436719b047c86b7fee8ae550601'
 
 filters = []
 
@@ -52,7 +51,7 @@ module.exports =
                 if @isDevMode()
                     console.log 'track.indentify: ', @userInfo.userInfoUUID
                 else
-                    mixpanel.identify userInfo.userInfoUUID
+                    mixpanel.identify @userInfo.userInfoUUID
 
     track: (title, data) ->
         data ?= {}

@@ -22,7 +22,7 @@ import           Empire.Empire           (Command, Empire)
 import qualified Safe
 
 import           Empire.Data.AST         (NodeRef, EdgeRef)
-import           Empire.ASTOp            (ASTOp, ClassOp, GraphOp, runASTOp)
+import           Empire.ASTOp            (ClassOp, GraphOp, runASTOp)
 import           Empire.ASTOps.Read      as ASTRead
 
 import qualified Luna.IR                 as IR
@@ -53,7 +53,7 @@ deltaToPoint :: Delta -> Text -> Point
 deltaToPoint delta code = Point col row where
     codePrefix = Text.take (fromIntegral delta + 1) code
     row = pred $ length $ Text.lines codePrefix
-    col = Text.length $ Text.takeWhileEnd (/= '\n') $ Text.init codePrefix
+    col = pred $ Text.length $ Text.takeWhileEnd (/= '\n') codePrefix
 
 removeMarkers :: Text -> Text
 removeMarkers (convert -> code) = convertVia @String $ SpanTree.foldlSpans concatNonMarker "" spanTree where
@@ -212,7 +212,7 @@ getNextExprMarker = do
         highestIndex = Safe.maximumMay keys
     return $ maybe 0 succ highestIndex
 
-invalidateMarker :: (ASTOp g m, HasNodeCache g) => Word64 -> m ()
+invalidateMarker :: GraphOp m => Word64 -> m ()
 invalidateMarker index = do
     oldId <- use $ Graph.nodeCache . Graph.nodeIdMap . at index
     Graph.nodeCache . Graph.nodeIdMap . at index .= Nothing
@@ -289,7 +289,11 @@ computeLength ref = do
 
 functionBlockStart :: ClassOp m => NodeId -> m Delta
 functionBlockStart funUUID = do
-    ref  <- ASTRead.getFunByNodeId funUUID
+    unit <- use Graph.clsClass
+    funs <- use Graph.clsFuns
+    let fun = Map.lookup funUUID funs
+    funGraph  <- fromJustM (throwM $ BH.BreadcrumbDoesNotExistException (Breadcrumb [Definition funUUID])) fun
+    ref       <- ASTRead.getFunByName $ funGraph ^. Graph.funName
     functionBlockStartRef ref
 
 functionBlockStartRef :: ClassOp m => NodeRef -> m Delta

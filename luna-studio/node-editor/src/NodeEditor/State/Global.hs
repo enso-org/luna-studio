@@ -26,7 +26,6 @@ import           System.Random                            (StdGen)
 import qualified System.Random                            as Random
 
 
-
 -- TODO: Reconsider our design. @wdanilo says that we shouldn't use MonadState at all
 data State = State
         { _ui                   :: UI.State

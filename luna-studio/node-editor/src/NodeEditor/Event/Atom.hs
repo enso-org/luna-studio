@@ -10,7 +10,7 @@ import           Data.Aeson        (FromJSON, ToJSON)
 
 data Event = SetFile { path :: FilePath }
            | UnsetFile
-           | UpdateFilePath { path :: FilePath}
+           | UpdateFilePath { path :: FilePath }
            deriving (Eq, FromJSON, Generic, NFData, Show, ToJSON, Typeable)
 
 instance EventName Event

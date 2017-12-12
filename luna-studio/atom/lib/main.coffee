@@ -32,7 +32,7 @@ module.exports = LunaStudio =
         codeEditor.connect(nodeEditor.connector)
         @welcome = new LunaWelcomeTab(codeEditor)
         @toolbar = new LunaToolbar(codeEditor)
-        @guide   = new VisualGuide()
+        @guide   = new VisualGuide(nodeEditor)
         @moving = false
 
         actStatus = (act, arg1, arg2) =>
