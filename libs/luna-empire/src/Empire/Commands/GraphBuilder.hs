@@ -88,7 +88,7 @@ buildClassGraph = do
 
 buildClassNode :: ClassOp m => NodeId -> String -> m API.ExpressionNode
 buildClassNode uuid name = do
-    f    <- ASTRead.getFunByNodeId uuid
+    f    <- ASTRead.getFunByName name
     meta <- fromMaybe def <$> AST.readMeta f
     codeStart <- Code.functionBlockStartRef f
     LeftSpacedSpan (SpacedSpan _ len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan f

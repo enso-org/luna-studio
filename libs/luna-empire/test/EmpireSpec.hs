@@ -521,7 +521,7 @@ spec = around withChannels $ parallel $ do
                 return $ find (\node -> node ^. Node.nodeId == u1) nodes
             withResult res $ \(Just plus) -> do
                 (plus ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «2»a + b")
+                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «1»a + b")
                     , Port.Port [Port.Arg 0] "a"    TStar Port.NotConnected
                     , Port.Port [Port.Arg 1] "b"    TStar Port.NotConnected
                     ]
@@ -548,7 +548,7 @@ spec = around withChannels $ parallel $ do
             withResult res $ \nodes -> do
                 let Just plus = find (\a -> view Node.nodeId a == u1) nodes
                 (plus ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «2»a + b number1")
+                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «1»a + b number1")
                     , Port.Port [Port.Arg 0] "a"    TStar Port.Connected
                     , Port.Port [Port.Arg 1] "b"    TStar Port.NotConnected
                     ]
@@ -779,7 +779,7 @@ spec = around withChannels $ parallel $ do
                     , Port.Port [Port.Projection 2] "c" TStar Port.NotConnected
                     ]
                 (defFoo ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: c: «2»a + b")
+                      Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: c: «1»a + b")
                     , Port.Port [Port.Arg 0] "a"    TStar Port.NotConnected
                     , Port.Port [Port.Arg 1] "b"    TStar Port.NotConnected
                     , Port.Port [Port.Arg 2] "c"    TStar Port.NotConnected
@@ -1053,13 +1053,13 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = (Just x): y: z: x + y" def
                 Graph.withGraph top $ use Graph.code
-            res `shouldBe` "«0»def main:\n    «1»foo = (Just x): y: z: «2»x + y\n    None"
+            res `shouldBe` "def main:\n    «0»foo = (Just x): y: z: «1»x + y\n    None"
         it "adds a marker in a proper place in lambda pattern-matching on an argument 2" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = (Just (Just (Foo x b c))): y: z: x + y" def
                 Graph.withGraph top $ use Graph.code
-            res `shouldBe` "«0»def main:\n    «1»foo = (Just (Just (Foo x b c))): y: z: «2»x + y\n    None"
+            res `shouldBe` "def main:\n    «0»foo = (Just (Just (Foo x b c))): y: z: «1»x + y\n    None"
         it "connects two outputs when one of them is pattern match" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -1171,8 +1171,9 @@ spec = around withChannels $ parallel $ do
                       Port.Port [Port.Self] "self" TStar Port.NotConnected
                     , Port.Port []          "alias" TStar Port.Connected
                     ]
+
                 (plus ^.. Node.inPorts . traverse) `shouldMatchList` [
-                        Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «4»a + b x y")
+                        Port.Port []           "alias" TStar (Port.WithDefault $ Expression "a: b: «3»a + b x y")
                       , Port.Port [Port.Arg 0] "a"    TStar Port.Connected
                       , Port.Port [Port.Arg 1] "b"    TStar Port.Connected
                     ]

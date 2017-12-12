@@ -266,10 +266,8 @@ runFrontend args = do
     setEnv "ATOM_HOME"             =<< packageStudioAtomHome
     setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory True
     setEnv "LUNA_TMP"              =<< lunaTmpPath
-    setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
+    setEnv "LUNA_PROJECTS"          =<< lunaProjectsPath
     setEnv "LUNA_TUTORIALS"        =<< lunaTutorialsPath
-    setEnv "LUNA_USER_INFO"        =<< userInfoPath
-    setEnv "LUNA_VERSION_PATH"     =<< versionFilePath
     unixOnly $ Shelly.shelly $ Shelly.run_ atom $ "-w" : maybeToList args
 
 runBackend :: MonadRun m => Bool -> m ()
