@@ -249,6 +249,32 @@ spec = around withChannels $ parallel $ do
                 def main:
                     print bar
                 |]
+        it "removes function at top-level and undos" $ \env -> do
+            (nodes, code) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc multiFunCode
+                nodes <- Graph.getNodes loc
+                let Just bar = find (\n -> n ^. Node.name == Just "bar") nodes
+                Graph.removeNodes loc [bar ^. Node.nodeId]
+                Graph.addSubgraph loc [bar] []
+                (,) <$> Graph.getNodes loc <*> Graph.getCode loc
+            find (\n -> n ^. Node.name == Just "main") nodes `shouldSatisfy` isJust
+            find (\n -> n ^. Node.name == Just "foo") nodes `shouldSatisfy` isJust
+            find (\n -> n ^. Node.name == Just "bar") nodes `shouldSatisfy` isJust
+            normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
+                ## Docs
+                def foo:
+                    5
+
+                ## Docs
+                def bar:
+                    "bar"
+
+                ## Docs
+                def main:
+                    print bar
+                |]
         it "renames function at top-level" $ \env -> do
             (nodes, code) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
