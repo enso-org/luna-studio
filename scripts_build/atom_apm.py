@@ -17,8 +17,6 @@ import system as system
 from common import working_directory
 import stack_build
 import atom_prepare
-from pysed import replace
-
 import re, tempfile
 
 #########################################################
