@@ -81,6 +81,7 @@ module Empire.Commands.Graph
     , reloadCode
     , resendCode
     , prepareNodeCache
+    , prepareLunaError
     ) where
 
 import           Control.Arrow                    ((&&&), (***))
