@@ -77,6 +77,7 @@ module Empire.Commands.Graph
     , setInterpreterState
     , stripMetadata
     , prepareGraphError
+    , prepareLunaError
     ) where
 
 import           Control.Arrow                    ((&&&), (***))
@@ -1770,6 +1771,10 @@ makeWhole srcAst dst = do
 
 prepareGraphError :: SomeException -> ErrorAPI.Error ErrorAPI.GraphError
 prepareGraphError e | Just (BH.BreadcrumbDoesNotExistException content) <- fromException e = ErrorAPI.Error ErrorAPI.BreadcrumbDoesNotExist . convert $ show content
-                    | otherwise                                                            = ErrorAPI.Error ErrorAPI.Other                  . convert $ displayException e
+                    | otherwise                                                            = ErrorAPI.Error ErrorAPI.OtherGraphError        . convert $ displayException e
 
+prepareLunaError :: SomeException -> ErrorAPI.Error ErrorAPI.LunaError
+prepareLunaError e = case prepareGraphError e of
+    ErrorAPI.Error ErrorAPI.OtherGraphError _ -> ErrorAPI.Error ErrorAPI.OtherLunaError . convert $ displayException e
+    ErrorAPI.Error tpe content                -> ErrorAPI.Error (ErrorAPI.Graph tpe) content
 

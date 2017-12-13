@@ -9,11 +9,12 @@ import           Data.Binary            (Binary)
 import           Data.UUID.Types        (UUID)
 import           LunaStudio.API.Request (Request (..))
 import           LunaStudio.API.Topic   (MessageTopic)
+import qualified LunaStudio.Data.Error  as ErrorAPI
 import           Prologue
 
 
-data Status a = Ok    { _resultData  :: a }
-              | Error { _message     :: String }
+data Status a = Ok    { _resultData :: a }
+              | Error { _lunaError  :: ErrorAPI.Error ErrorAPI.LunaError }
               deriving (Eq, Generic, Show)
 
 makeLenses ''Status
@@ -36,8 +37,8 @@ class (MessageTopic (Request req), MessageTopic (Response req inv res), Binary r
   result :: Request req -> inv -> res -> Response req inv res
   result (Request uuid guiID req) inv payload = Response uuid guiID req (Ok inv) (Ok payload)
 
-  error :: Request req -> Status inv -> String -> Response req inv res
-  error  (Request uuid guiID req) inv msg = Response uuid guiID req inv (Error msg)
+  error :: Request req -> Status inv -> ErrorAPI.Error ErrorAPI.LunaError -> Response req inv res
+  error  (Request uuid guiID req) inv err = Response uuid guiID req inv (Error err)
 
 ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) => Request req -> inv -> Response req inv ()
 ok (Request uuid guiID req) inv = Response uuid guiID req (Ok inv) (Ok ())

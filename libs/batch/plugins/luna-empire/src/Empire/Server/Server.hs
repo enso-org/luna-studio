@@ -14,6 +14,7 @@ import qualified Data.Binary                   as Bin
 import           Data.ByteString.Lazy          (toStrict)
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
+import qualified Data.Text                     as Text
 import           GHC.Stack                     (renderStack, whoCreated)
 import           Prelude                       ((++))
 import           Prologue
@@ -32,6 +33,7 @@ import           LunaStudio.API.Request        (Request (..))
 import qualified LunaStudio.API.Response       as Response
 import           LunaStudio.API.Topic          (MessageTopic)
 import qualified LunaStudio.API.Topic          as Topic
+import           LunaStudio.Data.Error         (Error, LunaError, errorContent)
 import           LunaStudio.Data.Graph         (Graph (..))
 import qualified LunaStudio.Data.Graph         as GraphAPI
 import           LunaStudio.Data.GraphLocation (GraphLocation (..))
@@ -62,10 +64,10 @@ sendToBus topic bin = do
 sendToBus' :: (MessageTopic a, Binary a) => a -> StateT Env BusT ()
 sendToBus' msg = sendToBus (Topic.topic msg) msg
 
-replyFail :: forall a b c. Response.ResponseResult a b c => Logger.Logger -> String -> Request a -> Response.Status b -> StateT Env BusT ()
-replyFail logger errMsg req inv = do
-  logger Logger.error $ formatErrorMessage req errMsg
-  sendToBus' $ Response.error req inv errMsg
+replyFail :: forall a b c. Response.ResponseResult a b c => Logger.Logger -> Error LunaError -> Request a -> Response.Status b -> StateT Env BusT ()
+replyFail logger err req inv = do
+  logger Logger.error $ formatErrorMessage req (Text.unpack $ err ^. errorContent)
+  sendToBus' $ Response.error req inv err
 
 replyOk :: forall a b. Response.ResponseResult a b () => Request a -> b -> StateT Env BusT ()
 replyOk req inv = sendToBus' $ Response.ok req inv
@@ -105,14 +107,14 @@ modifyGraph inverse action success origReq@(Request uuid guiID request') = do
     inv'             <- liftIO $ try $ runEmpire empireNotifEnv currentEmpireEnv $ inverse request
     case inv' of
         Left (exc :: SomeException) -> do
-            err <- liftIO $ prettyException exc
+            let err = Graph.prepareLunaError exc
             replyFail logger err origReq (Response.Error err)
         Right (inv, _) -> do
             let invStatus = Response.Ok inv
             result <- liftIO $ try $ runEmpire empireNotifEnv currentEmpireEnv $ action request
             case result of
                 Left  (exc :: SomeException) -> do
-                    err <- liftIO $ prettyException exc
+                    let err = Graph.prepareLunaError exc
                     replyFail logger err origReq invStatus
                 Right (result, newEmpireEnv) -> do
                     Env.empireEnv .= newEmpireEnv
