@@ -284,6 +284,7 @@ runPackage develop forceRun = case currentHost of
         atom <- atomAppPath
         checkLunaHome
         setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory develop
+        setEnv "LUNA_STUDIO_LOG_PATH"  =<< logsDir              develop
         setEnv "ATOM_HOME"             =<< userStudioAtomHome
         setEnv "LUNA_TMP"              =<< lunaTmpPath
         setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
