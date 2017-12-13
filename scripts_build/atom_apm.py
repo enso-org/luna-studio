@@ -188,11 +188,11 @@ def apm_packages():
 def sed_inplace(filename, pattern, repl):
     pattern_compiled = re.compile(pattern)
     if system.windows():
-        encode='cp1252'
+        encoding='cp1252'
     else:
-        encode='utf8'
+        encoding='utf8'
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
-        with open(filename, encoding=encode) as src_file:
+        with open(filename, encoding=encoding) as src_file:
             for line in src_file:
                 tmp_file.write(pattern_compiled.sub(repl, line))
     shutil.copystat(filename, tmp_file.name)
