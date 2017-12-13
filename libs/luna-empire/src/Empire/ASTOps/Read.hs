@@ -21,7 +21,7 @@ import qualified Safe
 
 import           LunaStudio.Data.Node               (NodeId)
 import qualified LunaStudio.Data.PortRef            as PortRef
-import           LunaStudio.Data.Port               as Port
+import           LunaStudio.Data.Port               (OutPortId(..), OutPortIndex(..))
 import qualified LunaStudio.Data.NodeLoc            as NodeLoc
 import           Empire.ASTOp                       (ClassOp, GraphOp, ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
@@ -34,6 +34,8 @@ import           Empire.Data.Layers                 (Marker)
 import qualified OCI.IR.Combinators as IRExpr
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
+
+import qualified System.IO as IO
 
 cutThroughGroups :: GraphOp m => NodeRef -> m NodeRef
 cutThroughGroups r = match r $ \case
@@ -83,7 +85,7 @@ getOutputForPort portId@(Projection i : rest) ref = cutThroughGroups ref >>= fli
 isGraphNode :: GraphOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
 
-getNodeId :: GraphOp m => NodeRef -> m (Maybe NodeId)
+getNodeId :: ASTOp g m => NodeRef -> m (Maybe NodeId)
 getNodeId node = do
     rootNodeId <- preview (_Just . PortRef.srcNodeLoc . NodeLoc.nodeId) <$> IR.getLayer @Marker node
     varNodeId  <- (getVarNode node >>= getNodeId) `catch` (\(_e :: NotUnifyException) -> return Nothing)
@@ -128,13 +130,13 @@ rightMatchOperand node = match node $ \case
 getTargetNode :: GraphOp m => NodeRef -> m NodeRef
 getTargetNode node = rightMatchOperand node >>= IR.source
 
-leftMatchOperand :: GraphOp m => NodeRef -> m EdgeRef
+leftMatchOperand :: ASTOp g m => NodeRef -> m EdgeRef
 leftMatchOperand node = match node $ \case
     Unify a _         -> pure a
     ASGFunction n _ _ -> pure n
     _         -> throwM $ NotUnifyException node
 
-getVarNode :: GraphOp m => NodeRef -> m NodeRef
+getVarNode :: ASTOp g m => NodeRef -> m NodeRef
 getVarNode node = leftMatchOperand node >>= IR.source
 
 data NodeDoesNotExistException = NodeDoesNotExistException NodeId
@@ -387,16 +389,14 @@ getMetadataRef unit = IR.matchExpr unit $ \case
                     _             -> return Nothing)
     _ -> return Nothing
 
-getFunByName :: ClassOp m => String -> m NodeRef
-getFunByName name = do
-    cls <- use Graph.clsClass
-    maybeFuns <- do
-        funs <- classFunctions cls
-        forM funs $ \fun -> do
-            funExpr <- cutThroughMarked fun
-            IR.matchExpr funExpr $ \case
-                IR.ASGRootedFunction n' _ -> do
-                    n <- getVarName' =<< IR.source n'
-                    return $ if nameToString n == name then Just fun else Nothing
-    case catMaybes maybeFuns of
+getFunByNodeId :: ClassOp m => NodeId -> m NodeRef
+getFunByNodeId nodeId = do
+    cls  <- use Graph.clsClass
+    funs <- classFunctions cls
+    fs   <- forM funs $ \fun -> do
+        nid <- getNodeId fun
+        return $ if nid == Just nodeId then Just fun else Nothing
+    case catMaybes fs of
+        []  -> throwM $ NodeDoesNotExistException nodeId
         [f] -> return f
+        _   -> error $ "multiple functions with " <> show nodeId
