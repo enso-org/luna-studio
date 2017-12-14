@@ -88,6 +88,9 @@
     transform:      translateX(@luna-connection-width * -1px);
     height:         calc(@ui ~'*' @luna-superline-height * 10px);
     overflow:       hidden;
+    &~ .luna-searcher__input {
+        border-radius: 0 0 unit(@luna-searcher-border-radius,px) unit(@luna-searcher-border-radius,px);
+    }
 }
     .luna-searcher__results__list {
         .background(@a);
@@ -95,7 +98,7 @@
         display:        flex;
         flex-direction: column-reverse;
         text-align:     center;
-        border-radius:  @luna-searcher-border-radius * 1px;
+        border-radius:  unit(@luna-searcher-border-radius,px) unit(@luna-searcher-border-radius,px) 0 0;
         padding:        0;
         width:          calc(@ui ~'*' @searcherWidth);
         max-height:     calc(@ui ~'*' @luna-superline-height * 10px);  
