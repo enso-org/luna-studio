@@ -12,6 +12,7 @@ import platform
 import requests
 import zipfile
 import io
+import os.path
 import sys
 import system as system
 from common import working_directory
@@ -32,6 +33,7 @@ packages_path = atom_home_path + '/packages/'
 dist_package_folder = ap.prep_path('../dist-package')
 gui_package_path = ap.prep_path('../dist-package/gui.zip')
 studio_folder = ap.prep_path('../luna-studio/atom')
+version_file =ap.prep_path('../dist/config/version.txt')
 
 paths = {
     system.systems.WINDOWS: {
@@ -199,10 +201,23 @@ def sed_inplace(filename, pattern, repl):
     shutil.move(tmp_file.name, filename)
 
 
+def check_version():
+    if os.path.isfile(version_file):
+        with open(version_file, 'r') as version_content:
+            for line in version_content:
+                return(line)
+    else:
+        return("")
+
+
+
 def modify_atom_package_json():
+    v = check_version()
+    name = "luna-studio" + v
+    productName = "LunaStudio" + v
     json = get_path('package_json')
-    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"luna-studio\"')
-    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"LunaStudio\"')
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"'+ name +'\"')
+    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"'+ productName +'\"')
 
 
 def run(gui_url, frontend_args, link=False):
