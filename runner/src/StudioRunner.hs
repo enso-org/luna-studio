@@ -321,12 +321,6 @@ runApp develop forceRun atom = do
     liftIO $ Environment.setEnv "LUNA_STUDIO_ATOM_ARG" (fromMaybe " " atom)
     runPackage develop forceRun
 
-deleteXDGDir :: IO ()
-deleteXDGDir = do
-    directory <- getXdgDirectory XdgConfig "./LunaStudio"
-    doesExist <- doesDirectoryExist directory
-    when doesExist $ liftIO $ removeDirectoryRecursive directory
-
 data Options = Options
     { frontend :: Bool
     , backend  :: Bool
