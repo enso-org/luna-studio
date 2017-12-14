@@ -338,7 +338,6 @@ optionParser = Options
 
 run :: MonadIO m => Options -> m ()
 run (Options frontend backend develop forceRun atom) = evalDefHostConfigs @'[RunnerConfig] $ do
-    liftIO $ deleteXDGDir
     if  frontend
     then runFrontend $ T.pack <$> atom
     else if backend
