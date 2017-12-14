@@ -34,6 +34,7 @@ import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbIte
 import           LunaStudio.Data.Library         (LibraryId)
 import           LunaStudio.Data.NodeLoc         (NodeLoc(..))
 import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.NodeCache       (portMappingMap)
 import           LunaStudio.Data.PortRef         (OutPortRef(..))
 import           LunaStudio.Data.Project         (ProjectId)
 import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
@@ -76,7 +77,7 @@ makeGraphCls fun lastUUID = do
                 name   <- ASTRead.getVarName' =<< IR.source n
                 return (nameToString name, root, offset)
     let ast   = Graph.AST ir pmState
-    let oldPortMapping = nodeCache ^. Graph.portMappingMap . at (uuid, Nothing)
+    let oldPortMapping = nodeCache ^. portMappingMap . at (uuid, Nothing)
     portMapping <- fromJustM (liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom) oldPortMapping
     globalMarkers <- use Graph.clsCodeMarkers
     let bh    = BH.LamItem portMapping ref def
@@ -91,7 +92,7 @@ makeGraphCls fun lastUUID = do
         runAliasAnalysis
         runASTOp $ do
             ASTBreadcrumb.makeTopBreadcrumbHierarchy ref
-            restorePortMappings (nodeCache ^. Graph.portMappingMap)
+            restorePortMappings (nodeCache ^. portMappingMap)
             use Graph.graphNodeCache
     Graph.clsNodeCache .= updatedCache
     return (uuid, graph)

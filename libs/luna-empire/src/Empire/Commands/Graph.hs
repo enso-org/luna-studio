@@ -78,6 +78,9 @@ module Empire.Commands.Graph
     , stripMetadata
     , prepareGraphError
     , prepareLunaError
+    , reloadCode
+    , resendCode
+    , prepareNodeCache
     ) where
 
 import           Control.Arrow                    ((&&&), (***))
@@ -130,7 +133,7 @@ import           Empire.Data.AST                  (InvalidConnectionException (.
                                                    PortDoesNotExistException(..), SomeASTException, astExceptionFromException,
                                                    astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy  as BH
-import           Empire.Data.Graph                (ClsGraph, Graph, NodeCache(..))
+import           Empire.Data.Graph                (ClsGraph, Graph)
 import qualified Empire.Data.Graph                as Graph
 import           Empire.Data.Layers               (SpanLength, SpanOffset)
 import qualified Empire.Data.Library              as Library
@@ -157,12 +160,13 @@ import qualified LunaStudio.Data.Breadcrumb       as Breadcrumb
 import           LunaStudio.Data.Constants        (gapBetweenNodes)
 import           LunaStudio.Data.Connection       (Connection (..))
 import           LunaStudio.Data.Diff             (Diff (..))
+import qualified LunaStudio.Data.Error            as ErrorAPI
 import qualified LunaStudio.Data.Graph            as APIGraph
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
 import           LunaStudio.Data.Node             (ExpressionNode (..), NodeId)
 import qualified LunaStudio.Data.Node             as Node
+import           LunaStudio.Data.NodeCache        (NodeCache (..), nodeMetaMap, nodeIdMap)
 import           LunaStudio.Data.NodeLoc          (NodeLoc (..))
-import qualified LunaStudio.Data.Error          as ErrorAPI
 import qualified LunaStudio.Data.NodeLoc          as NodeLoc
 import           LunaStudio.Data.NodeMeta         (NodeMeta)
 import qualified LunaStudio.Data.NodeMeta         as NodeMeta
@@ -1011,8 +1015,8 @@ extractMarkedMetasAndIds root = IR.matchExpr root $ \case
         return $ (marker, (meta, nid <|> nid2)) : rest
     _ -> concat <$> (mapM (extractMarkedMetasAndIds <=< IR.source) =<< IR.inputs root)
 
-reloadCode :: GraphLocation -> Text -> Empire ()
-reloadCode loc@(GraphLocation file _) code = do
+prepareNodeCache :: GraphLocation -> Empire NodeCache
+prepareNodeCache loc@(GraphLocation file _) = do
     (funs, topMarkers) <- withUnit (GraphLocation file (Breadcrumb [])) $ do
         funs       <- use Graph.clsFuns
         topMarkers <- runASTOp $ extractMarkedMetasAndIds =<< use Graph.clsClass
@@ -1028,7 +1032,12 @@ reloadCode loc@(GraphLocation file _) code = do
         return $ Map.fromList elems
     let previousNodeIds   = Map.unions $ (Map.mapMaybe snd topMarkers) : (Map.mapMaybe snd <$> oldMetasAndIds)
         previousNodeMetas = Map.unions $ (Map.mapMaybe fst topMarkers) : (Map.mapMaybe fst <$> oldMetasAndIds)
-    withUnit (GraphLocation file (Breadcrumb [])) $ Graph.nodeCache .= NodeCache previousNodeIds previousNodeMetas (Map.unions previousPortMappings)
+    return $ NodeCache previousNodeIds previousNodeMetas (Map.unions previousPortMappings)    
+
+reloadCode :: GraphLocation -> Text -> Empire ()
+reloadCode loc@(GraphLocation file _) code = do
+    nodeCache <- prepareNodeCache loc
+    withUnit (GraphLocation file (Breadcrumb [])) $ Graph.nodeCache .= nodeCache
     loadCode loc code
 
 putIntoHierarchy :: GraphOp m => NodeId -> NodeRef -> m ()
@@ -1119,7 +1128,7 @@ loadCode (GraphLocation file _) code = do
         putNewIRCls ir
         FileMetadata fileMetadata <- runASTOp readMetadata'
         let savedNodeMetas = Map.fromList $ map (\(MarkerNodeMeta m meta) -> (m, meta)) fileMetadata
-        Graph.nodeCache . Graph.nodeMetaMap %= (\cache -> Map.union cache savedNodeMetas)
+        Graph.nodeCache . nodeMetaMap %= (\cache -> Map.union cache savedNodeMetas)
         runASTOp $ do
             let codeWithoutMeta = stripMetadata code
             Graph.code .= codeWithoutMeta
@@ -1136,7 +1145,7 @@ loadCode (GraphLocation file _) code = do
             forM funs $ \f -> IR.matchExpr f $ \case
                 IR.Marked m _e -> do
                     marker <- getMarker =<< IR.source m
-                    uuid   <- use $ Graph.nodeCache . Graph.nodeIdMap . at marker
+                    uuid   <- use $ Graph.nodeCache . nodeIdMap . at marker
                     return (uuid, f)
     for_ functions $ \(lastUUID, fun) -> do
         uuid <- Library.withLibrary file (fst <$> makeGraph fun lastUUID)

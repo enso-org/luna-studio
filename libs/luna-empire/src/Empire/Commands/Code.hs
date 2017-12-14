@@ -40,6 +40,7 @@ import           Luna.Syntax.Text.Analysis.SpanTree as SpanTree
 
 import           LunaStudio.Data.Breadcrumb         (Breadcrumb(..), BreadcrumbItem(..))
 import           LunaStudio.Data.Node               (NodeId)
+import qualified LunaStudio.Data.NodeCache          as NodeCache
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 
 import           LunaStudio.Data.Point (Point(Point))
@@ -216,10 +217,10 @@ getNextExprMarker = do
 
 invalidateMarker :: (ASTOp g m, HasNodeCache g) => Word64 -> m ()
 invalidateMarker index = do
-    oldId <- use $ Graph.nodeCache . Graph.nodeIdMap . at index
-    Graph.nodeCache . Graph.nodeIdMap . at index .= Nothing
-    Graph.nodeCache . Graph.nodeMetaMap . at index .= Nothing
-    Graph.nodeCache . Graph.portMappingMap %= Map.filterWithKey (\(nid,_) _ -> Just nid /= oldId)
+    oldId <- use $ Graph.nodeCache . NodeCache.nodeIdMap . at index
+    Graph.nodeCache . NodeCache.nodeIdMap . at index .= Nothing
+    Graph.nodeCache . NodeCache.nodeMetaMap . at index .= Nothing
+    Graph.nodeCache . NodeCache.portMappingMap %= Map.filterWithKey (\(nid,_) _ -> Just nid /= oldId)
 
 addCodeMarker :: GraphOp m => Delta -> EdgeRef -> m NodeRef
 addCodeMarker beg edge = do

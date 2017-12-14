@@ -32,6 +32,7 @@ import qualified LunaStudio.API.Graph.RemovePort            as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode            as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort            as RenamePort
 import qualified LunaStudio.API.Graph.SearchNodes           as SearchNodes
+import qualified LunaStudio.API.Graph.SetCode               as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression     as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta          as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault        as SetPortDefault
@@ -68,13 +69,14 @@ data Event = UnknownEvent                             String
            | RenameNodeResponse                   RenameNode.Response
            | RenamePortResponse                   RenamePort.Response
            | SearchNodesResponse                 SearchNodes.Response
+           | SetCodeResponse                         SetCode.Response
            | SetNodeExpressionResponse     SetNodeExpression.Response
            | SetNodesMetaResponse               SetNodesMeta.Response
            | SetPortDefaultResponse           SetPortDefault.Response
            | SubstituteResponse                   Substitute.Response
            | TypeCheckResponse                     TypeCheck.Response
            | UndoResponse                               Undo.Response
-           deriving (Eq, Show, Generic, NFData)
+           deriving (Show, Generic, NFData)
 
 instance EventName Event
 
