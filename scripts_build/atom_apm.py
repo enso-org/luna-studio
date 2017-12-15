@@ -187,21 +187,29 @@ def apm_packages():
 
 def sed_inplace(filename, pattern, repl):
     pattern_compiled = re.compile(pattern)
-    if system.windows():
-        encoding='cp1252'
-    else:
-        encoding='utf8'
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
-        with open(filename, encoding=encoding) as src_file:
-            for line in src_file:
-                tmp_file.write(pattern_compiled.sub(repl, line))
+        with open(filename, 'rb') as src_file:
+            data = src_file.read()
+            line = None
+            try:
+                line = data.decode('utf8')
+            except UnicodeDecodeError:
+                try:
+                    line = data.decode('cp1252')
+                except:
+                    raise Exception("Unable to decode the package.json file.")
+
+            if line is None:
+                raise Exception("Unable to decode the package.json file.")
+
+            tmp_file.write(pattern_compiled.sub(repl, line))
     shutil.copystat(filename, tmp_file.name)
     shutil.move(tmp_file.name, filename)
 
 
 def modify_atom_package_json():
     json = get_path('package_json')
-    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"luna-studio\"')
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"LunaStudio\"')
     sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"LunaStudio\"')
 
 
