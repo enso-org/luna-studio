@@ -19,6 +19,7 @@ import           Data.Coerce
 import           Data.Char                       (isSpace)
 import           Data.List                       (dropWhileEnd, find, minimum, maximum)
 import qualified Data.Map                        as Map
+import           Data.Maybe                      (fromJust)
 import           Data.Reflection                 (Given (..), give)
 import qualified Data.Set                        as Set
 import qualified Data.Text                       as Text
@@ -38,7 +39,7 @@ import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Typecheck       as Typecheck (Scope(..), createStdlib, run)
 import           Empire.Data.AST                 (SomeASTException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy, code, codeMarkers)
+import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy, code, codeMarkers, nodeCache)
 import qualified Empire.Data.Library             as Library (body)
 import           Empire.Empire                   (CommunicationEnv (..), InterpreterEnv(..), Empire, modules)
 import qualified Language.Haskell.TH             as TH
@@ -69,7 +70,7 @@ import           System.Directory                (canonicalizePath, getCurrentDi
 import           System.Environment              (lookupEnv, setEnv)
 import           System.FilePath                 ((</>), takeDirectory)
 
-import           Empire.Prelude                  hiding (minimum, maximum)
+import           Empire.Prelude                  hiding (fromJust, minimum, maximum)
 
 import           Test.Hspec                      (Expectation, Selector, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
                                                   shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
@@ -2518,3 +2519,47 @@ def main:
                 Graph.addNode loc u1 "( 1, 2,   3)" def
                 Graph.setPortDefault loc (inPortRef u1 [Port.Arg (-1)]) (Just (PortDefault.Constant (PortDefault.IntValue 0)))
                 ) env `shouldThrow` tupleOOB
+            it "redos collapsing to a function" $ let
+            initialCode = [r|
+                «5»def main:
+                    None
+
+                «6»def bar:
+                    «0»url = "http://example.com"
+                    «1»request = Http.get url
+                    «2»response = request . perform
+                    «3»body1 = response . body
+                    «4»toText1 = body1 . toText
+                    None
+
+                def func1 url:
+                    request = Http.get url
+                    response = request . perform
+                    response
+
+                def bar:
+                    url = "http://example.com"
+                    response = func1 url
+                    body1 = response . body
+                    toText1 = body1 . toText
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
+                let top = GraphLocation file def
+                funs <- Graph.getNodes top
+                let Just bar = find (\n -> n ^. Node.name == Just "bar") funs
+                    bar' = GraphLocation file (Breadcrumb [Definition (bar ^. Node.nodeId)])
+                ids <- Graph.withGraph bar' $ runASTOp $ mapM (Graph.getNodeIdForMarker) [1..2]
+                nodes <- Graph.getNodes bar'
+                (undoCode, undoCache) <- (,) <$> Graph.withUnit top (use Graph.code) <*> Graph.prepareNodeCache top
+                Graph.collapseToFunction bar' $ map fromJust ids
+                code <- Graph.getCode top
+                let normalize = Text.pack . normalizeQQ . Text.unpack
+                liftIO $ code `shouldBe` normalize expectedCode
+                Graph.withUnit top $ Graph.nodeCache .= undoCache
+                Graph.loadCode loc undoCode
+                code' <- Graph.withUnit top $ use Graph.code
+                liftIO $ code' `shouldBe` normalize initialCode
+                nodes' <- Graph.getNodes bar'
+                liftIO $ nodes `shouldMatchList` nodes'
+                Graph.collapseToFunction bar' $ map fromJust ids

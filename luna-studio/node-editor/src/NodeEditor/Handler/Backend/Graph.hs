@@ -309,7 +309,7 @@ handle (Event.Batch ev) = Just $ case ev of
     SearchNodesResponse response -> handleResponse response success doNothing2 where
         success = localAddSearcherHints . view SearchNodes.searcherHints
 
-    SetCodeResponse response -> handleResponse response success doNothing where
+    SetCodeResponse response -> handleResponse response success doNothing2 where
         request         = response ^. Response.request
         location        = request  ^. SetCode.location
         success         = applyResult location

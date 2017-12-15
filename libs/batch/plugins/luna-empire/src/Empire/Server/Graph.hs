@@ -265,9 +265,9 @@ handleAutolayoutNodes = modifyGraph inverse action replyResult where
 handleCollapseToFunction :: Request CollapseToFunction.Request -> StateT Env BusT ()
 handleCollapseToFunction = modifyGraph inverse action replyResult where
     inverse (CollapseToFunction.Request location@(GraphLocation file _) _) = do
-        (code, nodeCache) <- Graph.withUnit (GraphLocation file def) $ 
-            (,) <$> use Graph.code <*> use Graph.nodeCache
-        return $ CollapseToFunction.Inverse code nodeCache
+        code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
+        cache <- Graph.prepareNodeCache (GraphLocation file def)
+        return $ CollapseToFunction.Inverse code cache
     action (CollapseToFunction.Request location locs) = withDefaultResult location $ do
         let ids = convert <$> locs
         Graph.collapseToFunction location ids
