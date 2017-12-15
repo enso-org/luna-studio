@@ -197,7 +197,7 @@ def sed_inplace(filename, pattern, repl):
                 try:
                     line = data.decode('cp1252')
                 except:
-                    print("Unable to decode the package.json file.")
+                    raise Exception("Unable to decode the package.json file.")
 
             if line is None:
                 raise Exception("Unable to decode the package.json file.")

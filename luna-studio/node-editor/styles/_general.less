@@ -38,21 +38,55 @@ atom-workspace .luna-studio {
     font-variant-ligatures: contextual;
 }
 
+.tab-bar .tab .title { z-index: 1 } // uncover Luna tab simblings
+ 
 [data-type="LunaNodeEditorTab"] {
-    // TODO: reconsidering default color scheme for graph background
-    // &.active {
-    //     background: @luna-graph-background-color !important;
-    //     height:     auto !important;
-    //     .title {
-    //         background: none !important;
-    //         border:     0 !important;
-    //     }
-    // }
+    &.active {
+        background: @luna-graph-background-color !important;
+        height:     auto !important;
+        z-index:    0;
+        .title {
+            background: none !important;
+            border:     0 !important;
+            z-index:    2;
+        }
+        &::after {
+            content: " ";
+            display: block;
+            background: @luna-graph-background-color !important;
+            width: 5000px;
+            position: absolute;
+            height: 100px;
+        }
+    }
     .close-icon {
         display: none;
     }
 }
-
+.pane.active {
+    [data-type="LunaNodeEditorTab"] {
+        &.active {
+            background: @luna-graph-background-color !important;
+            height:     auto !important;
+            .title {
+                background: none !important;
+                border:     0 !important;
+            }
+            &::after {
+                content: " ";
+                display: block;
+                background: @luna-graph-background-color !important;
+                width: 5000px;
+                position: absolute;
+                height: 100px;
+                z-index: -1;
+            }
+        }
+        .close-icon {
+            display: none;
+        }
+    }
+}
 
 /////////////////////////////
 //       basic styles      //
