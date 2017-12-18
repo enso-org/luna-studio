@@ -35,6 +35,7 @@ module Empire.Commands.Graph
     , disconnect
     , getAvailableImports
     , getNodeMeta
+    , getNodePositions
     , getBuffer
     , getCode
     , getGraph
@@ -177,7 +178,6 @@ import qualified Path
 import qualified Safe
 import           System.Directory                 (canonicalizePath)
 import           System.Environment               (getEnv)
-
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNode = addNodeCondTC True
@@ -326,7 +326,7 @@ addNodeWithConnection location nl@(NodeLoc _ nodeId) expression nodeMeta connect
                 longestSelfChain = Safe.headDef [Self] $ reverse $ sortBy (compare `on` length) selfs
                 port = if shouldConnectToArg firstWord then [Arg 0] else longestSelfChain
             void $ connectCondTC False location (OutPortRef (NodeLoc def nid) []) (InPortRef' $ InPortRef nl port)
-            withGraph location $ runASTOp $ autolayoutNodes [nodeId]
+            withGraph location $ runASTOp $ autolayoutNodesAST [nodeId]
     typecheck location
     return node
 
@@ -929,12 +929,21 @@ renameNode loc nid name
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ return ()
 
-autolayoutNodes :: GraphOp m => [NodeId] -> m ()
-autolayoutNodes nids = timeIt "autolayoutNodes" $ do
+autolayoutNodesAST :: GraphOp m => [NodeId] -> m ()
+autolayoutNodesAST nids = timeIt "autolayoutNodes" $ do
     nodes <- GraphBuilder.buildNodesForAutolayout <!!> "buildNodesForAutolayout"
     conns <- GraphBuilder.buildConnections        <!!> "buildConnections"
     let autolayout = Autolayout.autolayoutNodes nids nodes conns
     traverse_ (uncurry setNodePositionAST) autolayout <!!> "setNodePositionsAST"
+
+autolayoutNodesCls :: ClassOp m => [NodeId] -> m ()
+autolayoutNodesCls nids = do
+    nodes <- GraphBuilder.buildNodesForAutolayoutCls
+    let autolayout = Autolayout.autolayoutNodes nids nodes []
+    traverse_ (uncurry setNodePositionCls) autolayout
+
+autolayoutNodes :: GraphLocation -> [NodeId] -> Empire ()
+autolayoutNodes loc nids = withGraph' loc (runASTOp $ autolayoutNodesAST nids) (runASTOp $ autolayoutNodesCls nids)
 
 openFile :: FilePath -> Empire ()
 openFile path = do
@@ -1073,12 +1082,32 @@ autolayout loc = do
         needLayout <- fmap catMaybes $ forM (Map.keys kids) $ \id -> do
             meta <- AST.getNodeMeta id
             return $ if meta /= def then Nothing else Just id
-        autolayoutNodes needLayout
+        autolayoutNodesAST needLayout
         return kids
     let next = concatMap (\(k, v) -> case v of
             BH.LambdaChild{}                -> [Breadcrumb.Lambda k]
             BH.ExprChild (BH.ExprItem pc _) -> map (Breadcrumb.Arg k) (Map.keys pc)) $ Map.assocs kids
     traverse_ (\a -> autolayout (loc |> a)) next
+
+getNodePositions :: GraphLocation -> [NodeLoc] -> Empire [Maybe (NodeLoc, Position)]
+getNodePositions loc nids
+    | GraphLocation f (Breadcrumb []) <- loc = withUnit loc $ runASTOp $ do
+        clsFuns    <- use Graph.clsFuns
+        forM (Map.assocs clsFuns) $ \(id, fun) -> do
+            case find (\n -> convert n == id) nids of
+                Just nl -> do
+                    f    <- ASTRead.getFunByName $ fun ^. Graph.funName
+                    meta <- (fmap $ view NodeMeta.position) <$> AST.readMeta f
+                    return $ (nl,) <$> meta
+                _       -> return Nothing
+    | otherwise = withGraph loc $ runASTOp $ do
+        kids <- uses Graph.breadcrumbHierarchy (view BH.children)
+        forM (Map.keys kids) $ \id -> do
+            case find (\n -> convert n == id) nids of
+                Just nl -> do
+                    meta <- (fmap $ view NodeMeta.position) <$> AST.getNodeMeta id
+                    return $ (nl,) <$> meta
+                _       -> return Nothing
 
 autolayoutTopLevel :: GraphLocation -> Empire ()
 autolayoutTopLevel loc = do
