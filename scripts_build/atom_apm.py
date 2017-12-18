@@ -218,11 +218,9 @@ def check_version():
 
 def modify_atom_package_json():
     v = check_version()
-    name = "luna-studio" + v
-    productName = "LunaStudio" + v
     json = get_path('package_json')
-    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format(name))
-    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format(productName))
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format("luna-studio" + v))
+    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
 
 def run(gui_url, frontend_args, link=False):
