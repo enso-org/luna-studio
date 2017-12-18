@@ -7,7 +7,7 @@ yaml    = require 'js-yaml'
 InputView = require './input-view'
 report = require './report'
 
-recentProjectsPath    = process.env.LUNA_STUDIO_DATA_PATH + '/recent-projects.yml'
+recentProjectsPath    = path.join process.env.LUNA_STUDIO_DATA_PATH, 'recent-projects.yml'
 defaultProjectPath    = process.env.LUNA_PROJECTS
 temporaryPath         = process.env.LUNA_TMP
 tutorialsDownloadPath = process.env.LUNA_TUTORIALS
@@ -73,7 +73,7 @@ closeAllFiles = ->
 openMainIfExists = ->
     projectPath = atom.project.getPaths()[0]
     return unless projectPath?
-    mainLocation = projectPath + '/src/Main.luna'
+    mainLocation = path.join projectPath, 'src', 'Main.luna'
     if fs.existsSync mainLocation
         atom.workspace.open(mainLocation, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
 

@@ -78,7 +78,21 @@ nodeEditor_ :: IsRef r => r -> NodeEditor -> Bool -> ReactElementM ViewEventHand
 nodeEditor_ ref ne isTopLevel = React.viewWithSKey nodeEditor name (ref, ne, isTopLevel) mempty
 
 nodeEditor :: IsRef r => ReactView (r, NodeEditor, Bool)
-nodeEditor = React.defineView name $ \(ref, ne', isTopLevel) -> do
+nodeEditor = React.defineView name $ \(ref, ne, isTopLevel) -> do
+    case ne ^. NodeEditor.graphStatus of
+        GraphLoading -> noGraph_ LoadingMode "Loading…"
+        NoGraph      -> noGraph_ EmptyMode ""
+        GraphLoaded  -> div_ ["className" $= Style.prefix "graph-container" ] $ graph_ ref ne isTopLevel
+        GraphError e -> div_ ["className" $= Style.prefixFromList [ "graph-container", "graph-container--error" ] ] $ do
+            graph_ ref ne isTopLevel
+            div_ ["className" $= Style.prefix "graph-error"] $ div_ ["className" $= Style.prefix "graph-error__message"] $ elemString $ convert $ e ^. errorContent
+            
+
+graph_ :: IsRef r => r -> NodeEditor -> Bool -> ReactElementM ViewEventHandler ()
+graph_ ref ne isTopLevel = React.viewWithSKey graph name (ref, ne, isTopLevel) mempty
+
+graph :: IsRef r => ReactView (r, NodeEditor, Bool)
+graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
     let ne               = applySearcherHints ne'
         camera           = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         nodes            = ne ^. NodeEditor.expressionNodes . to HashMap.elems
@@ -95,53 +109,47 @@ nodeEditor = React.defineView name $ \(ref, ne', isTopLevel) -> do
         nodesWithVis     = Set.fromList $ map (^. visPropNodeLoc) visualizations
         visWithSelection = map (\vis -> (vis, NodeEditor.isVisualizationNodeSelected vis ne)) visualizations
         mayEditedTextPortControlPortRef = ne ^. NodeEditor.textControlEditedPortRef
-    case ne ^. NodeEditor.graphStatus of
-        GraphLoaded ->
-            div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
-                                                       <> if isAnyFullscreen          then ["studio-window--has-visualization-fullscreen"] else []
-                                                       <> if maybeSearcher /= Nothing then ["studio-window--has-searcher"]                 else []
-                                                       )
-                 , "key" $= "studio-window"] $ do
+    div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
+                                               <> if isAnyFullscreen          then ["studio-window--has-visualization-fullscreen"] else []
+                                               <> if maybeSearcher /= Nothing then ["studio-window--has-searcher"]                 else []
+                                               )
+         , "key" $= "studio-window"] $ do
 
-                div_ [ "className" $= Style.prefix "studio-window__center", "key" $= "studio-window__center" ] $
-                    div_
-                        [ "className" $= Style.prefixFromList (["graph"] <> if isAnyVisActive  then ["graph--has-visualization-active"] else [])
-                        , "key"       $= "graph"
-                        ] $ do
+        div_ [ "className" $= Style.prefix "studio-window__center", "key" $= "studio-window__center" ] $
+            div_
+                [ "className" $= Style.prefixFromList (["graph"] <> if isAnyVisActive  then ["graph--has-visualization-active"] else [])
+                , "key"       $= "graph"
+                ] $ do
 
-                        dynamicStyles_ camera $ ne ^. NodeEditor.expressionNodesRecursive
+                dynamicStyles_ camera $ ne ^. NodeEditor.expressionNodesRecursive
 
-                        planeMonads_ $
-                            monads_ monads
+                planeMonads_ $
+                    monads_ monads
 
-                        planeNodes_ $ do
+                planeNodes_ $ do
 
-                            forM_ nodes $ \n -> node_ ref
-                                                      n
-                                                      isTopLevel
-                                                      (not . null $ ne ^. NodeEditor.posHalfConnections)
-                                                      (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher)
-                                                      (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)
-                                                      (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
-                            planeConnections_ $ do
-                                forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref
-                                forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
-                                forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
+                    forM_ nodes $ \n -> node_ ref
+                                              n
+                                              isTopLevel
+                                              (not . null $ ne ^. NodeEditor.posHalfConnections)
+                                              (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher)
+                                              (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)
+                                              (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
+                    planeConnections_ $ do
+                        forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref
+                        forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
+                        forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
-                            forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPath
+                    forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPath
 
 
-                        planeNewConnection_ $ do
-                            forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
+                planeNewConnection_ $ do
+                    forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
 
-                withJust input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher) n
-                withJust output $ sidebar_ ref Nothing
+        withJust input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher) n
+        withJust output $ sidebar_ ref Nothing
 
-                planeCanvas_ mempty --required for cursor lock
-
-        GraphLoading -> noGraph_ LoadingMode "Loading…"
-        NoGraph      -> noGraph_ EmptyMode ""
-        GraphError e -> noGraph_ ErrorMode . convert $ e ^. errorContent
+        planeCanvas_ mempty --required for cursor lock
 
 noGraph_ :: NoGraphMode -> String -> ReactElementM ViewEventHandler ()
 noGraph_ mode msg =
@@ -149,7 +157,7 @@ noGraph_ mode msg =
         case mode of
             EmptyMode   -> mempty
             LoadingMode -> div_ [ "className" $= Style.prefix "background-text"] $  elemString msg
-            ErrorMode   -> div_ [ "className" $= Style.prefix "background-text-container"] $ 
+            ErrorMode   -> div_ [ "className" $= Style.prefix "background-text-container"] $
                                div_ [ "className" $= Style.prefix "background-text"] $ elemString msg
 
 dynamicStyles_ :: Matrix Double -> [ExpressionNode] -> ReactElementM ViewEventHandler ()
