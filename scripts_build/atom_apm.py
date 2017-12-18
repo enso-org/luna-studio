@@ -221,8 +221,8 @@ def modify_atom_package_json():
     name = "luna-studio" + v
     productName = "LunaStudio" + v
     json = get_path('package_json')
-    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"'+ name +'\"')
-    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"'+ productName +'\"')
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format(name))
+    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format(productName))
 
 
 def run(gui_url, frontend_args, link=False):
