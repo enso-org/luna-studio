@@ -12,7 +12,6 @@ import platform
 import requests
 import zipfile
 import io
-import os.path
 import sys
 import system as system
 from common import working_directory
