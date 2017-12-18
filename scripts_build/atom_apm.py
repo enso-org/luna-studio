@@ -210,13 +210,11 @@ def sed_inplace(filename, pattern, repl):
 
 
 def check_version():
-    if os.path.isfile(version_file):
+    try:
         with open(version_file, 'r') as version_content:
-            for line in version_content:
-                return(line)
-    else:
-        return("")
-
+            return version_content.readline()
+    except FileNotFoundError:
+        return ""
 
 
 def modify_atom_package_json():
