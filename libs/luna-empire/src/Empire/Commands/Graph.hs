@@ -90,7 +90,7 @@ import           Data.Aeson                       (FromJSON, ToJSON)
 import qualified Data.Aeson                       as Aeson
 import qualified Data.Aeson.Text                  as Aeson
 import           Data.Coerce                      (coerce)
-import           Data.Char                        (isSeparator, isUpper)
+import           Data.Char                        (isSeparator, isSpace, isUpper)
 import           Data.Foldable                    (toList)
 import           Data.List                        ((++), elemIndex, find, group, partition, sortBy, sortOn, nub, head)
 import qualified Data.List                        as List
@@ -176,6 +176,7 @@ import qualified LunaStudio.Data.PortRef          as PortRef
 import           LunaStudio.Data.Position         (Position)
 import qualified LunaStudio.Data.Position         as Position
 import           LunaStudio.Data.Range            (Range(..))
+import qualified LunaStudio.Data.Range            as Range
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrow, replace)
 import qualified Path
 import qualified Safe
@@ -960,17 +961,34 @@ openFile path = do
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withTC' loc False (return ()) (return ())
 
+breakDiffs :: [Diff] -> [Diff]
+breakDiffs diffs = go [] diffs
+    where
+        go acc [] = reverse acc
+        go acc (d@(Diff range code cursor):list) =
+            case Text.span isSpace code of
+                (prefix, suffix)
+                    | Text.null prefix -> go (d:acc) list
+                    | otherwise        -> let rangeEnd   = fromJust (fmap snd range)
+                                              newRange   = Just (rangeEnd, rangeEnd)
+                                              whitespace = Diff range prefix cursor
+                                              onlyCode   = Diff newRange suffix cursor
+                                          in go (onlyCode:whitespace:acc) list
+
 substituteCodeFromPoints :: FilePath -> [Diff] -> Empire ()
-substituteCodeFromPoints path diffs = do
+substituteCodeFromPoints path (breakDiffs -> diffs) = do
     let loc = GraphLocation path (Breadcrumb [])
     changes <- withUnit loc $ do
         oldCode   <- use Graph.code
-        let noMarkers  = Code.removeMarkers oldCode
-            deltas     = map (\(Diff range code cursor) -> case range of
+        let noMarkers    = Code.removeMarkers oldCode
+            deltas       = map (\(Diff range code cursor) -> case range of
                 Just (start, end) -> (Code.pointToDelta start noMarkers, Code.pointToDelta end noMarkers, code)
                 _                 -> (0, fromIntegral (Text.length noMarkers), code))
                         diffs
-            realDeltas = map (\(a,b,c) -> let (a', b') = Code.viewDeltasToReal oldCode (a,b) in (a', b', c)) deltas
+            viewToReal c = case Text.uncons c of
+                Nothing        -> Code.viewDeltasToReal
+                Just (char, _) -> if isSpace char then Code.viewDeltasToRealBeforeMarker else Code.viewDeltasToReal
+            realDeltas   = map (\(a,b,c) -> let (a', b') = (viewToReal c) oldCode (a,b) in (a', b', c)) deltas
         return realDeltas
     substituteCode path changes
 
