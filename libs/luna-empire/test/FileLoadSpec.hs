@@ -71,8 +71,8 @@ import           System.FilePath                 ((</>), takeDirectory)
 import           Empire.Prelude                  hiding (maximum)
 import           Luna.Prelude                    (normalizeQQ)
 
-import           Test.Hspec                      (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
-                                                  shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, xit)
+import           Test.Hspec                      (Expectation, Selector, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
+                                                  shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
 
 import           EmpireUtils
 
@@ -2332,3 +2332,37 @@ def main:
                 Graph.addNode loc u2 "( 1, 2,   3)" def
                 Graph.setPortDefault loc (inPortRef u1 [Port.Arg 0]) (Just (PortDefault.Constant (PortDefault.BoolValue False)))
                 Graph.setPortDefault loc (inPortRef u2 [Port.Arg 2]) (Just (PortDefault.Constant (PortDefault.IntValue 100)))
+        it "throws exception on setting out of bounds tuple element" $ \env -> let
+            initialCode = [r|
+                def main:
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    tuple1 = ( 1, 2,   3)
+                    None
+                |]
+            tupleOOB :: Selector ASTBuilder.TupleElementOutOfBoundsException
+            tupleOOB = const True
+            in specifyCodeChange initialCode expectedCode (\loc -> do
+                u1 <- mkUUID
+                Graph.addNode loc u1 "( 1, 2,   3)" def
+                Graph.setPortDefault loc (inPortRef u1 [Port.Arg 5]) (Just (PortDefault.Constant (PortDefault.IntValue 0)))
+                ) env `shouldThrow` tupleOOB
+        it "throws exception on setting negative out of bounds tuple element" $ \env -> let
+            initialCode = [r|
+                def main:
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    tuple1 = ( 1, 2,   3)
+                    None
+                |]
+            tupleOOB :: Selector ASTBuilder.TupleElementOutOfBoundsException
+            tupleOOB = const True
+            in specifyCodeChange initialCode expectedCode (\loc -> do
+                u1 <- mkUUID
+                Graph.addNode loc u1 "( 1, 2,   3)" def
+                Graph.setPortDefault loc (inPortRef u1 [Port.Arg (-1)]) (Just (PortDefault.Constant (PortDefault.IntValue 0)))
+                ) env `shouldThrow` tupleOOB
