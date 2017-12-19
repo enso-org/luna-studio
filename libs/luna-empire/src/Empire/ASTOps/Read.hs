@@ -366,28 +366,30 @@ canEnterNode ref = do
     if match' then rhsIsLambda ref else return False
 
 classFunctions :: ClassOp m => NodeRef -> m [NodeRef]
-classFunctions unit = IR.matchExpr unit $ \case
-    IR.Unit _ _ klass -> do
-        klass' <- IR.source klass
-        IR.matchExpr klass' $ \case
-            IR.ClsASG _ _ _ _ funs -> do
-                funs' <- mapM IR.source funs
-                catMaybes <$> forM funs' (\f -> cutThroughMarked f >>= \fun -> IR.matchExpr fun $ \case
-                    IR.ASGRootedFunction{} -> return (Just f)
-                    _                      -> return Nothing)
-    _ -> return []
+classFunctions unit = do
+    klass' <- classFromUnit unit
+    IR.matchExpr klass' $ \case
+        IR.ClsASG _ _ _ _ funs -> do
+            funs' <- mapM IR.source funs
+            catMaybes <$> forM funs' (\f -> cutThroughMarked f >>= \fun -> IR.matchExpr fun $ \case
+                IR.ASGRootedFunction{} -> return (Just f)
+                _                      -> return Nothing)
+        _ -> return []
+
+classFromUnit :: ClassOp m => NodeRef -> m NodeRef
+classFromUnit unit = IR.matchExpr unit $ \case
+    IR.Unit _ _ c -> IR.source c
 
 getMetadataRef :: ClassOp m => NodeRef -> m (Maybe NodeRef)
-getMetadataRef unit = IR.matchExpr unit $ \case
-    IR.Unit _ _ klass -> do
-        klass' <- IR.source klass
-        IR.matchExpr klass' $ \case
-            IR.ClsASG _ _ _ _ funs -> do
-                funs' <- mapM IR.source funs
-                (Safe.headMay . catMaybes) <$> forM funs' (\f -> IR.matchExpr f $ \case
-                    IR.Metadata{} -> return (Just f)
-                    _             -> return Nothing)
-    _ -> return Nothing
+getMetadataRef unit = do
+    klass' <- classFromUnit unit
+    IR.matchExpr klass' $ \case
+        IR.ClsASG _ _ _ _ funs -> do
+            funs' <- mapM IR.source funs
+            (Safe.headMay . catMaybes) <$> forM funs' (\f -> IR.matchExpr f $ \case
+                IR.Metadata{} -> return (Just f)
+                _             -> return Nothing)
+        _ -> return Nothing
 
 getFunByNodeId :: ClassOp m => NodeId -> m NodeRef
 getFunByNodeId nodeId = do

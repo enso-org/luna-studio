@@ -228,8 +228,7 @@ insertFunAfter previousFunction function code = do
             let firstFunction = Safe.headMay funs
             funBlockStart <- case firstFunction of
                 Just fun -> Code.functionBlockStartRef fun
-                _        -> Code.functionBlockStartRef =<< IR.matchExpr unit (\case
-                    IR.Unit _ _ cls -> IR.source cls)
+                _        -> Code.functionBlockStartRef =<< ASTRead.classFromUnit unit
             (off, off') <- case firstFunction of
                 Just firstFun -> do
                     LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan firstFun
@@ -276,21 +275,19 @@ addFunNode loc parsing uuid expr meta = withUnit loc $ do
         let markedCode = Text.concat [markerText, code]
         return (name, markedNode, markedCode)
 
-    klass <- use Graph.clsClass
+    unit <- use Graph.clsClass
     (insertedCharacters, codePosition) <- runASTOp $ do
-        funs <- ASTRead.classFunctions klass
+        funs <- ASTRead.classFunctions unit
         previousFunction <- findPreviousFunction meta funs
 
         insertedCharacters <- insertFunAfter previousFunction markedFunction markedCode
-        IR.matchExpr klass $ \case
-            IR.Unit _ _ cls -> do
-                cls' <- IR.source cls
-                Just (cls'' :: IR.Expr (IR.ClsASG)) <- IR.narrow cls'
-                l <- IR.unsafeGeneralize <$> IR.link markedFunction cls''
-                links <- IR.matchExpr cls' $ \case
-                    IR.ClsASG _ _ _ _ decls -> return decls
-                newFuns <- putNewFunctionRef l previousFunction links
-                IR.modifyExprTerm cls'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize newFuns :: [IR.Link (IR.Expr IR.Draft) (IR.Expr Term.ClsASG)])
+        cls' <- ASTRead.classFromUnit unit
+        Just (cls'' :: IR.Expr (IR.ClsASG)) <- IR.narrow cls'
+        l <- IR.unsafeGeneralize <$> IR.link markedFunction cls''
+        links <- IR.matchExpr cls' $ \case
+            IR.ClsASG _ _ _ _ decls -> return decls
+        newFuns <- putNewFunctionRef l previousFunction links
+        IR.modifyExprTerm cls'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize newFuns :: [IR.Link (IR.Expr IR.Draft) (IR.Expr Term.ClsASG)])
         codePosition       <- Code.functionBlockStartRef markedFunction
 
         return (fromIntegral insertedCharacters, codePosition)
@@ -566,33 +563,32 @@ removeNodes loc@(GraphLocation file (Breadcrumb [])) nodeIds = do
         let graphsToRemove = Map.elems $ Map.filterWithKey (\a _ -> a `elem` nodeIds) funs
         Graph.clsFuns .= Map.filterWithKey (\a _ -> a `notElem` nodeIds) funs
 
-        klass <- use Graph.clsClass
-        runASTOp $ IR.matchExpr klass $ \case
-            IR.Unit _ _ cls -> do
-                cls' <- IR.source cls
-                Just (cls'' :: IR.Expr (IR.ClsASG)) <- IR.narrow cls'
-                funs <- IR.matchExpr cls' $ \case
-                    IR.ClsASG _ _ _ _ f -> do
-                        links <- mapM (\link -> (link,) <$> IR.source link) f
-                        forM links $ \(link, fun) -> do
-                            fun' <- ASTRead.cutThroughMarked fun
-                            IR.matchExpr fun' $ \case
-                                IR.ASGRootedFunction n _ -> do
-                                    name <- ASTRead.getVarName' =<< IR.source n
-                                    return $ if convert name `elem` funsToRemove then Left link else Right link
-                                IR.Metadata{} -> return $ Right link
-                let (toRemove, left) = partitionEithers funs
-                spans <- forM toRemove $ \candidate -> do
-                    ref <- IR.source candidate
-                    start <- Code.functionBlockStartRef ref
-                    LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan.CodeSpan ref
-                    return (start - off, start + len)
-                forM (reverse spans) $ \(start, end) -> do
-                    let removedCharacters = end - start
-                    Graph.clsFuns . traverse . Graph.funGraph . Graph.fileOffset %= (\off -> if off > end then off - removedCharacters else off)
-                    Code.removeAt start end
-                IR.modifyExprTerm cls'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize left)
-                mapM (IR.deleteSubtree <=< IR.source) toRemove
+        unit <- use Graph.clsClass
+        runASTOp $ do
+            cls' <- ASTRead.classFromUnit unit
+            Just (cls'' :: IR.Expr (IR.ClsASG)) <- IR.narrow cls'
+            funs <- IR.matchExpr cls' $ \case
+                IR.ClsASG _ _ _ _ f -> do
+                    links <- mapM (\link -> (link,) <$> IR.source link) f
+                    forM links $ \(link, fun) -> do
+                        fun' <- ASTRead.cutThroughMarked fun
+                        IR.matchExpr fun' $ \case
+                            IR.ASGRootedFunction n _ -> do
+                                name <- ASTRead.getVarName' =<< IR.source n
+                                return $ if convert name `elem` funsToRemove then Left link else Right link
+                            IR.Metadata{} -> return $ Right link
+            let (toRemove, left) = partitionEithers funs
+            spans <- forM toRemove $ \candidate -> do
+                ref <- IR.source candidate
+                start <- Code.functionBlockStartRef ref
+                LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan.CodeSpan ref
+                return (start - off, start + len)
+            forM (reverse spans) $ \(start, end) -> do
+                let removedCharacters = end - start
+                Graph.clsFuns . traverse . Graph.funGraph . Graph.fileOffset %= (\off -> if off > end then off - removedCharacters else off)
+                Code.removeAt start end
+            IR.modifyExprTerm cls'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize left)
+            mapM (IR.deleteSubtree <=< IR.source) toRemove
     resendCode loc
 removeNodes loc@(GraphLocation file _) nodeIds = do
     withTC loc False $ runASTOp $ mapM removeNodeNoTC nodeIds
@@ -1067,20 +1063,18 @@ stripMetadata text = if lexerStream == code then text else flip Text.append "\n"
 
 removeMetadataNode :: ClassOp m => m ()
 removeMetadataNode = do
-    unit <- use Graph.clsClass
-    IR.matchExpr unit $ \case
-        IR.Unit _ _ klass -> do
-            klass' <- IR.source klass
-            newLinks <- IR.matchExpr klass' $ \case
-                IR.ClsASG _ _ _ _ funs -> do
-                    funs' <- mapM IR.source funs
-                    catMaybes <$> forM funs (\f -> do
-                        f' <- IR.source f
-                        IR.matchExpr f' $ \case
-                            IR.Metadata{} -> return Nothing
-                            _             -> return (Just f))
-            Just (klass'' :: IR.Expr (IR.ClsASG)) <- IR.narrow klass'
-            IR.modifyExprTerm klass'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize newLinks :: [IR.Link (IR.Expr IR.Draft) (IR.Expr Term.ClsASG)])
+    unit   <- use Graph.clsClass
+    klass' <- ASTRead.classFromUnit unit
+    newLinks <- IR.matchExpr klass' $ \case
+        IR.ClsASG _ _ _ _ funs -> do
+            funs' <- mapM IR.source funs
+            catMaybes <$> forM funs (\f -> do
+                f' <- IR.source f
+                IR.matchExpr f' $ \case
+                    IR.Metadata{} -> return Nothing
+                    _             -> return (Just f))
+    Just (klass'' :: IR.Expr (IR.ClsASG)) <- IR.narrow klass'
+    IR.modifyExprTerm klass'' $ wrapped . IR.termClsASG_decls .~ (map IR.unsafeGeneralize newLinks :: [IR.Link (IR.Expr IR.Draft) (IR.Expr Term.ClsASG)])
 
 getNextTopLevelMarker :: ClassOp m => m Word64
 getNextTopLevelMarker = do
@@ -1091,26 +1085,25 @@ getNextTopLevelMarker = do
     return newMarker
 
 markFunctions :: ClassOp m => NodeRef -> m ()
-markFunctions unit = IR.matchExpr unit $ \case
-    IR.Unit _ _ klass -> do
-        klass' <- IR.source klass
-        IR.matchExpr klass' $ \case
-            IR.ClsASG _ _ _ _ funs -> do
-                forM_ funs $ \fun -> IR.source fun >>= \asgFun -> IR.matchExpr asgFun $ \case
-                    IR.Marked{}            -> return ()
-                    IR.ASGRootedFunction{} -> do
-                        newMarker <- getNextTopLevelMarker
-                        funStart  <- Code.functionBlockStartRef asgFun
-                        Code.insertAt funStart (Code.makeMarker newMarker)
-                        marker    <- IR.marker' newMarker
-                        markedFun <- IR.marked' marker asgFun
-                        Graph.clsCodeMarkers . at newMarker ?= markedFun
-                        LeftSpacedSpan (SpacedSpan off prevLen) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan asgFun
-                        let markerLength = convert $ Text.length $ Code.makeMarker newMarker
-                        IR.putLayer @CodeSpan marker $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan 0 markerLength))
-                        IR.putLayer @CodeSpan markedFun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off (prevLen + markerLength)))
-                        IR.putLayer @CodeSpan asgFun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan 0 prevLen))
-                        IR.replaceSource markedFun fun
+markFunctions unit = do
+    klass' <- ASTRead.classFromUnit unit
+    IR.matchExpr klass' $ \case
+        IR.ClsASG _ _ _ _ funs -> do
+            forM_ funs $ \fun -> IR.source fun >>= \asgFun -> IR.matchExpr asgFun $ \case
+                IR.Marked{}            -> return ()
+                IR.ASGRootedFunction{} -> do
+                    newMarker <- getNextTopLevelMarker
+                    funStart  <- Code.functionBlockStartRef asgFun
+                    Code.insertAt funStart (Code.makeMarker newMarker)
+                    marker    <- IR.marker' newMarker
+                    markedFun <- IR.marked' marker asgFun
+                    Graph.clsCodeMarkers . at newMarker ?= markedFun
+                    LeftSpacedSpan (SpacedSpan off prevLen) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan asgFun
+                    let markerLength = convert $ Text.length $ Code.makeMarker newMarker
+                    IR.putLayer @CodeSpan marker $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan 0 markerLength))
+                    IR.putLayer @CodeSpan markedFun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off (prevLen + markerLength)))
+                    IR.putLayer @CodeSpan asgFun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan 0 prevLen))
+                    IR.replaceSource markedFun fun
 
 loadCode :: GraphLocation -> Text -> Empire ()
 loadCode (GraphLocation file _) code = do
