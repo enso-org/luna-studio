@@ -210,7 +210,9 @@ getNextExprMarker = do
     localExprMap  <- getExprMap
     let keys         = Map.keys $ Map.union globalExprMap localExprMap
         highestIndex = Safe.maximumMay keys
-    return $ maybe 0 succ highestIndex
+        newMarker    = maybe 0 succ highestIndex
+    invalidateMarker newMarker
+    return newMarker
 
 invalidateMarker :: (ASTOp g m, HasNodeCache g) => Word64 -> m ()
 invalidateMarker index = do
@@ -223,7 +225,6 @@ addCodeMarker :: GraphOp m => Delta -> EdgeRef -> m NodeRef
 addCodeMarker beg edge = do
     ref    <- IR.source edge
     index  <- getNextExprMarker
-    invalidateMarker index
     marker <- IR.marker' index
     markedNode <- IR.marked' marker ref
     exprLength <- IR.getLayer @SpanLength ref

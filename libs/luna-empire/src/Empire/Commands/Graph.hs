@@ -265,7 +265,6 @@ addFunNode loc parsing uuid expr meta = withUnit loc $ do
                 name <- ASTRead.getVarName' =<< IR.source n
                 return $ nameToString name
         index  <- getNextTopLevelMarker
-        Code.invalidateMarker index
         marker <- IR.marker' index
         let markerText = Code.makeMarker index
             markerLen  = convert $ Text.length markerText
@@ -1088,6 +1087,7 @@ getNextTopLevelMarker = do
     globalMarkers <- use Graph.clsCodeMarkers
     let highestIndex = Safe.maximumMay $ Map.keys globalMarkers
         newMarker    = maybe 0 succ highestIndex
+    Code.invalidateMarker newMarker
     return newMarker
 
 markFunctions :: ClassOp m => NodeRef -> m ()
@@ -1100,8 +1100,7 @@ markFunctions unit = IR.matchExpr unit $ \case
                     IR.Marked{}            -> return ()
                     IR.ASGRootedFunction{} -> do
                         newMarker <- getNextTopLevelMarker
-                        Code.invalidateMarker newMarker
-                        funStart <- Code.functionBlockStartRef asgFun
+                        funStart  <- Code.functionBlockStartRef asgFun
                         Code.insertAt funStart (Code.makeMarker newMarker)
                         marker    <- IR.marker' newMarker
                         markedFun <- IR.marked' marker asgFun
