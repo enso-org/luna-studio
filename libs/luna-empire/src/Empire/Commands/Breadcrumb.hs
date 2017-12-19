@@ -66,15 +66,16 @@ makeGraphCls :: NodeRef -> Maybe NodeId -> Command Graph.ClsGraph (NodeId, Graph
 makeGraphCls fun lastUUID = do
     pmState   <- liftIO Graph.defaultPMState
     nodeCache <- use Graph.clsNodeCache
-    asgFun    <- runASTOp $ ASTRead.cutThroughMarked fun
-    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ IR.matchExpr asgFun $ \case
-        IR.ASGRootedFunction n root -> do
-            offset <- functionBlockStartRef asgFun
-            name   <- ASTRead.getVarName' =<< IR.source n
-            return (nameToString name, root, offset)
+    uuid      <- maybe (liftIO UUID.nextRandom) return lastUUID
+    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ do
+        IR.putLayer @Marker fun $ Just $ OutPortRef (NodeLoc def uuid) []
+        asgFun    <- ASTRead.cutThroughMarked fun
+        IR.matchExpr asgFun $ \case
+            IR.ASGRootedFunction n root -> do
+                offset <- functionBlockStartRef asgFun
+                name   <- ASTRead.getVarName' =<< IR.source n
+                return (nameToString name, root, offset)
     let ast   = Graph.AST ir pmState
-    uuid <- maybe (liftIO UUID.nextRandom) return lastUUID
-    runASTOp $ IR.putLayer @Marker fun $ Just $ OutPortRef (NodeLoc def uuid) []
     let oldPortMapping = nodeCache ^. Graph.portMappingMap . at (uuid, Nothing)
     portMapping <- fromJustM (liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom) oldPortMapping
     globalMarkers <- use Graph.clsCodeMarkers
