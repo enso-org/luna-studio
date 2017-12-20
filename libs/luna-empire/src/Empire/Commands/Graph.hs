@@ -1496,7 +1496,7 @@ paste loc position (Text.pack -> text) = do
         fm          <- forM (Safe.headMay [metaLine]) parseMetadata
         let metas   =  maybe [] (\(FileMetadata fm') -> moveToOrigin fm') fm
         indentation <- fromIntegral <$> runASTOp Code.getCurrentIndentationLength
-        let exprs' = Text.lines $ Code.removeMarkers $ convert withoutMeta
+        let exprs' = Text.lines $ convert withoutMeta
             cut    = snd $ foldl' (\(initialIndent, acc) e -> let indent' = Text.length (Text.takeWhile isSeparator e) in (initialIndent, if indent' <= initialIndent then Break:acc else NoBreak:acc)) (Text.length (Text.takeWhile isSeparator (head exprs')), []) exprs'
         forM (exprBreaker exprs' cut) $ \(Text.strip -> expr) -> do
             let (marker, rest) = Text.breakOn "»" expr & both %~ Text.drop 1
