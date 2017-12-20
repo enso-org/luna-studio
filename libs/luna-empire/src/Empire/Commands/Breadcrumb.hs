@@ -137,14 +137,13 @@ withRootedFunction uuid act = do
             IR.getLayer @SpanLength ref
         return (a, len)
     Graph.clsFuns . ix uuid . Graph.funGraph .= newGraph
-    funName <- use $ Graph.clsFuns . ix uuid . Graph.funName
     diffs <- runASTOp $ do
         cls <- use Graph.clsClass
         funs <- ASTRead.classFunctions cls
         forM funs $ \fun -> ASTRead.cutThroughMarked fun >>= \f -> IR.matchExpr f $ \case
             IR.ASGRootedFunction n _ -> do
-                name <- ASTRead.getVarName' =<< IR.source n
-                if (nameToString name == funName) then do
+                nodeId <- ASTRead.getNodeId fun
+                if (nodeId == Just uuid) then do
                     lenDiff <- if fun == f then do
                         LeftSpacedSpan (SpacedSpan off prevLen) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan.CodeSpan f
                         IR.putLayer @CodeSpan.CodeSpan fun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off len))
