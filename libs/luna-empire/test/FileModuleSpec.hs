@@ -393,18 +393,6 @@ spec = around withChannels $ parallel $ do
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc multiFunCode
                 Graph.substituteCode "TestPath" [(13, 14, "10")]
-        -- it "fffff" $ \env -> do
-        --     evalEmp env $ do
-        --         Library.createLibrary Nothing "TestPath"
-        --         let loc = GraphLocation "TestPath" $ Breadcrumb []
-        --         Graph.loadCode loc multiFunCode
-        --         before <- Graph.getNodes loc
-        --         Graph.substituteCode "TestPath" [(21, 21, "def tes")]
-        --         Graph.substituteCode "TestPath" [(28, 28, "t:\n")]
-        --         Graph.substituteCode "TestPath" [(34, 34, "    2")]
-        --         liftIO . Text.putStrLn =<< Graph.withUnit loc (use Graph.code)
-        --         after <- Graph.getNodes loc
-        --         liftIO $ print before >> print after
         it "shows proper function offsets without imports" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
