@@ -1239,7 +1239,7 @@ spec = around withChannels $ parallel $ do
                     sum1 = a + 1
                     sum1
 
-                def func1:
+                def func2:
                     c = 4
                     sum2 = c + 2
                     sum2
@@ -1247,7 +1247,7 @@ spec = around withChannels $ parallel $ do
                 def main:
                     None
                     sum1 = func1
-                    sum2 = func1
+                    sum2 = func2
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID

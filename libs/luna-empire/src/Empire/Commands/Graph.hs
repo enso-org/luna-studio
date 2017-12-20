@@ -1373,8 +1373,8 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
             return $ beg + len
     Code.insertAt insertPos codeToInsert
 
-generateCollapsedDefCode :: GraphOp m => [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text)
-generateCollapsedDefCode inputs outputs bodyIds = do
+generateCollapsedDefCode :: GraphOp m => Text -> [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text)
+generateCollapsedDefCode defName inputs outputs bodyIds = do
     inputNames <- fmap (map (view _2) . sortOn fst) $ forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) -> do
         position <- fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
         name     <- ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
@@ -1385,7 +1385,6 @@ generateCollapsedDefCode inputs outputs bodyIds = do
         ref     <- ASTRead.getASTPointer nid
         Just cb <- Code.getOffsetRelativeToFile ref
         return (cb, ref)
-    defName            <- generateNodeNameFromBase "func"
     currentIndentation <- Code.getCurrentIndentationLength
     let indentBy i l = "\n" <> Text.replicate (fromIntegral i) " " <> l
         bodyIndented = indentBy (Code.defaultIndentationLength)
@@ -1420,6 +1419,8 @@ collapseToFunction loc@(GraphLocation file _) nids = do
     code <- withGraph loc $ use Graph.code
     nodes <- getNodes (GraphLocation file def)
     when (null nids) $ throwM ImpossibleToCollapse
+    let names   = Set.fromList $ mapMaybe (view Node.name) nodes
+        newName = generateNewFunctionName names "func"
     defCode <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids
         connections <- GraphBuilder.buildConnections
@@ -1430,7 +1431,7 @@ collapseToFunction loc@(GraphLocation file _) nids = do
             outConns = filter (\x -> srcInIds x && not (dstInIds x)) connections
             outputs  = nub $ fst <$> outConns
             useSites = outConns ^.. traverse . _2 . PortRef.dstNodeId
-        (defCode, useCode) <- generateCollapsedDefCode inputs outputs nids
+        (defCode, useCode) <- generateCollapsedDefCode newName inputs outputs nids
         insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) useCode
         return defCode
     code <- insertCodeBeforeFunction loc defCode
