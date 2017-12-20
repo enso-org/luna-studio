@@ -1228,6 +1228,38 @@ spec = around withChannels $ parallel $ do
                 let Just ab  = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "(a, b)") nodes
                     Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
                 Graph.collapseToFunction loc [ab, baz]
+        it "handles collapsing nodes into functions two times" $ let
+            initialCode = [r|
+                def main:
+                    None
+                |]
+            expectedCode = [r|
+                def func1:
+                    (a, b) = (1, 2)
+                    sum1 = a + 1
+                    sum1
+
+                def func1:
+                    c = 4
+                    sum2 = c + 2
+                    sum2
+
+                def main:
+                    None
+                    sum1 = func1
+                    sum2 = func1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                u1 <- mkUUID
+                u2 <- mkUUID
+                Graph.addNode loc u1 "(a, b) = (1, 2)" def
+                Graph.addNode loc u2 "a + 1" def
+                u3 <- mkUUID
+                u4 <- mkUUID
+                Graph.addNode loc u3 "c = 4" def
+                Graph.addNode loc u4 "c + 2" def
+                Graph.collapseToFunction loc [u1, u2]
+                Graph.collapseToFunction loc [u3, u4]
         it "handles collapsing nodes into functions without use of an argument" $ let
             initialCode = [r|
                 def main:
