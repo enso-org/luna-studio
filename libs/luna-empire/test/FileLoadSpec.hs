@@ -2519,7 +2519,7 @@ def main:
                 Graph.addNode loc u1 "( 1, 2,   3)" def
                 Graph.setPortDefault loc (inPortRef u1 [Port.Arg (-1)]) (Just (PortDefault.Constant (PortDefault.IntValue 0)))
                 ) env `shouldThrow` tupleOOB
-            it "redos collapsing to a function" $ let
+        it "redos collapsing to a function" $ let
             initialCode = [r|
                 «5»def main:
                     None
@@ -2530,6 +2530,10 @@ def main:
                     «2»response = request . perform
                     «3»body1 = response . body
                     «4»toText1 = body1 . toText
+                    None
+                |]
+            expectedCode = [r|
+                def main:
                     None
 
                 def func1 url:
