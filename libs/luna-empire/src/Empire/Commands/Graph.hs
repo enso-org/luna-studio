@@ -131,8 +131,8 @@ import qualified Empire.Commands.GraphUtils       as GraphUtils
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Publisher        as Publisher
 import           Empire.Data.AST                  (InvalidConnectionException (..), EdgeRef, NodeRef, NotInputEdgeException (..),
-                                                   PortDoesNotExistException(..), SomeASTException, astExceptionFromException,
-                                                   astExceptionToException)
+                                                   NotUnifyException, PortDoesNotExistException(..), SomeASTException,
+                                                   astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy  as BH
 import           Empire.Data.Graph                (ClsGraph, Graph)
 import qualified Empire.Data.Graph                as Graph
@@ -1373,7 +1373,7 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
             return $ beg + len
     Code.insertAt insertPos codeToInsert
 
-generateCollapsedDefCode :: GraphOp m => Text -> [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text)
+generateCollapsedDefCode :: GraphOp m => Text -> [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text, Maybe Text, Position)
 generateCollapsedDefCode defName inputs outputs bodyIds = do
     inputNames <- fmap (map (view _2) . sortOn fst) $ forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) -> do
         position <- fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
@@ -1381,13 +1381,21 @@ generateCollapsedDefCode defName inputs outputs bodyIds = do
         return (position, name)
     outputNames <- forM outputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
         ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
+    let singleOutput = case outputs of
+            [a] -> Just $ a ^. PortRef.srcNodeId
+            _   -> Nothing
+    singleOutputMeta <- forM singleOutput AST.getNodeMeta
+    let singleOutputPosition = fmap (view NodeMeta.position) (join singleOutputMeta)
+    bodyMetas <- mapM AST.getNodeMeta bodyIds
+    let bodyPositions = sortOn (view Position.x) $ map (view NodeMeta.position) $ catMaybes bodyMetas
+        rightmostPosition = last bodyPositions
     codeBegs <- fmap (sortOn fst) $ forM bodyIds $ \nid -> do
         ref     <- ASTRead.getASTPointer nid
         Just cb <- Code.getOffsetRelativeToFile ref
         return (cb, ref)
     currentIndentation <- Code.getCurrentIndentationLength
     let indentBy i l = "\n" <> Text.replicate (fromIntegral i) " " <> l
-        bodyIndented = indentBy (Code.defaultIndentationLength)
+        bodyIndented = indentBy Code.defaultIndentationLength
         retIndented  = indentBy currentIndentation
     newCodeBlockBody <- fmap Text.concat $ forM codeBegs $ \(beg, ref) -> do
         len  <- IR.getLayer @SpanLength ref
@@ -1406,22 +1414,20 @@ generateCollapsedDefCode defName inputs outputs bodyIds = do
             Just n -> bodyIndented n
             _      -> ""
     let defCode = header <> newCodeBlockBody <> returnLine
-    let useLine = retIndented $ unsafeFromJust returnBody
-                              <> " = "
+    let useLine = retIndented $ maybe "" (<> " = ") returnBody
                               <> Text.unwords (defName : fmap convert inputNames)
-    return (defCode, useLine)
+    return (defCode, useLine, returnBody, fromMaybe rightmostPosition singleOutputPosition)
 
 topLevelFunctionID :: GraphLocation -> NodeId
 topLevelFunctionID (GraphLocation _ (Breadcrumb (Breadcrumb.Definition nodeId:_))) = nodeId
 
 collapseToFunction :: GraphLocation -> [NodeId] -> Empire ()
 collapseToFunction loc@(GraphLocation file _) nids = do
-    code <- withGraph loc $ use Graph.code
     nodes <- getNodes (GraphLocation file def)
     when (null nids) $ throwM ImpossibleToCollapse
     let names   = Set.fromList $ mapMaybe (view Node.name) nodes
         newName = generateNewFunctionName names "func"
-    defCode <- withGraph loc $ runASTOp $ do
+    (defCode, useVarName, outputPosition) <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids
         connections <- GraphBuilder.buildConnections
         let srcInIds = flip Set.member ids . view PortRef.srcNodeId . fst
@@ -1429,16 +1435,22 @@ collapseToFunction loc@(GraphLocation file _) nids = do
             inConns  = filter (\x -> dstInIds x && not (srcInIds x)) connections
             inputs   = nub $ fst <$> inConns
             outConns = filter (\x -> srcInIds x && not (dstInIds x)) connections
-            outputs  = nub $ fst <$> outConns
-            useSites = outConns ^.. traverse . _2 . PortRef.dstNodeId
-        (defCode, useCode) <- generateCollapsedDefCode newName inputs outputs nids
+        outConns' <- filterM (\a -> not <$> isOutput (view PortRef.dstNodeId $ snd a)) outConns
+        let outputs  = nub $ fst <$> outConns'
+            useSites = outConns' ^.. traverse . _2 . PortRef.dstNodeId
+        (defCode, useCode, useVarName, outputPosition) <- generateCollapsedDefCode newName inputs outputs nids
         insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) useCode
-        return defCode
+        return (defCode, useVarName, outputPosition)
     code <- insertCodeBeforeFunction loc defCode
     reloadCode  loc code
     typecheckWithRecompute (GraphLocation file def)
     removeNodes loc nids
-
+    withGraph loc $ runASTOp $ do
+        nodes <- GraphBuilder.buildNodes
+        let funUseNodes = filter (\n -> n ^. Node.name == useVarName) nodes
+        case funUseNodes of
+            [a] -> setNodePositionAST (a ^. Node.nodeId) outputPosition
+            _   -> return ()
 
 prepareCopy :: GraphLocation -> [NodeId] -> Empire String
 prepareCopy loc@(GraphLocation _ (Breadcrumb [])) nodeIds = withUnit loc $ do

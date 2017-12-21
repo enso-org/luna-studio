@@ -1189,6 +1189,7 @@ spec = around withChannels $ parallel $ do
                     «1»baz = buzz foo
                     «2»spam = eggs baz
                     «3»a = baz + 1
+                    None
                 |]
             expectedCode = [r|
                 def func1 foo:
@@ -1200,10 +1201,26 @@ spec = around withChannels $ parallel $ do
                     foo = bar
                     baz = func1 foo
                     a = baz + 1
+                    None
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
                 Graph.collapseToFunction loc [baz, spam]
+        it "handles collapsing anonymous nodes into functions" $ let
+            initialCode = [r|
+                def main:
+                    «0»5
+                |]
+            expectedCode = [r|
+                def func1:
+                    5
+
+                def main:
+                    func1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Just five <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.collapseToFunction loc [five]
         it "handles collapsing nodes with pattern matching into functions" $ let
             initialCode = [r|
                 def main:
@@ -1228,6 +1245,35 @@ spec = around withChannels $ parallel $ do
                 let Just ab  = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "(a, b)") nodes
                     Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
                 Graph.collapseToFunction loc [ab, baz]
+        it "handles collapsing nodes to proper position" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = bar
+                    «1»(a, b) = (1, 2)
+                    «2»baz = a + b
+                    «3»c = baz + 1
+                |]
+            expectedCode = [r|
+                def func1:
+                    (a, b) = (1, 2)
+                    baz = a + b
+                    baz
+
+                def main:
+                    foo = bar
+                    baz = func1
+                    c = baz + 1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.getNodes loc
+                let Just ab  = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "(a, b)") nodes
+                    Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
+                Just bazMeta <- Graph.getNodeMeta loc baz
+                Graph.collapseToFunction loc [ab, baz]
+                nodes <- Graph.getNodes loc
+                let Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
+                Just newBazMeta <- Graph.getNodeMeta loc baz
+                liftIO $ newBazMeta ^. NodeMeta.position `shouldBe` bazMeta ^. NodeMeta.position
         it "handles collapsing nodes into functions two times" $ let
             initialCode = [r|
                 def main:
