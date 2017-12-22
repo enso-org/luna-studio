@@ -1364,9 +1364,12 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
     beforeRefs <- fmap Set.fromList $ forM beforeNodes ASTRead.getASTRef
     afterRefs  <- fmap Set.fromList $ forM afterNodes  ASTRead.getASTRef
     topSeq     <- ASTRead.getCurrentBody
-    refToInsertAfter <- findRefToInsertAfter beforeRefs afterRefs topSeq
+    output     <- getCurrentFunctionOutput
+    refToInsertAfter <- findRefToInsertAfter (Set.insert output beforeRefs) afterRefs topSeq
     insertPos        <- case refToInsertAfter of
-        Nothing -> Code.getCurrentBlockBeginning
+        Nothing -> do
+            len <- IR.getLayer @SpanLength output
+            (+len) <$> Code.getCurrentBlockBeginning
         Just r  -> do
             Just beg <- Code.getOffsetRelativeToFile r
             len      <- IR.getLayer @SpanLength r

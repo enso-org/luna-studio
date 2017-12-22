@@ -1291,9 +1291,9 @@ spec = around withChannels $ parallel $ do
                     sum2
 
                 def main:
-                    None
                     sum1 = func1
                     sum2 = func2
+                    None
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -1322,8 +1322,8 @@ spec = around withChannels $ parallel $ do
 
                 def main:
                     foo = bar
-                    a = 3 + 1
                     spam = func1 foo
+                    a = 3 + 1
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
