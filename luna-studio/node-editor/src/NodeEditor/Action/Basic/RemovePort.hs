@@ -9,7 +9,7 @@ import           NodeEditor.Action.Basic.UpdateNode       (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                  as Batch
 import           NodeEditor.Action.State.NodeEditor       (getConnectionsContainingNode, getInputNode)
 import           NodeEditor.React.Model.Connection        (connectionId, dst, src)
-import           NodeEditor.React.Model.Node.SidebarNode  (countProjectionPorts, hasPort, inputSidebarPorts, isInputSidebar)
+import           NodeEditor.React.Model.Node.SidebarNode  (countProjectionPorts, hasPort, inputIsDef, inputSidebarPorts, isInputSidebar)
 import           NodeEditor.React.Model.Port              (OutPortIndex (Projection))
 import           NodeEditor.State.Global                  (State)
 
@@ -20,8 +20,8 @@ removePort portRef = whenM (localRemovePort portRef) $ Batch.removePort portRef
 localRemovePort :: OutPortRef -> Command State Bool
 localRemovePort (OutPortRef nid pid@(Projection pos : _)) = do
     mayNode <- getInputNode nid
-    flip (maybe (return False)) mayNode $ \node ->
-        if not (isInputSidebar node) || not (hasPort pid node) || countProjectionPorts node == 1
+    flip (maybe (return False)) mayNode $ \node -> do
+        if not (isInputSidebar node) || not (hasPort pid node) || (not (node ^. inputIsDef) && countProjectionPorts node <= 1)
             then return False
             else do
                 let (prev, _:next) = splitAt pos $ node ^. inputSidebarPorts

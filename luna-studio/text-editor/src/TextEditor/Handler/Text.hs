@@ -15,7 +15,7 @@ import           TextEditor.Event.Batch            (BatchEvent (..))
 import           TextEditor.Event.Event            (Event (Atom, Batch, Text))
 import           TextEditor.Event.Internal         (InternalEvent (..))
 import           TextEditor.Event.Text             (TextEvent (..))
-import           TextEditor.Handler.Backend.Common (doNothing, handleResponse)
+import           TextEditor.Handler.Backend.Common (doNothing, doNothing2, handleResponse)
 import           TextEditor.State.Global           (State)
 
 
@@ -28,13 +28,13 @@ handle (Atom (Paste selections content)) = Just $
     withJustM_ JS.activeLocation $ \location ->
         ActBatch.paste location (convert selections) content
 
-handle (Batch (SubstituteResponse response)) = Just $ handleResponse response doNothing doNothing
-handle (Batch (BufferGetResponse  response)) = Just $ handleResponse response success doNothing where
+handle (Batch (SubstituteResponse response)) = Just $ handleResponse response doNothing doNothing2
+handle (Batch (BufferGetResponse  response)) = Just $ handleResponse response success doNothing2 where
     success result = do
         let uri  = response ^. Response.request . GetBuffer.filePath
             code = result ^. GetBuffer.code
         liftIO $ JS.setBuffer (convert uri) (convert code)
-handle (Batch (CopyResponse  response)) = Just $ handleResponse response success doNothing where
+handle (Batch (CopyResponse  response)) = Just $ handleResponse response success doNothing2 where
     success result = do
         let uri  = response ^. Response.request . Copy.filePath
             code = result ^. Copy.code

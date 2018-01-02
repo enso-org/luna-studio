@@ -30,6 +30,7 @@ import           LunaStudio.API.Graph.AddNode  (Request (..))
 import qualified LunaStudio.API.Graph.AddNode  as AddNode
 import qualified LunaStudio.API.Graph.Result   as Result
 import qualified LunaStudio.API.Topic          as Topic
+import qualified LunaStudio.Data.Error         as Error
 import qualified LunaStudio.Data.Graph         as Graph
 import           LunaStudio.Data.LabeledTree
 import qualified LunaStudio.Data.Node          as Node
@@ -88,7 +89,7 @@ spec = describe "Undo-Redo for single user" $ do
         node <- generateNode
 
         let nodeId = node ^. Node.nodeId
-            response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId) "3" def Nothing) (Response.Ok ()) (Response.Error "error" :: Response.Status ())
+            response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId) "3" def Nothing) (Response.Ok ()) (Response.Error (Error.Error Error.OtherLunaError "error") :: Response.Status ())
             topic = "empire.graph.node.add.response"
         let res = run' state (handleMessage (Message.Message topic (Compress.pack (encode response))))
         let responseException :: Selector ResponseErrorException

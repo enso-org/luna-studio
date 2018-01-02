@@ -32,6 +32,7 @@ packages_path = atom_home_path + '/packages/'
 dist_package_folder = ap.prep_path('../dist-package')
 gui_package_path = ap.prep_path('../dist-package/gui.zip')
 studio_folder = ap.prep_path('../luna-studio/atom')
+version_file =ap.prep_path('../dist/config/version.txt')
 
 paths = {
     system.systems.WINDOWS: {
@@ -207,10 +208,19 @@ def sed_inplace(filename, pattern, repl):
     shutil.move(tmp_file.name, filename)
 
 
+def check_version():
+    try:
+        with open(version_file, 'r') as version_content:
+            return version_content.readline()
+    except FileNotFoundError:
+        return ""
+
+
 def modify_atom_package_json():
+    v = check_version()
     json = get_path('package_json')
-    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"LunaStudio\"')
-    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"LunaStudio\"')
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format("luna-studio" + v))
+    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
 
 def run(gui_url, frontend_args, link=False):

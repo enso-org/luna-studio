@@ -266,8 +266,10 @@ runFrontend args = do
     setEnv "ATOM_HOME"             =<< packageStudioAtomHome
     setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory True
     setEnv "LUNA_TMP"              =<< lunaTmpPath
-    setEnv "LUNA_PROJECTS"          =<< lunaProjectsPath
+    setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
     setEnv "LUNA_TUTORIALS"        =<< lunaTutorialsPath
+    setEnv "LUNA_USER_INFO"        =<< userInfoPath
+    setEnv "LUNA_VERSION_PATH"     =<< versionFilePath
     unixOnly $ Shelly.shelly $ Shelly.run_ atom $ "-w" : maybeToList args
 
 runBackend :: MonadRun m => Bool -> m ()
@@ -321,12 +323,6 @@ runApp develop forceRun atom = do
     liftIO $ Environment.setEnv "LUNA_STUDIO_ATOM_ARG" (fromMaybe " " atom)
     runPackage develop forceRun
 
-deleteXDGDir :: IO ()
-deleteXDGDir = do
-    directory <- getXdgDirectory XdgConfig "./LunaStudio"
-    doesExist <- doesDirectoryExist directory
-    when doesExist $ liftIO $ removeDirectoryRecursive directory
-
 data Options = Options
     { frontend :: Bool
     , backend  :: Bool
@@ -344,7 +340,6 @@ optionParser = Options
 
 run :: MonadIO m => Options -> m ()
 run (Options frontend backend develop forceRun atom) = evalDefHostConfigs @'[RunnerConfig] $ do
-    liftIO $ deleteXDGDir
     if  frontend
     then runFrontend $ T.pack <$> atom
     else if backend

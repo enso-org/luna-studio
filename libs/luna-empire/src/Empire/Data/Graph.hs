@@ -172,7 +172,9 @@ defaultClsAST = mdo
         attachEmpireLayers
         initExprMapping
         cls <- Pass.eval' @InitPass $ do
-            klass <- IR.clsASG' False (stringToName "A") [] [] []
+            hub   <- IR.unresolvedImpHub' []
+            cls   <- IR.clsASG' False (stringToName "A") [] [] []
+            klass <- IR.unit' hub [] cls
             return klass
         st   <- snapshot
         pass <- DepState.get @PassManager.State
