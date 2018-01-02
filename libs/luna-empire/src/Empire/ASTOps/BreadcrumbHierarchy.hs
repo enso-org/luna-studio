@@ -14,7 +14,7 @@ import qualified Data.Map as Map
 import           Data.Text.Position            (Delta)
 import qualified Data.UUID.V4  as UUID
 
-import           Empire.ASTOp                    (GraphOp)
+import           Empire.ASTOp                    (ASTOp, GraphOp)
 import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Read              as ASTRead
@@ -36,7 +36,7 @@ makeTopBreadcrumbHierarchy ref = do
     item <- prepareFunctionChild ref ref
     breadcrumbHierarchy .= item
 
-getMarker :: GraphOp m => NodeRef -> m Word64
+getMarker :: ASTOp g m => NodeRef -> m Word64
 getMarker marker = do
     IR.matchExpr marker $ \case
         IR.Marker index -> return index

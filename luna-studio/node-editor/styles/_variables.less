@@ -22,7 +22,7 @@
 @luna-zindex-monads:                      @lvl-1 + 2;
 @luna-zindex-visualization-inactive:      @lvl-1 + 3;
 @luna-zindex-visualization-hover:         @lvl-1 + 4;
-@luna-zindex-visualization-selected-node: @lvl-1 + 1;
+@luna-zindex-visualization-selected-node: @lvl-1 + 5;
 
 @lvl-2:                                   10;
 
@@ -34,10 +34,11 @@
 @luna-zindex-new-connection:              @lvl-3 + 1;
 @luna-zindex-canvas:                      @lvl-3 + 2;
 @luna-zindex-sidebars:                    @lvl-3 + 3;
-@luna-zindex-breadcrumbs:                 @lvl-3 + 4;
-@luna-zindex-visualization-active:        @lvl-3 + 2;
-@luna-zindex-searcher:                    @lvl-3 + 5;
-@luna-zindex-visualization-fullscreen:    @lvl-3 + 6;
+@luna-zindex-parser-error:                @lvl-3 + 4;
+@luna-zindex-breadcrumbs:                 @lvl-3 + 5;
+@luna-zindex-visualization-active:        @lvl-3 + 6;
+@luna-zindex-searcher:                    @lvl-3 + 7;
+@luna-zindex-visualization-fullscreen:    @lvl-3 + 8;
 
 
 /////////////////////////////
@@ -57,7 +58,7 @@
 /////////////////////////////
 
 @luna-syntax-background-color:   @syntax-background-color;
-@luna-graph-background-color:    darken(@luna-syntax-background-color,0%); //#181b1f;
+@luna-graph-background-color:    #070706; //darken(@luna-syntax-background-color,0%); //#181b1f;
 
 @luna-syntax-text-color:         @syntax-text-color;
 @luna-text-color:                @syntax-text-color;
@@ -87,6 +88,8 @@
 
 @colorSearcherResultsBackground: @luna-syntax-background-color;
 @colorSearcherResultsSelected:   #3a414a;
+
+@luna-error-background:          #7a2525; //#511;
 
 // node
 

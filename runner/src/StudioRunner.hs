@@ -7,6 +7,8 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE PackageImports        #-}
+{-# LANGUAGE FlexibleContexts      #-}
 
 module Main where
 
@@ -21,8 +23,8 @@ import           Data.List.Split
 import qualified Data.List                     as List
 import           Data.Maybe                    (fromMaybe, maybeToList)
 import           Data.Semigroup                ((<>))
-import qualified Data.Set                      as Set
-import           Data.Set                      (Set)
+import qualified "containers"  Data.Set        as Set
+import           "containers"  Data.Set        (Set)
 import qualified Data.Text                     as T
 import           Filesystem.Path
 import           Filesystem.Path.CurrentOS     (decodeString, encodeString, fromText)
@@ -264,8 +266,10 @@ runFrontend args = do
     setEnv "ATOM_HOME"             =<< packageStudioAtomHome
     setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory True
     setEnv "LUNA_TMP"              =<< lunaTmpPath
-    setEnv "LUNA_PROJECTS"          =<< lunaProjectsPath
+    setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
     setEnv "LUNA_TUTORIALS"        =<< lunaTutorialsPath
+    setEnv "LUNA_USER_INFO"        =<< userInfoPath
+    setEnv "LUNA_VERSION_PATH"     =<< versionFilePath
     unixOnly $ Shelly.shelly $ Shelly.run_ atom $ "-w" : maybeToList args
 
 runBackend :: MonadRun m => Bool -> m ()
@@ -282,6 +286,7 @@ runPackage develop forceRun = case currentHost of
         atom <- atomAppPath
         checkLunaHome
         setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory develop
+        setEnv "LUNA_STUDIO_LOG_PATH"  =<< logsDir              develop
         setEnv "ATOM_HOME"             =<< userStudioAtomHome
         setEnv "LUNA_TMP"              =<< lunaTmpPath
         setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
@@ -318,12 +323,6 @@ runApp develop forceRun atom = do
     liftIO $ Environment.setEnv "LUNA_STUDIO_ATOM_ARG" (fromMaybe " " atom)
     runPackage develop forceRun
 
-deleteXDGDir :: IO ()
-deleteXDGDir = do
-    directory <- getXdgDirectory XdgConfig "./LunaStudio"
-    doesExist <- doesDirectoryExist directory
-    when doesExist $ liftIO $ removeDirectoryRecursive directory
-
 data Options = Options
     { frontend :: Bool
     , backend  :: Bool
@@ -341,7 +340,6 @@ optionParser = Options
 
 run :: MonadIO m => Options -> m ()
 run (Options frontend backend develop forceRun atom) = evalDefHostConfigs @'[RunnerConfig] $ do
-    liftIO $ deleteXDGDir
     if  frontend
     then runFrontend $ T.pack <$> atom
     else if backend

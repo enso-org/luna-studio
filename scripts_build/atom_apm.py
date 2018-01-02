@@ -17,6 +17,7 @@ import system as system
 from common import working_directory
 import stack_build
 import atom_prepare
+import re, tempfile
 
 #########################################################
 #                     PATHS                             #
@@ -31,12 +32,13 @@ packages_path = atom_home_path + '/packages/'
 dist_package_folder = ap.prep_path('../dist-package')
 gui_package_path = ap.prep_path('../dist-package/gui.zip')
 studio_folder = ap.prep_path('../luna-studio/atom')
+version_file =ap.prep_path('../dist/config/version.txt')
 
 paths = {
     system.systems.WINDOWS: {
         'apm': '/Atom/resources/app/apm/bin/apm.cmd',
         'oniguruma': '/Atom/resources/app/node_modules/oniguruma',
-        'package_json': '', #check it!
+        'package_json': '/Atom/resources/app/package.json',
     },
     system.systems.LINUX: {
         'apm': '/atom/usr/share/atom/resources/app/apm/bin/apm',
@@ -49,6 +51,7 @@ paths = {
         'package_json': '/Atom.app/Contents/Resources/app/package.json',
     },
 }
+
 
 def get_path(name):
     try:
@@ -183,10 +186,41 @@ def apm_packages():
                     apm_package(pkg_name, pkg_ver)
 
 
-def modify_atom_package_json():
-    json = get_path('package_json')
-    run_process('sed', '-i', 's/"name":"atom"/"name":"LunaStudio"/g ; s/"productName":"Atom"/"productName":"LunaStudio"/g',json)
+def sed_inplace(filename, pattern, repl):
+    pattern_compiled = re.compile(pattern)
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+        with open(filename, 'rb') as src_file:
+            data = src_file.read()
+            line = None
+            try:
+                line = data.decode('utf8')
+            except UnicodeDecodeError:
+                try:
+                    line = data.decode('cp1252')
+                except:
+                    raise Exception("Unable to decode the package.json file.")
 
+            if line is None:
+                raise Exception("Unable to decode the package.json file.")
+
+            tmp_file.write(pattern_compiled.sub(repl, line))
+    shutil.copystat(filename, tmp_file.name)
+    shutil.move(tmp_file.name, filename)
+
+
+def check_version():
+    try:
+        with open(version_file, 'r') as version_content:
+            return version_content.readline()
+    except FileNotFoundError:
+        return ""
+
+
+def modify_atom_package_json():
+    v = check_version()
+    json = get_path('package_json')
+    sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format("luna-studio" + v))
+    sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
 
 def run(gui_url, frontend_args, link=False):

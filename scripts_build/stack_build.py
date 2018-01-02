@@ -31,7 +31,6 @@ def build_runner(runner_args):
         if system.windows():
             subprocess.check_output(['stack', 'build'])
             os.system('stack exec ghc -- ' + runnerPath + ' ' + hostPath + ' ' + resPath)
-            return
 
         subprocess.check_output(['stack', 'build'] + runner_args)
     mv_runner(runner_dir)
@@ -44,7 +43,7 @@ def mv_runner(runner):
     if system.windows():
         runner_src = runner + '/src/' + '/StudioRunner.exe'
         runner_dst = ap.prep_path('../dist/bin/public/luna-studio/luna-studio.exe')
-        os.rename(runner_src, runner_dst)
+        os.replace(runner_src, runner_dst)
 
 
 def link_main_bin ():

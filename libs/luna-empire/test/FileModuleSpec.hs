@@ -10,6 +10,7 @@ import           Data.List                       (find)
 import qualified Data.Map                        as Map
 import qualified Data.Set                        as Set
 import qualified Data.Text                       as Text
+import qualified Data.Text.IO                    as Text
 import           Empire.ASTOp                    (runASTOp)
 import           Empire.ASTOps.Parse             (SomeParserException)
 import qualified Empire.Commands.AST             as AST
@@ -455,7 +456,7 @@ spec = around withChannels $ parallel $ do
                 Graph.loadCode loc multiFunCode
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 Graph.withUnit loc $ runASTOp $ forM funIds $ Code.functionBlockStart
-            sort offsets `shouldBe` [0, 27, 61]
+            sort offsets `shouldBe` [0, 30, 64]
         it "shows proper function offsets with imports" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -463,7 +464,7 @@ spec = around withChannels $ parallel $ do
                 Graph.loadCode loc codeWithImport
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 Graph.withUnit loc $ runASTOp $ forM funIds $ Code.functionBlockStart
-            sort offsets `shouldBe` [12, 31, 54]
+            sort offsets `shouldBe` [12, 34, 60]
         it "adds node in a function with at least two nodes" $
             let initialCode = [r|
                     def foo:
@@ -546,16 +547,16 @@ spec = around withChannels $ parallel $ do
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
                 ## Docs
-                def foo:
-                    «4»number1 = 5
-                    «1»5
+                «1»def foo:
+                    «6»number1 = 5
+                    «3»5
                 ## Docs
                 «0»def bar:
-                    «5»number1 = 1
-                    «2»"bar"
+                    «7»number1 = 1
+                    «4»"bar"
                 ## Docs
-                def main:
-                    «3»print bar
+                «2»def main:
+                    «5»print bar
                 |]
         it "connects anonymous node" $ \env -> do
             let code = Text.pack $ normalizeQQ [r|
@@ -581,14 +582,14 @@ spec = around withChannels $ parallel $ do
                 Graph.connect (loc |>= foo) (outPortRef five []) (InPortRef' $ inPortRef n1 [Port.Arg 0])
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                def foo:
-                    «0»n1 = number1 * 5
-                    «1»number1 = 5
+                «0»def foo:
+                    «3»n1 = number1 * 5
+                    «4»number1 = 5
                     number1
-                def bar:
-                    «2»"bar"
-                def main:
-                    «3»print bar
+                «1»def bar:
+                    «5»"bar"
+                «2»def main:
+                    «6»print bar
                 |]
         it "adds node after connecting to output" $ \env -> do
             code <- evalEmp env $ do
@@ -606,19 +607,19 @@ spec = around withChannels $ parallel $ do
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
                     ## Docs
-                    def foo:
-                        «1»5
+                    «1»def foo:
+                        «3»5
 
                     ## Docs
                     «0»def bar:
-                        «5»number2 = 1
-                        «2»text1 = "bar"
-                        «4»number1 = 5
+                        «7»number2 = 1
+                        «4»text1 = "bar"
+                        «6»number1 = 5
                         number1
 
                     ## Docs
-                    def main:
-                        «3»print bar
+                    «2»def main:
+                        «5»print bar
                 |]
         it "updates block end after connecting to output" $ \env -> do
             (blockEnd, code) <- evalEmp env $ do
@@ -636,20 +637,20 @@ spec = around withChannels $ parallel $ do
                 return (blockEnd, code)
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
                     ## Docs
-                    def foo:
-                        «1»5
+                    «1»def foo:
+                        «3»5
 
                     ## Docs
                     «0»def bar:
-                        «2»text1 = "bar"
-                        «4»number1 = 5
+                        «4»text1 = "bar"
+                        «6»number1 = 5
                         number1
 
                     ## Docs
-                    def main:
-                        «3»print bar
+                    «2»def main:
+                        «5»print bar
                 |]
-            blockEnd `shouldBe` 98
+            blockEnd `shouldBe` 101
         it "maintains proper block start info after adding node" $ \env -> do
             (starts, code) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -677,7 +678,7 @@ spec = around withChannels $ parallel $ do
                 def main:
                     print bar
                 |]
-            starts `shouldMatchList` [0, 46, 80]
+            starts `shouldMatchList` [0, 49, 83]
         it "maintains proper function file offsets after adding node" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -692,7 +693,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",8), ("bar",57), ("main",88)]
+            offsets `shouldMatchList` [("foo",11), ("bar",60), ("main",94)]
         it "maintains proper function file offsets after adding a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -707,7 +708,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",8), ("bar",38), ("aaa",61), ("main",88)]
+            offsets `shouldMatchList` [("foo",11), ("bar",41), ("aaa",67), ("main",97)]
         it "maintains proper function file offsets after removing a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -721,7 +722,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",8), ("main",35)]
+            offsets `shouldMatchList` [("foo",11), ("main",41)]
         it "maintains proper function file offsets after renaming a function" $ \env -> do
             u1 <- mkUUID
             offsets <- evalEmp env $ do
@@ -736,7 +737,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo", 8), ("qwerty", 38), ("main", 72)]
+            offsets `shouldMatchList` [("foo", 11), ("qwerty", 41), ("main", 78)]
         it "adds the first function in a file" $ \env -> do
             u1 <- mkUUID
             (nodes, code) <- evalEmp env $ do

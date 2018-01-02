@@ -285,6 +285,7 @@ module.exports =
 
         detach: =>
             if @panel.isVisible()
+                @nodeEditor.setEventFilter []
                 @panel.hide()
 
         disable: =>

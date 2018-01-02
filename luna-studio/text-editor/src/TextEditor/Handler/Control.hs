@@ -11,13 +11,13 @@ import           TextEditor.Action.Batch            (interpreterPause, interpret
 import           TextEditor.Event.Batch             (BatchEvent (InterpreterResponse, InterpreterUpdate))
 import           TextEditor.Event.Event             (Event (Atom, Batch))
 import           TextEditor.Event.Internal          (InternalEvent (InterpreterPause, InterpreterReload, InterpreterStart))
-import           TextEditor.Handler.Backend.Common  (doNothing, handleResponse)
+import           TextEditor.Handler.Backend.Common  (doNothing2, handleResponse)
 import           TextEditor.State.Global            (State)
 
 
 handle :: Event -> Maybe (Command State ())
 handle (Batch (InterpreterUpdate (Interpreter.Update update))) = Just $ pushInterpreterUpdate "Update" $ Just update
-handle (Batch (InterpreterResponse response)) = Just $ handleResponse response success doNothing where
+handle (Batch (InterpreterResponse response)) = Just $ handleResponse response success doNothing2 where
     success _ = pushInterpreterUpdate (head $ words $ show $ response ^. Response.request) Nothing
 handle (Atom InterpreterStart ) = Just $ interpreterStart
 handle (Atom InterpreterPause ) = Just $ interpreterPause

@@ -27,12 +27,14 @@ import           Empire.Data.AST                   (NodeRef, astExceptionFromExc
 import           Empire.Data.BreadcrumbHierarchy   (navigateTo, replaceAt)
 import qualified Empire.Data.BreadcrumbHierarchy   as BH
 import qualified Empire.Data.Graph                 as Graph
-import           Empire.Data.Layers                (SpanLength)
+import           Empire.Data.Layers                (Marker, SpanLength)
 import qualified Empire.Data.Library               as Library
 
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (..))
 import           LunaStudio.Data.Library         (LibraryId)
+import           LunaStudio.Data.NodeLoc         (NodeLoc(..))
 import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.PortRef         (OutPortRef(..))
 import           LunaStudio.Data.Project         (ProjectId)
 import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
 import           Data.Text.Span                  (LeftSpacedSpan(..), SpacedSpan(..))
@@ -64,13 +66,16 @@ makeGraphCls :: NodeRef -> Maybe NodeId -> Command Graph.ClsGraph (NodeId, Graph
 makeGraphCls fun lastUUID = do
     pmState   <- liftIO Graph.defaultPMState
     nodeCache <- use Graph.clsNodeCache
-    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ ASTRead.cutThroughDocAndMarked fun >>= \f -> IR.matchExpr f $ \case
-        IR.ASGRootedFunction n root -> do
-            offset <- functionBlockStartRef f
-            name   <- ASTRead.getVarName' =<< IR.source n
-            return (nameToString name, root, offset)
+    uuid      <- maybe (liftIO UUID.nextRandom) return lastUUID
+    (funName, IR.Rooted ir ref, fileOffset) <- runASTOp $ do
+        IR.putLayer @Marker fun $ Just $ OutPortRef (NodeLoc def uuid) []
+        asgFun    <- ASTRead.cutThroughDocAndMarked fun
+        IR.matchExpr asgFun $ \case
+            IR.ASGRootedFunction n root -> do
+                offset <- functionBlockStartRef asgFun
+                name   <- ASTRead.getVarName' =<< IR.source n
+                return (nameToString name, root, offset)
     let ast   = Graph.AST ir pmState
-    uuid <- maybe (liftIO UUID.nextRandom) return lastUUID
     let oldPortMapping = nodeCache ^. Graph.portMappingMap . at (uuid, Nothing)
     portMapping <- fromJustM (liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom) oldPortMapping
     globalMarkers <- use Graph.clsCodeMarkers

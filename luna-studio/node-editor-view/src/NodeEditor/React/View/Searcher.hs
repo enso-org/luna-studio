@@ -53,6 +53,16 @@ searcher =  React.defineView name $ \(ref, s, visLibPath) -> do
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ do
         let inputClasses = Style.prefixFromList $ "searcher__input" : (if s ^. Searcher.selected == 0 then ["searcher__input--selected"] else [])
+            selected     = s ^. Searcher.selected
+
+        -- TODO [LJK, PM]: Refactor this piece of code:
+        case s ^. Searcher.mode of
+            Searcher.Command    results -> do results_ ref selected results
+            Searcher.Node _ nmi results -> do results_ ref selected results
+                                              withJust (s ^. Searcher.docVis) $ docVisualization_ ref docPresent visLibPath
+            Searcher.NodeName _ results -> do results_ ref selected results
+            Searcher.PortName _ results -> do results_ ref selected results
+
         input_ (
             [ "key"         $= "searchInput"
             , "className"   $= inputClasses
@@ -64,19 +74,6 @@ searcher =  React.defineView name $ \(ref, s, visLibPath) -> do
                                         se  = target e "selectionEnd"
                                     in dispatch ref $ UI.SearcherEvent $ InputChanged val ss se
             ] <> mayCustomInput )
-        div_
-            [ "key"       $= "searcherResults"
-            , "className" $= Style.prefix "searcher__results"
-            ] $ do
-            -- TODO [LJK, PM]: Refactor this piece of code:
-            let selected = s ^. Searcher.selected
-            case s ^. Searcher.mode of
-                Searcher.Command    results -> do results_   ref selected results
-                Searcher.Node _ nmi results -> do results_   ref selected results
-                                                  withJust (s ^. Searcher.docVis) $ docVisualization_ ref docPresent visLibPath
-                Searcher.NodeName _ results -> do results_   ref selected results
-                Searcher.PortName _ results -> do results_   ref selected results
-
 
     -- div_
         --     [ "key"       $= "searcherPreview"
@@ -88,11 +85,15 @@ searcher_ :: IsRef ref => ref -> Searcher -> FilePath -> ReactElementM ViewEvent
 searcher_ ref model visLibPath = React.viewWithSKey searcher name (ref, model, visLibPath) mempty
 
 results_ :: IsRef ref => ref -> Int -> [Match] -> ReactElementM ViewEventHandler ()
-results_ ref selected results =
+results_ ref selected results = if results == [] then return () else
     div_
-        [ "key"       $= "searcherResultsList"
-        , "className" $= Style.prefix "searcher__results__list"
-        ] $ forKeyed_ (drop (selected - 1) results) $ \(idx, result) -> do
+        [ "key"       $= "searcherResults"
+        , "className" $= Style.prefix "searcher__results"
+        ] $ do
+        div_
+            [ "key"       $= "searcherResultsList"
+            , "className" $= Style.prefix "searcher__results__list"
+            ] $ forKeyed_ (drop (selected - 1) results) $ \(idx, result) -> do
             let resultClasses i = Style.prefixFromList $ "searcher__results__item" : (if selected > 0 && i == 0 then [ "searcher__results__item--selected" ] else [])
             div_
                 [ "key"       $= jsShow idx

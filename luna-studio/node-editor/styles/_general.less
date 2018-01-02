@@ -38,21 +38,55 @@ atom-workspace .luna-studio {
     font-variant-ligatures: contextual;
 }
 
+.tab-bar .tab .title { z-index: 1 } // uncover Luna tab simblings
+ 
 [data-type="LunaNodeEditorTab"] {
-    // TODO: reconsidering default color scheme for graph background
-    // &.active {
-    //     background: @luna-graph-background-color !important;
-    //     height:     auto !important;
-    //     .title {
-    //         background: none !important;
-    //         border:     0 !important;
-    //     }
-    // }
+    &.active {
+        background: @luna-graph-background-color !important;
+        height:     auto !important;
+        z-index:    0;
+        .title {
+            background: none !important;
+            border:     0 !important;
+            z-index:    2;
+        }
+        &::after {
+            content: " ";
+            display: block;
+            background: @luna-graph-background-color !important;
+            width: 5000px;
+            position: absolute;
+            height: 100px;
+        }
+    }
     .close-icon {
         display: none;
     }
 }
-
+.pane.active {
+    [data-type="LunaNodeEditorTab"] {
+        &.active {
+            background: @luna-graph-background-color !important;
+            height:     auto !important;
+            .title {
+                background: none !important;
+                border:     0 !important;
+            }
+            &::after {
+                content: " ";
+                display: block;
+                background: @luna-graph-background-color !important;
+                width: 5000px;
+                position: absolute;
+                height: 100px;
+                z-index: -1;
+            }
+        }
+        .close-icon {
+            display: none;
+        }
+    }
+}
 
 /////////////////////////////
 //       basic styles      //
@@ -182,4 +216,44 @@ atom-workspace .luna-studio {
 
 .luna-plane--selected-node {
     z-index: @luna-zindex-visualization-selected-node;
+}
+
+
+// parser error
+
+.luna-graph-container {
+    width: 100%;
+    height: 100%;
+}
+.luna-graph-error {
+    background: fade(@luna-graph-background-color,50%);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: @luna-zindex-parser-error;
+}
+.luna-graph-error__message {
+    border-radius: unit(@luna-border-radius,px);
+    width:         unit(@luna-grid-size,px) * 28;
+    padding:       unit(@luna-grid-size,px);
+    background:    @luna-error-background;
+    align-self:    flex-end;
+    margin-bottom: unit(@luna-border-radius,px);
+    max-width:     calc(100% ~'-' 2 * unit(@luna-grid-size,px));
+    overflow:      hidden;
+    word-break:    break-word;    
+}
+atom-notifications atom-notification.error, 
+atom-notifications atom-notification.fatal, 
+atom-notifications atom-notification.warning, 
+atom-notifications atom-notification.info, 
+atom-notifications atom-notification.success {
+    &::before,
+    .content { 
+        border-color: @luna-graph-background-color !important;
+    }
 }

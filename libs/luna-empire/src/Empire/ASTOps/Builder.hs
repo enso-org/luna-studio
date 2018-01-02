@@ -11,6 +11,7 @@ import           Control.Monad                      (foldM, replicateM, zipWithM
 import           Data.Maybe                         (isNothing)
 import qualified Data.Text                          as Text
 import           Empire.Prelude                     hiding (List)
+import qualified Safe
 
 import           LunaStudio.Data.Node               (NodeId)
 import           LunaStudio.Data.PortRef            (OutPortRef (..))
@@ -96,6 +97,9 @@ getArgumentOf fun beg = IR.matchExpr fun $ \case
         off <- Code.getOffsetRelativeToTarget g
         g'  <- IR.source g
         getArgumentOf g' (beg + off)
+    Tuple l -> do
+        off <- Code.getOffsetRelativeToTarget $ last l
+        return (last l, beg + off)
     f -> error $ show f
 
 getOrCreateArgument :: GraphOp m => EdgeRef -> Delta -> Int -> Int -> m (EdgeRef, Delta)
@@ -106,6 +110,10 @@ getOrCreateArgument currentFun codeBegin currentArgument neededArgument
     | otherwise = do
         fun <- IR.source currentFun
         IR.matchExpr fun $ \case
+            Tuple l -> do
+                arg  <- return (Safe.atMay l neededArgument) <?!> TupleElementOutOfBoundsException fun neededArgument
+                foff <- Code.getOffsetRelativeToTarget arg
+                return (arg, codeBegin + foff)
             Grouped g -> do
                 foff <- Code.getOffsetRelativeToTarget g
                 getOrCreateArgument g (codeBegin + foff) currentArgument neededArgument
@@ -126,11 +134,20 @@ getOrCreateArgument currentFun codeBegin currentArgument neededArgument
                 IR.replace ap fun
                 getOrCreateArgument currentFun codeBegin currentArgument neededArgument
 
+data TupleElementOutOfBoundsException = TupleElementOutOfBoundsException NodeRef Int
+    deriving Show
+
+instance Exception TupleElementOutOfBoundsException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
 padArgs :: GraphOp m => EdgeRef -> Delta -> Delta -> Int -> m ()
 padArgs e beg argOffset i | i <= 0    = return ()
                           | otherwise = do
     bl     <- IR.blank
     fun    <- IR.source e
+    funIsTuple <- ASTRead.isTuple fun
+    when funIsTuple $ throwM $ TupleElementOutOfBoundsException fun i
     ap     <- IR.generalize <$> IR.app fun bl
     [f, a] <- IR.inputs ap
     isOp   <- Code.isOperatorVar fun

@@ -63,18 +63,21 @@ def build_runner(runner_args):
 def main ():
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", help="Build backend only", action="store_true")
+    parser.add_argument("--runner", help="Build runner only", action="store_true")
     parser.add_argument("--frontend", help="Build frontend only", action="store_true")
-    parser.add_argument("--release", help="Build package in release mode", action="store_true")
+    parser.add_argument("--release", help="Build package in release mode", action="store_false")
     parser.add_argument("--gui_url", help="Path to uploaded gui")
-    parser.add_argument("--backend-stack", help="Additional options passed to stack while building backend", action="append", dest="stack_backend_args", default=['--copy-bins', '--install-ghc'])
+    parser.add_argument("--backend-stack", help="Additional options passed to stack while building backend", action="append", dest="stack_backend_args", default=['--copy-bins', '--install-ghc', '--ghc-options=-fexternal-interpreter'])
     parser.add_argument("--frontend-stack", help="Additional options passed to stack while building frontend", action="append", dest="stack_frontend_args", default=['--install-ghc'])
     parser.add_argument("--runner-stack", help="Additional options passed to stack while building runner", action="append", dest="stack_runner_args", default=['--copy-bins', '--install-ghc'])
     args = parser.parse_args()
 
     if args.backend:
         build_backend (args.stack_backend_args)
+    elif args.runner:
+        build_runner (args.stack_runner_args)
     elif args.frontend:
-        build_frontend (args.stack_frontend_args, args.gui_url, dev_mode=(not args.release)) # FIXME: "not ..." is not a proper way to handle this flag
-    else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, args.gui_url, not args.release)
+        build_frontend (args.stack_frontend_args, args.gui_url, dev_mode=args.release)
+    else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, args.gui_url, dev_mode=args.release)
 
 main()
