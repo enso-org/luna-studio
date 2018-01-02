@@ -1179,7 +1179,7 @@ getNodePositions loc nids
         forM (Map.assocs clsFuns) $ \(id, fun) -> do
             case find (\n -> convert n == id) nids of
                 Just nl -> do
-                    f    <- ASTRead.getFunByName $ fun ^. Graph.funName
+                    f    <- ASTRead.getFunByNodeId id
                     meta <- (fmap $ view NodeMeta.position) <$> AST.readMeta f
                     return $ (nl,) <$> meta
                 _       -> return Nothing

@@ -179,7 +179,7 @@ buildNodesForAutolayoutCls = do
 buildNodeForAutolayoutCls :: ClassOp m => NodeId -> m (NodeId, Int, Position)
 buildNodeForAutolayoutCls nid = do
     name    <- use $ Graph.clsFuns . ix nid . Graph.funName
-    marked  <- ASTRead.getFunByName name
+    marked  <- ASTRead.getFunByNodeId nid
     codePos <- Code.functionBlockStartRef marked
     meta    <- fromMaybe def <$> AST.readMeta marked
     pure (nid, fromIntegral codePos, meta ^. NodeMeta.position)
