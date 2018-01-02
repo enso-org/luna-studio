@@ -1206,6 +1206,28 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
                 Graph.collapseToFunction loc [baz, spam]
+        it "handles collapsing all nodes into a function" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = "AAA"
+                    «1»baz = "BBB"
+                    «2»spam = eggs foo baz
+                    None
+                |]
+            expectedCode = [r|
+                def func1:
+                    foo = "AAA"
+                    baz = "BBB"
+                    spam = eggs foo baz
+                    spam
+
+                def main:
+                    spam = func1
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [0, 1, 2]
+                Graph.collapseToFunction loc $ map fromJust nodes
         it "handles collapsing anonymous nodes into functions" $ let
             initialCode = [r|
                 def main:
