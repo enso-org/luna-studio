@@ -33,6 +33,7 @@ import qualified LunaStudio.API.Graph.RenameNode             as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort             as RenamePort
 import qualified LunaStudio.API.Graph.Result                 as Result
 import qualified LunaStudio.API.Graph.SearchNodes            as SearchNodes
+import qualified LunaStudio.API.Graph.SetCode                as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression      as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta           as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault         as SetPortDefault
@@ -307,6 +308,11 @@ handle (Event.Batch ev) = Just $ case ev of
 
     SearchNodesResponse response -> handleResponse response success doNothing2 where
         success = localAddSearcherHints . view SearchNodes.searcherHints
+
+    SetCodeResponse response -> handleResponse response success doNothing2 where
+        request         = response ^. Response.request
+        location        = request  ^. SetCode.location
+        success         = applyResult location
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId

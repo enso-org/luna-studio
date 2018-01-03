@@ -42,24 +42,14 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 
 }
 
-.luna-welcome-background {
-	background:      rgba(0,0,0,0);
-	position:        fixed !important;
-	top:             0;
-	left:            0;
-	right:           0;
-	bottom:          0;
-	display:         flex;
-	justify-content: center;
-}
-
 .luna-welcome-scroll {
 	position:   fixed !important;
 	top:        0;
 	bottom:     0;
+	left:       0;
 	overflow-y: scroll;
 	overflow-x: hidden;
-	width:      @width;
+	width:      100%;
 	.hide-scrollbar;
 }
 
@@ -67,7 +57,7 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 	font-weight:   300;
 	border-radius: @border-radius;
 	padding:       @padding @padding 0;
-	margin:        @padding 0;
+	margin:        @padding auto;
 	background:    @background;
 	width:         @width - 2*@padding;
 	position:      relative;

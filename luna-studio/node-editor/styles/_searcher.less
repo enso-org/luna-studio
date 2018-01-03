@@ -9,6 +9,21 @@
 
 @searcherWidth:      400px;
 
+.luna-studio-window--has-searcher {
+    .luna-studio-window__center {
+        z-index: @luna-zindex-searcher;
+    }
+}
+
+.luna-port-sidebar {
+    @p: 10px; //calc(@ui ~'*' unit(@luna-grid-size, px) / 1.6);
+    .luna-searcher__input {
+        padding:  0 @p; 
+        position: relative;
+        left:    -@p;
+    }
+}
+
 .luna-node__name,
 .luna-node__expression {
     min-height: calc(@ui ~'*' @luna-line-height);
@@ -83,7 +98,7 @@
     bottom:         calc(@ui ~'*' 28px);
     position:       absolute;
     left:           calc(@ui ~'*' (-@searcherWidth/2));
-    width:          calc(@ui ~'*' @searcherWidth * 1.5 + 2px);
+    width:          calc(@ui ~'*' @searcherWidth + 2px);
     border:         calc(@ui ~'*' @luna-connection-width * 1px) solid transparent; //TODO: add this border to children instead (with proper color)
     transform:      translateX(@luna-connection-width * -1px);
     height:         calc(@ui ~'*' @luna-superline-height * 10px);
@@ -108,12 +123,13 @@
         @y: calc(@ui ~'*' @luna-superline-height * 10px);
         .background(@a);
         font-size:     calc(@ui ~'*' 10px);
-        border-radius: @luna-searcher-border-radius * 1px;
+        border-radius: unit(@luna-searcher-border-radius, px) 
+                       unit(@luna-searcher-border-radius, px) 
+                       unit(@luna-searcher-border-radius, px) 0;
         box-sizing:    border-box;
-        //padding:       calc(@ui ~'*' 4px) calc(@ui ~'*' 8px);
         position:      absolute;
-        bottom:        0;
-        left:          calc(@ui ~'*' @searcherWidth + 2px);
+        bottom:        30px;
+        left:          calc(@ui ~'*' @searcherWidth/2 + 2px);
         height:        @y;
         width:         calc(@ui ~'*' @searcherWidth/2);
         white-space:   normal;

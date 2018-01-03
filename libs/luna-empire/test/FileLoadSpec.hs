@@ -16,8 +16,10 @@ import           Control.Monad                   (forM)
 import           Control.Monad.Loops             (unfoldM)
 import           Control.Monad.Reader            (ask)
 import           Data.Coerce
-import           Data.List                       (find, maximum)
+import           Data.Char                       (isSpace)
+import           Data.List                       (dropWhileEnd, find, minimum, maximum)
 import qualified Data.Map                        as Map
+import           Data.Maybe                      (fromJust)
 import           Data.Reflection                 (Given (..), give)
 import qualified Data.Set                        as Set
 import qualified Data.Text                       as Text
@@ -37,7 +39,7 @@ import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Typecheck       as Typecheck (Scope(..), createStdlib, run)
 import           Empire.Data.AST                 (SomeASTException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy, code, codeMarkers)
+import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy, code, codeMarkers, nodeCache)
 import qualified Empire.Data.Library             as Library (body)
 import           Empire.Empire                   (CommunicationEnv (..), InterpreterEnv(..), Empire, modules)
 import qualified Language.Haskell.TH             as TH
@@ -68,8 +70,7 @@ import           System.Directory                (canonicalizePath, getCurrentDi
 import           System.Environment              (lookupEnv, setEnv)
 import           System.FilePath                 ((</>), takeDirectory)
 
-import           Empire.Prelude                  hiding (maximum)
-import           Luna.Prelude                    (normalizeQQ)
+import           Empire.Prelude                  hiding (fromJust, minimum, maximum)
 
 import           Test.Hspec                      (Expectation, Selector, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
                                                   shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
@@ -118,6 +119,11 @@ testLuna' = [r|def main:
 |]
 
 atXPos = ($ def) . (NodeMeta.position . Position.x .~)
+
+normalizeQQ :: String -> String
+normalizeQQ str = dropWhileEnd isSpace $ intercalate "\n" $ fmap (drop minWs) allLines where
+    allLines = dropWhile null $ dropWhileEnd isSpace <$> lines str
+    minWs    = minimum $ length . takeWhile isSpace <$> (filter (not.null) allLines)
 
 specifyCodeChange :: Text -> Text -> (GraphLocation -> Empire a) -> CommunicationEnv -> Expectation
 specifyCodeChange initialCode expectedCode act env = do
@@ -1183,16 +1189,163 @@ spec = around withChannels $ parallel $ do
                     «1»baz = buzz foo
                     «2»spam = eggs baz
                     «3»a = baz + 1
+                    None
                 |]
             expectedCode = [r|
+                def func1 foo:
+                    baz = buzz foo
+                    spam = eggs baz
+                    baz
+
                 def main:
                     foo = bar
-                    def func1 foo:
-                        baz = buzz foo
-                        spam = eggs baz
-                        baz
                     baz = func1 foo
                     a = baz + 1
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
+                Graph.collapseToFunction loc [baz, spam]
+        it "handles collapsing all nodes into a function" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = "AAA"
+                    «1»baz = "BBB"
+                    «2»spam = eggs foo baz
+                    None
+                |]
+            expectedCode = [r|
+                def func1:
+                    foo = "AAA"
+                    baz = "BBB"
+                    spam = eggs foo baz
+                    spam
+
+                def main:
+                    spam = func1
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [0, 1, 2]
+                Graph.collapseToFunction loc $ map fromJust nodes
+        it "handles collapsing anonymous nodes into functions" $ let
+            initialCode = [r|
+                def main:
+                    «0»5
+                |]
+            expectedCode = [r|
+                def func1:
+                    5
+
+                def main:
+                    func1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Just five <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.collapseToFunction loc [five]
+        it "handles collapsing nodes with pattern matching into functions" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = bar
+                    «1»(a, b) = (1, 2)
+                    «2»baz = a + b
+                    «3»c = baz + 1
+                |]
+            expectedCode = [r|
+                def func1:
+                    (a, b) = (1, 2)
+                    baz = a + b
+                    baz
+
+                def main:
+                    foo = bar
+                    baz = func1
+                    c = baz + 1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.getNodes loc
+                let Just ab  = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "(a, b)") nodes
+                    Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
+                Graph.collapseToFunction loc [ab, baz]
+        it "handles collapsing nodes to proper position" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = bar
+                    «1»(a, b) = (1, 2)
+                    «2»baz = a + b
+                    «3»c = baz + 1
+                |]
+            expectedCode = [r|
+                def func1:
+                    (a, b) = (1, 2)
+                    baz = a + b
+                    baz
+
+                def main:
+                    foo = bar
+                    baz = func1
+                    c = baz + 1
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.getNodes loc
+                let Just ab  = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "(a, b)") nodes
+                    Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
+                Just bazMeta <- Graph.getNodeMeta loc baz
+                Graph.collapseToFunction loc [ab, baz]
+                nodes <- Graph.getNodes loc
+                let Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
+                Just newBazMeta <- Graph.getNodeMeta loc baz
+                liftIO $ newBazMeta ^. NodeMeta.position `shouldBe` bazMeta ^. NodeMeta.position
+        it "handles collapsing nodes into functions two times" $ let
+            initialCode = [r|
+                def main:
+                    None
+                |]
+            expectedCode = [r|
+                def func1:
+                    (a, b) = (1, 2)
+                    sum1 = a + 1
+                    sum1
+
+                def func2:
+                    c = 4
+                    sum2 = c + 2
+                    sum2
+
+                def main:
+                    sum1 = func1
+                    sum2 = func2
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                u1 <- mkUUID
+                u2 <- mkUUID
+                Graph.addNode loc u1 "(a, b) = (1, 2)" def
+                Graph.addNode loc u2 "a + 1" def
+                u3 <- mkUUID
+                u4 <- mkUUID
+                Graph.addNode loc u3 "c = 4" def
+                Graph.addNode loc u4 "c + 2" def
+                Graph.collapseToFunction loc [u1, u2]
+                Graph.collapseToFunction loc [u3, u4]
+        it "handles collapsing nodes into functions without use of an argument" $ let
+            initialCode = [r|
+                def main:
+                    «0»foo = bar
+                    «1»baz = buzz foo
+                    «2»spam = eggs baz
+                    «3»a = 3 + 1
+                |]
+            expectedCode = [r|
+                def func1 foo:
+                    baz = buzz foo
+                    spam = eggs baz
+                    spam
+
+                def main:
+                    foo = bar
+                    spam = func1 foo
+                    a = 3 + 1
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just baz, Just spam] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1, 2]
@@ -1210,16 +1363,17 @@ spec = around withChannels $ parallel $ do
                     «10»foo = id result
                 |]
             expectedCode = [r|
+                def func1 crypto fiat:
+                    uri = "https://min-api.cryptocompare.com/data/price?fsym="
+                    withCrypto = uri + crypto
+                    fullUri = withCrypto + "&tsyms=" + fiat
+                    response = Http.getJSON fullUri
+                    result = response . lookupReal fiat
+                    result
+
                 def main:
                     crypto = "BTC"
                     fiat = "USD"
-                    def func1 crypto fiat:
-                        uri = "https://min-api.cryptocompare.com/data/price?fsym="
-                        withCrypto = uri + crypto
-                        fullUri = withCrypto + "&tsyms=" + fiat
-                        response = Http.getJSON fullUri
-                        result = response . lookupReal fiat
-                        result
                     result = func1 crypto fiat
                     foo = id result
                 |]
@@ -1239,16 +1393,17 @@ spec = around withChannels $ parallel $ do
                     «10»foo = id result
                 |]
             expectedCode = [r|
+                def func1 fiat crypto:
+                    uri = "https://min-api.cryptocompare.com/data/price?fsym="
+                    withCrypto = uri + crypto
+                    fullUri = withCrypto + "&tsyms=" + fiat
+                    response = Http.getJSON fullUri
+                    result = response . lookupReal fiat
+                    result
+
                 def main:
                     crypto = "BTC"
                     fiat = "USD"
-                    def func1 fiat crypto:
-                        uri = "https://min-api.cryptocompare.com/data/price?fsym="
-                        withCrypto = uri + crypto
-                        fullUri = withCrypto + "&tsyms=" + fiat
-                        response = Http.getJSON fullUri
-                        result = response . lookupReal fiat
-                        result
                     result = func1 fiat crypto
                     foo = id result
                 |]
@@ -1787,7 +1942,6 @@ spec = around withChannels $ parallel $ do
             expectedCode = [r|
                 def main:
                     "test"
-
                     pi = 3.14
                     foo = a: b: a + b
                     c = 4
@@ -1825,7 +1979,6 @@ spec = around withChannels $ parallel $ do
                     request = Http.get url
                     response = request . perform
                     None
-
                 def main:
                     None
                 |]
@@ -1919,7 +2072,6 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
                 code <- Graph.copyText (GraphLocation file def) [Range 19 189]
                 Graph.pasteText (GraphLocation file def) [Range 19 19] [code]
-                Graph.substituteCode "/TestPath" [(212, 212, "\n")]
                 Graph.getGraph loc
         it "sends update with proper code points after paste" $ \env -> do
             let initialCode = "def main:\n\n    print 3.14\n"
@@ -1956,6 +2108,7 @@ spec = around withChannels $ parallel $ do
                     c = 4
                     c = 4.0
                     bar = foo 8.0 c
+
                     bar = foo 8 c
 
                 def bar:
@@ -2220,7 +2373,7 @@ spec = around withChannels $ parallel $ do
                         setEnv "LUNAROOT" lunaroot
                         (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
                         putMVar imports $ unwrap std
-                        runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True
+                        runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True False
             let updates = env ^. to _updatesChan
             ups <- atomically $ unfoldM (tryReadTChan updates)
             let _ResultUpdate = prism ResultUpdate $ \n -> case n of
@@ -2466,3 +2619,51 @@ def main:
                 Graph.addNode loc u1 "( 1, 2,   3)" def
                 Graph.setPortDefault loc (inPortRef u1 [Port.Arg (-1)]) (Just (PortDefault.Constant (PortDefault.IntValue 0)))
                 ) env `shouldThrow` tupleOOB
+        it "redos collapsing to a function" $ let
+            initialCode = [r|
+                «5»def main:
+                    None
+
+                «6»def bar:
+                    «0»url = "http://example.com"
+                    «1»request = Http.get url
+                    «2»response = request . perform
+                    «3»body1 = response . body
+                    «4»toText1 = body1 . toText
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    None
+
+                def func1 url:
+                    request = Http.get url
+                    response = request . perform
+                    response
+
+                def bar:
+                    url = "http://example.com"
+                    response = func1 url
+                    body1 = response . body
+                    toText1 = body1 . toText
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
+                let top = GraphLocation file def
+                funs <- Graph.getNodes top
+                let Just bar = find (\n -> n ^. Node.name == Just "bar") funs
+                    bar' = GraphLocation file (Breadcrumb [Definition (bar ^. Node.nodeId)])
+                ids <- Graph.withGraph bar' $ runASTOp $ mapM (Graph.getNodeIdForMarker) [1..2]
+                nodes <- Graph.getNodes bar'
+                (undoCode, undoCache) <- (,) <$> Graph.withUnit top (use Graph.code) <*> Graph.prepareNodeCache top
+                Graph.collapseToFunction bar' $ map fromJust ids
+                code <- Graph.getCode top
+                let normalize = Text.pack . normalizeQQ . Text.unpack
+                liftIO $ code `shouldBe` normalize expectedCode
+                Graph.withUnit top $ Graph.nodeCache .= undoCache
+                Graph.loadCode loc undoCode
+                code' <- Graph.withUnit top $ use Graph.code
+                liftIO $ code' `shouldBe` normalize initialCode
+                nodes' <- Graph.getNodes bar'
+                liftIO $ nodes `shouldMatchList` nodes'
+                Graph.collapseToFunction bar' $ map fromJust ids

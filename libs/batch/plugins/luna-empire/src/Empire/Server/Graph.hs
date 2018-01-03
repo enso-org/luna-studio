@@ -42,6 +42,7 @@ import           Empire.Commands.GraphBuilder            (buildClassGraph, build
 import qualified Empire.Commands.GraphUtils              as GraphUtils
 import qualified Empire.Commands.Persistence             as Persistence
 import           Empire.Data.AST                         (SomeASTException, astExceptionFromException, astExceptionToException)
+import qualified Empire.Data.Graph                       as Graph (code, nodeCache)
 import           Empire.Empire                           (Empire)
 import qualified Empire.Empire                           as Empire
 import           Empire.Env                              (Env)
@@ -75,6 +76,7 @@ import qualified LunaStudio.API.Graph.Request            as G
 import qualified LunaStudio.API.Graph.Result             as Result
 import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings
 import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes
+import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
@@ -252,16 +254,17 @@ handleAddSubgraph = modifyGraph defInverse action replyResult where
 handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
 handleAutolayoutNodes = modifyGraph inverse action replyResult where
     inverse (AutolayoutNodes.Request location nodeLocs _) = do
-        let getNlAndPos :: NodeLoc -> Empire (Maybe (NodeLoc, Position))
-            getNlAndPos nl = do
-                mayMeta <- Graph.getNodeMeta location $ convert nl --TODO[PM -> MM] Use NodeLoc instead of NodeId
-                return $ (nl,) . view NodeMeta.position <$> mayMeta
-        AutolayoutNodes.Inverse . catMaybes <$> mapM getNlAndPos nodeLocs
+        positions <- Graph.getNodePositions location nodeLocs
+        return $ AutolayoutNodes.Inverse $ catMaybes positions
     action (AutolayoutNodes.Request location nodeLocs _) = withDefaultResult location $
-        Graph.withGraph location $ runASTOp $ Graph.autolayoutNodes (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
+        Graph.autolayoutNodes location (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
 handleCollapseToFunction :: Request CollapseToFunction.Request -> StateT Env BusT ()
-handleCollapseToFunction = modifyGraph defInverse action replyResult where
+handleCollapseToFunction = modifyGraph inverse action replyResult where
+    inverse (CollapseToFunction.Request location@(GraphLocation file _) _) = do
+        code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
+        cache <- Graph.prepareNodeCache (GraphLocation file def)
+        return $ CollapseToFunction.Inverse code cache
     action (CollapseToFunction.Request location locs) = withDefaultResult location $ do
         let ids = convert <$> locs
         Graph.collapseToFunction location ids
@@ -389,6 +392,17 @@ handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request loca
             Right (result, _) -> do
                 let msg = Response.result origReq () result
                 atomically $ writeTChan toBusChan $ Message.Message (Topic.topic msg) $ Compress.pack $ Bin.encode msg
+
+handleSetCode :: Request SetCode.Request -> StateT Env BusT ()
+handleSetCode = modifyGraph inverse action replyResult where
+    inverse (SetCode.Request location@(GraphLocation file _) _ _) = do
+        cache <- Graph.prepareNodeCache location
+        code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
+        return $ SetCode.Inverse code cache
+    action (SetCode.Request location@(GraphLocation file _) code cache) = withDefaultResultTC location $ do
+        Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
+        Graph.loadCode location code
+        Graph.resendCode location
 
 handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleSetNodeExpression = modifyGraph inverse action replyResult where

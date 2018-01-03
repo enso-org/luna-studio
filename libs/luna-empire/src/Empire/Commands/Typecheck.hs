@@ -166,19 +166,19 @@ getCurrentScope imports file = do
         Just f -> return f
         _      -> recomputeCurrentScope imports file
 
-run :: MVar CompiledModules -> GraphLocation -> Bool -> Command InterpreterEnv ()
-run imports loc@(GraphLocation file br) interpret = do
+run :: MVar CompiledModules -> GraphLocation -> Bool -> Bool -> Command InterpreterEnv ()
+run imports loc@(GraphLocation file br) interpret recompute = do
     cln        <- use cleanUp
     threads    <- use listeners
     listeners .= []
     case br of
         Breadcrumb [] -> do
-            void $ recomputeCurrentScope imports file
             liftIO $ mapM killThread threads
             liftIO cln
+            void $ recomputeCurrentScope imports file
         _             -> do
             std        <- liftIO $ readMVar imports
-            scope      <- getCurrentScope imports file
+            scope      <- (if recompute then recomputeCurrentScope else getCurrentScope) imports file
             let imps = unionImports (flattenScope $ Scope std) scope
             zoom graph $ flip (zoomBreadcrumb' br) (return ()) $ do
                 runTC imps

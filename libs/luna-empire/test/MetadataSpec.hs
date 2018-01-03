@@ -444,6 +444,41 @@ def bar:
     «3»bar = foo 8.0 c
     None
 |]
+        it "pastes two nodes with metadata" $ \env -> do
+            (nodes, code, newC, newBar) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath"
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.loadCode loc testLuna
+                nodes <- Graph.getNodes loc
+                let Just main = find (\n -> n ^. Node.name == Just "main") nodes
+                (Just c, Just bar) <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
+                    (,) <$> Graph.getNodeIdForMarker 2 <*> Graph.getNodeIdForMarker 14
+                copy  <- Graph.prepareCopy (loc |>= main ^. Node.nodeId) [c, bar]
+                Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (200,0)) copy
+                code  <- Graph.withUnit loc $ use Graph.code
+                (newC, newBar) <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
+                    (Just c, Just bar) <- (,) <$> Graph.getNodeIdForMarker 19 <*> Graph.getNodeIdForMarker 20
+                    (,) <$> GraphBuilder.buildNode c <*> GraphBuilder.buildNode bar
+                return (nodes, Text.unpack code, newC, newBar)
+            newC ^. Node.nodeMeta . NodeMeta.position `shouldNotBe` newBar ^. Node.nodeMeta . NodeMeta.position
+            code `shouldStartWith` [r|«18»def main:
+    «0»pi = 3.14
+    «1»foo = a: b:
+        «5»lala = 17.0
+        «12»buzz = x: y:
+            «9»x * y
+        «6»pi = 3.14
+        «7»n = buzz a lala
+        «8»m = buzz b pi
+        «11»m + n
+    «2»c = 4.0
+    «19»c = 4.0
+
+    «14»bar = foo 8.0 c
+    «20»bar = foo 8.0 c
+    «17»node1 = BogusConstructorForParser
+    «16»node2 = primWaitForProcess node1
+|]
         it "moves positions to origin" $ \_ ->
             let positions = map (\pos -> Graph.MarkerNodeMeta 0 $ set NodeMeta.position (Position.fromTuple pos) def) [(-10, 30), (40, 20), (999, 222), (40, -344)]
                 moved     = Graph.moveToOrigin positions

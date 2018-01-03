@@ -170,6 +170,20 @@ buildNodeForAutolayout nid = do
     meta         <- fromMaybe def <$> AST.readMeta marked
     pure (nid, fromIntegral codePos, meta ^. NodeMeta.position)
 
+buildNodesForAutolayoutCls :: ClassOp m => m [(NodeId, Int, Position)]
+buildNodesForAutolayoutCls = do
+    allNodeIds <- uses Graph.clsFuns Map.keys
+    nodes      <- mapM buildNodeForAutolayoutCls allNodeIds
+    pure nodes
+
+buildNodeForAutolayoutCls :: ClassOp m => NodeId -> m (NodeId, Int, Position)
+buildNodeForAutolayoutCls nid = do
+    name    <- use $ Graph.clsFuns . ix nid . Graph.funName
+    marked  <- ASTRead.getFunByNodeId nid
+    codePos <- Code.functionBlockStartRef marked
+    meta    <- fromMaybe def <$> AST.readMeta marked
+    pure (nid, fromIntegral codePos, meta ^. NodeMeta.position)
+
 buildNode :: GraphOp m => NodeId -> m API.ExpressionNode
 buildNode nid = do
     root      <- GraphUtils.getASTPointer nid

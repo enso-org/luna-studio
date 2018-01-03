@@ -34,6 +34,7 @@ import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbIte
 import           LunaStudio.Data.Library         (LibraryId)
 import           LunaStudio.Data.NodeLoc         (NodeLoc(..))
 import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.NodeCache       (portMappingMap)
 import           LunaStudio.Data.PortRef         (OutPortRef(..))
 import           LunaStudio.Data.Project         (ProjectId)
 import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
@@ -76,7 +77,7 @@ makeGraphCls fun lastUUID = do
                 name   <- ASTRead.getVarName' =<< IR.source n
                 return (nameToString name, root, offset)
     let ast   = Graph.AST ir pmState
-    let oldPortMapping = nodeCache ^. Graph.portMappingMap . at (uuid, Nothing)
+    let oldPortMapping = nodeCache ^. portMappingMap . at (uuid, Nothing)
     portMapping <- fromJustM (liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom) oldPortMapping
     globalMarkers <- use Graph.clsCodeMarkers
     let bh    = BH.LamItem portMapping ref def
@@ -91,7 +92,7 @@ makeGraphCls fun lastUUID = do
         runAliasAnalysis
         runASTOp $ do
             ASTBreadcrumb.makeTopBreadcrumbHierarchy ref
-            restorePortMappings (nodeCache ^. Graph.portMappingMap)
+            restorePortMappings (nodeCache ^. portMappingMap)
             use Graph.graphNodeCache
     Graph.clsNodeCache .= updatedCache
     return (uuid, graph)
@@ -136,14 +137,13 @@ withRootedFunction uuid act = do
             IR.getLayer @SpanLength ref
         return (a, len)
     Graph.clsFuns . ix uuid . Graph.funGraph .= newGraph
-    funName <- use $ Graph.clsFuns . ix uuid . Graph.funName
     diffs <- runASTOp $ do
         cls <- use Graph.clsClass
         funs <- ASTRead.classFunctions cls
         forM funs $ \fun -> ASTRead.cutThroughDocAndMarked fun >>= \f -> IR.matchExpr f $ \case
             IR.ASGRootedFunction n _ -> do
-                name <- ASTRead.getVarName' =<< IR.source n
-                if (nameToString name == funName) then do
+                nodeId <- ASTRead.getNodeId fun
+                if (nodeId == Just uuid) then do
                     lenDiff <- if fun == f then do
                         LeftSpacedSpan (SpacedSpan off prevLen) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan.CodeSpan f
                         IR.putLayer @CodeSpan.CodeSpan fun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off len))
