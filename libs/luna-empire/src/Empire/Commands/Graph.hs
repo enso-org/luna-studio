@@ -36,7 +36,7 @@ module Empire.Commands.Graph
     , disconnect
     , getAvailableImports
     , getNodeMeta
-    , getNodePositions
+    , getNodeMetas
     , getBuffer
     , getCode
     , getGraph
@@ -1182,24 +1182,22 @@ autolayout loc = do
             BH.ExprChild (BH.ExprItem pc _) -> map (Breadcrumb.Arg k) (Map.keys pc)) $ Map.assocs kids
     traverse_ (\a -> autolayout (loc |> a)) next
 
-getNodePositions :: GraphLocation -> [NodeLoc] -> Empire [Maybe (NodeLoc, Position)]
-getNodePositions loc nids
+getNodeMetas :: GraphLocation -> [NodeLoc] -> Empire [Maybe (NodeLoc, NodeMeta)]
+getNodeMetas loc nids
     | GraphLocation f (Breadcrumb []) <- loc = withUnit loc $ runASTOp $ do
         clsFuns    <- use Graph.clsFuns
         forM (Map.assocs clsFuns) $ \(id, fun) -> do
             case find (\n -> convert n == id) nids of
                 Just nl -> do
-                    f    <- ASTRead.getFunByNodeId id
-                    meta <- (fmap $ view NodeMeta.position) <$> AST.readMeta f
-                    return $ (nl,) <$> meta
+                    f     <- ASTRead.getFunByNodeId id
+                    fmap (nl,) <$> AST.readMeta f
                 _       -> return Nothing
     | otherwise = withGraph loc $ runASTOp $ do
         kids <- uses Graph.breadcrumbHierarchy (view BH.children)
         forM (Map.keys kids) $ \id -> do
             case find (\n -> convert n == id) nids of
                 Just nl -> do
-                    meta <- (fmap $ view NodeMeta.position) <$> AST.getNodeMeta id
-                    return $ (nl,) <$> meta
+                    fmap (nl,) <$> AST.getNodeMeta id
                 _       -> return Nothing
 
 autolayoutTopLevel :: GraphLocation -> Empire ()

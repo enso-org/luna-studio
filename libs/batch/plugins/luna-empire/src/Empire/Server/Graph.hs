@@ -254,7 +254,7 @@ handleAddSubgraph = modifyGraph defInverse action replyResult where
 handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
 handleAutolayoutNodes = modifyGraph inverse action replyResult where
     inverse (AutolayoutNodes.Request location nodeLocs _) = do
-        positions <- Graph.getNodePositions location nodeLocs
+        positions <- Graph.getNodeMetas location nodeLocs
         return $ AutolayoutNodes.Inverse $ catMaybes positions
     action (AutolayoutNodes.Request location nodeLocs _) = withDefaultResult location $
         Graph.autolayoutNodes location (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId

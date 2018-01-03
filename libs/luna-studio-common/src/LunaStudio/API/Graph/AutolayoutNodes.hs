@@ -9,7 +9,7 @@ import qualified LunaStudio.API.Response       as Response
 import qualified LunaStudio.API.Topic          as T
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.NodeLoc       (NodeLoc)
-import           LunaStudio.Data.Position      (Position)
+import           LunaStudio.Data.NodeMeta      (NodeMeta)
 import           Prologue
 
 
@@ -18,7 +18,7 @@ data Request = Request { _location    :: GraphLocation
                        , _centerGraph :: Bool
                        } deriving (Eq, Generic, Show)
 
-data Inverse = Inverse { _prevPositions :: [(NodeLoc, Position)]
+data Inverse = Inverse { _prevPositions :: [(NodeLoc, NodeMeta)]
                        } deriving (Eq, Generic, Show)
 
 makeLenses ''Request

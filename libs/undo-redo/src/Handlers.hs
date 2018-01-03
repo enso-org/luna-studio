@@ -22,6 +22,7 @@ import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
 import qualified LunaStudio.API.Graph.AddPort            as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes
 import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
 import qualified LunaStudio.API.Graph.MovePort           as MovePort
 import qualified LunaStudio.API.Graph.Paste              as Paste
@@ -56,6 +57,7 @@ handlersMap = Map.fromList
     , makeHandler handleAddNodeUndo
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
+    , makeHandler handleAutolayoutNodes
     , makeHandler handleCollapseToFunctionUndo
     , makeHandler handleMovePortUndo
     , makeHandler handlePasteUndo
@@ -77,6 +79,7 @@ type family UndoResponseRequest t where
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
     UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
+    UndoResponseRequest AutolayoutNodes.Response      = SetNodesMeta.Request
     UndoResponseRequest CollapseToFunction.Response   = SetCode.Request
     UndoResponseRequest MovePort.Response             = MovePort.Request
     UndoResponseRequest Paste.Response                = RemoveNodes.Request
@@ -95,6 +98,7 @@ type family RedoResponseRequest t where
     RedoResponseRequest AddNode.Response              = AddNode.Request
     RedoResponseRequest AddPort.Response              = AddPort.Request
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
+    RedoResponseRequest AutolayoutNodes.Response      = AutolayoutNodes.Request
     RedoResponseRequest CollapseToFunction.Response   = CollapseToFunction.Request
     RedoResponseRequest MovePort.Response             = MovePort.Request
     RedoResponseRequest Paste.Response                = Paste.Request
@@ -179,6 +183,15 @@ getUndoAddConnection (AddConnection.Request location _ _) (AddConnection.Inverse
 handleAddConnectionUndo :: AddConnection.Response -> Maybe (RemoveConnection.Request, AddConnection.Request)
 handleAddConnectionUndo (Response.Response _ _ req invStatus status) = case (invStatus, status) of
     (Response.Ok inv, Response.Ok _) -> Just (getUndoAddConnection req inv, req)
+    _                                -> Nothing
+
+getUndoAutolayout :: AutolayoutNodes.Request -> AutolayoutNodes.Inverse -> SetNodesMeta.Request
+getUndoAutolayout (AutolayoutNodes.Request location _ _) (AutolayoutNodes.Inverse positions) =
+    SetNodesMeta.Request location $ map (\(nl, meta) -> (convert nl, meta)) positions
+
+handleAutolayoutNodes :: AutolayoutNodes.Response -> Maybe (SetNodesMeta.Request, AutolayoutNodes.Request)
+handleAutolayoutNodes (Response.Response _ _ req invStatus status) = case (invStatus, status) of
+    (Response.Ok inv, Response.Ok _) -> Just (getUndoAutolayout req inv, req)
     _                                -> Nothing
 
 handleCollapseToFunctionUndo :: CollapseToFunction.Response -> Maybe (SetCode.Request, CollapseToFunction.Request)
