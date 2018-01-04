@@ -68,7 +68,7 @@ def cp_helper(input_path, output_path):
 def cp_files():
     cp_helper('../luna-studio/node-editor/js', '../luna-studio/atom/lib/gen')
     paths = [
-        '../luna-studio/text-editor/js/atom-callback-text-editor.js',
+        '../luna-studio/text-editor/js/atom-callback-text-editor.coffee',
         '../luna-studio/text-editor/js/app-text-editor.coffee',
         '../luna-studio/node-editor/config.release.js',
         '../luna-studio/node-editor/config.debug.js',

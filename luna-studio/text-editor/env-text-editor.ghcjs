@@ -4,7 +4,7 @@ var analytics        = require('./analytics')
     common           = require('./common'),
     config           = require('./config'),
     gzip             = require('./gzip');
-    atomCallbackTextEditor = require('./atom-callback-text-editor')();
+    atomCallbackTextEditor = require('./atom-callback-text-editor');
     globalRegistry = {};
 
 var run = function() {
@@ -22,5 +22,5 @@ return { connect             : function(connector) { connector(globalRegistry); 
        , onSetClipboard      : function(callback) { atomCallbackTextEditor.onSetClipboard(callback); }
        , pushDiffs           : function(diffs) { atomCallbackTextEditor.pushDiffs(diffs); }
        , pushInternalEvent   : function(data) { atomCallbackTextEditor.pushInternalEvent(data); }
-       , statusListener      : function(callback) { atomCallbackTextEditor.statusListener(callback); }
+       , onStatus            : function(callback) { atomCallbackTextEditor.onStatus(callback); }
        }

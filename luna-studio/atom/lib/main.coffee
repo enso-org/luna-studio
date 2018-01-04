@@ -28,7 +28,7 @@ module.exports = LunaStudio =
     activate: (state) ->
         stats.initialize()
         atom.grammars.addGrammar(new LunaSemanticGrammar(atom.grammars, codeEditor.lex))
-        atom.workspace.addOpener (uri) => @lunaOpener(uri)
+        atom.workspace.addOpener @lunaOpener
         codeEditor.connect(nodeEditor.connector)
         @welcome = new LunaWelcomeTab(codeEditor)
         @toolbar = new LunaToolbar(codeEditor)
@@ -41,11 +41,11 @@ module.exports = LunaStudio =
                 if rootPath? and rootPath != ""
                     projects.recent.add rootPath
                     codeEditor.pushInternalEvent(tag: "SetProject", _path: rootPath)
-            if act == 'ProjectSet'
+            else if act == 'ProjectSet'
                 projects.openMainIfExists()
-            if act == 'FileOpened'
+            else if act == 'FileOpened'
                 codeEditor.pushInternalEvent(tag: "GetBuffer", _path: arg1)
-            if act == 'ProjectMove'
+            else if act == 'ProjectMove'
                 moveUri = (oldUri) -> if oldUri? and oldUri.startsWith arg2
                     return arg1 + oldUri.slice arg2.length
                 @moving = true
@@ -60,7 +60,7 @@ module.exports = LunaStudio =
                             pane.uri = newUri
                             nodeEditor.pushEvent(tag: "UpdateFilePath", path: newUri)
 
-        codeEditor.statusListener actStatus
+        codeEditor.onStatus actStatus
         atom.workspace.onDidChangeActivePaneItem (item) => @handleItemChange(item)
         atom.workspace.onDidDestroyPaneItem (event) => @handleItemDestroy(event)
         atom.workspace.observeTextEditors (editor) => @handleSaveAsLuna(editor)
@@ -184,7 +184,7 @@ module.exports = LunaStudio =
         preferredNodeEditorPosition:
             title: 'Preferred pane for node editor'
             type: 'string'
-            default: 'right'
+            default: 'up'
             enum: [
                 { value: 'left' , description: 'Left pane' }
                 { value: 'right', description: 'Right pane' }
@@ -194,7 +194,7 @@ module.exports = LunaStudio =
         preferredCodeEditorPosition:
             title: 'Preferred pane for code editor'
             type: 'string'
-            default: 'left'
+            default: 'down'
             enum: [
                 { value: 'left' , description: 'Left pane' }
                 { value: 'right', description: 'Right pane' }
