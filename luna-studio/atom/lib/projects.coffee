@@ -17,7 +17,7 @@ temporaryProject = {
     path: path.join temporaryPath, 'unsaved-luna-project'
     srcDir: 'src'
     mainFile: 'Main.luna'
-    mainContent: 'def main:\n    None'
+    mainContent: 'def main:\n    hello = "Hello, World!"'
     }
 
 temporaryMainFilePath = path.join temporaryProject.path, temporaryProject.srcDir, temporaryProject.mainFile
