@@ -68,7 +68,9 @@ closeAllFiles = ->
     for pane in atom.workspace.getPanes()
         for paneItem in pane.getItems()
             if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
-                pane.destroyItem(paneItem)
+                unless pane.destroyItem paneItem
+                    return false
+    return true
 
 openMainIfExists = ->
     projectPath = atom.project.getPaths()[0]
@@ -85,9 +87,9 @@ selectLunaProject = (e) ->
 
 openLunaProject = (paths) ->
     if paths?
-        closeAllFiles()
-        atom.project.setPaths [paths[0]]
-        openMainIfExists
+        if closeAllFiles()
+            atom.project.setPaths [paths[0]]
+            openMainIfExists
 
 
 module.exports =
@@ -99,10 +101,10 @@ module.exports =
     temporaryProject:
         path: temporaryProject.path
         open: (callback) =>
-            closeAllFiles()
-            createTemporary =>
-                atom.project.setPaths [temporaryProject.path]
-                callback?()
+            if closeAllFiles()
+                createTemporary =>
+                    atom.project.setPaths [temporaryProject.path]
+                    callback?()
         isOpen: =>
             return isTemporary atom.project.getPaths()[0]
 
@@ -182,11 +184,11 @@ module.exports =
             cloneError = (err) =>
                 report.displayError 'Error while cloning tutorial', err
                 finalize()
-            closeAllFiles()
-            fse.remove dstPath, (err) =>
-                if err?
-                    cloneError err.toString()
-                else
-                    clone().catch (error) =>
+            if closeAllFiles()
+                fse.remove dstPath, (err) =>
+                    if err?
+                        cloneError err.toString()
+                    else
                         clone().catch (error) =>
-                            cloneError error
+                            clone().catch (error) =>
+                                cloneError error

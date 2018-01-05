@@ -86,8 +86,8 @@ class LunaWelcomeTab extends View
         projects.recent.load (recentProjectPath) =>
             item = new ProjectItem {uri: recentProjectPath}, recentClasses, (progress, finalize) =>
                 progress 0.5
-                projects.closeAllFiles()
-                atom.project.setPaths [recentProjectPath]
+                if projects.closeAllFiles()
+                    atom.project.setPaths [recentProjectPath]
                 finalize()
             @privateItems.push(item)
             @privateContainer.append(item.element)
