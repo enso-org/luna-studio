@@ -1,3 +1,4 @@
+
 fs       = require 'fs-plus'
 path     = require 'path'
 yaml     = require 'js-yaml'
@@ -67,17 +68,6 @@ module.exports = LunaStudio =
         atom.workspace.onDidAddPaneItem (pane)   => @handleItemChange(pane.item)
         atom.project.onDidChangePaths (projectPaths) => @handleProjectPathsChange(projectPaths)
         atom.workspace.open(LUNA_STUDIO_URI, {split: atom.config.get('luna-studio.preferredNodeEditorPosition')})
-        atom.packages.onDidActivateInitialPackages =>
-            @toolbar.attach()
-            atom.reopenProjectMenuManager.open = projects.openLunaProject
-            if atom.config.get('luna-studio.showWelcomeScreen') and atom.project.getPaths().length == 0
-                @welcome.attach()
-            if atom.config.get('luna-studio.resetProjects') and atom.project.getPaths().length == 0
-                @openProjectInBackground = true
-                projects.temporaryProject.open (err) =>
-                    if err then throw err
-            if atom.config.get('luna-studio.showWelcomeGuide')
-                @guide.start()
         atom.commands.add 'atom-workspace',
             'application:add-project-folder': projects.selectLunaProject
             'application:open':               projects.selectLunaProject
@@ -85,7 +75,20 @@ module.exports = LunaStudio =
         atom.commands.add 'body',
             'luna-studio:welcome': => @welcome.attach()
             'luna-studio:guide':   => @guide.start()
-            'core:cancel': => @welcome.detach()
+            'core:cancel': => @welcome.cancel()
+        atom.packages.onDidActivateInitialPackages =>
+            @toolbar.attach()
+            atom.reopenProjectMenuManager.open = projects.openLunaProject
+            openTemporaryProject = => projects.temporaryProject.open (err) => if err then throw err
+            resetProjects = atom.config.get('luna-studio.resetProjects') and atom.project.getPaths().length == 0
+            if atom.config.get('luna-studio.showWelcomeScreen') and atom.project.getPaths().length == 0
+                @welcome.attach()
+                if resetProjects
+                    @welcome.onCancel = openTemporaryProject
+            else if resetProjects
+                openTemporaryProject()
+            if atom.config.get('luna-studio.showWelcomeGuide')
+                @guide.start()
         codeEditor.start()
 
 
@@ -157,13 +160,10 @@ module.exports = LunaStudio =
         if projectPath?
             projects.recent.add projectPath
             codeEditor.pushInternalEvent(tag: "SetProject", _path: projectPath)
-            if @openProjectInBackground
-                @openProjectInBackground = false
-            else
-                analytics.track 'LunaStudio.Project.Open',
-                    name: path.basename projectPath
-                    path: projectPath
-                @welcome.detach()
+            analytics.track 'LunaStudio.Project.Open',
+                name: path.basename projectPath
+                path: projectPath
+            @welcome.close()
         if @moving
             @moving = false
         else

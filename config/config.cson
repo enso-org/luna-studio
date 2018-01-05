@@ -5,7 +5,7 @@
     randomColor: false
   core:
     automaticallyUpdate: false
-    destroyEmptyPanes: false
+    destroyEmptyPanes: true
     disabledPackages: [
       "dev-live-reload"
       "hidpi"

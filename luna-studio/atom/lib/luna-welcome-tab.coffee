@@ -80,7 +80,7 @@ class LunaWelcomeTab extends View
         @welcomeModal.on 'click', (e) -> e.stopPropagation()
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search
-        @background.on 'click', @detach
+        @background.on 'click', @cancel
 
         @hideSearchResults()
         projects.recent.load (recentProjectPath) =>
@@ -127,6 +127,17 @@ class LunaWelcomeTab extends View
             @panel.hide()
             @previouslyFocusedElement?.focus()
             analytics.track 'LunaStudio.Welcome.Close'
+            return true
+        return false
+
+    close: =>
+        if @detach()
+            onCancel = null
+
+    cancel: =>
+        if @detach()
+            @onCancel?()
+            onCancel = null
 
     search: =>
         filterQuery = @searchInput[0].value
