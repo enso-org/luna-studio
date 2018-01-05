@@ -72,6 +72,7 @@ import           Luna.Compilation                             (CompiledModules (
 
 import qualified OCI.IR.Repr.Vis                   as Vis
 import qualified Control.Monad.State.Dependent.Old as DepOld
+import           Luna.Pass.Data.UniqueNameGen               (initNameGen)
 import           Luna.Pass.Data.ExprMapping
 import           Luna.Builtin.Data.Module          (Imports (..), unionsImports)
 import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
@@ -261,6 +262,7 @@ runModuleTypecheck sources cmpMods@(CompiledModules _ prims) = do
         Pass.setAttr (getTypeDesc @UnitLoader.SourcesManager) $ error "Data not provided: SourcesManager"
         Pass.setAttr (getTypeDesc @UnitSet)                   $ error "Data not provided: UnitSet"
         Pass.setAttr (getTypeDesc @Invalids)                  $ (mempty :: Invalids)
+        initNameGen
         impNames <- Pass.eval' $ do
             imphub   <- unit @^. Term.imports
             imps     <- readWrappedSources (unsafeGeneralize imphub :: Expr (UnresolvedImportHub >> UnresolvedImport >> UnresolvedImportSrc))
