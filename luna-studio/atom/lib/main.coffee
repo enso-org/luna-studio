@@ -37,29 +37,30 @@ module.exports = LunaStudio =
         @moving = false
 
         actStatus = (act, arg1, arg2) =>
-            if act == 'Init'
-                rootPath = atom.project.getPaths().shift()
-                if rootPath? and rootPath != ""
-                    projects.recent.add rootPath
-                    codeEditor.pushInternalEvent(tag: "SetProject", _path: rootPath)
-            else if act == 'ProjectSet'
-                projects.openMainIfExists()
-            else if act == 'FileOpened'
-                codeEditor.pushInternalEvent(tag: "GetBuffer", _path: arg1)
-            else if act == 'ProjectMove'
-                moveUri = (oldUri) -> if oldUri? and oldUri.startsWith arg2
-                    return arg1 + oldUri.slice arg2.length
-                @moving = true
-                atom.project.setPaths [arg1]
-                for pane in atom.workspace.getPaneItems()
-                    if pane instanceof LunaCodeEditorTab
-                        newUri = moveUri pane.uri
-                        pane.setUri newUri if newUri?
-                    else if pane instanceof LunaNodeEditorTab
-                        newUri = moveUri pane.uri
-                        if newUri?
-                            pane.uri = newUri
-                            nodeEditor.pushEvent(tag: "UpdateFilePath", path: newUri)
+            switch act
+                when 'Init'
+                    rootPath = atom.project.getPaths().shift()
+                    if rootPath? and rootPath != ""
+                        projects.recent.add rootPath
+                        codeEditor.pushInternalEvent(tag: "SetProject", _path: rootPath)
+                when 'ProjectSet'
+                    projects.openMainIfExists()
+                when 'FileOpened'
+                    codeEditor.pushInternalEvent(tag: "GetBuffer", _path: arg1)
+                when 'ProjectMove'
+                    moveUri = (oldUri) -> if oldUri? and oldUri.startsWith arg2
+                        return arg1 + oldUri.slice arg2.length
+                    @moving = true
+                    atom.project.setPaths [arg1]
+                    for pane in atom.workspace.getPaneItems()
+                        if pane instanceof LunaCodeEditorTab
+                            newUri = moveUri pane.uri
+                            pane.setUri newUri if newUri?
+                        else if pane instanceof LunaNodeEditorTab
+                            newUri = moveUri pane.uri
+                            if newUri?
+                                pane.uri = newUri
+                                nodeEditor.pushEvent(tag: "UpdateFilePath", path: newUri)
 
         codeEditor.onStatus actStatus
         atom.workspace.onDidChangeActivePaneItem (item) => @handleItemChange(item)
