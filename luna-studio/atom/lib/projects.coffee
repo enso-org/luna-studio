@@ -6,6 +6,7 @@ request = require 'request'
 yaml    = require 'js-yaml'
 InputView = require './input-view'
 report = require './report'
+{ProjectItem, recentClasses} = require './project-item'
 
 recentProjectsPath    = path.join process.env.LUNA_STUDIO_DATA_PATH, 'recent-projects.yml'
 defaultProjectPath    = process.env.LUNA_PROJECTS
@@ -91,6 +92,19 @@ openLunaProject = (paths) ->
             atom.project.setPaths [paths[0]]
             openMainIfExists
 
+recentProjects = []
+recentProjectsPaths = ->
+    paths = []
+    for recentProject in recentProjects
+        paths.push recentProject.uri
+    return paths
+
+mkRecentProject = (projectPath) ->
+    new ProjectItem {uri: projectPath}, recentClasses, (progress, finalize) =>
+        progress 0.5
+        if closeAllFiles()
+            atom.project.setPaths [projectPath]
+        finalize()
 
 module.exports =
     closeAllFiles: closeAllFiles
@@ -117,24 +131,30 @@ module.exports =
                     (name) => "Path already exists at '#{name}'",
                     (name) => callback name
     recent:
-        load: (callback) =>
-            loadRecentNoCheck (recentProjectsPaths) =>
-                recentProjectsPaths.forEach (recentProjectPath) =>
-                    fs.access recentProjectPath, (err) =>
-                        if not err
-                            callback recentProjectPath
+        items: recentProjects
+
+        refreshProjectsList: (callback) =>
+            recentProjects.length = 0
+            loadRecentNoCheck (serializedProjectPaths) =>
+                serializedProjectPaths.forEach (serializedProjectPath) =>
+                    try
+                        fs.accessSync serializedProjectPath
+                        recentProjects.push mkRecentProject serializedProjectPath
+                    catch error
+                callback?()
 
         add: (recentProjectPath) =>
             if isTemporary recentProjectPath then return
-            loadRecentNoCheck (recentProjectsPaths) =>
-                pos = recentProjectsPaths.indexOf(recentProjectPath);
-                if pos != -1
-                    recentProjectsPaths.splice(pos, 1)
-                recentProjectsPaths.unshift(recentProjectPath)
-                data = yaml.safeDump(recentProjectsPaths)
-                fs.writeFile recentProjectsPath, data, encoding, (err) =>
-                    if err?
-                        console.log err
+            unless recentProjects.length == 0
+                for pos in [0..recentProjects.length - 1]
+                    if recentProjects[pos].uri is recentProjectPath
+                        recentProjects.splice pos, 1
+                        break
+            recentProjects.unshift mkRecentProject recentProjectPath
+            data = yaml.safeDump recentProjectsPaths()
+            fs.writeFile recentProjectsPath, data, encoding, (err) =>
+                if err?
+                    console.log err
     tutorial:
         list: (callback) =>
             try
