@@ -533,16 +533,17 @@ addPortNoTC loc (OutPortRef nl pid) name = runASTOp $ do
     when (inE /= nid) $ throwM NotInputEdgeException
     ref <- ASTRead.getCurrentASTTarget
     ASTBuilder.detachNodeMarkersForArgs ref
-    ASTModify.addLambdaArg position ref name
+    ids      <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
+    varNames <- catMaybes <$> mapM GraphBuilder.getNodeName ids
+    ASTModify.addLambdaArg position ref name $ map convert varNames
     newLam <- ASTRead.getCurrentASTTarget
     ASTBuilder.attachNodeMarkersForArgs nid [] newLam
 
 addPortWithConnections :: GraphLocation -> OutPortRef -> Maybe Text -> [AnyPortRef] -> Empire ()
 addPortWithConnections loc portRef name connectTo = do
     withTC loc False $ do
-        newPorts <- addPortNoTC loc portRef name
+        addPortNoTC loc portRef name
         for_ connectTo $ connectNoTC loc portRef
-        return newPorts
     resendCode loc
 
 addSubgraph :: GraphLocation -> [ExpressionNode] -> [Connection] -> Empire [ExpressionNode]
