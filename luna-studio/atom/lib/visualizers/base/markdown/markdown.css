@@ -10,6 +10,6 @@ p {
 	margin-bottom: 8px;
 }
 code {
-	font-family: Hasklig, monospace;
+	font-family: 'hasklig-regular', 'hasklig', monospace;
 	color:       #bbb;
 }

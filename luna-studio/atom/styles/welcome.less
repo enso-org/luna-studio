@@ -27,11 +27,11 @@
 @width:                 52.5*@grid;
 @padding:               2*@grid;
 
-.hide-scrollbar() {
-	&::-webkit-scrollbar {
-	    display: none;
-	}
-}
+// .hide-scrollbar() {
+// 	&::-webkit-scrollbar {
+// 	   display: none;
+// 	}
+// }
 
 atom-panel.modal.overlay.from-top::before { // TODO: Make it more specific - use a global class?
 	background-color: #000;
@@ -42,32 +42,22 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 
 }
 
-.luna-welcome-background {
-	background:      rgba(0,0,0,0);
-	position:        fixed !important;
-	top:             0;
-	left:            0;
-	right:           0;
-	bottom:          0;
-	display:         flex;
-	justify-content: center;
-}
-
 .luna-welcome-scroll {
 	position:   fixed !important;
 	top:        0;
 	bottom:     0;
-	overflow-y: scroll;
-	overflow-x: hidden;
-	width:      @width;
-	.hide-scrollbar;
+	left:       0;
+	overflow-y: auto;
+	overflow-x: auto;
+	width:      100%;
+	//.hide-scrollbar;
 }
 
 .luna-welcome {
 	font-weight:   300;
 	border-radius: @border-radius;
 	padding:       @padding @padding 0;
-	margin:        @padding 0;
+	margin:        @padding auto;
 	background:    @background;
 	width:         @width - 2*@padding;
 	position:      relative;

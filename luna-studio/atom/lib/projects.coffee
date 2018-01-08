@@ -6,6 +6,7 @@ request = require 'request'
 yaml    = require 'js-yaml'
 InputView = require './input-view'
 report = require './report'
+{ProjectItem, recentClasses} = require './project-item'
 
 recentProjectsPath    = path.join process.env.LUNA_STUDIO_DATA_PATH, 'recent-projects.yml'
 defaultProjectPath    = process.env.LUNA_PROJECTS
@@ -17,7 +18,7 @@ temporaryProject = {
     path: path.join temporaryPath, 'unsaved-luna-project'
     srcDir: 'src'
     mainFile: 'Main.luna'
-    mainContent: 'def main:\n    None'
+    mainContent: 'def main:\n    hello = "Hello, World!"\n    None'
     }
 
 temporaryMainFilePath = path.join temporaryProject.path, temporaryProject.srcDir, temporaryProject.mainFile
@@ -68,7 +69,9 @@ closeAllFiles = ->
     for pane in atom.workspace.getPanes()
         for paneItem in pane.getItems()
             if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
-                pane.destroyItem(paneItem)
+                unless pane.destroyItem paneItem
+                    return false
+    return true
 
 openMainIfExists = ->
     projectPath = atom.project.getPaths()[0]
@@ -85,10 +88,23 @@ selectLunaProject = (e) ->
 
 openLunaProject = (paths) ->
     if paths?
-        closeAllFiles()
-        atom.project.setPaths [paths[0]]
-        openMainIfExists
+        if closeAllFiles()
+            atom.project.setPaths [paths[0]]
+            openMainIfExists
 
+recentProjects = []
+recentProjectsPaths = ->
+    paths = []
+    for recentProject in recentProjects
+        paths.push recentProject.uri
+    return paths
+
+mkRecentProject = (projectPath) ->
+    new ProjectItem {uri: projectPath}, recentClasses, (progress, finalize) =>
+        progress 0.5
+        if closeAllFiles()
+            atom.project.setPaths [projectPath]
+        finalize()
 
 module.exports =
     closeAllFiles: closeAllFiles
@@ -99,10 +115,10 @@ module.exports =
     temporaryProject:
         path: temporaryProject.path
         open: (callback) =>
-            closeAllFiles()
-            createTemporary =>
-                atom.project.setPaths [temporaryProject.path]
-                callback?()
+            if closeAllFiles()
+                createTemporary =>
+                    atom.project.setPaths [temporaryProject.path]
+                    callback?()
         isOpen: =>
             return isTemporary atom.project.getPaths()[0]
 
@@ -111,28 +127,30 @@ module.exports =
                 inputView = new InputView()
                 suggestedProjectName = path.basename(atom.project.getPaths()[0])
                 inputView.attach "Save project as", defaultProjectPath, suggestedProjectName,
-                    (name) =>!fs.existsSync(name),
+                    (name) => !fs.existsSync(name),
                     (name) => "Path already exists at '#{name}'",
                     (name) => callback name
     recent:
-        load: (callback) =>
-            loadRecentNoCheck (recentProjectsPaths) =>
-                recentProjectsPaths.forEach (recentProjectPath) =>
-                    fs.access recentProjectPath, (err) =>
-                        if not err
-                            callback recentProjectPath
+        getItems: -> recentProjects
+
+        refreshProjectsList: (callback) =>
+            recentProjects = []
+            loadRecentNoCheck (serializedProjectPaths) =>
+                serializedProjectPaths.forEach (serializedProjectPath) =>
+                    try
+                        fs.accessSync serializedProjectPath
+                        recentProjects.push mkRecentProject serializedProjectPath
+                    catch error
+                callback?()
 
         add: (recentProjectPath) =>
             if isTemporary recentProjectPath then return
-            loadRecentNoCheck (recentProjectsPaths) =>
-                pos = recentProjectsPaths.indexOf(recentProjectPath);
-                if pos != -1
-                    recentProjectsPaths.splice(pos, 1)
-                recentProjectsPaths.unshift(recentProjectPath)
-                data = yaml.safeDump(recentProjectsPaths)
-                fs.writeFile recentProjectsPath, data, encoding, (err) =>
-                    if err?
-                        console.log err
+            recentProjects = recentProjects.filter (project) -> project.uri isnt recentProjectPath
+            recentProjects.unshift mkRecentProject recentProjectPath
+            data = yaml.safeDump recentProjectsPaths()
+            fs.writeFile recentProjectsPath, data, encoding, (err) =>
+                if err?
+                    console.log err
     tutorial:
         list: (callback) =>
             try
@@ -182,11 +200,11 @@ module.exports =
             cloneError = (err) =>
                 report.displayError 'Error while cloning tutorial', err
                 finalize()
-            closeAllFiles()
-            fse.remove dstPath, (err) =>
-                if err?
-                    cloneError err.toString()
-                else
-                    clone().catch (error) =>
+            if closeAllFiles()
+                fse.remove dstPath, (err) =>
+                    if err?
+                        cloneError err.toString()
+                    else
                         clone().catch (error) =>
-                            cloneError error
+                            clone().catch (error) =>
+                                cloneError error

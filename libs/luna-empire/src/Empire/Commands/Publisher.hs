@@ -48,9 +48,12 @@ sendUpdate upd = do
     chan <- asks $ view updatesChan
     liftIO $ atomically $ writeTChan chan upd
 
-requestTC :: GraphLocation -> ClsGraph -> Bool -> Bool -> Command s ()
-requestTC loc g flush runInterpreter = do
+requestTC :: GraphLocation -> ClsGraph -> Bool -> Bool -> Bool -> Command s ()
+requestTC loc g flush runInterpreter recompute = do
     chan <- view typecheckChan
     liftIO $ do
-        tryTakeMVar chan
-        putMVar chan $ TCRequest loc g flush runInterpreter
+        a <- tryTakeMVar chan
+        let recompute' = case a of
+                Just h -> if h ^. tcRecompute then True else recompute
+                _      -> recompute
+        putMVar chan $ TCRequest loc g flush runInterpreter recompute'

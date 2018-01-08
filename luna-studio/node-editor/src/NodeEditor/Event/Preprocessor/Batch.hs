@@ -47,6 +47,7 @@ handlers = Map.fromList [ handle AddConnectionResponse
                         , handle RenameNodeResponse
                         , handle RenamePortResponse
                         , handle SearchNodesResponse
+                        , handle SetCodeResponse
                         , handle SetNodeExpressionResponse
                         , handle SetNodesMetaResponse
                         , handle SetPortDefaultResponse

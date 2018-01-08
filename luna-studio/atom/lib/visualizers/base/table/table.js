@@ -1,5 +1,10 @@
 (function () {
 
+  var tableOf = function (content, level) {
+    var open = '<table class="level' + level + '">';
+    return open + content + "</table>";
+  }
+
   var hasExactlyKeys = function (keys, obj) {
     return Object.keys(obj).length == keys.length && keys.every(k => obj.hasOwnProperty(k));
   };
@@ -11,7 +16,7 @@
     return data.every(obj => hasExactlyKeys(firstKeys, obj));
   }
 
-  var genObjectMatrix = function (data) {
+  var genObjectMatrix = function (data, level) {
     var result = "<tr><th></th>";
     var keys   = Object.keys(data[0]);
     keys.forEach(function (key) {
@@ -21,11 +26,11 @@
     data.forEach(function (row, ix) {
       result += ("<tr><th>" + ix + "</th>");
       keys.forEach(function (k) {
-        result += ("<td>" + JSON.stringify(row[k]) + "</td>");
+        result += toTableCell(row[k], level);
       });
       result += ("</tr>")
     });
-    return ("<table>" + result + "</table>");
+    return tableOf(result, level);
   }
 
   var isMatrix = function (data) {
@@ -38,7 +43,7 @@
     return eachHasProperLen;
   }
 
-  var genMatrix = function (data) {
+  var genMatrix = function (data, level) {
     var result = "<tr><th></th>";
     data[0].forEach(function (elt, ix) {
       result += ("<th>" + ix + "</th>");
@@ -47,34 +52,59 @@
     data.forEach(function (row, ix) {
       result += ("<tr><th>" + ix + "</th>");
       row.forEach(function (d) {
-        result += ("<td>" + JSON.stringify(d) + "</td>");
+        result += toTableCell(d, level);
       });
       result += ("</tr>")
     });
-    return ("<table>" + result + "</table>");
+    return tableOf(result, level);
   }
 
-  var genGenericTable = function (data) {
+  var genGenericTable = function (data, level) {
     var result = "";
     data.forEach(function (point, ix) {
-      result += ("<tr><th>" + ix + "</th><td>" + JSON.stringify(point) + "</td></tr>");
+      result += ("<tr><th>" + ix + "</th>" + toTableCell(point, level) + "</tr>");
     });
-    return ("<table>" + result + "</table>");
+    return tableOf(result, level);
   }
 
-  var genTable = function (data) {
-    if (isMatrix(data)) {
-      return genMatrix(data);
-    } else if (isObjectMatrix(data)) {
-      return genObjectMatrix(data);
+  var genRowObjectTable = function (data, level) {
+    var keys = Object.keys(data);
+    var result = "<tr>";
+    keys.forEach(function (key) {
+      result += ("<th>" + key + "</th>");
+    });
+    result += "</tr><tr>";
+    keys.forEach(function (key) {
+      result += toTableCell(data[key], level);
+    });
+    result += "</tr>";
+    return tableOf(result, level);
+  }
+
+  var toTableCell = function (data, level) {
+    if (Array.isArray(data)) {
+      return "<td>" + genTable(data, level + 1) + "</td>";
+    } else if (data instanceof Object) {
+      return "<td>" + genRowObjectTable(data, level + 1) + "</td>";
     } else {
-      return genGenericTable(data);
+      var res = data.toString();
+      return '<td class="plaintext">' + (res === "" ? "N/A" : res) + '</td>';
+    }
+  }
+
+  var genTable = function (data, level) {
+    if (isMatrix(data)) {
+      return genMatrix(data, level);
+    } else if (isObjectMatrix(data)) {
+      return genObjectMatrix(data, level);
+    } else {
+      return genGenericTable(data, level);
     }
   }
 
   var render = function (json) {
     var data  = JSON.parse(json);
-    var table = genTable(data);
+    var table = genTable(data, 0);
     document.body.innerHTML = table;
   };
   window.addEventListener("message", function (evt) {

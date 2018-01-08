@@ -29,6 +29,7 @@ import qualified OCI.Pass.Class                         as Pass
 import qualified OCI.Pass.Manager                       as Pass (RefState)
 import qualified OCI.Pass.Manager                       as PassManager (PassManager, State)
 import           LunaStudio.Data.Node                   (NodeId)
+import           LunaStudio.Data.NodeCache
 import           LunaStudio.Data.NodeMeta               (NodeMeta)
 import           Luna.Syntax.Text.Parser.Errors         (Invalids)
 import qualified Luna.Syntax.Text.Parser.Marker         as Luna
@@ -74,15 +75,10 @@ data ClsGraph = ClsGraph { _clsAst         :: AST ClsGraph
                          , _clsNodeCache   :: NodeCache
                          } deriving Show
 
-data NodeCache = NodeCache { _nodeIdMap      :: Map Word64 NodeId
-                           , _nodeMetaMap    :: Map Word64 NodeMeta
-                           , _portMappingMap :: Map (NodeId, Maybe Int) (NodeId, NodeId)
-                           } deriving Show
-
 defaultClsGraph :: IO ClsGraph
 defaultClsGraph = do
     (ast, cls) <- defaultClsAST
-    return $ ClsGraph ast cls def def def def (NodeCache def def def)
+    return $ ClsGraph ast cls def def def def def
 
 type PMState g = Pass.RefState (PassManager.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT g IO))))))
 
@@ -172,7 +168,9 @@ defaultClsAST = mdo
         attachEmpireLayers
         initExprMapping
         cls <- Pass.eval' @InitPass $ do
-            klass <- IR.clsASG' False (stringToName "A") [] [] []
+            hub   <- IR.unresolvedImpHub' []
+            cls   <- IR.clsASG' False (stringToName "A") [] [] []
+            klass <- IR.unit' hub [] cls
             return klass
         st   <- snapshot
         pass <- DepState.get @PassManager.State
@@ -183,7 +181,6 @@ makeLenses ''Graph
 makeLenses ''FunctionGraph
 makeLenses ''ClsGraph
 makeLenses ''AST
-makeLenses ''NodeCache
 
 class HasCode g where
     code :: Lens' g Text

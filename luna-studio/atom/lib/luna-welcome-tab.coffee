@@ -1,16 +1,11 @@
 {View} = require 'atom-space-pen-views'
 etch = require 'etch'
 fuzzyFilter = null # defer until used
-ProjectItem = require './project-item'
+{ProjectItem, privateNewClasses, communityNewClasses, tutorialClasses} = require './project-item'
 projects = require './projects'
 analytics = require './gen/analytics'
 report = require './report'
 
-projectClasses = "luna-welcome__tile "
-tutorialClasses = projectClasses + "luna-welcome__tile--tutorial"
-recentClasses = projectClasses + "luna-welcome__tile--recent"
-privateNewClasses = projectClasses + 'luna-welcome__tile--add-new'
-comunnityNewClasses = projectClasses + 'luna-welcome__tile--add-new'
 
 module.exports =
 class LunaWelcomeTab extends View
@@ -18,82 +13,70 @@ class LunaWelcomeTab extends View
         super
 
     @content: -> @div =>
-        @div
-            class: 'luna-welcome-background'
-            outlet: 'background'
-            =>
-                @div class: 'luna-welcome-scroll', outlet: 'welcomePanel', =>
-                    @div class: 'luna-welcome', =>
-                        @div class: 'luna-welcome__header', =>
-                            @h1 class: 'luna-welcome__title', 'Welcome to Luna Studio'
-                            @div class: 'luna-welcome__header__menu', =>
-                                @input
-                                    class: 'luna-input luna-input--search luna-welcome-search native-key-bindings'
-                                    type: 'search'
-                                    placeholder: 'Search'
-                                    outlet: 'searchInput'
-                                @div class: 'luna-welcome__header__menu__links', =>
-                                    @a
-                                        class: 'luna-welcome-link luna-welcome-link--forum'
-                                        href: 'http://luna-lang.org'
-                                        title: 'Forum'
-                                        'Forum'
-                                    @a
-                                        class: 'luna-welcome-link luna-welcome-link--chat'
-                                        href: 'http://luna-lang.org'
-                                        title: 'Chat'
-                                        'Chat'
-                        @div class: 'luna-welcome__body', =>
-                            @div class: 'luna-welcome__block luna-welcome__block--projects', =>
-                                @div
-                                    class: 'luna-welcome__section luna-welcome__section--search-results'
-                                    outlet: 'searchResultsSection'
-                                    =>
-                                        @h2 class: 'luna-welcome__section__title icon icon-search', 'Search results'
-                                        @div class: 'luna-welcome__section__container', outlet: 'searchResultsContainer', =>
-                                @div
-                                    class: 'luna-welcome__section luna-welcome__section--tutorials'
-                                    outlet: 'tutorialsSection'
-                                    =>
-                                        @h2 class: 'luna-welcome__section__title icon icon-book', 'Tutorials'
-                                        @div class: 'luna-welcome__section__container', outlet: 'tutorialsContainer', =>
-                                @div
-                                    class: 'luna-welcome__section luna-welcome__section--private',
-                                    outlet: 'privateSection'
-                                    =>
-                                        @h2 class: 'luna-welcome__section__title icon icon-person', 'Private'
-                                        @div class: 'luna-welcome__section__container', outlet: 'privateContainer', =>
-                                @div
-                                    class: 'luna-welcome__section luna-welcome__section--community'
-                                    outlet: 'communitySection'
-                                    =>
-                                        @h2 class: 'luna-welcome__section__title icon icon-organization',  'Community'
-                                        @div  class: 'luna-welcome__section__container', outlet: 'communityContainer', =>
+        @div class: 'luna-welcome-scroll', =>
+            @div class: 'luna-welcome-background', outlet: 'background', =>
+                @div class: 'luna-welcome', outlet: 'welcomeModal', =>
+                    @div class: 'luna-welcome__header', =>
+                        @h1 class: 'luna-welcome__title', 'Welcome to Luna Studio'
+                        @div class: 'luna-welcome__header__menu', =>
+                            @input
+                                class: 'luna-input luna-input--search luna-welcome-search native-key-bindings'
+                                type: 'search'
+                                placeholder: 'Search'
+                                outlet: 'searchInput'
+                            @div class: 'luna-welcome__header__menu__links', =>
+                                @a
+                                    class: 'luna-welcome-link luna-welcome-link--forum'
+                                    href: 'http://luna-lang.org'
+                                    title: 'Forum'
+                                    'Forum'
+                                @a
+                                    class: 'luna-welcome-link luna-welcome-link--chat'
+                                    href: 'http://luna-lang.org'
+                                    title: 'Chat'
+                                    'Chat'
+                    @div class: 'luna-welcome__body', =>
+                        @div class: 'luna-welcome__block luna-welcome__block--projects', =>
+                            @div
+                                class: 'luna-welcome__section luna-welcome__section--search-results'
+                                outlet: 'searchResultsSection'
+                                =>
+                                    @h2 class: 'luna-welcome__section__title icon icon-search', 'Search results'
+                                    @div class: 'luna-welcome__section__container', outlet: 'searchResultsContainer', =>
+                            @div
+                                class: 'luna-welcome__section luna-welcome__section--tutorials'
+                                outlet: 'tutorialsSection'
+                                =>
+                                    @h2 class: 'luna-welcome__section__title icon icon-book', 'Tutorials'
+                                    @div class: 'luna-welcome__section__container', outlet: 'tutorialsContainer', =>
+                            @div
+                                class: 'luna-welcome__section luna-welcome__section--private',
+                                outlet: 'privateSection'
+                                =>
+                                    @h2 class: 'luna-welcome__section__title icon icon-person', 'Private'
+                                    @div class: 'luna-welcome__section__container', outlet: 'privateContainer', =>
+                            @div
+                                class: 'luna-welcome__section luna-welcome__section--community'
+                                outlet: 'communitySection'
+                                =>
+                                    @h2 class: 'luna-welcome__section__title icon icon-organization',  'Community'
+                                    @div  class: 'luna-welcome__section__container', outlet: 'communityContainer', =>
 
     initialize: =>
         @tutorialItems = {}
-        @privateItems = []
         @privateNew = new ProjectItem({name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
             projects.temporaryProject.open())
         @communityItems = []
-        @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, comunnityNewClasses, (progress, finalize) =>
+        @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, communityNewClasses, (progress, finalize) =>
             finalize()
             report.displayError 'Not supported yet', 'Community projects are not supported yet')
-        @welcomePanel.on 'click', (e) -> e.stopPropagation()
+        @welcomeModal.on 'click', (e) -> e.stopPropagation()
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search
-        @background.on 'click', @detach
+        @background.on 'click', @cancel
 
-        @hideSearchResults()
-        projects.recent.load (recentProjectPath) =>
-            item = new ProjectItem {uri: recentProjectPath}, recentClasses, (progress, finalize) =>
-                progress 0.5
-                projects.closeAllFiles()
-                atom.project.setPaths [recentProjectPath]
-                finalize()
-            @privateItems.push(item)
-            @privateContainer.append(item.element)
+        projects.recent.refreshProjectsList @hideSearchResults
 
         @noTutorialsMsg ?= 'Fetching tutorials list...'
         @redrawTutorials()
@@ -119,6 +102,7 @@ class LunaWelcomeTab extends View
     attach: (@mode) =>
         @panel ?= atom.workspace.addModalPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
+        @hideSearchResults()
         @panel.show()
         @searchInput.focus()
         analytics.track 'LunaStudio.Welcome.Open'
@@ -126,10 +110,20 @@ class LunaWelcomeTab extends View
     detach: =>
         if @panel and @panel.isVisible()
             @searchInput[0].value = ''
-            @hideSearchResults()
             @panel.hide()
             @previouslyFocusedElement?.focus()
             analytics.track 'LunaStudio.Welcome.Close'
+            return true
+        return false
+
+    close: =>
+        if @detach()
+            @onCancel = null
+
+    cancel: =>
+        if @detach()
+            @onCancel?()
+            @onCancel = null
 
     search: =>
         filterQuery = @searchInput[0].value
@@ -141,7 +135,7 @@ class LunaWelcomeTab extends View
             for itemName in Object.keys @tutorialItems
                 allItems.push @tutorialItems[itemName]
 
-            allItems = allItems.concat(@privateItems)
+            allItems = allItems.concat projects.recent.getItems()
             filteredItems = fuzzyFilter(allItems, filterQuery, key: @getFilterKey())
             @showSearchResults filteredItems
 
@@ -156,19 +150,22 @@ class LunaWelcomeTab extends View
         @tutorialsSection.hide()
         @searchResultsSection.show()
 
-    hideSearchResults: =>
+    redrawPrivateItems: =>
         @privateContainer.empty()
-        @privateContainer.append(@privateNew.element)
-        for privateItem in @privateItems
-            @privateContainer.append(privateItem.element)
+        @privateContainer.append @privateNew.element
+        for recentProject in projects.recent.getItems()
+            @privateContainer.append recentProject.element
 
-        @redrawTutorials()
-
+    redrawCommunityItems: =>
         @communityContainer.empty()
-        @communityContainer.append(@comunnityNew.element)
+        @communityContainer.append @comunnityNew.element
         for communityItem in @communityItems
-            @communityContainer.append(communityItem.element)
+            @communityContainer.append communityItem.element
 
+    hideSearchResults: =>
+        @redrawPrivateItems()
+        @redrawCommunityItems()
+        @redrawTutorials()
 
         @searchResultsSection.hide()
         @communitySection.show()

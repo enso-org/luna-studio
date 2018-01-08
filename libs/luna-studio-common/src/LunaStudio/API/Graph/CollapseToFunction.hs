@@ -10,17 +10,18 @@ import qualified LunaStudio.API.Topic          as T
 import           LunaStudio.Data.Connection    (Connection)
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.Node          (ExpressionNode)
+import           LunaStudio.Data.NodeCache     (NodeCache)
 import           LunaStudio.Data.NodeLoc       (NodeLoc)
 import           Prologue                      hiding (TypeRep)
 
 
 data Request = Request { _location :: GraphLocation
                        , _nodeLocs :: [NodeLoc]
-                       } deriving (Eq, Generic, Show)
+                       } deriving (Generic, Show)
 
-data Inverse = Inverse { _nodes       :: [ExpressionNode]
-                       , _connections :: [Connection]
-                       } deriving (Eq, Generic, Show)
+data Inverse = Inverse { _prevCode  :: Text
+					   , _nodeCache :: NodeCache
+                       } deriving (Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Inverse
@@ -32,9 +33,8 @@ instance NFData Inverse
 instance ToJSON Inverse
 instance G.GraphRequest Request where location = location
 
--- TODO[MK]: handle inverses
-type Response = Response.Response Request () Result
-instance Response.ResponseResult Request () Result
+type Response = Response.Response Request Inverse Result
+instance Response.ResponseResult Request Inverse Result
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.node.collapsetofunction"

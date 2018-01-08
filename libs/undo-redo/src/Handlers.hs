@@ -17,34 +17,37 @@ import qualified Data.List                              as List
 import           Data.Map.Strict                        (Map)
 import qualified Data.Map.Strict                        as Map
 import           Data.Maybe
-import           Data.UUID                              as UUID (nil)
-import qualified LunaStudio.API.Graph.AddConnection     as AddConnection
-import qualified LunaStudio.API.Graph.AddNode           as AddNode
-import qualified LunaStudio.API.Graph.AddPort           as AddPort
-import qualified LunaStudio.API.Graph.AddSubgraph       as AddSubgraph
-import qualified LunaStudio.API.Graph.MovePort          as MovePort
-import qualified LunaStudio.API.Graph.Paste             as Paste
-import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
-import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
-import qualified LunaStudio.API.Graph.RemovePort        as RemovePort
-import qualified LunaStudio.API.Graph.RenameNode        as RenameNode
-import qualified LunaStudio.API.Graph.RenamePort        as RenamePort
-import           LunaStudio.API.Graph.Result            (Result)
-import qualified LunaStudio.API.Graph.Result            as Result
-import qualified LunaStudio.API.Graph.SetNodeExpression as SetNodeExpression
-import qualified LunaStudio.API.Graph.SetNodesMeta      as SetNodesMeta
-import qualified LunaStudio.API.Graph.SetPortDefault    as SetPortDefault
-import           LunaStudio.API.Request                 (Request (..))
-import qualified LunaStudio.API.Request                 as Request
-import           LunaStudio.API.Response                (Response (..))
-import qualified LunaStudio.API.Response                as Response
-import qualified LunaStudio.API.Topic                   as Topic
-import           LunaStudio.Data.Connection             as Connection
-import qualified LunaStudio.Data.Graph                  as Graph
-import qualified LunaStudio.Data.Node                   as Node
-import           LunaStudio.Data.Port                   (OutPortIndex (Projection))
-import           LunaStudio.Data.PortRef                (AnyPortRef (InPortRef'), OutPortRef (..))
-import           Prologue                               hiding (throwM)
+import           Data.UUID                               as UUID (nil)
+import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
+import qualified LunaStudio.API.Graph.AddNode            as AddNode
+import qualified LunaStudio.API.Graph.AddPort            as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
+import qualified LunaStudio.API.Graph.MovePort           as MovePort
+import qualified LunaStudio.API.Graph.Paste              as Paste
+import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
+import           LunaStudio.API.Graph.Result             (Result)
+import qualified LunaStudio.API.Graph.Result             as Result
+import qualified LunaStudio.API.Graph.SetCode            as SetCode
+import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import           LunaStudio.API.Request                  (Request (..))
+import qualified LunaStudio.API.Request                  as Request
+import           LunaStudio.API.Response                 (Response (..))
+import qualified LunaStudio.API.Response                 as Response
+import qualified LunaStudio.API.Topic                    as Topic
+import           LunaStudio.Data.Connection              as Connection
+import qualified LunaStudio.Data.Graph                   as Graph
+import qualified LunaStudio.Data.Node                    as Node
+import           LunaStudio.Data.Port                    (OutPortIndex (Projection))
+import           LunaStudio.Data.PortRef                 (AnyPortRef (InPortRef'), OutPortRef (..))
+import           Prologue                                hiding (throwM)
 
 type Handler = ByteString -> UndoPure ()
 
@@ -54,6 +57,8 @@ handlersMap = Map.fromList
     , makeHandler handleAddNodeUndo
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
+    , makeHandler handleAutolayoutNodes
+    , makeHandler handleCollapseToFunctionUndo
     , makeHandler handleMovePortUndo
     , makeHandler handlePasteUndo
     , makeHandler handleRemoveConnectionUndo
@@ -61,6 +66,7 @@ handlersMap = Map.fromList
     , makeHandler handleRemovePortUndo
     , makeHandler handleRenameNodeUndo
     , makeHandler handleRenamePortUndo
+    , makeHandler handleSetCodeUndo
     , makeHandler handleSetNodeExpressionUndo
     , makeHandler handleSetNodesMetaUndo
     , makeHandler handleSetPortDefaultUndo
@@ -73,6 +79,8 @@ type family UndoResponseRequest t where
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
     UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
+    UndoResponseRequest AutolayoutNodes.Response      = SetNodesMeta.Request
+    UndoResponseRequest CollapseToFunction.Response   = SetCode.Request
     UndoResponseRequest MovePort.Response             = MovePort.Request
     UndoResponseRequest Paste.Response                = RemoveNodes.Request
     UndoResponseRequest RemoveConnection.Response     = AddConnection.Request
@@ -80,6 +88,7 @@ type family UndoResponseRequest t where
     UndoResponseRequest RemovePort.Response           = AddPort.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest RenamePort.Response           = RenamePort.Request
+    UndoResponseRequest SetCode.Response              = SetCode.Request
     UndoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
     UndoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
     UndoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
@@ -89,6 +98,8 @@ type family RedoResponseRequest t where
     RedoResponseRequest AddNode.Response              = AddNode.Request
     RedoResponseRequest AddPort.Response              = AddPort.Request
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
+    RedoResponseRequest AutolayoutNodes.Response      = AutolayoutNodes.Request
+    RedoResponseRequest CollapseToFunction.Response   = CollapseToFunction.Request
     RedoResponseRequest MovePort.Response             = MovePort.Request
     RedoResponseRequest Paste.Response                = Paste.Request
     RedoResponseRequest RemoveConnection.Response     = RemoveConnection.Request
@@ -96,6 +107,7 @@ type family RedoResponseRequest t where
     RedoResponseRequest RemovePort.Response           = RemovePort.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest RenamePort.Response           = RenamePort.Request
+    RedoResponseRequest SetCode.Response              = SetCode.Request
     RedoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
     RedoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
     RedoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
@@ -173,6 +185,20 @@ handleAddConnectionUndo (Response.Response _ _ req invStatus status) = case (inv
     (Response.Ok inv, Response.Ok _) -> Just (getUndoAddConnection req inv, req)
     _                                -> Nothing
 
+getUndoAutolayout :: AutolayoutNodes.Request -> AutolayoutNodes.Inverse -> SetNodesMeta.Request
+getUndoAutolayout (AutolayoutNodes.Request location _ _) (AutolayoutNodes.Inverse positions) =
+    SetNodesMeta.Request location $ map (\(nl, meta) -> (convert nl, meta)) positions
+
+handleAutolayoutNodes :: AutolayoutNodes.Response -> Maybe (SetNodesMeta.Request, AutolayoutNodes.Request)
+handleAutolayoutNodes (Response.Response _ _ req invStatus status) = case (invStatus, status) of
+    (Response.Ok inv, Response.Ok _) -> Just (getUndoAutolayout req inv, req)
+    _                                -> Nothing
+
+handleCollapseToFunctionUndo :: CollapseToFunction.Response -> Maybe (SetCode.Request, CollapseToFunction.Request)
+handleCollapseToFunctionUndo (Response.Response _ _ req invStatus status) = case (invStatus, status) of
+    (Response.Ok inv, Response.Ok _) -> Just (SetCode.Request (req ^. CollapseToFunction.location) (inv ^. CollapseToFunction.prevCode) (inv ^. CollapseToFunction.nodeCache), req)
+    _                                -> Nothing
+
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
 getUndoMovePort (MovePort.Request location oldPortRef newPos) = case oldPortRef of
@@ -245,6 +271,10 @@ handleRenamePortUndo (Response.Response _ _ req invStatus status) = case (invSta
     (Response.Ok inv, Response.Ok _) -> Just (getUndoRenamePort req inv, req)
     _                                -> Nothing
 
+handleSetCodeUndo :: SetCode.Response -> Maybe (SetCode.Request,  SetCode.Request)
+handleSetCodeUndo (Response.Response _ _ req invStatus status) = case (invStatus, status) of
+    (Response.Ok inv, Response.Ok _) -> Just (SetCode.Request (req ^. SetCode.location) (inv ^. SetCode.prevCode) (inv ^. SetCode.prevCache), req)
+    _                                -> Nothing
 
 getUndoSetNodeExpression :: SetNodeExpression.Request -> SetNodeExpression.Inverse -> SetNodeExpression.Request
 getUndoSetNodeExpression (SetNodeExpression.Request location nodeId _) (SetNodeExpression.Inverse prevExpr) =

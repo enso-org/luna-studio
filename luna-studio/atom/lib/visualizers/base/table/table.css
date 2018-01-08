@@ -5,15 +5,31 @@ body {
 table {
     font-size:   12px;
     line-height: 16px;
-    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0 0;
     width: 100%;
     display: block;
 }
-th,td {
-    cell-spacing: 0;
-    border: none;
-    padding: 0 5px;
+
+td {
+  padding: 0;
 }
+
+td.plaintext,
 th {
-  opacity: 0.25;
+  padding: 5px;
+}
+
+th,td {
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+
+th {
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 400;
+}
+
+td, th {
+  background-color: rgba(255, 255, 255, 0.03);
 }

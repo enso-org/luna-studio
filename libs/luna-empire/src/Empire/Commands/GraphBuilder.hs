@@ -88,7 +88,7 @@ buildClassGraph = do
 
 buildClassNode :: ClassOp m => NodeId -> String -> m API.ExpressionNode
 buildClassNode uuid name = do
-    f    <- ASTRead.getFunByName name
+    f    <- ASTRead.getFunByNodeId uuid
     meta <- fromMaybe def <$> AST.readMeta f
     codeStart <- Code.functionBlockStartRef f
     LeftSpacedSpan (SpacedSpan _ len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan f
@@ -168,6 +168,20 @@ buildNodeForAutolayout nid = do
     marked       <- ASTRead.getASTRef nid
     Just codePos <- Code.getOffsetRelativeToFile marked
     meta         <- fromMaybe def <$> AST.readMeta marked
+    pure (nid, fromIntegral codePos, meta ^. NodeMeta.position)
+
+buildNodesForAutolayoutCls :: ClassOp m => m [(NodeId, Int, Position)]
+buildNodesForAutolayoutCls = do
+    allNodeIds <- uses Graph.clsFuns Map.keys
+    nodes      <- mapM buildNodeForAutolayoutCls allNodeIds
+    pure nodes
+
+buildNodeForAutolayoutCls :: ClassOp m => NodeId -> m (NodeId, Int, Position)
+buildNodeForAutolayoutCls nid = do
+    name    <- use $ Graph.clsFuns . ix nid . Graph.funName
+    marked  <- ASTRead.getFunByNodeId nid
+    codePos <- Code.functionBlockStartRef marked
+    meta    <- fromMaybe def <$> AST.readMeta marked
     pure (nid, fromIntegral codePos, meta ^. NodeMeta.position)
 
 buildNode :: GraphOp m => NodeId -> m API.ExpressionNode

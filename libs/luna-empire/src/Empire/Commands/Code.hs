@@ -22,7 +22,7 @@ import           Empire.Empire           (Command, Empire)
 import qualified Safe
 
 import           Empire.Data.AST         (NodeRef, EdgeRef)
-import           Empire.ASTOp            (ClassOp, GraphOp, runASTOp)
+import           Empire.ASTOp            (ASTOp, ClassOp, GraphOp, runASTOp)
 import           Empire.ASTOps.Read      as ASTRead
 
 import qualified Luna.IR                 as IR
@@ -40,6 +40,7 @@ import           Luna.Syntax.Text.Analysis.SpanTree as SpanTree
 
 import           LunaStudio.Data.Breadcrumb         (Breadcrumb(..), BreadcrumbItem(..))
 import           LunaStudio.Data.Node               (NodeId)
+import qualified LunaStudio.Data.NodeCache          as NodeCache
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 
 import           LunaStudio.Data.Point (Point(Point))
@@ -53,7 +54,7 @@ deltaToPoint :: Delta -> Text -> Point
 deltaToPoint delta code = Point col row where
     codePrefix = Text.take (fromIntegral delta + 1) code
     row = pred $ length $ Text.lines codePrefix
-    col = pred $ Text.length $ Text.takeWhileEnd (/= '\n') codePrefix
+    col = Text.length $ Text.takeWhileEnd (/= '\n') $ Text.init codePrefix
 
 removeMarkers :: Text -> Text
 removeMarkers (convert -> code) = convertVia @String $ SpanTree.foldlSpans concatNonMarker "" spanTree where
@@ -210,20 +211,21 @@ getNextExprMarker = do
     localExprMap  <- getExprMap
     let keys         = Map.keys $ Map.union globalExprMap localExprMap
         highestIndex = Safe.maximumMay keys
-    return $ maybe 0 succ highestIndex
+        newMarker    = maybe 0 succ highestIndex
+    invalidateMarker newMarker
+    return newMarker
 
-invalidateMarker :: GraphOp m => Word64 -> m ()
+invalidateMarker :: (ASTOp g m, HasNodeCache g) => Word64 -> m ()
 invalidateMarker index = do
-    oldId <- use $ Graph.nodeCache . Graph.nodeIdMap . at index
-    Graph.nodeCache . Graph.nodeIdMap . at index .= Nothing
-    Graph.nodeCache . Graph.nodeMetaMap . at index .= Nothing
-    Graph.nodeCache . Graph.portMappingMap %= Map.filterWithKey (\(nid,_) _ -> Just nid /= oldId)
+    oldId <- use $ Graph.nodeCache . NodeCache.nodeIdMap . at index
+    Graph.nodeCache . NodeCache.nodeIdMap . at index .= Nothing
+    Graph.nodeCache . NodeCache.nodeMetaMap . at index .= Nothing
+    Graph.nodeCache . NodeCache.portMappingMap %= Map.filterWithKey (\(nid,_) _ -> Just nid /= oldId)
 
 addCodeMarker :: GraphOp m => Delta -> EdgeRef -> m NodeRef
 addCodeMarker beg edge = do
     ref    <- IR.source edge
     index  <- getNextExprMarker
-    invalidateMarker index
     marker <- IR.marker' index
     markedNode <- IR.marked' marker ref
     exprLength <- IR.getLayer @SpanLength ref
@@ -289,11 +291,7 @@ computeLength ref = do
 
 functionBlockStart :: ClassOp m => NodeId -> m Delta
 functionBlockStart funUUID = do
-    unit <- use Graph.clsClass
-    funs <- use Graph.clsFuns
-    let fun = Map.lookup funUUID funs
-    funGraph  <- fromJustM (throwM $ BH.BreadcrumbDoesNotExistException (Breadcrumb [Definition funUUID])) fun
-    ref       <- ASTRead.getFunByName $ funGraph ^. Graph.funName
+    ref  <- ASTRead.getFunByNodeId funUUID
     functionBlockStartRef ref
 
 functionBlockStartRef :: ClassOp m => NodeRef -> m Delta
@@ -374,6 +372,18 @@ gossipLengthsChangedBy delta ref = do
     succs     <- Set.toList <$> IR.getLayer @IR.Succs ref
     succNodes <- mapM IR.readTarget succs
     mapM_ (gossipLengthsChangedBy delta) succNodes
+
+addToLengthCls :: ClassOp m => NodeRef -> Delta -> m ()
+addToLengthCls ref delta = do
+    LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan ref
+    IR.putLayer @CodeSpan ref $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off (len + delta)))
+
+gossipLengthsChangedByCls :: ClassOp m => Delta -> NodeRef -> m ()
+gossipLengthsChangedByCls delta ref = do
+    addToLengthCls ref delta
+    succs     <- Set.toList <$> IR.getLayer @IR.Succs ref
+    succNodes <- mapM IR.readTarget succs
+    mapM_ (gossipLengthsChangedByCls delta) succNodes
 
 makeMarker :: Word64 -> Text
 makeMarker s = Text.pack $ "«" <> show s <> "»"

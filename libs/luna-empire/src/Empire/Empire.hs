@@ -53,6 +53,7 @@ data TCRequest = TCRequest { _tcLocation       :: GraphLocation
                            , _tcGraph          :: ClsGraph
                            , _tcFlush          :: Bool
                            , _tcRunInterpreter :: Bool
+                           , _tcRecompute      :: Bool
                            }
 makeLenses ''TCRequest
 

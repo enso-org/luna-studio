@@ -33,12 +33,15 @@ import qualified LunaStudio.API.Graph.RenameNode             as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort             as RenamePort
 import qualified LunaStudio.API.Graph.Result                 as Result
 import qualified LunaStudio.API.Graph.SearchNodes            as SearchNodes
+import qualified LunaStudio.API.Graph.SetCode                as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression      as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta           as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault         as SetPortDefault
 import qualified LunaStudio.API.Response                     as Response
 import           LunaStudio.Data.Breadcrumb                  (containsNode)
-import           LunaStudio.Data.Error                       (Error, GraphError (BreadcrumbDoesNotExist, Other), errorType)
+import           LunaStudio.Data.Error                       (Error (Error), GraphError (BreadcrumbDoesNotExist, OtherGraphError),
+                                                              LunaError, errorType)
+import qualified LunaStudio.Data.Error                       as ErrorAPI
 import qualified LunaStudio.Data.Graph                       as Graph
 import           LunaStudio.Data.GraphLocation               (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation               as GraphLocation
@@ -64,7 +67,7 @@ import           NodeEditor.Action.UUID                      (isOwnRequest)
 import qualified NodeEditor.Batch.Workspace                  as Workspace
 import           NodeEditor.Event.Batch                      (Event (..))
 import qualified NodeEditor.Event.Event                      as Event
-import           NodeEditor.Handler.Backend.Common           (doNothing, handleResponse)
+import           NodeEditor.Handler.Backend.Common           (doNothing, doNothing2, handleResponse)
 import           NodeEditor.React.Model.App                  (workspace)
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as Node
 import           NodeEditor.React.Model.NodeEditor           (GraphStatus (GraphError, GraphLoaded))
@@ -83,7 +86,7 @@ applyResultPreventingExpressionNodesPorts gl res = inCurrentLocation gl $ applyR
 applyResult' :: Bool -> Result.Result -> NodePath -> Command State ()
 applyResult' preventPorts res path = unlessM (checkBreadcrumb res) $
     case res ^. Result.graphUpdates of
-        Left err -> handleError err
+        Left err -> handleGraphError err
         Right graphUpdates -> do
             let exprNodeUpdateFunction = if preventPorts then localUpdateOrAddExpressionNodePreventingPorts else localUpdateOrAddExpressionNode
             void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
@@ -96,14 +99,18 @@ applyResult' preventPorts res path = unlessM (checkBreadcrumb res) $
             when (isJust outputSidebar) $ forM_ outputSidebar $ localUpdateOrAddOutputNode . convert . (path,)
             setGraphStatus GraphLoaded
 
-handleError :: Error GraphError -> Command State ()
-handleError e = case e ^. errorType of
+handleGraphError :: Error GraphError -> Command State ()
+handleGraphError e = case e ^. errorType of
     BreadcrumbDoesNotExist -> do
         setGraphStatus (GraphError e)
         mayWorkspace <- getWorkspace
         let isOnTop = fromMaybe True (Workspace.isOnTopBreadcrumb <$> mayWorkspace)
         if isOnTop then fatal "Cannot get file from backend" else exitBreadcrumb
-    Other                  -> setGraphStatus (GraphError e)
+    OtherGraphError        -> setGraphStatus (GraphError e)
+
+handleLunaError :: Error LunaError -> Command State ()
+handleLunaError (Error (ErrorAPI.Graph tpe) content) = handleGraphError $ Error tpe content
+handleLunaError _                                    = fatal "Cannot get file from backend"
 
 checkBreadcrumb :: Result.Result -> Command State Bool
 checkBreadcrumb res = do
@@ -127,7 +134,7 @@ handle (Event.Batch ev) = Just $ case ev of
             setBreadcrumbs $ result ^. GetProgram.breadcrumb
             setCurrentImports $ result ^. GetProgram.availableImports
             case result ^. GetProgram.graph of
-                Left err    -> handleError err
+                Left err    -> handleGraphError err
                 Right graph -> do
                     let nodes       = convert . (NodeLoc.empty,) <$> graph ^. Graph.nodes
                         input       = convert . (NodeLoc.empty,) <$> graph ^. Graph.inputSidebar
@@ -140,44 +147,37 @@ handle (Event.Batch ev) = Just $ case ev of
                     whenM (isOwnRequest requestId) $ withJust (result ^. GetProgram.typeRepToVisMap) $ \visMap ->
                         Global.preferedVisualizers .= visMap
                     updateScene
-        failure res = do
-            mayWorkspace <- getWorkspace
-            let isOnTop = fromMaybe True (Workspace.isOnTopBreadcrumb <$> mayWorkspace)
-            if isOnTop
-                then fatal "Cannot get file from backend"
-                else do
-                    modifyApp $ workspace . _Just %= Workspace.upperWorkspace
-                    getProgram def False
+        failure err _ = handleLunaError err
 
     AddConnectionResponse response -> handleResponse response success failure where
-        requestId = response ^. Response.requestId
-        request   = response ^. Response.request
-        location  = request  ^. AddConnection.location
-        failure _ = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success   = applyResult location
+        requestId   = response ^. Response.requestId
+        request     = response ^. Response.request
+        location    = request  ^. AddConnection.location
+        failure _ _ = whenM (isOwnRequest requestId) $ revertAddConnection request
+        success     = applyResult location
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. AddNode.location
         nl             = request  ^. AddNode.nodeLoc
-        failure _      = whenM (isOwnRequest requestId) $ revertAddNode request
+        failure _ _    = whenM (isOwnRequest requestId) $ revertAddNode request
         success result = do
             applyResult location result
             whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where
-        requestId = response ^. Response.requestId
-        request   = response ^. Response.request
-        location  = request  ^. AddPort.location
-        failure _ = whenM (isOwnRequest requestId) $ revertAddPort request
-        success   = applyResult location
+        requestId   = response ^. Response.requestId
+        request     = response ^. Response.request
+        location    = request  ^. AddPort.location
+        failure _ _ = whenM (isOwnRequest requestId) $ revertAddPort request
+        success     = applyResult location
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. AddSubgraph.location
-        failure _      = whenM (isOwnRequest requestId) $ revertAddSubgraph request
+        failure _ _    = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success result = do
             applyResult location result
             inCurrentLocation location $ \path -> whenM (isOwnRequest requestId) $
@@ -186,12 +186,12 @@ handle (Event.Batch ev) = Just $ case ev of
                         collaborativeModify $ map (convert . (path,) . view nodeId) $ graphUpdates ^. Graph.nodes
                     Left _ -> return ()
 
-    AtomPasteResponse response -> handleResponse response success doNothing where
+    AtomPasteResponse response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
         location  = request  ^. AtomPaste.location
         success   = applyResult location
 
-    AutolayoutNodesResponse response -> handleResponse response success doNothing where
+    AutolayoutNodesResponse response -> handleResponse response success doNothing2 where
         location     = response ^. Response.request . AutolayoutNodes.location
         shouldCenter = response ^. Response.request . AutolayoutNodes.centerGraph
         success res  = applyResult location res >> when shouldCenter centerGraph
@@ -212,12 +212,12 @@ handle (Event.Batch ev) = Just $ case ev of
                 CollaborationUpdate.CancelTouch nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId .= Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
-    CollapseToFunctionResponse response -> handleResponse response success doNothing where
+    CollapseToFunctionResponse response -> handleResponse response success doNothing2 where
         request         = response ^. Response.request
         location        = request  ^. CollapseToFunction.location
         success         = applyResult location
 
-    CopyResponse response -> handleResponse response success doNothing where
+    CopyResponse response -> handleResponse response success doNothing2 where
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request ^. Copy.location
@@ -227,10 +227,10 @@ handle (Event.Batch ev) = Just $ case ev of
                 let meta  = convert $ result ^. Copy.clipboardMeta
                 liftIO $ JS.copyStringToClipboard plain meta
 
-    DumpGraphVizResponse response -> handleResponse response doNothing doNothing
+    DumpGraphVizResponse response -> handleResponse response doNothing doNothing2
 
     --TODO[LJK, PM]: Review this Handler
-    GetSubgraphsResponse response -> handleResponse response success doNothing where
+    GetSubgraphsResponse response -> handleResponse response success doNothing2 where
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request ^. GetSubgraphs.location
@@ -243,11 +243,11 @@ handle (Event.Batch ev) = Just $ case ev of
             updateMonads $ update ^. MonadsUpdate.monads --FIXME updateMonads in path!
 
     MovePortResponse response -> handleResponse response success failure where
-        requestId = response ^. Response.requestId
-        request   = response ^. Response.request
-        location  = request  ^. MovePort.location
-        failure _ = whenM (isOwnRequest requestId) $ revertMovePort request
-        success   = applyResult location
+        requestId   = response ^. Response.requestId
+        request     = response ^. Response.request
+        location    = request  ^. MovePort.location
+        failure _ _ = whenM (isOwnRequest requestId) $ revertMovePort request
+        success     = applyResult location
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location
@@ -260,83 +260,88 @@ handle (Event.Batch ev) = Just $ case ev of
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
           void $ localUpdateNodeTypecheck path $ update ^. NodeTCUpdate.node
 
-    PasteResponse response -> handleResponse response success doNothing where
+    PasteResponse response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
         location  = request  ^. Paste.location
         success   = applyResult location
 
-    ProjectMoved response -> handleResponse response success doNothing where
+    ProjectMoved response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
         success _ = localMoveProject (request ^. MoveProject.oldPath) (request ^. MoveProject.newPath)
 
     RedoResponse _response -> $notImplemented
 
     RemoveConnectionResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. RemoveConnection.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
-        success         = applyResult location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. RemoveConnection.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
+        success           = applyResult location
 
     RemoveNodesResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. RemoveNodes.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
-        success         = applyResult location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. RemoveNodes.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
+        success           = applyResult location
 
     RemovePortResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. RemovePort.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
-        success         = applyResult location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. RemovePort.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
+        success           = applyResult location
 
     RenameNodeResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. RenameNode.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
-        success         = applyResult location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. RenameNode.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
+        success           = applyResult location
 
     RenamePortResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. RenamePort.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertRenamePort request inverse
-        success         = applyResult location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. RenamePort.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertRenamePort request inverse
+        success           = applyResult location
 
-    SearchNodesResponse response -> handleResponse response success doNothing where
+    SearchNodesResponse response -> handleResponse response success doNothing2 where
         success = localAddSearcherHints . view SearchNodes.searcherHints
 
-    SetNodeExpressionResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
+    SetCodeResponse response -> handleResponse response success doNothing2 where
         request         = response ^. Response.request
-        location        = request  ^. SetNodeExpression.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
+        location        = request  ^. SetCode.location
         success         = applyResult location
 
+    SetNodeExpressionResponse response -> handleResponse response success failure where
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. SetNodeExpression.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
+        success           = applyResult location
+
     SetNodesMetaResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. SetNodesMeta.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
-        success         = whenM (not <$> isOwnRequest requestId) . applyResult location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. SetNodesMeta.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
+        success           = whenM (not <$> isOwnRequest requestId) . applyResult location
 
     SetPortDefaultResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. SetPortDefault.location
-        failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success         = applyResultPreventingExpressionNodesPorts location
+        requestId         = response ^. Response.requestId
+        request           = response ^. Response.request
+        location          = request  ^. SetPortDefault.location
+        failure _ inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
+        success           = applyResultPreventingExpressionNodesPorts location
 
-    SubstituteResponse response -> handleResponse response success doNothing where
+    SubstituteResponse response -> handleResponse response success doNothing2 where
         location    = response ^. Response.request . Substitute.location
         success res = do
             applyResult location (res ^. Substitute.defResult)
             withJust (res ^. Substitute.importChange) setCurrentImports
 
-    TypeCheckResponse response -> handleResponse response doNothing doNothing
+    TypeCheckResponse response -> handleResponse response doNothing doNothing2
 
     UndoResponse _response -> $notImplemented
 

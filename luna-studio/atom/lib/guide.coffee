@@ -268,11 +268,32 @@ module.exports =
                     @pointer[0].classList.remove pointerWindowClass
                 if @isVisible()
                     highlightedRect = @highlightedElem.getBoundingClientRect()
-                    @pointer.show()
-                    @pointer[0].style.width  = highlightedRect.width + 'px'
-                    @pointer[0].style.height = highlightedRect.height + 'px'
-                    @pointer[0].style.top  = highlightedRect.top + 'px'
-                    @pointer[0].style.left = highlightedRect.left + 'px'
+                    nodeEditorElem = @highlightedElem
+                    loop
+                        if typeof nodeEditorElem.className is 'string'
+                            if nodeEditorElem.className.split(' ').indexOf('luna-studio-window') != -1 or nodeEditorElem.className.split(' ').indexOf('luna-studio-mount') != -1 then break
+                        break unless nodeEditorElem = nodeEditorElem.parentNode
+
+                    if nodeEditorElem
+                        nodeEditorRect   = nodeEditorElem.getBoundingClientRect()
+                        leftNotVisible   = highlightedRect.left   < nodeEditorRect.left
+                        rightNotVisible  = highlightedRect.right  > nodeEditorRect.right
+                        topNotVisible    = highlightedRect.top    < nodeEditorRect.top
+                        bottomNotVisible = highlightedRect.bottom > nodeEditorRect.bottom
+                        if leftNotVisible or rightNotVisible or topNotVisible or bottomNotVisible or @isNodeEditorElementCovered()
+                            @pointer.hide()
+                        else
+                            @pointer.show()
+                            @pointer[0].style.width  = highlightedRect.width + 'px'
+                            @pointer[0].style.height = highlightedRect.height + 'px'
+                            @pointer[0].style.top    = highlightedRect.top + 'px'
+                            @pointer[0].style.left   = highlightedRect.left + 'px'
+                    else
+                        @pointer.show()
+                        @pointer[0].style.width  = highlightedRect.width + 'px'
+                        @pointer[0].style.height = highlightedRect.height + 'px'
+                        @pointer[0].style.top    = highlightedRect.top + 'px'
+                        @pointer[0].style.left   = highlightedRect.left + 'px'
                 else
                     @pointer.hide()
                 window.requestAnimationFrame @updatePointer
@@ -301,6 +322,8 @@ module.exports =
                         parsed = yaml.safeLoad data
                         if parsed? && not parsed.disabled
                             @start parsed, guidePath
+                            return
+                    @detach()
 
         disableGuide: =>
             if @guidePath?
@@ -319,26 +342,35 @@ module.exports =
             @attach()
             @nextStep 0
 
+
+        isNodeEditorElementCovered: =>
+            elem = @highlightedElem
+            corners = [ {x: elem.getBoundingClientRect().left + 10,  y: elem.getBoundingClientRect().top + 10}
+                      , {x: elem.getBoundingClientRect().left + 10,  y: elem.getBoundingClientRect().bottom - 10}
+                      , {x: elem.getBoundingClientRect().right - 10, y: elem.getBoundingClientRect().top + 10}
+                      , {x: elem.getBoundingClientRect().right - 10, y: elem.getBoundingClientRect().bottom - 10}
+                      ]
+            for p, i in corners
+                pointContainer = document.elementFromPoint p.x, p.y
+                nodeEditorFound = false
+                loop
+                    if typeof pointContainer.className is 'string'
+                        if pointContainer.className.indexOf('luna-studio-window') != -1 or pointContainer.className.indexOf('luna-studio-mount') != -1
+                            nodeEditorFound = true
+                            break
+                    break unless pointContainer = pointContainer.parentNode
+                if not nodeEditorFound
+                    return true
+            return false
+
         isVisible: =>
             elem = @highlightedElem
             style = getComputedStyle elem
             if style.display is 'none' then return false
             if style.visibility isnt 'visible' then return false
-            if style.opacity < 0.1 then return false
             if (elem.offsetWidth + elem.offsetHeight + elem.getBoundingClientRect().height + elem.getBoundingClientRect().width is 0)
                 return false
-            elemCenter =
-                x: elem.getBoundingClientRect().left + elem.offsetWidth / 2
-                y: elem.getBoundingClientRect().top  + elem.offsetHeight / 2
-            if elemCenter.x < 0 then return false
-            if elemCenter.x > (document.documentElement.clientWidth || window.innerWidth) then return false
-            if elemCenter.y < 0 then return false
-            if elemCenter.y > (document.documentElement.clientHeight || window.innerHeight) then return false
-            pointContainer = document.elementFromPoint elemCenter.x, elemCenter.y
-            while true
-                if pointContainer is elem then return true
-                break unless pointContainer = pointContainer.parentNode
-            return false
+            return true
 
         fastForward: =>
             @doIt()
