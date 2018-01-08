@@ -131,10 +131,10 @@ module.exports =
                     (name) => "Path already exists at '#{name}'",
                     (name) => callback name
     recent:
-        items: recentProjects
+        getItems: -> recentProjects
 
         refreshProjectsList: (callback) =>
-            recentProjects.length = 0
+            recentProjects = []
             loadRecentNoCheck (serializedProjectPaths) =>
                 serializedProjectPaths.forEach (serializedProjectPath) =>
                     try
@@ -145,11 +145,7 @@ module.exports =
 
         add: (recentProjectPath) =>
             if isTemporary recentProjectPath then return
-            unless recentProjects.length == 0
-                for pos in [0..recentProjects.length - 1]
-                    if recentProjects[pos].uri is recentProjectPath
-                        recentProjects.splice pos, 1
-                        break
+            recentProjects = recentProjects.filter (project) -> project.uri isnt recentProjectPath
             recentProjects.unshift mkRecentProject recentProjectPath
             data = yaml.safeDump recentProjectsPaths()
             fs.writeFile recentProjectsPath, data, encoding, (err) =>

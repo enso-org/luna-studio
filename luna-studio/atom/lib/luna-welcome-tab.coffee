@@ -118,12 +118,12 @@ class LunaWelcomeTab extends View
 
     close: =>
         if @detach()
-            onCancel = null
+            @onCancel = null
 
     cancel: =>
         if @detach()
             @onCancel?()
-            onCancel = null
+            @onCancel = null
 
     search: =>
         filterQuery = @searchInput[0].value
@@ -135,7 +135,7 @@ class LunaWelcomeTab extends View
             for itemName in Object.keys @tutorialItems
                 allItems.push @tutorialItems[itemName]
 
-            allItems = allItems.concat projects.recent.items
+            allItems = allItems.concat projects.recent.getItems()
             filteredItems = fuzzyFilter(allItems, filterQuery, key: @getFilterKey())
             @showSearchResults filteredItems
 
@@ -153,7 +153,7 @@ class LunaWelcomeTab extends View
     redrawPrivateItems: =>
         @privateContainer.empty()
         @privateContainer.append @privateNew.element
-        for recentProject in projects.recent.items
+        for recentProject in projects.recent.getItems()
             @privateContainer.append recentProject.element
 
     redrawCommunityItems: =>
