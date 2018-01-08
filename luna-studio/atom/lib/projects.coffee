@@ -127,7 +127,7 @@ module.exports =
                 inputView = new InputView()
                 suggestedProjectName = path.basename(atom.project.getPaths()[0])
                 inputView.attach "Save project as", defaultProjectPath, suggestedProjectName,
-                    (name) =>!fs.existsSync(name),
+                    (name) => !fs.existsSync(name),
                     (name) => "Path already exists at '#{name}'",
                     (name) => callback name
     recent:

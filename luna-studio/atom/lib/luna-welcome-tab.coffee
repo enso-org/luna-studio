@@ -102,6 +102,7 @@ class LunaWelcomeTab extends View
     attach: (@mode) =>
         @panel ?= atom.workspace.addModalPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
+        @hideSearchResults()
         @panel.show()
         @searchInput.focus()
         analytics.track 'LunaStudio.Welcome.Open'
@@ -109,7 +110,6 @@ class LunaWelcomeTab extends View
     detach: =>
         if @panel and @panel.isVisible()
             @searchInput[0].value = ''
-            @hideSearchResults()
             @panel.hide()
             @previouslyFocusedElement?.focus()
             analytics.track 'LunaStudio.Welcome.Close'
