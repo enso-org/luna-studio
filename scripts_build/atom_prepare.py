@@ -17,7 +17,7 @@ def prepare_holder(output, content_start, content_end, input1, input2, placehold
         modified.write(content_end)
 
 def put_ghcjs(output, content, str_to_change):
-    with open(content, 'r') as code:
+    with open(content, 'r', encoding='utf8') as code:
         code = code.read()
         for line in fileinput.input(output, inplace=True):
             print(line.replace(str_to_change, code))
