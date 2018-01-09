@@ -33,22 +33,26 @@ dist_package_folder = ap.prep_path('../dist-package')
 gui_package_path = ap.prep_path('../dist-package/gui.zip')
 studio_folder = ap.prep_path('../luna-studio/atom')
 version_file =ap.prep_path('../dist/config/version.txt')
+logo_ico =ap.prep_path('../resources/logo.ico')
 
 paths = {
     system.systems.WINDOWS: {
         'apm': '/Atom/resources/app/apm/bin/apm.cmd',
         'oniguruma': '/Atom/resources/app/node_modules/oniguruma',
         'package_json': '/Atom/resources/app/package.json',
+        'atom_app' : '/Atom/atom.exe',
     },
     system.systems.LINUX: {
         'apm': '/atom/usr/share/atom/resources/app/apm/bin/apm',
         'oniguruma': '/atom/usr/share/atom/resources/app/node_modules/oniguruma',
         'package_json': '/atom/usr/share/atom/resources/app/package.json',
+        'atom_app' : '', #check
     },
     system.systems.DARWIN: {
         'apm': '/Atom.app/Contents/Resources/app/apm/bin/apm',
         'oniguruma': '/Atom.app/Contents/Resources/app/node_modules/oniguruma',
         'package_json': '/Atom.app/Contents/Resources/app/package.json',
+        'atom_app' : 'check',
     },
 }
 
@@ -223,6 +227,19 @@ def modify_atom_package_json():
     sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
 
+def modify_atom_icon():
+    if system.windows():
+        atom = get_path('atom_app')
+        programdata = os.environ.get('%PROGRAMDATA%')
+        winresourcer = os.path.join(programdata,'npm','node_modules','winresourcer','lib','WinResourcer')
+        print(winresourcer)
+        print(atom)
+        proc=subprocess.Popen([winresourcer, '--operation=Update', '--exeFile='++atom, '--resourceType=Icongroup', '--resourceName=1', '--resource='++logo_ico],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc.wait()
+        output = proc.stdout.read()
+        return output.decode('utf-8')
+
+
 def run(gui_url, frontend_args, link=False):
     print("Installing Atom packages")
     init_apm(gui_url, frontend_args, link)
@@ -230,6 +247,7 @@ def run(gui_url, frontend_args, link=False):
         apm_luna_atom_package(pkg_name, pkg_url)
     apm_packages()
     modify_atom_package_json()
+    modify_atom_icon()
 
 
 # if __name__ == '__main__':
