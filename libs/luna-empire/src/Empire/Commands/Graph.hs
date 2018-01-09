@@ -482,8 +482,8 @@ setOutputTo out = do
     newSeq   <- reconnectOut oldSeq out blockEnd
     traverse_ (updateGraphSeq . Just) newSeq
 
-updateGraphSeq :: GraphOp m => Maybe NodeRef -> m ()
-updateGraphSeq newOut = do
+updateGraphSeqWithWhilelist :: GraphOp m => [NodeRef] -> Maybe NodeRef -> m ()
+updateGraphSeqWithWhilelist whitelist newOut = do
     currentTgt   <- ASTRead.getCurrentASTTarget
     Just outLink <- ASTRead.getFirstNonLambdaLink currentTgt
     oldSeq       <- IR.source outLink
@@ -501,9 +501,12 @@ updateGraphSeq newOut = do
             blockEnd <- Code.getCurrentBlockEnd
             Code.insertAt (blockEnd - noneLen) "None"
             return ()
-    IR.deepDeleteWithWhitelist oldSeq $ Set.fromList $ maybeToList newOut
+    IR.deepDeleteWithWhitelist oldSeq $ Set.union (Set.fromList whitelist) (Set.fromList (maybeToList newOut))
     oldRef <- use $ Graph.breadcrumbHierarchy . BH.self
     when (oldRef == oldSeq) $ for_ newOut (Graph.breadcrumbHierarchy . BH.self .=)
+
+updateGraphSeq :: GraphOp m => Maybe NodeRef -> m ()
+updateGraphSeq newOut = updateGraphSeqWithWhilelist [] newOut
 
 updateCodeSpan' :: GraphOp m => NodeRef -> m _
 updateCodeSpan' ref = IR.matchExpr ref $ \case
@@ -617,8 +620,8 @@ removeExprMarker ref = do
     let newExprMap = Map.filter (/= ref) exprMap
     setExprMap newExprMap
 
-removeSequenceElement :: GraphOp m => NodeRef -> NodeRef -> m (Maybe NodeRef, Bool)
-removeSequenceElement seq ref = IR.matchExpr seq $ \case
+unpinSequenceElement :: GraphOp m => NodeRef -> NodeRef -> m (Maybe NodeRef, Bool)
+unpinSequenceElement seq ref = IR.matchExpr seq $ \case
     IR.Seq l r -> do
         rt <- IR.source r
         if rt == ref
@@ -631,13 +634,14 @@ removeSequenceElement seq ref = IR.matchExpr seq $ \case
                 return (Just lt, True)
             else do
                 lt    <- IR.source l
-                recur <- removeSequenceElement lt ref
+                recur <- unpinSequenceElement lt ref
                 case recur of
                     (Just newRef, True) -> do -- left child changed
                         len    <- IR.getLayer @SpanLength ref
                         indent <- Code.getCurrentIndentationLength
                         Code.gossipLengthsChangedBy (negate $ len + indent + 1) lt
-                        IR.replace newRef lt
+                        ASTModify.substitute newRef lt
+                        IR.delete lt
                         return (Just newRef, False)
                     (Nothing, True)     -> do -- left child removed, right child replaces whole seq
                         roff     <- IR.getLayer @SpanOffset r
@@ -652,11 +656,16 @@ removeSequenceElement seq ref = IR.matchExpr seq $ \case
         Code.removeAt offset (offset + len)
         return (Nothing, True)
 
+unpinFromSequence :: GraphOp m => NodeRef -> m ()
+unpinFromSequence ref = do
+    oldSeq <- ASTRead.getCurrentBody
+    (newS, shouldUpdate) <- unpinSequenceElement oldSeq ref
+    when shouldUpdate (updateGraphSeqWithWhilelist [ref] newS)
+
 removeFromSequence :: GraphOp m => NodeRef -> m ()
 removeFromSequence ref = do
-    oldSeq <- ASTRead.getCurrentBody
-    (newS, shouldUpdate) <- removeSequenceElement oldSeq ref
-    when shouldUpdate (updateGraphSeq newS)
+    unpinFromSequence ref
+    IR.deleteSubtree ref
 
 removePort :: GraphLocation -> OutPortRef -> Empire ()
 removePort loc portRef = do
@@ -783,6 +792,35 @@ connect loc outPort anyPort = do
     resendCode loc
     return connection
 
+reorder :: GraphOp m => NodeId -> NodeId -> m ()
+reorder dst src = do
+    dstDownstream <- getNodeDownstream dst
+    dstDownAST    <- mapM ASTRead.getASTRef dstDownstream
+    nodes         <- ASTRead.getCurrentBody >>= AST.readSeq
+    srcAst        <- ASTRead.getASTRef src
+    let srcIndex    = List.elemIndex srcAst nodes
+        downIndices = sortOn snd $ map (\a -> (a, a `List.elemIndex` nodes)) dstDownAST
+        leftToSrc   = map fst $ filter ((< srcIndex) . snd) downIndices
+    let f acc e = do
+            oldSeq   <- ASTRead.getCurrentBody
+            code     <- Code.getCodeOf e
+            unpinFromSequence e
+            blockEnd <- Code.getCurrentBlockEnd
+            oldSeq'   <- ASTRead.getCurrentBody
+            insertAfterAndUpdate oldSeq' (Just acc) e blockEnd code
+            return e
+    foldM f srcAst leftToSrc
+    return ()
+
+getNodeDownstream :: GraphOp m => NodeId -> m [NodeId]
+getNodeDownstream nodeId = do
+    conns <- map (\(a,b) -> (a^.PortRef.srcNodeId, b^.PortRef.dstNodeId)) <$> GraphBuilder.buildConnections
+    (_, output) <- GraphBuilder.getEdgePortMapping
+    let connsWithoutOutput = filter ((/= output) . snd) conns
+        go c n             = let next = map snd $ filter ((== n) . fst) c
+                             in next ++ concatMap (go c) next
+    return $ nodeId : go connsWithoutOutput nodeId
+
 connectPersistent :: GraphOp m => OutPortRef -> AnyPortRef -> m Connection
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     -- FIXME[MK]: passing the `generateNodeName` here is a hack arising from cyclic module deps. Need to remove together with modules refactoring.
@@ -795,6 +833,15 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst
             var <- ASTRead.getASTVar srcNodeId
             setOutputTo var
     srcAst <- ASTRead.getASTOutForPort srcNodeId srcPort
+    (input, output) <- GraphBuilder.getEdgePortMapping
+    when (input /= srcNodeId && output /= dstNodeId) $ do
+        src'   <- ASTRead.getASTRef srcNodeId
+        dstAst <- ASTRead.getASTRef dstNodeId
+        s      <- ASTRead.getCurrentBody
+        nodes  <- AST.readSeq s
+        let srcPos = List.elemIndex src' nodes
+            dstPos = List.elemIndex dstAst nodes
+        when (dstPos < srcPos) $ reorder dstNodeId srcNodeId
     case dstPort of
         [] -> makeWhole srcAst dstNodeId
         _  -> makeInternalConnection srcAst dstNodeId dstPort

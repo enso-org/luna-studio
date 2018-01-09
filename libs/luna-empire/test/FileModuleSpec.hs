@@ -583,8 +583,8 @@ spec = around withChannels $ parallel $ do
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
                 «0»def foo:
-                    «3»n1 = number1 * 5
                     «4»number1 = 5
+                    «3»n1 = number1 * 5
                     number1
                 «1»def bar:
                     «5»"bar"
