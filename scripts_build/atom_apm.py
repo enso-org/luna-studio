@@ -102,6 +102,7 @@ def run_apm(command, *args):
 def copy_studio (package_path, gui_url, frontend_args):
     if gui_url:
         try:
+            print ("copy studio from url")
             r = requests.get(gui_url)
             z = zipfile.ZipFile(io.BytesIO(r.content))
             z.extractall(package_path)
@@ -230,14 +231,11 @@ def modify_atom_package_json():
 def modify_atom_icon():
     if system.windows():
         atom = get_path('atom_app')
-        programdata = os.environ.get('%PROGRAMDATA%')
-        winresourcer = os.path.join(programdata,'npm','node_modules','winresourcer','lib','WinResourcer')
-        print(winresourcer)
-        print(atom)
-        proc=subprocess.Popen([winresourcer, '--operation=Update', '--exeFile='++atom, '--resourceType=Icongroup', '--resourceName=1', '--resource='++logo_ico],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        proc.wait()
-        output = proc.stdout.read()
-        return output.decode('utf-8')
+        appdata = os.environ.get('APPDATA')
+        winresourcer = os.path.join(appdata,'npm','node_modules','winresourcer','lib','WinResourcer')
+        proc=run_process('node', winresourcer, '--operation=Update', '--exeFile='+atom, '--resourceType=Icongroup', '--resourceName=1', '--resourceFile='+logo_ico)
+
+        return print(proc)
 
 
 def run(gui_url, frontend_args, link=False):
