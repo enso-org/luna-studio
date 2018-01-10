@@ -30,7 +30,7 @@ def build_runner(runner_args):
         resPath = runner_dir + '/../resources/my.res'
         if system.windows():
             subprocess.check_output(['stack', 'build'])
-            os.system('stack exec ghc -- ' + runnerPath + ' ' + hostPath + ' ' + resPath)
+            os.system('stack exec ghc -- ' + runnerPath + ' ' + hostPath + ' ' + resPath + ' -optl -mwindows')
 
         subprocess.check_output(['stack', 'build'] + runner_args)
     mv_runner(runner_dir)

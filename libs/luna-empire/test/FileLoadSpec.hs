@@ -1911,6 +1911,34 @@ spec = around withChannels $ parallel $ do
                 Graph.connect loc (outPortRef n1 []) (InPortRef' $ inPortRef p1 [Port.Arg 0])
                 Graph.disconnect loc (inPortRef p1 [Port.Arg 0])
                 Graph.connect loc (outPortRef n1 []) (InPortRef' $ inPortRef p1 [Port.Arg 1])
+        it "adds port that would be shadowed" $ let
+            initialCode = [r|
+                def main:
+                    None
+                def foo:
+                    «0»a = "text"
+                    «1»b = 4
+                    «2»s = b + _
+                    a
+                |]
+            expectedCode = [r|
+                def main:
+                    None
+                def foo c:
+                    a = "text"
+                    b = 4
+                    s = b + c
+                    a
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
+                let top = GraphLocation file def
+                funs <- Graph.getNodes top
+                let Just foo = find (\n -> n ^. Node.name == Just "foo") funs
+                    fooLoc = (top |>= foo ^. Node.nodeId)
+                Just s <- (find (\n -> n ^. Node.name == Just "s")) <$> Graph.getNodes fooLoc
+                (i, _) <- Graph.withGraph fooLoc $ runASTOp $ GraphBuilder.getEdgePortMapping
+                Graph.addPortWithConnections fooLoc (outPortRef i [Port.Projection 0]) Nothing [InPortRef' $ inPortRef (s ^. Node.nodeId) [Port.Arg 1]]
+                return ()
         it "sets expression for lambdas with markers inside" $ let
             initialCode = testLuna
             expectedCode = [r|

@@ -83,6 +83,8 @@ module Empire.Commands.Graph
     , resendCode
     , prepareNodeCache
     , prepareLunaError
+    , importsToHints
+    , filterPrimMethods
     ) where
 
 import           Control.Arrow                    ((&&&), (***))
@@ -533,16 +535,17 @@ addPortNoTC loc (OutPortRef nl pid) name = runASTOp $ do
     when (inE /= nid) $ throwM NotInputEdgeException
     ref <- ASTRead.getCurrentASTTarget
     ASTBuilder.detachNodeMarkersForArgs ref
-    ASTModify.addLambdaArg position ref name
+    ids      <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
+    varNames <- catMaybes <$> mapM GraphBuilder.getNodeName ids
+    ASTModify.addLambdaArg position ref name $ map convert varNames
     newLam <- ASTRead.getCurrentASTTarget
     ASTBuilder.attachNodeMarkersForArgs nid [] newLam
 
 addPortWithConnections :: GraphLocation -> OutPortRef -> Maybe Text -> [AnyPortRef] -> Empire ()
 addPortWithConnections loc portRef name connectTo = do
     withTC loc False $ do
-        newPorts <- addPortNoTC loc portRef name
+        addPortNoTC loc portRef name
         for_ connectTo $ connectNoTC loc portRef
-        return newPorts
     resendCode loc
 
 addSubgraph :: GraphLocation -> [ExpressionNode] -> [Connection] -> Empire [ExpressionNode]
@@ -1690,13 +1693,16 @@ classToHints (IR.Class constructors methods) = ClassHints cons' meth'
     where
         getDoc = maybe def convert . view IR.documentation
         cons'  = ((, def) . convert) <$> Map.keys constructors
-        meth'  = (convert *** getDoc) <$> Map.toList methods
+        meth'  = (convert *** getDoc) <$> (filter (isPublicMethod . fst) $ Map.toList methods)
+
+isPublicMethod :: IR.Name -> Bool
+isPublicMethod (nameToString -> n) = Safe.headMay n /= Just '_'
 
 importsToHints :: Module.Imports -> ModuleHints
 importsToHints (Module.Imports classes functions) = ModuleHints funHints classHints
     where
         getDoc     = maybe def convert . view IR.documentation
-        funHints   = (convert *** getDoc) <$> Map.toList functions
+        funHints   = (convert *** getDoc) <$> (filter (isPublicMethod . fst) $ Map.toList functions)
         classes'   = Map.mapKeys convert classes
         classHints = classToHints . view IR.documentedItem <$> classes'
 
@@ -1707,6 +1713,12 @@ instance Exception ModuleCompilationException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
+filterPrimMethods :: Module.Imports -> Module.Imports
+filterPrimMethods (Module.Imports classes funs) = Module.Imports classes properFuns
+    where
+        properFuns = Map.filterWithKey (\k _ -> not $ isPrimMethod k) funs
+        isPrimMethod (nameToString -> n) = "prim" `List.isPrefixOf` n || n == "#uminus#"
+
 getImports :: GraphLocation -> [ImportName] -> Empire ImportsHints
 getImports (GraphLocation file _) imports = do
     lunaroot        <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
@@ -1715,7 +1727,7 @@ getImports (GraphLocation file _) imports = do
     importsMVar     <- view modules
     hints <- forM imports $ \i -> do
         cmpModules <- liftIO $ readMVar importsMVar
-        if i == nativeModuleName then return (i, cmpModules ^. Compilation.prims) else do
+        if i == nativeModuleName then return (i, cmpModules ^. Compilation.prims . to filterPrimMethods) else do
             case Map.lookup (convert i) (cmpModules ^. Compilation.modules) of
                 Just m -> return (i, m)
                 _      -> do
