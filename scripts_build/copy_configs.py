@@ -54,6 +54,7 @@ def copy_atom_configs ():
     for config in configs_files:
         shutil.copy(ap.prep_path(config), dst_path)
 
+
 def run():
     copy_configs(supervisor_dir,env_dir, windows_dir)
     copy_resources(resources_dir)

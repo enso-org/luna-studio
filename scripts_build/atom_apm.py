@@ -20,6 +20,11 @@ import atom_prepare
 import re, tempfile
 
 #########################################################
+#                   sha256sum                           #
+#########################################################
+linux_sha='60e7197f4678bc072fe91d23ee43a7c05db141c6beba8c69bf4b4415d1de2689'
+
+#########################################################
 #                     PATHS                             #
 #########################################################
 
@@ -34,6 +39,7 @@ gui_package_path = ap.prep_path('../dist-package/gui.zip')
 studio_folder = ap.prep_path('../luna-studio/atom')
 version_file =ap.prep_path('../dist/config/version.txt')
 logo_ico =ap.prep_path('../resources/logo.ico')
+logo_png =ap.prep_path('../resources/logo.png')
 
 paths = {
     system.systems.WINDOWS: {
@@ -228,14 +234,25 @@ def modify_atom_package_json():
     sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
 
+def change_about_atom():
+    if system.linux():
+        blob=ap.prep_path('../dist/third-party/atom/usr/share/atom/snapshot_blob.bin')
+        proc = subprocess.Popen(['printf \"Luna\" | dd of=' + blob +' bs=1', 'seek=$((0x31F69DD)) count=4 conv=notrunc'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        proc.wait()
+        output = proc.stdout.read()
+        print (output)
+
 def modify_atom_icon():
     if system.windows():
         atom = get_path('atom_app')
         appdata = os.environ.get('APPDATA')
         winresourcer = os.path.join(appdata,'npm','node_modules','winresourcer','lib','WinResourcer')
         proc=run_process('node', winresourcer, '--operation=Update', '--exeFile='+atom, '--resourceType=Icongroup', '--resourceName=1', '--resourceFile='+logo_ico)
+        print(proc)
+    elif system.linux():
+        atom_logo=ap.prep_path('../dist/third-party/atom/usr/share/atom/resources/app/resources/atom.png')
+        shutil.copyfile(logo_png, atom_logo)
 
-        return print(proc)
 
 
 def run(gui_url, frontend_args, link=False):
@@ -246,6 +263,7 @@ def run(gui_url, frontend_args, link=False):
     apm_packages()
     modify_atom_package_json()
     modify_atom_icon()
+    change_about_atom()
 
 
 # if __name__ == '__main__':
