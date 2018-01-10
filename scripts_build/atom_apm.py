@@ -233,15 +233,6 @@ def modify_atom_package_json():
     sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format("luna-studio" + v))
     sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
-
-def change_about_atom():
-    if system.linux():
-        blob=ap.prep_path('../dist/third-party/atom/usr/share/atom/snapshot_blob.bin')
-        proc = subprocess.Popen(['printf \"Luna\" | dd of=' + blob +' bs=1', 'seek=$((0x31F69DD)) count=4 conv=notrunc'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-        proc.wait()
-        output = proc.stdout.read()
-        print (output)
-
 def modify_atom_icon():
     if system.windows():
         atom = get_path('atom_app')
@@ -263,7 +254,6 @@ def run(gui_url, frontend_args, link=False):
     apm_packages()
     modify_atom_package_json()
     modify_atom_icon()
-    change_about_atom()
 
 
 # if __name__ == '__main__':
