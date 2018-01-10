@@ -798,22 +798,24 @@ connect loc outPort anyPort = do
 reorder :: GraphOp m => NodeId -> NodeId -> m ()
 reorder dst src = do
     dstDownstream <- getNodeDownstream dst
-    dstDownAST    <- mapM ASTRead.getASTRef dstDownstream
-    nodes         <- ASTRead.getCurrentBody >>= AST.readSeq
-    srcAst        <- ASTRead.getASTRef src
-    let srcIndex    = List.elemIndex srcAst nodes
-        downIndices = sortOn snd $ map (\a -> (a, a `List.elemIndex` nodes)) dstDownAST
-        leftToSrc   = map fst $ filter ((< srcIndex) . snd) downIndices
-    let f acc e = do
-            oldSeq   <- ASTRead.getCurrentBody
-            code     <- Code.getCodeOf e
-            unpinFromSequence e
-            blockEnd <- Code.getCurrentBlockEnd
-            oldSeq'   <- ASTRead.getCurrentBody
-            insertAfterAndUpdate oldSeq' (Just acc) e blockEnd code
-            return e
-    foldM f srcAst leftToSrc
-    return ()
+    let wouldIntroduceCycle = src `elem` dstDownstream
+    if wouldIntroduceCycle then return () else do
+        dstDownAST    <- mapM ASTRead.getASTRef dstDownstream
+        nodes         <- ASTRead.getCurrentBody >>= AST.readSeq
+        srcAst        <- ASTRead.getASTRef src
+        let srcIndex    = List.elemIndex srcAst nodes
+            downIndices = sortOn snd $ map (\a -> (a, a `List.elemIndex` nodes)) dstDownAST
+            leftToSrc   = map fst $ filter ((< srcIndex) . snd) downIndices
+        let f acc e = do
+                oldSeq   <- ASTRead.getCurrentBody
+                code     <- Code.getCodeOf e
+                unpinFromSequence e
+                blockEnd <- Code.getCurrentBlockEnd
+                oldSeq'   <- ASTRead.getCurrentBody
+                insertAfterAndUpdate oldSeq' (Just acc) e blockEnd code
+                return e
+        foldM f srcAst leftToSrc
+        return ()
 
 getNodeDownstream :: GraphOp m => NodeId -> m [NodeId]
 getNodeDownstream nodeId = do

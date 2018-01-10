@@ -1958,6 +1958,22 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 [Just bar, Just quux] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [1,3]
                 Graph.connect loc (outPortRef quux []) (InPortRef' $ inPortRef bar [Port.Arg 0])
+        it "reorders nodes if required for connection - cyclic case" $ let
+            initialCode = [r|
+                def main:
+                    «0»sum1 = _ + 2
+                    «1»sum2 = sum1 + 4
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    sum1 = sum2 + 2
+                    sum2 = sum1 + 4
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [Just sum1, Just sum2] <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [0,1]
+                Graph.connect loc (outPortRef sum2 []) (InPortRef' $ inPortRef sum1 [Port.Arg 0])
         it "sets expression for lambdas with markers inside" $ let
             initialCode = testLuna
             expectedCode = [r|
