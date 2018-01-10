@@ -52,7 +52,7 @@ paths = {
         'apm': '/Atom.app/Contents/Resources/app/apm/bin/apm',
         'oniguruma': '/Atom.app/Contents/Resources/app/node_modules/oniguruma',
         'package_json': '/Atom.app/Contents/Resources/app/package.json',
-        'atom_app' : 'check',
+        'atom_app' : '', #check
     },
 }
 
