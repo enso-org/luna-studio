@@ -46,7 +46,7 @@ addLambdaArg :: GraphOp m => Int -> NodeRef -> Maybe Text -> [String] -> m ()
 addLambdaArg position lambda name varNames = do
     argNames <- getArgNames lambda
     let forbidden = varNames <> argNames
-    let Just placeholderName = find (not . flip elem forbidden) allWords
+    let Just placeholderName = find (`notElem` forbidden) allWords
     let nameForNewArg = case name of
             Just n -> if convert n `elem` forbidden then placeholderName else convert n
             _      -> placeholderName
