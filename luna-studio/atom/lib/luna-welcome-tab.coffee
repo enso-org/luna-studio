@@ -1,16 +1,11 @@
 {View} = require 'atom-space-pen-views'
 etch = require 'etch'
 fuzzyFilter = null # defer until used
-ProjectItem = require './project-item'
+{ProjectItem, privateNewClasses, communityNewClasses, tutorialClasses} = require './project-item'
 projects = require './projects'
 analytics = require './gen/analytics'
 report = require './report'
 
-projectClasses = "luna-welcome__tile "
-tutorialClasses = projectClasses + "luna-welcome__tile--tutorial"
-recentClasses = projectClasses + "luna-welcome__tile--recent"
-privateNewClasses = projectClasses + 'luna-welcome__tile--add-new'
-comunnityNewClasses = projectClasses + 'luna-welcome__tile--add-new'
 
 module.exports =
 class LunaWelcomeTab extends View
@@ -69,12 +64,11 @@ class LunaWelcomeTab extends View
 
     initialize: =>
         @tutorialItems = {}
-        @privateItems = []
         @privateNew = new ProjectItem({name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
             projects.temporaryProject.open())
         @communityItems = []
-        @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, comunnityNewClasses, (progress, finalize) =>
+        @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, communityNewClasses, (progress, finalize) =>
             finalize()
             report.displayError 'Not supported yet', 'Community projects are not supported yet')
         @welcomeModal.on 'click', (e) -> e.stopPropagation()
@@ -82,15 +76,7 @@ class LunaWelcomeTab extends View
         @searchInput.on 'keyup', @search
         @background.on 'click', @cancel
 
-        @hideSearchResults()
-        projects.recent.load (recentProjectPath) =>
-            item = new ProjectItem {uri: recentProjectPath}, recentClasses, (progress, finalize) =>
-                progress 0.5
-                projects.closeAllFiles()
-                atom.project.setPaths [recentProjectPath]
-                finalize()
-            @privateItems.push(item)
-            @privateContainer.append(item.element)
+        projects.recent.refreshProjectsList @hideSearchResults
 
         @noTutorialsMsg ?= 'Fetching tutorials list...'
         @redrawTutorials()
@@ -116,6 +102,7 @@ class LunaWelcomeTab extends View
     attach: (@mode) =>
         @panel ?= atom.workspace.addModalPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
+        @hideSearchResults()
         @panel.show()
         @searchInput.focus()
         analytics.track 'LunaStudio.Welcome.Open'
@@ -123,7 +110,6 @@ class LunaWelcomeTab extends View
     detach: =>
         if @panel and @panel.isVisible()
             @searchInput[0].value = ''
-            @hideSearchResults()
             @panel.hide()
             @previouslyFocusedElement?.focus()
             analytics.track 'LunaStudio.Welcome.Close'
@@ -132,12 +118,12 @@ class LunaWelcomeTab extends View
 
     close: =>
         if @detach()
-            onCancel = null
+            @onCancel = null
 
     cancel: =>
         if @detach()
             @onCancel?()
-            onCancel = null
+            @onCancel = null
 
     search: =>
         filterQuery = @searchInput[0].value
@@ -149,7 +135,7 @@ class LunaWelcomeTab extends View
             for itemName in Object.keys @tutorialItems
                 allItems.push @tutorialItems[itemName]
 
-            allItems = allItems.concat(@privateItems)
+            allItems = allItems.concat projects.recent.getItems()
             filteredItems = fuzzyFilter(allItems, filterQuery, key: @getFilterKey())
             @showSearchResults filteredItems
 
@@ -164,19 +150,22 @@ class LunaWelcomeTab extends View
         @tutorialsSection.hide()
         @searchResultsSection.show()
 
-    hideSearchResults: =>
+    redrawPrivateItems: =>
         @privateContainer.empty()
-        @privateContainer.append(@privateNew.element)
-        for privateItem in @privateItems
-            @privateContainer.append(privateItem.element)
+        @privateContainer.append @privateNew.element
+        for recentProject in projects.recent.getItems()
+            @privateContainer.append recentProject.element
 
-        @redrawTutorials()
-
+    redrawCommunityItems: =>
         @communityContainer.empty()
-        @communityContainer.append(@comunnityNew.element)
+        @communityContainer.append @comunnityNew.element
         for communityItem in @communityItems
-            @communityContainer.append(communityItem.element)
+            @communityContainer.append communityItem.element
 
+    hideSearchResults: =>
+        @redrawPrivateItems()
+        @redrawCommunityItems()
+        @redrawTutorials()
 
         @searchResultsSection.hide()
         @communitySection.show()

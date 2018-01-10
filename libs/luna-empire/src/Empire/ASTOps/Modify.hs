@@ -42,18 +42,19 @@ import qualified Data.List as L (take, head, drop, tail)
 
 
 
-addLambdaArg :: GraphOp m => Int -> NodeRef -> Maybe Text -> m ()
-addLambdaArg position lambda name = do
-    names <- getArgNames lambda
-    let Just placeholderName = find (not . flip elem names) allWords
-        nameForNewArg = case name of
-            Just n -> if convert n `elem` names then placeholderName else convert n
+addLambdaArg :: GraphOp m => Int -> NodeRef -> Maybe Text -> [String] -> m ()
+addLambdaArg position lambda name varNames = do
+    argNames <- getArgNames lambda
+    let forbidden = varNames <> argNames
+    let Just placeholderName = find (`notElem` forbidden) allWords
+    let nameForNewArg = case name of
+            Just n -> if convert n `elem` forbidden then placeholderName else convert n
             _      -> placeholderName
     match lambda $ \case
         Lam _arg _body -> do
             out'  <- ASTRead.getFirstNonLambdaRef lambda
             addLambdaArg' position nameForNewArg Nothing lambda
-        Grouped g -> IR.source g >>= \k -> addLambdaArg position k name
+        Grouped g -> IR.source g >>= \k -> addLambdaArg position k name varNames
         ASGFunction n as _ -> do
             let argsBefore        = take position as
                 argsAfter         = drop position as

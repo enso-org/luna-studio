@@ -288,7 +288,7 @@ module.exports =
                             @pointer[0].style.height = highlightedRect.height + 'px'
                             @pointer[0].style.top    = highlightedRect.top + 'px'
                             @pointer[0].style.left   = highlightedRect.left + 'px'
-                    else 
+                    else
                         @pointer.show()
                         @pointer[0].style.width  = highlightedRect.width + 'px'
                         @pointer[0].style.height = highlightedRect.height + 'px'
@@ -322,6 +322,8 @@ module.exports =
                         parsed = yaml.safeLoad data
                         if parsed? && not parsed.disabled
                             @start parsed, guidePath
+                            return
+                    @detach()
 
         disableGuide: =>
             if @guidePath?
