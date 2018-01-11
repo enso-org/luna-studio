@@ -6,7 +6,6 @@ module NodeEditor.React.Model.App (
     module NodeEditor.React.Model.App,
 ) where
 
-import           System.FilePath                    (takeBaseName)
 import           Common.Prelude
 import           NodeEditor.Batch.Workspace         (Workspace)
 import qualified NodeEditor.Batch.Workspace         as Workspace
@@ -27,5 +26,8 @@ mk = App def def . fmap Workspace.mk
 
 moduleName :: Getter App (Maybe String)
 moduleName = to moduleName' where
-    moduleName' a = takeBaseName . filePath <$> a ^. workspace
+    moduleName' a = takeBaseName' . filePath <$> a ^. workspace
     filePath a = a ^. Workspace.currentLocation . GraphLocation.filePath
+
+takeBaseName' :: FilePath -> FilePath
+takeBaseName' = reverse  . takeWhile (`notElem` ['/', '\\']) . reverse
