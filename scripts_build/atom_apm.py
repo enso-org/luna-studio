@@ -230,6 +230,7 @@ def modify_atom_package_json():
     sed_inplace(json, r'\"name\":\"atom\"','\"name\":\"{}\"'.format("luna-studio" + v))
     sed_inplace(json, r'\"productName\":\"Atom\"','\"productName\":\"{}\"'.format("LunaStudio" + v))
 
+
 def modify_atom_icon():
     if system.windows():
         atom = get_path('atom_app')
@@ -239,7 +240,6 @@ def modify_atom_icon():
         print(proc)
     elif system.linux():
         shutil.copyfile(logo_png, atom_logo)
-
 
 
 def run(gui_url, frontend_args, link=False):
