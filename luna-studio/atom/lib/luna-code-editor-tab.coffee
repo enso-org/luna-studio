@@ -44,7 +44,7 @@ TextBuffer::subscribeToFileOverride = (codeEditor) ->
       #   else
       #     @reload()
 
-    @fileSubscriptions.add @file.onDidDelete ->
+    @fileSubscriptions.add @file.onDidDelete =>
         modified = @getText() != @cachedDiskContents
         @wasModifiedBeforeRemove = modified
         @emitter.emit 'did-delete'
@@ -53,10 +53,10 @@ TextBuffer::subscribeToFileOverride = (codeEditor) ->
         else
             @destroy()
 
-    @fileSubscriptions.add @file.onDidRename ->
+    @fileSubscriptions.add @file.onDidRename =>
         @emitter.emit 'did-change-path', @getPath()
 
-    @fileSubscriptions.add @file.onWillThrowWatchError (errorObject) ->
+    @fileSubscriptions.add @file.onWillThrowWatchError (errorObject) =>
         @emitter.emit 'will-throw-watch-error', errorObject
 
 subscribe = null
