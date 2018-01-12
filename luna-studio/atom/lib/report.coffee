@@ -24,6 +24,12 @@ readLogs = =>
         console.error error
     return logData
 
+createErrorReport = (msg) =>
+    contents = [msg + '\n\n' + '======= logs: =======']
+    logs = readLogs()
+    for fileName in Object.keys logs
+        contents.push '\n=== ' + fileName + ' ===\n' + logs[fileName]
+    contents.join '\n'
 
 module.exports =
     displayError: (title, detail) =>
@@ -38,16 +44,16 @@ module.exports =
         console.error title, detail
 
     onNotification: (notification) =>
+        errorReport = createErrorReport notification.message
         options =
             dismissable: true
-            description: msg
+            description: notification.message
             buttons: [
                 text: 'Copy to clipboard'
                 onDidClick: =>
-                    atom.clipboard.write msg
-                    return notification.dismiss()
+                    atom.clipboard.write errorReport
             ]
-        switch notification.lvl
+        switch notification.level
             when 0
                 atom.notifications.addFatalError "Fatal Error", options
             when 1

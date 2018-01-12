@@ -26,9 +26,10 @@ module.exports =
                 else
                     console.log msg
         else
-            listeners.onNotification.forEach
-                level: lvl
-                message: msg
+            listeners.onNotification.forEach (callback) ->
+                callback
+                    level: lvl
+                    message: msg
     onNotification: (listener) => listeners.onNotification.push listener
     onEvent: (listener) => listeners.onEvent.push listener
     unOnEvent: (listener) => removeFromArray listeners.onEvent, listener
