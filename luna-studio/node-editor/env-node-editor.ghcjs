@@ -17,9 +17,9 @@ GHCJS_CODE_BE_THERE
 
 };
 
-return { start     : function(url, mount) { run(url, mount);}
-       , pushEvent : function(data) { atomCallback.pushEvent(data); }
-       , notificationListener : function(callback) {atomCallback.notificationListener(callback);}
-       , connector(otherGlobal) { atomCallback.connector(otherGlobal); }
-       , setEventFilter: atomCallback.setEventFilter
+return { start:                run
+       , connector:            atomCallback.connector
+       , onNotification:       atomCallback.onNotification
+       , pushEvent:            atomCallback.pushEvent
+       , setEventFilter:       atomCallback.setEventFilter
        }

@@ -1,14 +1,13 @@
-"use strict";
-
 removeFromArray = (array, elt) =>
     index = array.indexOf elt
     array.splice index, 1
 
 listeners =
     onEvent: []
+    onNotification: []
 
 globalRegistry = null
-eventFilters = 
+eventFilters =
     blockedEvents: []
     allowedEvents: []
 
@@ -16,7 +15,7 @@ module.exports =
     connector: (otherGlobal) => globalRegistry = otherGlobal
     setActiveLocation: (location) =>  globalRegistry.activeLocation = location
     pushNotification: (lvl, msg) =>
-        unless atom?
+        if listeners.onNotification.length == 0
             switch lvl
                 when 0, 1
                     console.error msg
@@ -27,42 +26,15 @@ module.exports =
                 else
                     console.log msg
         else
-            switch lvl
-                when 0
-                    notification = atom.notifications.addFatalError "Fatal Error",
-                        dismissable: true
-                        description: msg
-                        buttons: [
-                            text: 'Copy to clipboard'
-                            onDidClick: =>
-                                atom.clipboard.write msg
-                                return notification.dismiss()
-                        ]
-                when 1
-                    notification = atom.notifications.addError "Error",
-                        dismissable: true
-                        description: msg
-                        buttons: [
-                            text: 'Copy to clipboard'
-                            onDidClick: =>
-                                atom.clipboard.write msg
-                                return notification.dismiss()
-                        ]
-                else
-                    notification = atom.notifications.addWarning "Warning",
-                        dismissable: true
-                        description: msg
-                        buttons: [
-                            text: 'Copy to clipboard'
-                            onDidClick: =>
-                                atom.clipboard.write msg
-                                return notification.dismiss()
-                        ]
+            listeners.onNotification.forEach
+                level: lvl
+                message: msg
+    onNotification: (listener) => listeners.onNotification.push listener
     onEvent: (listener) => listeners.onEvent.push listener
     unOnEvent: (listener) => removeFromArray listeners.onEvent, listener
     pushEvent: (data) =>
         listeners.onEvent.forEach (listener) => listener(data)
-    setEventFilter: (blocked, allowed) => 
+    setEventFilter: (blocked, allowed) =>
         eventFilters = { blockedEvents: blocked, allowedEvents: allowed }
     acceptEvent: (event) =>
         event    = JSON.parse event

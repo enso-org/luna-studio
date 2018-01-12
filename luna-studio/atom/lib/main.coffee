@@ -3,11 +3,12 @@ fs       = require 'fs-plus'
 path     = require 'path'
 yaml     = require 'js-yaml'
 
-VisualGuide      = require './guide'
-stats = require './stats'
-analytics = require './gen/analytics'
-LunaCodeEditorTab  = require './luna-code-editor-tab'
-LunaNodeEditorTab  = require './luna-node-editor-tab'
+analytics   = require './gen/analytics'
+report      = require './report'
+stats       = require './stats'
+VisualGuide = require './guide'
+LunaCodeEditorTab = require './luna-code-editor-tab'
+LunaNodeEditorTab = require './luna-node-editor-tab'
 LunaWelcomeTab = require './luna-welcome-tab'
 LunaToolbar = require './luna-toolbar'
 LunaSemanticGrammar = require './luna-grammar'
@@ -31,7 +32,8 @@ module.exports = LunaStudio =
         stats.initialize()
         atom.grammars.addGrammar(new LunaSemanticGrammar(atom.grammars, codeEditor.lex))
         atom.workspace.addOpener @lunaOpener
-        codeEditor.connect(nodeEditor.connector)
+        codeEditor.connect nodeEditor.connector
+        nodeEditor.onNotification report.onNotification
         @welcome = new LunaWelcomeTab(codeEditor)
         @toolbar = new LunaToolbar(codeEditor)
         @guide   = new VisualGuide(nodeEditor)
