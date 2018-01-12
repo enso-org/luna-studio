@@ -36,7 +36,7 @@ module.exports = LunaStudio =
         @toolbar = new LunaToolbar(codeEditor)
         @guide   = new VisualGuide(nodeEditor)
         @moving = false
-        version.checkUpdates console.log
+        version.checkUpdates()
         actStatus = (act, arg1, arg2) =>
             switch act
                 when 'Init'

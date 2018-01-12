@@ -1,6 +1,7 @@
 request = require 'request'
 yaml    = require 'js-yaml'
 stats   = require './stats'
+report  = require './report'
 
 
 versionRequestOpts =
@@ -11,6 +12,7 @@ versionRequestOpts =
 
 class Version
     constructor: (@major, @minor) ->
+    toString: -> @major + '.' + @minor
 
 parseVersion = (str) ->
     r = /^(\d+)\.(\d+)/.exec str
@@ -65,5 +67,19 @@ checkUpdates = (callback) =>
     catch error
         fail 'Updates check failed: ' + error.message
 
+displayInformation = (version) ->
+    if version.error
+        report.silentError 'Check updates', version.error
+        return
+    notification = atom.notifications.addSuccess 'New version ' + version + ' available',
+        dismissable: true
+        description: 'Use luna-manager to upgrade'
+        buttons: [
+            text: 'OK'
+            onDidClick: =>
+                return notification.dismiss()
+        ]
+
+
 module.exports =
-    checkUpdates: checkUpdates
+    checkUpdates: -> checkUpdates displayInformation
