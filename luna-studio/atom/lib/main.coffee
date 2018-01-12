@@ -13,6 +13,7 @@ LunaToolbar = require './luna-toolbar'
 LunaSemanticGrammar = require './luna-grammar'
 projects  = require './projects'
 Statusbar = require './statusbar-view'
+version = require './version'
 (require './luna-visualizers')()
 codeEditor = (require './gen/text-editor-ghcjs.js')()
 nodeEditor = (require './gen/node-editor-ghcjs.js')()
@@ -35,7 +36,7 @@ module.exports = LunaStudio =
         @toolbar = new LunaToolbar(codeEditor)
         @guide   = new VisualGuide(nodeEditor)
         @moving = false
-
+        version.checkUpdates console.log
         actStatus = (act, arg1, arg2) =>
             switch act
                 when 'Init'

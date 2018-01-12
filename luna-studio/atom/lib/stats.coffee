@@ -136,7 +136,6 @@ module.exports =
             return
         fs.readFile versionInfoPath, encoding, callback
 
-
     initialize: ->
         @readUserInfo (error, userInfo) =>
             if error?
