@@ -45,7 +45,7 @@ class LunaToolbar extends View
     attach: =>
         @panel ?= atom.workspace.addLeftPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
-        @buttonLogo[0].innerHTML = logo.generateInAppLogo 24
+        @buttonLogo[0].innerHTML = logo.generateInAppLogo 48
         @panel.show()
 
     detach: =>
