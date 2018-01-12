@@ -1,8 +1,8 @@
 request = require 'request'
+shell   = require 'shell'
 yaml    = require 'js-yaml'
 stats   = require './stats'
 report  = require './report'
-
 
 versionRequestOpts =
     url: 'http://packages.luna-lang.org/config.yaml'
@@ -61,22 +61,24 @@ checkUpdates = (callback) =>
                         versionsList.sort compareVersion
                         newestAvailable = versionsList[versionsList.length - 1]
                         if newestAvailable? and appVersion? and 1 == compareVersion newestAvailable, appVersion
-                            callback newestAvailable
+                            callback
+                                version: newestAvailable
+                                uri: 'http://packages.luna-lang.org/' + osType.toLowerCase() + '/lunaInstaller.zip'
                     else
                         fail 'Cannot parse updates file.'
     catch error
         fail 'Updates check failed: ' + error.message
 
-displayInformation = (version) ->
-    if version.error
-        report.silentError 'Check updates', version.error
+displayInformation = (upgrade) ->
+    if upgrade.error
+        report.silentError 'Check updates', upgrade.error
         return
-    notification = atom.notifications.addSuccess 'New version ' + version + ' available',
+    notification = atom.notifications.addSuccess 'Luna Studio ' + upgrade.version + ' is available!',
         dismissable: true
-        description: 'Use luna-manager to upgrade'
         buttons: [
-            text: 'OK'
+            text: 'Upgrade'
             onDidClick: =>
+                shell.openExternal upgrade.uri
                 return notification.dismiss()
         ]
 
