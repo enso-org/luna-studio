@@ -48,7 +48,6 @@ checkUpdates = (callback) =>
                     fail 'Cannot read user info'
                     return
                 osKey = osType.toLowerCase() + '.' + osArch.toLowerCase()
-                console.log osKey
                 request.get versionRequestOpts, (err, response, body) =>
                     parsed = yaml.safeLoad(body)
                     if body?
