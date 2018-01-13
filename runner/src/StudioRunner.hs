@@ -68,6 +68,8 @@ data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _lunaProjects           :: FilePath
                                  , _tutorialsDirectory     :: FilePath
                                  , _userInfoFile           :: FilePath
+                                 , _resourcesFolder        :: FilePath
+                                 , _shareFolder            :: FilePath
                                  }
 
 makeLenses ''RunnerConfig
@@ -103,6 +105,8 @@ instance Monad m => MonadHostConfig RunnerConfig 'Linux arch m where
         , _lunaProjects           = "luna" </> "projects"
         , _tutorialsDirectory     = "tutorials"
         , _userInfoFile           = "user_info.json"
+        , _resourcesFolder        = "public" </> "luna-studio" </> "resources"
+        , _shareFolder            = ".local" </> "share"
         }
 
 instance Monad m => MonadHostConfig RunnerConfig 'Darwin arch m where
@@ -139,8 +143,10 @@ version = do
 backendBinsPath, configPath, atomAppPath, backendDir                           :: MonadRun m => m FilePath
 supervisordBinPath, supervisorctlBinPath, killSupervisorBinPath                :: MonadRun m => m FilePath
 packageStudioAtomHome, userStudioAtomHome, localLogsDirectory, versionFilePath :: MonadRun m => m FilePath
+resourcesDirectory                                                             :: MonadRun m => m FilePath
 userLogsDirectory, userdataStorageDirectory, localdataStorageDirectory         :: MonadRun m => m FilePath
 lunaTmpPath, lunaProjectsPath, lunaTutorialsPath, userInfoPath                 :: MonadRun m => m FilePath
+sharePath                                                                      :: MonadRun m => m FilePath
 
 backendBinsPath           = relativeToMainDir [binsFolder, backendBinsFolder]
 configPath                = relativeToMainDir [configFolder]
@@ -152,10 +158,12 @@ killSupervisorBinPath     = relativeToMainDir [thirdPartyFolder, supervisorKillF
 packageStudioAtomHome     = relativeToMainDir [userConfigFolder, studioHome]
 localLogsDirectory        = relativeToMainDir [logsFolder]
 versionFilePath           = relativeToMainDir [configFolder, versionFile]
+resourcesDirectory        = relativeToMainDir [binsFolder, resourcesFolder]
 userLogsDirectory         = relativeToHomeDir [logsFolder, appName] >>= (\p -> (fmap (p </>) version))
 userdataStorageDirectory  = relativeToHomeDir [configHomeFolder, appName, storageDataHomeFolder]
 localdataStorageDirectory = relativeToHomeDir [storageDataHomeFolder]
 userInfoPath              = relativeToHomeDir [userInfoFile]
+sharePath                 = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) [shareFolder]
 userStudioAtomHome = do
     runnerCfg <- get @RunnerConfig
     baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= (\p -> (fmap (p </>) version))
@@ -200,6 +208,22 @@ copyLunaStudio = do
     Shelly.shelly $ do
         Shelly.mkdir_p atomHomeParent
         Shelly.cp_r packageAtomHome atomHomeParent
+
+copyResourcesLinux :: MonadRun m => m ()
+copyResourcesLinux = when linux $ do
+  runnerCfg <- get @RunnerConfig
+  versionN  <- version
+  resources <- resourcesDirectory
+  liftIO $ print(resources)
+  localShareFolder <- sharePath
+  liftIO $ print (localShareFolder)
+  let iconsFolder      = resources </> "icons"
+      desktopFile      = resources </> decodeString (encodeString "app.desktop")
+      localDesktop     = localShareFolder </> "applications" </> decodeString (encodeString (runnerCfg ^. appName) ++ encodeString versionN ++ ".desktop")
+  liftIO $ print (localDesktop)
+  Shelly.shelly $ do
+      Shelly.cmd "cp" "-r" iconsFolder localShareFolder
+      Shelly.cp desktopFile localDesktop
 
 testDirectory :: MonadIO m => FilePath -> m Bool
 testDirectory path = Shelly.shelly $ Shelly.test_d path
@@ -315,7 +339,7 @@ runPackage develop forceRun = case currentHost of
         when develop   $ liftIO $ Environment.setEnv "LUNA_STUDIO_DEVELOP" "True"
         createStorageDataDirectory develop
         unless develop $ checkLunaHome
-
+        copyResourcesLinux
         runLunaEmpire logs supervisorConf forceRun
 
 runApp :: MonadRun m => Bool -> Bool -> Maybe String -> m ()
