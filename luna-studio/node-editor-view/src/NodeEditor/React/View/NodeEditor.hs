@@ -19,6 +19,7 @@ import           NodeEditor.React.Model.Constants           (nodeRadius)
 import qualified NodeEditor.React.Model.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
+import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
 import           NodeEditor.React.Model.NodeEditor          (GraphStatus (..), NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.React.Model.Port                (InPortIndex (Self))
@@ -110,15 +111,16 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
         nodesWithVis     = Set.fromList $ map (^. visPropNodeLoc) visualizations
         visWithSelection = map (\vis -> (vis, NodeEditor.isVisualizationNodeSelected vis ne)) visualizations
         mayEditedTextPortControlPortRef = ne ^. NodeEditor.textControlEditedPortRef
+        allowVisualizations             = maybe True (null . (^. SidebarNode.inputSidebarPorts)) $ ne ^. NodeEditor.inputNode
     div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
-                                               <> if isAnyFullscreen    then ["studio-window--has-visualization-fullscreen"] else []
-                                               <> if isJust maySearcher then ["studio-window--has-searcher"]                 else []
+                                               <> if allowVisualizations && isAnyFullscreen then ["studio-window--has-visualization-fullscreen"] else []
+                                               <> if isJust maySearcher                     then ["studio-window--has-searcher"]                 else []
                                                )
          , "key" $= "studio-window"] $ do
 
         div_ [ "className" $= Style.prefix "studio-window__center", "key" $= "studio-window__center" ] $
             div_
-                [ "className" $= Style.prefixFromList (["graph"] <> if isAnyVisActive  then ["graph--has-visualization-active"] else [])
+                [ "className" $= Style.prefixFromList (["graph"] <> if allowVisualizations && isAnyVisActive then ["graph--has-visualization-active"] else [])
                 , "key"       $= "graph"
                 ] $ do
 
@@ -136,12 +138,13 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                                               (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
                                               (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)
                                               (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
+                                              (not allowVisualizations)
                     planeConnections_ $ do
                         forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref
                         forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
                         forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
-                    forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPaths
+                    when allowVisualizations . forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPaths
 
                 planeNewConnection_ $ do
                     forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
