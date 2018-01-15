@@ -9,17 +9,21 @@ trackError = (title, detail) =>
 encoding = 'utf8'
 logsPath = process.env.LUNA_STUDIO_LOG_PATH
 
+filePatttern = /.*empire.*/
+
 readLogs = =>
     logData = {}
     try
         for fileName in fs.readdirSync logsPath
-            console.log fileName
-            filePath = path.join logsPath, fileName
-            try
-                data = fs.readFileSync filePath, {encoding: encoding}
-                logData[fileName] = data
-            catch error
-                console.error error
+            if filePatttern.test fileName
+                filePath = path.join logsPath, fileName
+                try
+                    data = fs.readFileSync filePath, {encoding: encoding}
+                    lines = data.split '\n'
+                    data = lines.splice(-100).join '\n'
+                    logData[fileName] = data
+                catch error
+                    console.error error
     catch error
         console.error error
     return logData
