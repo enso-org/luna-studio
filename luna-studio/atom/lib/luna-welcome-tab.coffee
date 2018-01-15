@@ -1,5 +1,6 @@
 {View} = require 'atom-space-pen-views'
-etch = require 'etch'
+etch   = require 'etch'
+shell  = require 'shell'
 fuzzyFilter = null # defer until used
 {ProjectItem, privateNewClasses, communityNewClasses, tutorialClasses} = require './project-item'
 projects = require './projects'
@@ -25,14 +26,14 @@ class LunaWelcomeTab extends View
                                 placeholder: 'Search'
                                 outlet: 'searchInput'
                             @div class: 'luna-welcome__header__menu__links', =>
-                                @a
+                                @div
+                                    outlet: 'forumButton'
                                     class: 'luna-welcome-link luna-welcome-link--forum'
-                                    href: 'http://luna-lang.org'
                                     title: 'Forum'
                                     'Forum'
-                                @a
+                                @div
+                                    outlet: 'chatButton'
                                     class: 'luna-welcome-link luna-welcome-link--chat'
-                                    href: 'http://luna-lang.org'
                                     title: 'Chat'
                                     'Chat'
                     @div class: 'luna-welcome__body', =>
@@ -75,6 +76,8 @@ class LunaWelcomeTab extends View
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search
         @background.on 'click', @cancel
+        @forumButton.on 'click', -> shell.openExternal 'https://discuss.luna-lang.org'
+        @chatButton.on 'click', -> shell.openExternal 'https://chat.luna-lang.org'
 
         projects.recent.refreshProjectsList @hideSearchResults
 
