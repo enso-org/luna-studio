@@ -33,9 +33,9 @@ filterArch = (objs, osKey) ->
     return filtered
 
 checkUpdates = (callback) =>
+    fail = (msg) -> callback
+        error: msg
     try
-        fail = (msg) -> callback
-            error: msg
         stats.readVersionInfo (err, versionInfo) =>
             if err
                 fail 'Cannot read version info: ' + err.message
