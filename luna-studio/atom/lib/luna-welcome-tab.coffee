@@ -83,7 +83,7 @@ class LunaWelcomeTab extends View
         @background.on 'click', @cancel
         @forumButton.on 'click', -> shell.openExternal 'https://discuss.luna-lang.org'
         @chatButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
-        @docsButton.on 'click', -> shell.openExternal 'https://luna-lang.gitbooks.io/docs/content'
+        @docsButton.on 'click', -> shell.openExternal 'http://docs.luna-lang.org'
 
         projects.recent.refreshProjectsList @hideSearchResults
 
