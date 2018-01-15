@@ -1,5 +1,6 @@
 fs        = require 'fs'
 path      = require 'path'
+shell     = require 'shell'
 
 analytics = require './gen/analytics'
 
@@ -54,12 +55,19 @@ module.exports =
             description: notification.message
             buttons: [
                 text: 'Copy to clipboard'
-                onDidClick: =>
-                    atom.clipboard.write errorReport
+                onDidClick: => atom.clipboard.write errorReport
             ]
         switch notification.level
             when 0
-                atom.notifications.addFatalError "Fatal Error", options
+                atom.notifications.addError "Fatal Error",
+                    dismissable: true
+                    description: notification.message + '<br>Please report this bug on our github'
+                    buttons: [
+                        text: 'Copy to clipboard and report'
+                        onDidClick: =>
+                            atom.clipboard.write errorReport
+                            shell.openExternal 'https://github.com/luna/luna-studio/issues'
+                    ]
             when 1
                 atom.notifications.addError "Error", options
             else
