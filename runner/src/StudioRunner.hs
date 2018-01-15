@@ -133,11 +133,16 @@ relativeToMainDir, relativeToHomeDir :: MonadRun m => [Getting FilePath RunnerCo
 relativeToMainDir = relativeToDir mainAppDir
 relativeToHomeDir = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) . (mainHomeDir :)
 
-version :: MonadRun m => m FilePath
-version = do
+versionText :: MonadRun m => m T.Text
+versionText = do
     versionFP  <- versionFilePath
     versionStr <- liftIO $ readFile $ encodeString versionFP
-    return . fromText . T.pack $ versionStr
+    return . T.pack $ versionStr
+
+version :: MonadRun m => m FilePath
+version = do
+    versionTxt <- versionText
+    return $ fromText versionTxt
 
 -- paths --
 backendBinsPath, configPath, atomAppPath, backendDir                           :: MonadRun m => m FilePath
@@ -212,14 +217,14 @@ copyLunaStudio = do
 copyResourcesLinux :: MonadRun m => m ()
 copyResourcesLinux = when linux $ do
   runnerCfg <- get @RunnerConfig
-  versionN  <- version
+  versionN  <- T.strip <$> versionText
   resources <- resourcesDirectory
   liftIO $ print(resources)
   localShareFolder <- sharePath
   liftIO $ print (localShareFolder)
   let iconsFolder      = resources </> "icons"
-      desktopFile      = resources </> decodeString (encodeString "app.desktop")
-      localDesktop     = localShareFolder </> "applications" </> decodeString (encodeString (runnerCfg ^. appName) ++ encodeString versionN ++ ".desktop")
+      desktopFile      = resources </> "app.desktop"
+      localDesktop     = localShareFolder </> "applications" </> fromText (T.concat [Shelly.toTextIgnore (runnerCfg ^. appName), versionN, ".desktop"])
   liftIO $ print (localDesktop)
   Shelly.shelly $ do
       Shelly.cmd "cp" "-r" iconsFolder localShareFolder
