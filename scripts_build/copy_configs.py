@@ -57,7 +57,10 @@ def copy_atom_configs ():
 
 def rebrand_atom_logo():
     if system.darwin():
-        shutil.copy('../resources/logo.icns', '../dist/third-party/Atom.app/Contents/Resources/atom.icns')
+        src = ap.prep_path('../resources/logo.icns')
+        dst = ap.prep_path('../dist/third-party/Atom.app/Contents/Resources/atom.icns')
+        shutil.copy(src, dst)
+        subprocess.run(['touch', ap.prep_path('../dist/third-party/Atom.app')])
 
 
 def run():
