@@ -219,13 +219,10 @@ copyResourcesLinux = when linux $ do
   runnerCfg <- get @RunnerConfig
   versionN  <- T.strip <$> versionText
   resources <- resourcesDirectory
-  liftIO $ print(resources)
   localShareFolder <- sharePath
-  liftIO $ print (localShareFolder)
   let iconsFolder      = resources </> "icons"
       desktopFile      = resources </> "app_shared.desktop"
       localDesktop     = localShareFolder </> "applications" </> fromText (T.concat ["LunaStudio", versionN, ".desktop"])
-  liftIO $ print (localDesktop)
   Shelly.shelly $ do
       Shelly.cmd "cp" "-r" iconsFolder localShareFolder
       Shelly.cp desktopFile localDesktop
