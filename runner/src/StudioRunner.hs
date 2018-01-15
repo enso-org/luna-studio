@@ -223,8 +223,8 @@ copyResourcesLinux = when linux $ do
   localShareFolder <- sharePath
   liftIO $ print (localShareFolder)
   let iconsFolder      = resources </> "icons"
-      desktopFile      = resources </> "app.desktop"
-      localDesktop     = localShareFolder </> "applications" </> fromText (T.concat [Shelly.toTextIgnore (runnerCfg ^. appName), versionN, ".desktop"])
+      desktopFile      = resources </> "app_shared.desktop"
+      localDesktop     = localShareFolder </> "applications" </> fromText (T.concat ["LunaStudio", versionN, ".desktop"])
   liftIO $ print (localDesktop)
   Shelly.shelly $ do
       Shelly.cmd "cp" "-r" iconsFolder localShareFolder
@@ -343,8 +343,9 @@ runPackage develop forceRun = case currentHost of
         setEnv "LUNA_VERSION_PATH"           =<< versionFilePath
         when develop   $ liftIO $ Environment.setEnv "LUNA_STUDIO_DEVELOP" "True"
         createStorageDataDirectory develop
-        unless develop $ checkLunaHome
-        copyResourcesLinux
+        unless develop $ do
+            checkLunaHome
+            copyResourcesLinux
         runLunaEmpire logs supervisorConf forceRun
 
 runApp :: MonadRun m => Bool -> Bool -> Maybe String -> m ()
