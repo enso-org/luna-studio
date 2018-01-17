@@ -29,6 +29,7 @@ encoding = 'utf8'
 
 mkRequestOpts = (url) ->
     url: url
+    timeout: 10000
     headers:
         'User-Agent': 'luna-studio'
 
@@ -151,11 +152,16 @@ module.exports =
         list: (callback) =>
             try
                 request.get tutorialListRequestOpts, (err, response, body) =>
+                    if err?
+                        callback
+                            error: 'Cannot download tutorial list. ' + err.message
+                        return
                     parsed = yaml.safeLoad(body)
                     unless parsed.forEach?
+                        parsed.message ?= ''
                         callback
-                            error: 'Cannot download tutorial list: ' + parsed.message
-                    else if body?
+                            error: 'Cannot download tutorial list. ' + parsed.message
+                    else
                         parsed.forEach (repo) =>
                             archiveUrl = repo.archive_url.replace('{archive_format}', 'zipball').replace('{/ref}', '/master')
                             callback
@@ -170,16 +176,13 @@ module.exports =
                                         description: repo.description
                                         uri: archiveUrl
                                         thumb: 'data:image/png;base64,' + parsed.content
-                    else
-                        callback
-                            error: 'Cannot download tutorial list.'
             catch error
                 report.displayError 'Error while getting tutorials', error.message
 
         open: (tutorial, progress, finalize) ->
             dstPath = path.join tutorialsDownloadPath, tutorial.name
             dstZipPath = dstPath + '.zip'
-            unpackPath = path.join tutorialsDownloadPath, 'unzipped'
+            unpackPath = path.join tutorialsDownloadPath, 'unzipped' + tutorial.name
             cloneError = (err) =>
                 report.displayError 'Error while cloning tutorial', err
                 finalize()
@@ -189,14 +192,11 @@ module.exports =
                         cloneError err.toString()
                     else
                         requestProgress(request mkRequestOpts tutorial.uri)
-                            .on 'progress', ((state) =>
-                                console.log state
-                                progress state.percent)
+                            .on 'progress', ((state) => progress state.percent)
                             .on 'error', cloneError
                             .pipe(unzip.Extract({ path: unpackPath }))
                             .on 'close', =>
                                 fs.readdir unpackPath, (err, files) =>
-                                    console.log err, files
                                     if err?
                                         cloneError 'Cannot open tutorial: ' + err.message
                                     else unless files[0]?
