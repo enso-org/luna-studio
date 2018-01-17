@@ -26,6 +26,7 @@ import           Empire.Data.AST               (SomeASTException)
 import           Empire.Empire                 (Empire, runEmpire)
 import           Empire.Env                    (Env)
 import qualified Empire.Env                    as Env
+import           Empire.Utils                  (currentISO8601Time)
 import qualified LunaStudio.API.Graph.Request  as G
 import qualified LunaStudio.API.Graph.Result   as Result
 import           LunaStudio.API.Request        (Request (..))
@@ -58,17 +59,25 @@ sendToBus' msg = sendToBus (Topic.topic msg) msg
 
 replyFail :: forall a b c. Response.ResponseResult a b c => Logger.Logger -> Error LunaError -> Request a -> Response.Status b -> StateT Env BusT ()
 replyFail logger err req inv = do
-  logger Logger.error $ formatErrorMessage req (Text.unpack $ err ^. errorContent)
-  sendToBus' $ Response.error req inv err
+    time <- liftIO currentISO8601Time
+    logger Logger.error $ time <> "\t:: " <> formatErrorMessage req (Text.unpack $ err ^. errorContent)
+    sendToBus' $ Response.error req inv err
 
 replyOk :: forall a b. Response.ResponseResult a b () => Request a -> b -> StateT Env BusT ()
-replyOk req inv = sendToBus' $ Response.ok req inv
+replyOk req inv = do
+    time <- liftIO currentISO8601Time
+    logger Logger.info $ time <> "\t:: sending ok for " <> Topic.topic req
+    sendToBus' $ Response.ok req inv
 
-replyResult :: forall a b c. Response.ResponseResult a b c => Request a -> b -> c -> StateT Env BusT ()
-replyResult req inv res = sendToBus' $ Response.result req inv res
+replyResult :: forall a b c. (Response.ResponseResult a b c, Show c) => Request a -> b -> c -> StateT Env BusT ()
+replyResult req inv res = do
+    time <- liftIO currentISO8601Time
+    logger Logger.info $ time <> "\t:: sending response for " <> Topic.topic req
+    logger Logger.info $ time <> "\t:: " <> show res
+    sendToBus' $ Response.result req inv res
 
 errorMessage :: String
-errorMessage = "Error processing request: "
+errorMessage = "error during processing request "
 
 formatErrorMessage :: MessageTopic a => a -> String -> String
 formatErrorMessage req msg = errorMessage <> (Topic.topic req) <> ": " <> msg
@@ -90,8 +99,9 @@ prettyException e = do
     stack <- whoCreated e
     return $ displayException e ++ "\n" ++ renderStack stack
 
-modifyGraph :: forall req inv res res'. (G.GraphRequest req, Response.ResponseResult req inv res') => (req -> Empire inv) -> (req -> Empire res) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
+modifyGraph :: forall req inv res res'. (Show req, G.GraphRequest req, Response.ResponseResult req inv res') => (req -> Empire inv) -> (req -> Empire res) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
 modifyGraph inverse action success origReq@(Request uuid guiID request') = do
+    logger Logger.info $ Topic.topic origReq <> ": " <> show request'
     request          <- liftIO $ webGUIHack request'
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
@@ -112,7 +122,7 @@ modifyGraph inverse action success origReq@(Request uuid guiID request') = do
                     Env.empireEnv .= newEmpireEnv
                     success origReq inv result
 
-modifyGraphOk :: forall req inv res . (Bin.Binary req, G.GraphRequest req, Response.ResponseResult req inv ()) => (req -> Empire inv) -> (req -> Empire res) -> Request req -> StateT Env BusT ()
+modifyGraphOk :: forall req inv res . (Show req, Bin.Binary req, G.GraphRequest req, Response.ResponseResult req inv ()) => (req -> Empire inv) -> (req -> Empire res) -> Request req -> StateT Env BusT ()
 modifyGraphOk inverse action = modifyGraph inverse action (\req@(Request uuid guiID request) inv _ -> replyOk req inv)
 
 defInverse :: a -> Empire ()

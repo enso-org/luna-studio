@@ -189,17 +189,18 @@ handleMessage = do
     case msgFrame of
         Left err -> logger Logger.error $ "Unparseable message: " <> err
         Right (MessageFrame msg crlID senderID lastFrame) -> do
-            let topic = msg ^. Message.topic
-                logMsg = show (crlID ^. Message.messageID) <> ": " <> show senderID
-                         <> " -> (last = " <> show lastFrame
-                         <> ")\t:: " <> topic
+            time <- liftIO Utils.currentISO8601Time
+            let topic   = msg ^. Message.topic
+                logMsg  = time <> "\t:: received " <> topic
                 content = Compress.unpack $ msg ^. Message.message
             case Utils.lastPart '.' topic of
-                "update"  -> handleUpdate        logMsg topic content
-                "status"  -> handleStatus        logMsg topic content
-                "request" -> handleRequest       logMsg topic content
-                "debug"   -> handleDebug         logMsg topic content
-                _         -> handleNotRecognized logMsg topic content
+                "update"    -> handleUpdate        logMsg topic content
+                "status"    -> handleStatus        logMsg topic content
+                "request"   -> handleRequest       logMsg topic content
+                "debug"     -> handleDebug         logMsg topic content
+                "response"  -> handleResponse      logMsg topic content
+                "typecheck" -> handleTypecheck     logMsg topic content
+                _           -> handleNotRecognized logMsg topic content
 
 defaultHandler :: ByteString -> StateT Env BusT ()
 defaultHandler content = do
@@ -234,3 +235,11 @@ handleNotRecognized :: String -> String -> ByteString -> StateT Env BusT ()
 handleNotRecognized logMsg _ content = do
     logger Logger.error logMsg
     logger Logger.error $ show content
+
+handleResponse :: String -> String -> ByteString -> StateT Env BusT ()
+handleResponse logMsg _ content = do
+    logger Logger.info logMsg
+
+handleTypecheck :: String -> String -> ByteString -> StateT Env BusT ()
+handleTypecheck logMsg _ content = do
+    logger Logger.info logMsg

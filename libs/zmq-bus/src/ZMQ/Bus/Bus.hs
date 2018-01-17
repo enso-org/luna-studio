@@ -125,17 +125,13 @@ withTimeout action timeout = runExceptT $ do
 sendByteString :: ByteString -> Bus ()
 sendByteString msg = do
     push <- getPushSocket
-    logger trace "Sending message..."
     lift2 $ ZMQ.send push [] msg
-    logger trace "Message sent"
 
 
 receiveByteString :: Bus ByteString
 receiveByteString = do
     sub <- getSubSocket
-    logger trace "Waiting for a message..."
     bs <- lift2 $ ZMQ.receive sub
-    logger trace "Message received"
     pure bs
 
 
