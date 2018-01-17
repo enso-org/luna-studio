@@ -155,7 +155,7 @@ module.exports =
         list: (callback) =>
             try
                 request.get tutorialRequestOpts, (err, response, body) =>
-                    parsed = yaml.safeLoad(body)
+                    parsed = yaml.safeLoad(body) || []
                     if body?
                         parsed.forEach (repo) =>
                             callback
