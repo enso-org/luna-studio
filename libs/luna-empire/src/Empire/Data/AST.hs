@@ -4,10 +4,13 @@ module Empire.Data.AST where
 
 import           Empire.Prelude hiding (cast)
 
+import           Data.Text      (Text)
+import qualified Data.Text      as Text
 import           Data.Typeable  (cast)
 
 import           Luna.IR              (IR, IRBuilder, SomeExpr, SomeExprLink, evalIRBuilder', evalPassManager', runRegs, snapshot)
-import           LunaStudio.Data.Port (OutPortId)
+import           LunaStudio.Data.Node (NodeId)
+import           LunaStudio.Data.Port (AnyPortId, OutPortId)
 
 import           System.Log     (DropLogger, Logger, dropLogs)
 
@@ -69,3 +72,25 @@ data PortDoesNotExistException = PortDoesNotExistException OutPortId deriving (S
 instance Exception PortDoesNotExistException where
     toException   = astExceptionToException
     fromException = astExceptionFromException
+
+data ConnectionException = ConnectionException {
+      _srcNodeId   :: NodeId
+    , _srcNodeCode :: Text
+    , _srcPort     :: OutPortId
+    , _dstNodeId   :: NodeId
+    , _dstNodeCode :: Text
+    , _dstPort     :: AnyPortId
+    , _innerExc    :: SomeASTException
+    } deriving Show
+
+makeLenses ''ConnectionException
+
+instance Exception ConnectionException where
+    toException        = astExceptionToException
+    fromException      = astExceptionFromException
+    displayException e = "Exception occurred during connecting port "
+                      <> show (e ^. srcPort) <> " of \""
+                      <> Text.unpack (e ^. srcNodeCode) <> "\" (" <> show (e ^. srcNodeId) <> ") to port "
+                      <> show (e ^. dstPort) <> " of \""
+                      <> Text.unpack (e ^. dstNodeCode) <> "\" (" <> show (e ^. dstNodeId) <> "): "
+                      <> displayException (e ^. innerExc)

@@ -136,8 +136,8 @@ import qualified Empire.Commands.GraphUtils       as GraphUtils
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Publisher        as Publisher
 import           Empire.Data.AST                  (InvalidConnectionException (..), EdgeRef, NodeRef, NotInputEdgeException (..),
-                                                   NotUnifyException, PortDoesNotExistException(..), SomeASTException,
-                                                   astExceptionFromException, astExceptionToException)
+                                                   NotUnifyException, PortDoesNotExistException(..), ConnectionException(..),
+                                                   SomeASTException, astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy  as BH
 import           Empire.Data.Graph                (ClsGraph, Graph)
 import qualified Empire.Data.Graph                as Graph
@@ -882,8 +882,20 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' ds
             connectPersistent src (InPortRef' (InPortRef d []))
         _ : _ -> throwM InvalidConnectionException
 
+
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
-connectNoTC loc outPort anyPort = runASTOp $ connectPersistent outPort anyPort
+connectNoTC loc outPort anyPort = runASTOp $ do
+    (inputSidebar, outputSidebar) <- GraphBuilder.getEdgePortMapping
+    let OutPortRef (convert -> outNodeId) outPortId = outPort
+        inNodeId = anyPort ^. PortRef.nodeId
+        inPortId = anyPort ^. PortRef.portId
+    let codeForId id | id == inputSidebar  = return "input sidebar"
+                     | id == outputSidebar = return "output sidebar"
+                     | otherwise           = ASTRead.getASTPointer id >>= Code.getCodeOf
+    outNodeCode <- codeForId outNodeId `catch` (\(_e::SomeASTException) -> return "unknown code")
+    inNodeCode  <- codeForId inNodeId `catch` (\(_e::SomeASTException) -> return "unknown code")
+    connectPersistent outPort anyPort `catch` (\(e::SomeASTException) ->
+        throwM $ ConnectionException outNodeId outNodeCode outPortId inNodeId inNodeCode inPortId e)
 
 data SelfPortDefaultException = SelfPortDefaultException InPortRef
     deriving (Show)
