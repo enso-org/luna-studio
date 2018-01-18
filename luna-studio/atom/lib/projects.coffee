@@ -1,11 +1,13 @@
 fse     = require 'fs-extra'
 fs      = require 'fs-plus'
-Git     = require 'nodegit'
 path    = require 'path'
 request = require 'request'
 yaml    = require 'js-yaml'
 InputView = require './input-view'
 report = require './report'
+requestProgress = require 'request-progress'
+unzip = require 'unzip'
+
 {ProjectItem, recentClasses} = require './project-item'
 
 recentProjectsPath    = path.join process.env.LUNA_STUDIO_DATA_PATH, 'recent-projects.yml'
@@ -25,19 +27,14 @@ temporaryMainFilePath = path.join temporaryProject.path, temporaryProject.srcDir
 
 encoding = 'utf8'
 
-tokenUser = 'luna-studio'
-token = '01665947e42b84759406bc56a72ec141575653d1'
-accessToken = '?access_token=' + token
-
-tutorialRequestOpts =
-    url: 'https://api.github.com/orgs/luna-packages/repos' + accessToken
+mkRequestOpts = (url) ->
+    url: url
+    timeout: 10000
     headers:
         'User-Agent': 'luna-studio'
 
-thumbnailRequestOpts = (name) ->
-    url: 'https://api.github.com/repos/luna-packages/' + name + '/contents/thumb.png' + accessToken
-    headers:
-        'User-Agent': 'luna-studio'
+tutorialListRequestOpts = mkRequestOpts 'https://api.github.com/orgs/luna-packages/repos'
+thumbnailRequestOpts = (name) -> mkRequestOpts 'https://api.github.com/repos/luna-packages/' + name + '/contents/thumb.png'
 
 loadRecentNoCheck = (callback) =>
     fs.readFile recentProjectsPath, encoding, (err, data) =>
@@ -154,49 +151,38 @@ module.exports =
     tutorial:
         list: (callback) =>
             try
-                request.get tutorialRequestOpts, (err, response, body) =>
+                request.get tutorialListRequestOpts, (err, response, body) =>
+                    if err?
+                        callback
+                            error: 'Cannot download tutorial list. ' + err.message
+                        return
                     parsed = yaml.safeLoad(body) || []
-                    if body?
+                    unless parsed.forEach?
+                        parsed.message ?= ''
+                        callback
+                            error: 'Cannot download tutorial list. ' + parsed.message
+                    else
                         parsed.forEach (repo) =>
+                            archiveUrl = repo.archive_url.replace('{archive_format}', 'zipball').replace('{/ref}', '/master')
                             callback
                                 name: repo.name
                                 description: repo.description
-                                uri: repo.html_url
+                                uri: archiveUrl
                             request.get thumbnailRequestOpts(repo.name), (err, response, body) =>
                                 if body?
                                     parsed = yaml.safeLoad(body)
                                     callback
                                         name: repo.name
                                         description: repo.description
-                                        uri: repo.html_url
+                                        uri: archiveUrl
                                         thumb: 'data:image/png;base64,' + parsed.content
-                    else
-                        callback
-                            error: 'Cannot download tutorial list.'
             catch error
                 report.displayError 'Error while getting tutorials', error.message
 
         open: (tutorial, progress, finalize) ->
-            dstPath = tutorialsDownloadPath + '/' + tutorial.name
-            cloneAttempts = 0
-            cloneOpts =
-                fetchOpts:
-                    callbacks:
-                        certificateCheck: => 1
-                        credentials: (url, userName) =>
-                            if cloneAttempts > 0
-                                return Git.Cred.sshKeyFromAgent(userName)
-                            cloneAttempts++
-                            return Git.Cred.userpassPlaintextNew(tokenUser, token)
-                        transferProgress: (stats) =>
-                            p = (stats.receivedObjects() + stats.indexedObjects()) / (stats.totalObjects() * 2)
-                            try
-                                progress p
-                            catch error
-                                console.log error
-            clone = -> Git.Clone(tutorial.uri, dstPath, cloneOpts).then (repo) =>
-                atom.project.setPaths [dstPath]
-                finalize()
+            dstPath = path.join tutorialsDownloadPath, tutorial.name
+            dstZipPath = dstPath + '.zip'
+            unpackPath = path.join tutorialsDownloadPath, 'unzipped' + tutorial.name
             cloneError = (err) =>
                 report.displayError 'Error while cloning tutorial', err
                 finalize()
@@ -205,6 +191,20 @@ module.exports =
                     if err?
                         cloneError err.toString()
                     else
-                        clone().catch (error) =>
-                            clone().catch (error) =>
-                                cloneError error
+                        requestProgress(request mkRequestOpts tutorial.uri)
+                            .on 'progress', ((state) => progress state.percent)
+                            .on 'error', cloneError
+                            .pipe(unzip.Extract({ path: unpackPath }))
+                            .on 'close', =>
+                                fs.readdir unpackPath, (err, files) =>
+                                    if err?
+                                        cloneError 'Cannot open tutorial: ' + err.message
+                                    else unless files[0]?
+                                        cloneError 'Wrong tutorial archive structure'
+                                    else
+                                        srcPath = path.join unpackPath, files[0]
+                                        fs.rename srcPath, dstPath, (err) =>
+                                            if err?
+                                                cloneError 'Cannot open tutorial: ' + err.message
+                                            atom.project.setPaths [dstPath]
+                                            finalize()
