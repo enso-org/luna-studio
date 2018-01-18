@@ -66,13 +66,16 @@ module.exports =
 
         constructor: (@uri, @codeEditor) ->
             super
-            @setModified(false)
-            @setUri(@uri)
+            @initialized = false
+            @setModified false
+            @setUri @uri
             @diffToOmit = new Set()
             @setPlaceholderText 'Please wait'
             @codeEditor.pushInternalEvent(tag: 'OpenFile', _path: @uri)
 
-            @codeEditor.onSetBuffer @setBuffer
+            @codeEditor.onSetBuffer (uri, text) =>
+                @setBuffer uri, text
+                @initialize()
             @codeEditor.onSetClipboard @setClipboard
             @codeEditor.onInsertCode @insertCode
             @handleEvents()
@@ -81,8 +84,8 @@ module.exports =
             @subscribe.add @getBuffer().onDidStopChanging (event) =>
                 diffs = []
                 for change in event.changes
-                    if @diffToOmit.has(change.newText)
-                        @diffToOmit.delete(change.newText)
+                    if @diffToOmit.has change.newText
+                        @diffToOmit.delete change.newText
                     else
                         @setModified(true)
                         start = change.oldRange.start
@@ -96,9 +99,14 @@ module.exports =
                           #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
                         diffs.push diff
                 if diffs.length > 0
-                    @codeEditor.pushDiffs(diffs)
+                    @codeEditor.pushDiffs diffs
             spinner = new Spinner(progress = 0, overlap = true)
-            @spinnerElement = @element.appendChild(spinner.element)
+            @spinnerElement = @element.appendChild spinner.element
+
+        initialize: ->
+            unless @initialized
+                @initialized = true
+                @onInitialize?()
 
         serialize: -> { deserializer: 'LunaCodeEditorTab', uri: @uri }
 

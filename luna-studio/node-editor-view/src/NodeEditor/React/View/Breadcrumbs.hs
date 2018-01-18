@@ -30,7 +30,7 @@ breadcrumbs = React.defineView name $ \(ref, moduleName, bcs) ->
                 , "key"       $= jsShow key
                 , onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc
                 ] $ case reverse bc of
-                    []       -> elemString $ fromMaybe "default" moduleName
+                    []       -> elemString $ fromMaybe "No file selected" moduleName
                     (item:_) -> elemString $ convert $ item ^. B.name
 
 breadcrumbs_ :: IsRef r => r -> Maybe String -> Breadcrumbs -> ReactElementM ViewEventHandler ()
