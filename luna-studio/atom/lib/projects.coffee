@@ -156,7 +156,7 @@ module.exports =
                         callback
                             error: 'Cannot download tutorial list. ' + err.message
                         return
-                    parsed = yaml.safeLoad(body)
+                    parsed = yaml.safeLoad(body) || []
                     unless parsed.forEach?
                         parsed.message ?= ''
                         callback
