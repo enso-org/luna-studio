@@ -148,7 +148,7 @@ version = do
 backendBinsPath, configPath, atomAppPath, backendDir                           :: MonadRun m => m FilePath
 supervisordBinPath, supervisorctlBinPath, killSupervisorBinPath                :: MonadRun m => m FilePath
 packageStudioAtomHome, userStudioAtomHome, localLogsDirectory, versionFilePath :: MonadRun m => m FilePath
-resourcesDirectory                                                             :: MonadRun m => m FilePath
+resourcesDirectory, windowsLogsDirectory                                       :: MonadRun m => m FilePath
 userLogsDirectory, userdataStorageDirectory, localdataStorageDirectory         :: MonadRun m => m FilePath
 lunaTmpPath, lunaProjectsPath, lunaTutorialsPath, userInfoPath                 :: MonadRun m => m FilePath
 sharePath                                                                      :: MonadRun m => m FilePath
@@ -164,6 +164,7 @@ packageStudioAtomHome     = relativeToMainDir [userConfigFolder, studioHome]
 localLogsDirectory        = relativeToMainDir [logsFolder]
 versionFilePath           = relativeToMainDir [configFolder, versionFile]
 resourcesDirectory        = relativeToMainDir [binsFolder, resourcesFolder]
+windowsLogsDirectory      = relativeToMainDir [configFolder, logsFolder]
 userLogsDirectory         = relativeToHomeDir [logsFolder, appName] >>= (\p -> (fmap (p </>) version))
 userdataStorageDirectory  = relativeToHomeDir [configHomeFolder, appName, storageDataHomeFolder]
 localdataStorageDirectory = relativeToHomeDir [storageDataHomeFolder]
@@ -186,9 +187,10 @@ lunaTutorialsPath = do
     lunaTmp   <- lunaTmpPath
     return $ lunaTmp </> (runnerCfg ^. tutorialsDirectory)
 
-atomHomeDir, logsDir, dataStorageDirectory :: MonadRun m => Bool -> m FilePath
+atomHomeDir, logsDir, windowsLogsDir, dataStorageDirectory :: MonadRun m => Bool -> m FilePath
 atomHomeDir          develop = if develop then packageStudioAtomHome     else userStudioAtomHome
 logsDir              develop = if develop then localLogsDirectory        else userLogsDirectory
+windowsLogsDir       develop = if develop then localLogsDirectory        else windowsLogsDirectory
 dataStorageDirectory develop = if develop then localdataStorageDirectory else userdataStorageDirectory
 -- misc runner utils --
 
@@ -314,7 +316,7 @@ runPackage develop forceRun = case currentHost of
         atom <- atomAppPath
         checkLunaHome
         setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory develop
-        setEnv "LUNA_STUDIO_LOG_PATH"  =<< logsDir              develop
+        setEnv "LUNA_STUDIO_LOG_PATH"  =<< windowsLogsDir       develop
         setEnv "ATOM_HOME"             =<< userStudioAtomHome
         setEnv "LUNA_TMP"              =<< lunaTmpPath
         setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
