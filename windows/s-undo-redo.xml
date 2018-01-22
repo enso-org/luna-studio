@@ -4,6 +4,7 @@
   <name>Luna Undo-Redo Service</name>
   <description>Undo-Redo support for Luna</description>
   <executable>%BASE%\..\..\bin\private\undo-redo.exe</executable>
+  <startmode>manual</startmode>
 
   <onfailure action="restart" delay="1 sec"/>
   <onfailure action="restart" delay="1 sec"/>

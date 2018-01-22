@@ -4,6 +4,7 @@
   <name>Luna Empire Service</name>
   <description>Luna backend</description>
   <executable>%BASE%\..\..\bin\private\luna-empire.exe</executable>
+  <startmode>manual</startmode>
 
   <onfailure action="restart" delay="1 sec"/>
   <onfailure action="restart" delay="1 sec"/>

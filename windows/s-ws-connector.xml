@@ -4,6 +4,7 @@
   <name>Luna WebSocket Connector Service</name>
   <description>WebSocket connector for Luna bus</description>
   <executable>%BASE%\..\..\bin\private\ws-connector.exe</executable>
+  <startmode>manual</startmode>
 
   <onfailure action="restart" delay="1 sec"/>
   <onfailure action="restart" delay="1 sec"/>
