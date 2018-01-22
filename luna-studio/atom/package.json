@@ -37,7 +37,7 @@
         "showdown": "1.8.x",
         "sub-atom": "1.0.x",
         "underscore": "1.8.x",
-        "unzip": "0.1.11",
+        "unzipper": "0.8.11",
         "uuid": "3.1.x",
         "vm2": "3.5.x"
     }

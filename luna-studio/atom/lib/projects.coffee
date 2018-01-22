@@ -6,7 +6,7 @@ yaml    = require 'js-yaml'
 InputView = require './input-view'
 report = require './report'
 requestProgress = require 'request-progress'
-unzip = require 'unzip'
+unzip = require 'unzipper'
 
 {ProjectItem, recentClasses} = require './project-item'
 
