@@ -316,7 +316,7 @@ startServices :: MonadRun m => m ()
 startServices = case currentHost of
     Windows -> do
         path <- windowsScriptsPath
-        Shelly.shelly $ Shelly.chdir path $ do
+        Shelly.shelly $ Shelly.silently $ Shelly.chdir path $ do
             let startPath = path </> Shelly.fromText "start.bat"
             Shelly.cmd startPath
     _       -> return ()
@@ -325,7 +325,7 @@ stopServices :: MonadRun m => m ()
 stopServices = case currentHost of
     Windows -> do
         path <- windowsScriptsPath
-        Shelly.shelly $ Shelly.chdir path $ do
+        Shelly.shelly $ Shelly.silently $ Shelly.chdir path $ do
             let stopPath = path </> Shelly.fromText "stop.bat"
             Shelly.cmd stopPath
     _       -> return ()
