@@ -76,6 +76,8 @@ openMainIfExists = ->
     mainLocation = path.join projectPath, 'src', 'Main.luna'
     if fs.existsSync mainLocation
         atom.workspace.open(mainLocation, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
+        target = atom.views.getView atom.workspace
+        atom.commands.dispatch(target, 'tree-view:reveal-active-file')
 
 isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith tutorialsDownloadPath)
 
