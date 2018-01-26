@@ -13,7 +13,7 @@
 module Main where
 
 import           Prelude                       hiding (FilePath)
-import           Control.Exception.Safe        (MonadMask, MonadCatch, bracket_, catchAny)
+import           Control.Exception.Safe        (MonadMask, MonadCatch, bracket_, catch)
 import           Control.Lens.Aeson
 import           Control.Lens
 import           Control.Monad
@@ -36,6 +36,7 @@ import           System.Process.Typed          (shell, runProcess, runProcess_, 
 import           System.Environment            (getExecutablePath, getArgs)
 import qualified System.Environment            as Environment
 import qualified System.IO                     as IO
+import           System.IO.Error               (isDoesNotExistError)
 import qualified Shelly.Lifted                 as Shelly
 import           System.Host
 
@@ -149,7 +150,7 @@ version = do
 
 printVersion :: (MonadRun m, MonadCatch m) => m ()
 printVersion = do
-    versionTxt <- catchAny versionText $ \e -> return "develop"
+    versionTxt <- catch versionText $ \e -> if (isDoesNotExistError e) then return "develop" else return . T.pack $ show e
     liftIO $ print versionTxt
 
 -- paths --
