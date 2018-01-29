@@ -9,6 +9,30 @@
     return Object.keys(obj).length == keys.length && keys.every(k => obj.hasOwnProperty(k));
   };
 
+  var getAtNestedKey = function (data, key) {
+    var res = data;
+    key.forEach(function (k) { res = res[k]; });
+    return res;
+  }
+
+  var repNestedKey = function (key) {
+    return key.join(".");
+  }
+
+  var generateNestings = function (data, key) {
+    var first = getAtNestedKey(data[0], key);
+    if (!(first instanceof Object)) return [key];
+    var firstKeys = Object.keys(first);
+    var isNestable = data.every(obj => hasExactlyKeys(firstKeys, getAtNestedKey(obj, key)));
+    if (isNestable) {
+      var withNests = firstKeys.map(k => key.concat([k]));
+      var furtherNestings = withNests.map(k => generateNestings(data, k));
+      return [].concat.apply([], furtherNestings);
+    } else {
+      return [key];
+    }
+  }
+
   var isObjectMatrix = function (data) {
     var isList = Array.isArray(data) && data[0];
     if (!isList || !(typeof data[0] === "object"))  return false;
@@ -19,14 +43,15 @@
   var genObjectMatrix = function (data, level) {
     var result = "<tr><th></th>";
     var keys   = Object.keys(data[0]);
-    keys.forEach(function (key) {
-      result += ("<th>" + key + "</th>");
+    var nests  = [].concat.apply([], keys.map(k => generateNestings(data,[k])));
+    nests.forEach(function (key) {
+      result += ("<th>" + repNestedKey(key) + "</th>");
     });
     result += "</tr>";
     data.forEach(function (row, ix) {
       result += ("<tr><th>" + ix + "</th>");
-      keys.forEach(function (k) {
-        result += toTableCell(row[k], level);
+      nests.forEach(function (k) {
+        result += toTableCell(getAtNestedKey(row, k), level);
       });
       result += ("</tr>")
     });
@@ -87,6 +112,7 @@
     } else if (data instanceof Object) {
       return "<td>" + genRowObjectTable(data, level + 1) + "</td>";
     } else {
+      if (data === undefined || data === null) data = "";
       var res = data.toString();
       return '<td class="plaintext">' + (res === "" ? "N/A" : res) + '</td>';
     }
