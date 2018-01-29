@@ -150,7 +150,7 @@ version = do
 
 printVersion :: (MonadRun m, MonadCatch m) => m ()
 printVersion = do
-    versionTxt <- catch versionText $ \e -> if (isDoesNotExistError e) then return "develop" else return . T.pack $ show e
+    versionTxt <- catch versionText $ \e -> return $ if (isDoesNotExistError e) then "develop" else T.pack $ show e
     liftIO $ print versionTxt
 
 -- paths --
