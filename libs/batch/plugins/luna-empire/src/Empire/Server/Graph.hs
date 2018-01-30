@@ -23,7 +23,7 @@ import           Data.ByteString.Lazy                    (fromStrict)
 import           Data.Char                               (isUpper)
 import qualified Data.HashMap.Strict                     as HashMap
 import qualified Data.IntMap                             as IntMap
-import           Data.List                               (break, find, partition, sortBy, (++))
+import           Data.List                               (break, find, partition, sortBy)
 import           Data.List.Split                         (splitOneOf)
 import qualified Data.Map                                as Map
 import           Data.Maybe                              (isJust, isNothing, listToMaybe, maybeToList)
@@ -161,41 +161,41 @@ getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
 getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
 getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
-getProjectPathAndRelativeModulePath :: FilePath -> IO (Maybe (FilePath, FilePath))
+getProjectPathAndRelativeModulePath :: MonadIO m => FilePath -> m (Maybe (FilePath, FilePath))
 getProjectPathAndRelativeModulePath modulePath = do
     let eitherToMaybe :: Either Path.PathException (Path.Path Path.Abs Path.File) -> Maybe (Path.Path Path.Abs Path.File)
         eitherToMaybe (Left  e) = Nothing
         eitherToMaybe (Right a) = Just a
-    runMaybeT $ do
+    liftIO . runMaybeT $ do
         absModulePath  <- MaybeT . fmap eitherToMaybe . try $ parseAbsFile modulePath
         absProjectPath <- MaybeT $ findProjectFileForFile absModulePath
         relModulePath  <- MaybeT $ getRelativePathForModule absProjectPath absModulePath
         return (fromAbsFile absProjectPath, fromRelFile relModulePath)
 
 saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
-saveSettings gl settings newGl = handle (\(e :: SomeException) -> return ()) $ do
+saveSettings gl settings newGl = handle (\(e :: SomeException) -> print e) $ do
     bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
     newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
     let filePath        = gl    ^. GraphLocation.filePath
         newFilePath     = newGl ^. GraphLocation.filePath
         lastBcInOldFile = if filePath == newFilePath then newBc else bc
-    liftIO $ do
-        withJustM (getProjectPathAndRelativeModulePath filePath) $ \(cp, fp) ->
-            Project.updateLocationSettings cp fp bc settings lastBcInOldFile
-        when (filePath /= newFilePath) $ withJustM (getProjectPathAndRelativeModulePath newFilePath) $ \(cp, fp) ->
-            Project.updateCurrentBreadcrumbSettings cp fp newBc
+    withJustM (getProjectPathAndRelativeModulePath filePath) $ \(cp, fp) ->
+        Project.updateLocationSettings cp fp bc settings lastBcInOldFile
+    when (filePath /= newFilePath) $ withJustM (getProjectPathAndRelativeModulePath newFilePath) $ \(cp, fp) ->
+        Project.updateCurrentBreadcrumbSettings cp fp newBc
 
 getClosestBcLocation :: GraphLocation -> Breadcrumb Text -> Empire GraphLocation
 getClosestBcLocation gl (Breadcrumb []) = return gl
 getClosestBcLocation gl (Breadcrumb (nodeName:newBcItems)) = do
     g <- Graph.getGraph gl
     let mayN = find ((Just nodeName ==) . view Node.name) (g ^. GraphAPI.nodes)
-    case mayN of
-        Nothing -> return gl
-        Just n  -> do
+        processLocation n = do
             let nid = n ^. Node.nodeId
                 bci = if n ^. Node.isDefinition then Breadcrumb.Definition nid else Breadcrumb.Lambda nid
-            getClosestBcLocation (gl & GraphLocation.breadcrumb . Breadcrumb.items %~ (++[bci])) $ Breadcrumb newBcItems
+                nextLocation = gl & GraphLocation.breadcrumb . Breadcrumb.items %~ (<>[bci])
+            getClosestBcLocation nextLocation $ Breadcrumb newBcItems
+    maybe (return gl) processLocation mayN
+
 
 -- Handlers
 

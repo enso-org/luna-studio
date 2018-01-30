@@ -80,11 +80,11 @@ instance (Hashable k, Eq k, Binary k, Binary v) => Binary (HashMap k v) where
     get = HashMap.fromList <$> get
 
 
-getModuleSettings :: FilePath -> FilePath -> IO (Maybe ModuleSettings)
-getModuleSettings configPath modulePath = either def (Map.lookup modulePath . view modulesSettings) <$> decodeFileEither configPath
+getModuleSettings :: MonadIO m => FilePath -> FilePath -> m (Maybe ModuleSettings)
+getModuleSettings configPath modulePath = liftIO $ either def (Map.lookup modulePath . view modulesSettings) <$> decodeFileEither configPath
 
-updateCurrentBreadcrumbSettings :: FilePath -> FilePath -> Breadcrumb Text -> IO ()
-updateCurrentBreadcrumbSettings configPath filePath bc = decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+updateCurrentBreadcrumbSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> m ()
+updateCurrentBreadcrumbSettings configPath filePath bc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
     createProjectSettings   = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings   = either (const createProjectSettings) updateModuleSettings
     createModuleSettings    = ModuleSettings bc HashMap.empty def
@@ -92,8 +92,8 @@ updateCurrentBreadcrumbSettings configPath filePath bc = decodeFileEither config
         Nothing -> ps & modulesSettings . at filePath ?~ createModuleSettings
         Just ms -> ps & modulesSettings . at filePath ?~ (ms & currentBreadcrumb .~ bc)
 
-updateLocationSettings :: FilePath -> FilePath -> Breadcrumb Text -> LocationSettings -> Breadcrumb Text -> IO ()
-updateLocationSettings configPath filePath bc settings currentBc = decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+updateLocationSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> LocationSettings -> Breadcrumb Text -> m ()
+updateLocationSettings configPath filePath bc settings currentBc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
     createProjectSettings    = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings    = either (const createProjectSettings) updateModuleSettings
     createModuleSettings     = ModuleSettings currentBc (fromMaybe mempty $ settings ^. visMap) $ Map.singleton bc createBreadcrumbSettings
