@@ -131,6 +131,8 @@ import qualified ZMQ.Bus.Trans                           as BusT
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
+logProjectPathNotFound :: MonadIO m => m ()
+logProjectPathNotFound = Project.logProjectSettingsError "Could not find project path."
 -- helpers
 
 
@@ -163,17 +165,19 @@ getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
 getProjectPathAndRelativeModulePath :: MonadIO m => FilePath -> m (Maybe (FilePath, FilePath))
 getProjectPathAndRelativeModulePath modulePath = do
-    let eitherToMaybe :: Either Path.PathException (Path.Path Path.Abs Path.File) -> Maybe (Path.Path Path.Abs Path.File)
-        eitherToMaybe (Left  e) = Nothing
-        eitherToMaybe (Right a) = Just a
-    liftIO . runMaybeT $ do
-        absModulePath  <- MaybeT . fmap eitherToMaybe . try $ parseAbsFile modulePath
+    let eitherToMaybe :: MonadIO m => Either Path.PathException (Path.Path Path.Abs Path.File) -> m (Maybe (Path.Path Path.Abs Path.File))
+        eitherToMaybe (Left  e) = Project.logProjectSettingsError e >> return def
+        eitherToMaybe (Right a) = return $ Just a
+    mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
+        absModulePath  <- MaybeT $ eitherToMaybe =<< try (parseAbsFile modulePath)
         absProjectPath <- MaybeT $ findProjectFileForFile absModulePath
         relModulePath  <- MaybeT $ getRelativePathForModule absProjectPath absModulePath
         return (fromAbsFile absProjectPath, fromRelFile relModulePath)
+    when (isNothing mayProjectPathAndRelModulePath) $ Project.logProjectSettingsError "Could not find project path."
+    return mayProjectPathAndRelModulePath
 
 saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
-saveSettings gl settings newGl = handle (\(e :: SomeException) -> print e) $ do
+saveSettings gl settings newGl = handle (\(e :: SomeException) -> Project.logProjectSettingsError e) $ do
     bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
     newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
     let filePath        = gl    ^. GraphLocation.filePath

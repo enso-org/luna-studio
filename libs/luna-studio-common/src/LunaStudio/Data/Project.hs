@@ -19,6 +19,7 @@ import           LunaStudio.Data.Library              (Library)
 import           LunaStudio.Data.NodeValue            (Visualizer)
 import           LunaStudio.Data.TypeRep              (TypeRep)
 import           Prologue                             hiding (TypeRep)
+import           System.IO                            (hFlush, stdout)
 
 
 type ProjectId = UUID
@@ -79,9 +80,21 @@ instance (Hashable k, Eq k, Binary k, Binary v) => Binary (HashMap k v) where
     put = put . HashMap.toList
     get = HashMap.fromList <$> get
 
+prefixError :: Show a => a -> String
+prefixError e = "Error while processing project settings: " <> show e
+
+logProjectSettingsError :: (MonadIO m, Show a) => a -> m ()
+logProjectSettingsError e = liftIO $ print (prefixError e) >> hFlush stdout
+
 
 getModuleSettings :: MonadIO m => FilePath -> FilePath -> m (Maybe ModuleSettings)
-getModuleSettings configPath modulePath = liftIO $ either def (Map.lookup modulePath . view modulesSettings) <$> decodeFileEither configPath
+getModuleSettings configPath modulePath = liftIO $ do
+    eitherFile <- decodeFileEither configPath
+    let modulePathNotFoundInFileMsg = "Could not find key: " <> show modulePath <> " in project settings located at: " <> show configPath
+        logProblemAndReturnDef e    = logProjectSettingsError e >> return def
+        logIfIsNothing mayMs        = if isJust mayMs then return mayMs else logProblemAndReturnDef modulePathNotFoundInFileMsg
+        findModulePathInSettings    = logIfIsNothing . Map.lookup modulePath . view modulesSettings
+    either logProblemAndReturnDef findModulePathInSettings eitherFile
 
 updateCurrentBreadcrumbSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> m ()
 updateCurrentBreadcrumbSettings configPath filePath bc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
