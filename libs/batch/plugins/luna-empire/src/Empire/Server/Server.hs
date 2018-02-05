@@ -109,14 +109,14 @@ modifyGraph inverse action success origReq@(Request uuid guiID request') = do
     inv'             <- liftIO $ try $ runEmpire empireNotifEnv currentEmpireEnv $ inverse request
     case inv' of
         Left (exc :: SomeException) -> do
-            let err = Graph.prepareLunaError exc
+            err <- liftIO $ Graph.prepareLunaError exc
             replyFail logger err origReq (Response.Error err)
         Right (inv, _) -> do
             let invStatus = Response.Ok inv
             result <- liftIO $ try $ runEmpire empireNotifEnv currentEmpireEnv $ action request
             case result of
                 Left  (exc :: SomeException) -> do
-                    let err = Graph.prepareLunaError exc
+                    err <- liftIO $ Graph.prepareLunaError exc
                     replyFail logger err origReq invStatus
                 Right (result, newEmpireEnv) -> do
                     Env.empireEnv .= newEmpireEnv

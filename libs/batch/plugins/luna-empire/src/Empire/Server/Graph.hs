@@ -395,8 +395,8 @@ handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request loca
         result <- try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ SearchNodes.Result <$> Graph.getImports location importsList
         case result of
             Left  (exc :: SomeException) -> do
-                let err = Graph.prepareLunaError exc
-                    msg = Response.error origReq invStatus err
+                err <- liftIO $ Graph.prepareLunaError exc
+                let msg = Response.error origReq invStatus err
                 atomically $ writeTChan toBusChan $ Message.Message (Topic.topic msg) $ Compress.pack $ Bin.encode msg
             Right (result, _) -> do
                 let msg = Response.result origReq () result
@@ -465,7 +465,9 @@ handleTypecheck req@(Request _ _ request) = do
     empireNotifEnv   <- use Env.empireNotif
     result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
     case result of
-        Left (exc :: SomeASTException) -> let err = Graph.prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ Graph.prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     return ()
 
