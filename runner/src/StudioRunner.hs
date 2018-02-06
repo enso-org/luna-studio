@@ -225,6 +225,7 @@ copyLunaStudio = do
     Shelly.shelly $ do
         Shelly.mkdir_p atomHomeParent
         Shelly.cp_r packageAtomHome atomHomeParent
+    when (currentHost == Windows) $ liftIO $ runProcess_ $ shell $ "attrib +h " <> (encodeString atomHomeParent)
 
 copyResourcesLinux :: MonadRun m => m ()
 copyResourcesLinux = when linux $ do
