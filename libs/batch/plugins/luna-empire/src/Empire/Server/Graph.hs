@@ -173,7 +173,7 @@ getProjectPathAndRelativeModulePath modulePath = do
         absProjectPath <- MaybeT $ findProjectFileForFile absModulePath
         relModulePath  <- MaybeT $ getRelativePathForModule absProjectPath absModulePath
         return (fromAbsFile absProjectPath, fromRelFile relModulePath)
-    when (isNothing mayProjectPathAndRelModulePath) $ Project.logProjectSettingsError "Could not find project path."
+    when (isNothing mayProjectPathAndRelModulePath) logProjectPathNotFound
     return mayProjectPathAndRelModulePath
 
 saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
