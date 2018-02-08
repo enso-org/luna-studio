@@ -55,7 +55,8 @@ import           OCI.IR.Class         (Import)
 import qualified OCI.Pass.Class       as Pass (SubPass, eval')
 import qualified OCI.Pass.Manager     as Pass (PassManager, setAttr, State)
 
-import           System.Log                                   (Logger, DropLogger, dropLogs)
+import           System.Log                                   (DropLogger(..), dropLogs)
+import           System.Log.Logger.Class                      (Logger(..), IdentityLogger(..))
 import           Luna.Pass.Data.ExprRoots                     (ExprRoots(..))
 import qualified Empire.Pass.PatternTransformation            as PatternTransformation
 import           Luna.Pass.Resolution.Data.UnresolvedVars     (UnresolvedVars(..))
@@ -133,6 +134,10 @@ type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedExpr, MarkedE
 type instance Outputs    Event EmpirePass = EmpireEmitters
 
 type instance Preserves        EmpirePass = '[]
+
+deriving instance MonadMask m => MonadMask (Pass.PassManager m)
+deriving instance MonadMask m => MonadMask (DepState.StateT t m)
+deriving instance MonadMask m => MonadMask (Logger (IdentityLogger l) m)
 
 instance MonadPassManager m => MonadRefLookup Net (Pass.SubPass pass m) where
     uncheckedLookupRef = lift . uncheckedLookupRef
@@ -294,26 +299,3 @@ putNewIRCls ir = do
     newAST <- liftIO $ Graph.emptyClsAST
     Graph.clsAst .= (newAST & Graph.ir .~ ir)
 
-
--- runPass :: forall pass g b a. KnownPass pass
---         => Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT g IO))))) b
---         -> Pass.SubPass pass (Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT g IO)))))) a
---         -> Command g a
--- runPass inits pass = do
---     g <- get
---     AST currentStateIR currentStatePass <- use Graph.ast
---     let evalIR = flip runStateT g
---                . withVis
---                . dropLogs
---                . DepState.evalDefStateT @Cache
---                . flip evalIRBuilder currentStateIR
---                . flip evalPassManager currentStatePass
---     ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do
---         inits
---         a      <- Pass.eval' @pass pass
---         st     <- snapshot
---         passSt <- DepState.get @Pass.State
---         return (a, (st, passSt))
---     put $ newG & Graph.ast .~ AST st passSt
---
---     return a

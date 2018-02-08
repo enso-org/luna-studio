@@ -36,6 +36,7 @@ ghc-options: -Wall
 dependencies:
     - aeson
     - aeson-pretty
+    - async
     - bimap
     - base
     - bytestring
@@ -62,6 +63,7 @@ dependencies:
     - path
     - prologue
     - safe
+    - safe-exceptions
     - split
     - stm
     - text

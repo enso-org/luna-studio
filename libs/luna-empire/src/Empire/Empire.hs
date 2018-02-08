@@ -20,7 +20,7 @@ import           LunaStudio.Data.Project       (ProjectId)
 import           LunaStudio.Data.TypeRep       (TypeRep)
 import           OCI.IR.Name                   (Name)
 
-import           Control.Concurrent            (ThreadId)
+import           Control.Concurrent.Async      (Async)
 import           Control.Concurrent.MVar       (MVar)
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Exception             (try)
@@ -73,7 +73,7 @@ data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [PortValue]
                                      , _errorsCache :: Map NodeId (APIError.Error APIError.NodeError)
                                      , _graph       :: ClsGraph
                                      , _cleanUp     :: IO ()
-                                     , _listeners   :: [ThreadId]
+                                     , _listeners   :: [Async ()]
                                      }
 makeLenses ''InterpreterEnv
 
@@ -87,6 +87,9 @@ runEmpire notif st cmd = runStateT (runReaderT cmd notif) st
 
 execEmpire :: CommunicationEnv -> s -> Command s a -> IO a
 execEmpire = fmap fst .:. runEmpire
+
+evalEmpire :: CommunicationEnv -> s -> Command s a -> IO s
+evalEmpire = fmap snd .:. runEmpire
 
 empire :: (CommunicationEnv -> s -> IO (a, s)) -> Command s a
 empire = ReaderT . fmap StateT
