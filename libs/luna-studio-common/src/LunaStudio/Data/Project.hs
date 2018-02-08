@@ -19,6 +19,7 @@ import           LunaStudio.Data.Library              (Library)
 import           LunaStudio.Data.NodeValue            (Visualizer)
 import           LunaStudio.Data.TypeRep              (TypeRep)
 import           Prologue                             hiding (TypeRep)
+import           System.FilePath                      (splitDirectories)
 import           System.IO                            (hFlush, stdout)
 
 
@@ -86,18 +87,22 @@ prefixError e = "Error while processing project settings: " <> show e
 logProjectSettingsError :: (MonadIO m, Show a) => a -> m ()
 logProjectSettingsError e = liftIO $ print (prefixError e) >> hFlush stdout
 
+canonicalizePath :: FilePath -> FilePath
+canonicalizePath = intercalate "/" . splitDirectories
 
 getModuleSettings :: MonadIO m => FilePath -> FilePath -> m (Maybe ModuleSettings)
-getModuleSettings configPath modulePath = liftIO $ do
+getModuleSettings configPath modulePath' = liftIO $ do
     eitherFile <- decodeFileEither configPath
-    let modulePathNotFoundInFileMsg = "Could not find key: " <> show modulePath <> " in project settings located at: " <> show configPath
+    let modulePath = canonicalizePath modulePath'
+        modulePathNotFoundInFileMsg = "Could not find key: " <> show modulePath <> " in project settings located at: " <> show configPath
         logProblemAndReturnDef e    = logProjectSettingsError e >> return def
         logIfIsNothing mayMs        = if isJust mayMs then return mayMs else logProblemAndReturnDef modulePathNotFoundInFileMsg
         findModulePathInSettings    = logIfIsNothing . Map.lookup modulePath . view modulesSettings
     either logProblemAndReturnDef findModulePathInSettings eitherFile
 
 updateCurrentBreadcrumbSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> m ()
-updateCurrentBreadcrumbSettings configPath filePath bc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+updateCurrentBreadcrumbSettings configPath filePath' bc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+    filePath                = canonicalizePath filePath'
     createProjectSettings   = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings   = either (const createProjectSettings) updateModuleSettings
     createModuleSettings    = ModuleSettings bc HashMap.empty def
@@ -106,7 +111,8 @@ updateCurrentBreadcrumbSettings configPath filePath bc = liftIO $ decodeFileEith
         Just ms -> ps & modulesSettings . at filePath ?~ (ms & currentBreadcrumb .~ bc)
 
 updateLocationSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> LocationSettings -> Breadcrumb Text -> m ()
-updateLocationSettings configPath filePath bc settings currentBc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+updateLocationSettings configPath filePath' bc settings currentBc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+    filePath                 = canonicalizePath filePath'
     createProjectSettings    = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings    = either (const createProjectSettings) updateModuleSettings
     createModuleSettings     = ModuleSettings currentBc (fromMaybe mempty $ settings ^. visMap) $ Map.singleton bc createBreadcrumbSettings
