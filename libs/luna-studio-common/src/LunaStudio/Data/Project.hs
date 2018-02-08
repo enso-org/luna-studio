@@ -87,13 +87,13 @@ prefixError e = "Error while processing project settings: " <> show e
 logProjectSettingsError :: (MonadIO m, Show a) => a -> m ()
 logProjectSettingsError e = liftIO $ print (prefixError e) >> hFlush stdout
 
-canonicalizePath :: FilePath -> FilePath
-canonicalizePath = intercalate "/" . splitDirectories
+toCommonPathFormat :: FilePath -> FilePath
+toCommonPathFormat = intercalate "/" . splitDirectories
 
 getModuleSettings :: MonadIO m => FilePath -> FilePath -> m (Maybe ModuleSettings)
 getModuleSettings configPath modulePath' = liftIO $ do
     eitherFile <- decodeFileEither configPath
-    let modulePath = canonicalizePath modulePath'
+    let modulePath = toCommonPathFormat modulePath'
         modulePathNotFoundInFileMsg = "Could not find key: " <> show modulePath <> " in project settings located at: " <> show configPath
         logProblemAndReturnDef e    = logProjectSettingsError e >> return def
         logIfIsNothing mayMs        = if isJust mayMs then return mayMs else logProblemAndReturnDef modulePathNotFoundInFileMsg
@@ -102,7 +102,7 @@ getModuleSettings configPath modulePath' = liftIO $ do
 
 updateCurrentBreadcrumbSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> m ()
 updateCurrentBreadcrumbSettings configPath filePath' bc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
-    filePath                = canonicalizePath filePath'
+    filePath                = toCommonPathFormat filePath'
     createProjectSettings   = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings   = either (const createProjectSettings) updateModuleSettings
     createModuleSettings    = ModuleSettings bc HashMap.empty def
@@ -112,7 +112,7 @@ updateCurrentBreadcrumbSettings configPath filePath' bc = liftIO $ decodeFileEit
 
 updateLocationSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> LocationSettings -> Breadcrumb Text -> m ()
 updateLocationSettings configPath filePath' bc settings currentBc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
-    filePath                 = canonicalizePath filePath'
+    filePath                 = toCommonPathFormat filePath'
     createProjectSettings    = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings    = either (const createProjectSettings) updateModuleSettings
     createModuleSettings     = ModuleSettings currentBc (fromMaybe mempty $ settings ^. visMap) $ Map.singleton bc createBreadcrumbSettings
