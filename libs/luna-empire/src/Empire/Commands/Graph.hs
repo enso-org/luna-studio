@@ -62,6 +62,7 @@ module Empire.Commands.Graph
     , withGraph'
     , withUnit
     , runTC
+    , typecheckWithRecompute
     , getName
     , MarkerNodeMeta(..)
     , FileMetadata(..)
@@ -193,6 +194,7 @@ import qualified Path
 import qualified Safe
 import           System.Directory                 (canonicalizePath)
 import           System.Environment               (getEnv)
+import qualified System.IO as IO
 
 addImports :: GraphLocation -> [Text] -> Empire ()
 addImports loc@(GraphLocation file _) modulesToImport = do
@@ -204,6 +206,10 @@ addImports loc@(GraphLocation file _) modulesToImport = do
         let newImports = map (\i -> Text.concat ["import ", i, "\n"]) neededImports
         return $ Text.concat $ newImports ++ [code]
     reloadCode loc newCode
+    liftIO $ print "FILE TC" >> IO.hFlush IO.stdout
+    typecheckWithRecompute (GraphLocation file def)
+    liftIO $ print "FUNCTION TC" >> IO.hFlush IO.stdout
+    typecheckWithRecompute loc
     withUnit (GraphLocation file def) $ do
         modulesMVar <- view modules
         importPaths <- liftIO $ getImportPaths loc

@@ -167,6 +167,7 @@ startTCWorker env = liftIO $ do
                     liftIO $ print "main tc" >> IO.hFlush IO.stdout
                     Typecheck.run modules loc interpret recompute `Exception.onException` Typecheck.stop
                     liftIO $ print "tc done" >> IO.hFlush IO.stdout)
+        when recompute $ void (Async.waitCatch async)
         putMVar tcAsync async
 
 startToBusWorker :: TChan Message -> Bus ()

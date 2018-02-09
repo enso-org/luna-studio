@@ -1,8 +1,10 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Empire.Commands.Typecheck where
 
@@ -16,13 +18,18 @@ import           Control.Exception.Safe           (mask_, uninterruptibleMask)
 import           Control.Monad                    (void)
 import           Control.Monad.Except             hiding (when)
 import           Control.Monad.Reader             (ask, runReaderT)
-import           Control.Monad.State              (execStateT)
+import           Control.Monad.State              (get, execStateT, runStateT)
 import qualified Data.Map                         as Map
 import           Data.Maybe                       (maybeToList)
+import qualified Data.Set                         as Set
 import           Empire.Prelude                   hiding (toList)
 import           Prologue                         (catMaybes, mapping)
 import           System.Directory                 (withCurrentDirectory)
+import           System.Directory                     (canonicalizePath)
+import           System.Environment                   (getEnv)
 import           System.FilePath                  (takeDirectory)
+import qualified System.IO as IO
+import qualified Path
 
 import qualified LunaStudio.Data.Error            as APIError
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
@@ -40,6 +47,8 @@ import           Empire.Data.Graph                (Graph)
 import qualified Empire.Data.Graph                as Graph
 import           Empire.Empire
 
+import qualified Control.Monad.State.Dependent    as DepState
+import           Data.TypeDesc                    (getTypeDesc)
 import           Luna.Builtin.Data.LunaEff        (runError, runIO)
 import           Luna.Builtin.Data.Module         (Imports (..), unionImports, unionsImports)
 import           Luna.Builtin.Prim                (SingleRep (..), ValueRep (..), getReps)
@@ -48,13 +57,17 @@ import qualified Luna.Project                     as Project
 import           Luna.Compilation                 (CompiledModules (..))
 import qualified Luna.IR                          as IR
 import           Luna.Pass.Data.ExprMapping
+import           Luna.Pass.Data.UniqueNameGen     (initNameGen)
 import qualified Luna.Pass.Evaluation.Interpreter as Interpreter
 import qualified Luna.IR.Layer.Errors             as Errors
+import qualified Luna.IR.Term.Unit                as Term
+import qualified Luna.Pass.Sourcing.UnitLoader    as UnitLoader
+import           Luna.Syntax.Text.Parser.Errors   (Invalids)
+import           OCI.IR.Layout.Typed              (type (>>))
 import           OCI.IR.Name.Qualified            (QualName)
-import qualified System.IO as IO
-import           System.Directory                     (canonicalizePath)
-import           System.Environment                   (getEnv)
-import qualified Path
+import qualified OCI.Pass.Class                   as Pass (SubPass, eval')
+import qualified OCI.Pass.Manager                 as Pass (PassManager, setAttr, State)
+import           System.Log                                   (DropLogger(..), dropLogs)
 
 runTC :: Imports -> Command Graph ()
 runTC imports = do
@@ -165,6 +178,7 @@ recomputeCurrentScope :: MVar CompiledModules -> FilePath -> Command Interpreter
 recomputeCurrentScope imports file = do
     liftIO $ print "RECOMPUTING!!!!!" >> IO.hFlush IO.stdout
     Lifted.modifyMVar imports $ \imps -> do
+        liftIO $ print imps >> IO.hFlush IO.stdout
         lunaroot    <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
         currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
         let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
@@ -175,12 +189,16 @@ recomputeCurrentScope imports file = do
                 Left e  -> error $ show e <> " " <> file
         qualName <- filePathToQualName file
         let nimpsF = nimps & Compilation.modules . at qualName ?~ f
+        liftIO $ print nimpsF >> IO.hFlush IO.stdout
+        liftIO $ print f >> IO.hFlush IO.stdout
         liftIO $ print "RECOMPUTING DOOOONE!!!!!" >> IO.hFlush IO.stdout
         return (nimpsF, f)
 
 getCurrentScope :: MVar CompiledModules -> FilePath -> Command InterpreterEnv Imports
 getCurrentScope imports file = do
+    liftIO $ print "getCurrentScope" >> IO.hFlush IO.stdout
     fs       <- liftIO $ readMVar imports
+    liftIO $ print fs >> IO.hFlush IO.stdout
     qualName <- filePathToQualName file
     case fs ^. Compilation.modules . at qualName of
         Just f -> return f
@@ -210,17 +228,54 @@ run imports loc@(GraphLocation file br) interpret recompute = do
         Breadcrumb [] -> do
             void $ mask_ $ recomputeCurrentScope imports file
         Breadcrumb (Definition uuid:rest) -> do
-            std        <- liftIO $ readMVar imports
             scope      <- mask_ $ (if recompute then recomputeCurrentScope else getCurrentScope) imports file
-            let imps = unionImports (flattenScope $ Scope std) scope
-            asyncs <- zoom graph $ withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
-                runTC imps
-                updateNodes  loc
-                {-updateMonads loc-}
-                -- if interpret then do
-                scope  <- runInterpreter file imps
-                traverse (updateValues loc) scope
-                -- else return _
+            asyncs <- zoom graph $ do
+                importedModules <- do
+                    unit :: IR.Expr IR.Unit <- uses Graph.clsClass IR.unsafeGeneralize
+                    g <- get
+                    Graph.AST ir pmState <- use Graph.clsAst
+                    let evalIR = flip runStateT g
+                               . Graph.withVis
+                               . dropLogs
+                               . DepState.evalDefStateT @IR.Cache
+                               . flip IR.evalIRBuilder ir
+                               . flip IR.evalPassManager pmState
+                    (importsInFile, newG) <- liftIO $ evalIR $ do
+                        Pass.setAttr (getTypeDesc @IR.WorldExpr)              $ error "Data not provided: WorldExpr"
+                        Pass.setAttr (getTypeDesc @UnitLoader.UnitsToLoad)    $ error "Data not provided: UnitsToLoad"
+                        Pass.setAttr (getTypeDesc @UnitLoader.SourcesManager) $ error "Data not provided: SourcesManager"
+                        Pass.setAttr (getTypeDesc @Term.UnitSet)              $ error "Data not provided: UnitSet"
+                        Pass.setAttr (getTypeDesc @Invalids)                  $ (mempty :: Invalids)
+                        initNameGen
+                        impNames <- Pass.eval' $ do
+                            imphub   <- unit IR.@^. Term.imports
+                            imps     <- IR.readWrappedSources (IR.unsafeGeneralize imphub :: IR.Expr (Term.UnresolvedImportHub >> Term.UnresolvedImport >> Term.UnresolvedImportSrc))
+                            impNames <- for imps $ \imp -> do
+                                src <- imp IR.@^. Term.termUnresolvedImport_source
+                                Term.Absolute path <- src IR.@. wrapped
+                                return path
+                            cls <- IR.matchExpr unit $ \case
+                                IR.Unit _ _ c -> IR.source c
+                            UnitLoader.partitionASGCls $ IR.unsafeGeneralize cls
+                            return impNames
+                        let impNamesWithBase = Set.insert "Std.Base" $ Set.fromList impNames
+                        return impNamesWithBase
+                    return importsInFile
+                std        <- liftIO $ readMVar imports
+                let CompiledModules cmpMods cmpPrims = std
+                    visibleModules = CompiledModules (Map.restrictKeys cmpMods importedModules) cmpPrims
+                    moduleEnv      = unionImports (flattenScope $ Scope visibleModules) scope
+                liftIO $ print importedModules >> IO.hFlush IO.stdout
+                liftIO $ print scope >> IO.hFlush IO.stdout
+                liftIO $ print (visibleModules ^. Compilation.modules) >> IO.hFlush IO.stdout
+                withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
+                    runTC moduleEnv
+                    updateNodes  loc
+                    {-updateMonads loc-}
+                    if interpret then do
+                        scope  <- runInterpreter file moduleEnv
+                        traverse (updateValues loc) scope
+                    else return Nothing
             liftIO $ print "setting listeners to "
             liftIO $ print asyncs >> IO.hFlush IO.stdout
             listeners .= fromMaybe [] asyncs
