@@ -85,7 +85,7 @@ installPython = do
         unless pythonSuppertedVersionPresent $ do
             -- we need this because of https://github.com/pyenv/pyenv/issues/950
             when (currentHost == Darwin) $ do
-                opensslPath <- Shelly.cmd "brew" "--prefix" "openssl"
+                opensslPath <- T.stripEnd <$> Shelly.cmd "brew" "--prefix" "openssl"
                 Shelly.setenv "CFLAGS"  $ "-I" <> opensslPath <> "/include"
                 Shelly.setenv "LDFLAGS" $ "-L" <> opensslPath <> "/lib"
             Shelly.cmd "pyenv" "install" supportedPythonVersion
