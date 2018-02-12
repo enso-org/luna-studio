@@ -23,7 +23,7 @@ default (T.Text)
 stack = "../../tools/stack/stack"
 
 tools = "../../tools"
-libs = "../../libs"
+libs = "../../lib"
 supportedNodeVersion = "6.11.3"
 supportedPythonVersion = "3.6.2"
 lunaShell = "./luna-shell.sh"
