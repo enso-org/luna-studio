@@ -20,6 +20,7 @@ import           NodeEditor.React.IsRef                  (IsRef, dispatch)
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
                                                           isInputSidebar, minimalNumberOfPorts)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
+import           NodeEditor.React.Model.NodeEditor       (VisualizersPaths)
 import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber, getPositionInSidebar,
                                                           isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
@@ -57,10 +58,10 @@ portHandlers ref MoveConnect False _ portRef =
     ]
 portHandlers _ _ _ _ _ = []
 
-sidebar_ :: (IsRef ref, SidebarNode node) => ref -> Maybe (Searcher, FilePath) -> node ->  ReactElementM ViewEventHandler ()
+sidebar_ :: (IsRef ref, SidebarNode node) => ref -> Maybe (Searcher, VisualizersPaths) -> node ->  ReactElementM ViewEventHandler ()
 sidebar_ ref maySearcher node = React.viewWithSKey sidebar (name node) (ref, maySearcher, node) mempty
 
-sidebar :: (IsRef ref, SidebarNode node) => ReactView (ref, Maybe (Searcher, FilePath), node)
+sidebar :: (IsRef ref, SidebarNode node) => ReactView (ref, Maybe (Searcher, VisualizersPaths), node)
 sidebar = React.defineView "sidebar" $ \(ref, maySearcher, node) -> do
     let ports          = SidebarNode.portsList node
         nodeLoc        = node ^. SidebarNode.nodeLoc
@@ -137,19 +138,19 @@ sidebar = React.defineView "sidebar" $ \(ref, maySearcher, node) -> do
                             ] mempty
 
 
-sidebarPortName_ :: IsRef ref => ref -> AnyPortRef -> Text -> Maybe (Searcher, FilePath) -> ReactElementM ViewEventHandler ()
+sidebarPortName_ :: IsRef ref => ref -> AnyPortRef -> Text -> Maybe (Searcher, VisualizersPaths) -> ReactElementM ViewEventHandler ()
 sidebarPortName_ ref portRef portName mayS = div_ ([ "className" $= Style.prefixFromList [ "port-sidebar__port__name", "noselect"] ] <> handlers') nameElement where
     regularName              = elemString $ convert portName
     (handlers', nameElement) = case portRef of
         OutPortRef' outPortRef -> do
             let outPortRefRegularHandler = [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.EditPortName outPortRef) ]
                 regularHandlersAndElem   = (outPortRefRegularHandler, regularName)
-            flip (maybe regularHandlersAndElem) mayS $ \(s, visLibPath) -> case s ^. Searcher.mode of
-                Searcher.PortName sPortRef _ -> if sPortRef == outPortRef then ([], searcher_ ref s visLibPath) else regularHandlersAndElem
+            flip (maybe regularHandlersAndElem) mayS $ \(s, visLibPaths) -> case s ^. Searcher.mode of
+                Searcher.PortName sPortRef _ -> if sPortRef == outPortRef then ([], searcher_ ref s visLibPaths) else regularHandlersAndElem
                 _                            -> regularHandlersAndElem
         _ -> ([], regularName)
 
-sidebarPort_ :: IsRef ref => ref -> NodeLoc -> AnyPort -> SidebarMode -> Bool -> Bool -> Maybe (Searcher, FilePath) -> ReactElementM ViewEventHandler ()
+sidebarPort_ :: IsRef ref => ref -> NodeLoc -> AnyPort -> SidebarMode -> Bool -> Bool -> Maybe (Searcher, VisualizersPaths) -> ReactElementM ViewEventHandler ()
 sidebarPort_ ref nl p mode isPortDragged canBeRemoved maySearcher = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
@@ -227,8 +228,8 @@ portLabelId = Mount.prefix "focus-portLabel"
 focusPortLabel :: IO ()
 focusPortLabel = UI.focus portLabelId
 
-filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe (Searcher, FilePath) -> Maybe (Searcher, FilePath)
-filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just (s, visLibPath)) = case s ^. Searcher.mode of
-    Searcher.PortName sPortRef _ -> if portRef == sPortRef then Just (s, visLibPath) else Nothing
+filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe (Searcher, VisualizersPaths) -> Maybe (Searcher, VisualizersPaths)
+filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just (s, visLibPaths)) = case s ^. Searcher.mode of
+    Searcher.PortName sPortRef _ -> if portRef == sPortRef then Just (s, visLibPaths) else Nothing
     _                            -> Nothing
 filterOutSearcherIfNotRelated _ _ = Nothing

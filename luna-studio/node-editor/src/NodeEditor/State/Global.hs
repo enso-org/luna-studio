@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.State.Global where
 
@@ -7,6 +8,7 @@ import           Common.Debug                             (HasRequestTimes, requ
 import           Common.Prelude
 import           Data.HashMap.Lazy                        (HashMap)
 import           Data.Map                                 (Map)
+import qualified Data.Map                                 as Map
 import           Data.Set                                 (Set)
 import           Data.Time.Clock                          (UTCTime)
 import           Data.UUID.Types                          (UUID)
@@ -14,12 +16,12 @@ import           Data.Word                                (Word8)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           LunaStudio.Data.NodeLoc                  (NodeLoc)
 import           LunaStudio.Data.NodeSearcher             (NodeSearcherData)
-import           LunaStudio.Data.NodeValue                (Visualizer, VisualizerMatcher, VisualizerName)
 import           LunaStudio.Data.TypeRep                  (TypeRep)
 import           NodeEditor.Event.Event                   (Event)
 import           NodeEditor.React.Model.App               (App)
 import qualified NodeEditor.React.Model.App               as App
 import           NodeEditor.React.Model.NodeEditor        (NodeEditor)
+import           NodeEditor.React.Model.Visualization     (Visualizer, VisualizerId, VisualizerMatcher)
 import           NodeEditor.React.Store                   (Ref)
 import qualified NodeEditor.React.Store.Ref               as Ref
 import           NodeEditor.State.Action                  (ActionRep, Connect, SomeAction)
@@ -31,17 +33,17 @@ import qualified System.Random                            as Random
 
 -- TODO: Reconsider our design. @wdanilo says that we shouldn't use MonadState at all
 data State = State
-        { _ui                   :: UI.State
-        , _backend              :: BackendState
-        , _actions              :: ActionState
-        , _collaboration        :: Collaboration.State
-        , _debug                :: DebugState
-        , _selectionHistory     :: [Set NodeLoc]
-        , _nodeSearcherData     :: NodeSearcherData
-        , _waitingForTc         :: Bool
-        , _preferedVisualizers  :: HashMap TypeRep Visualizer
-        , _visualizers          :: Map VisualizerName VisualizerMatcher
-        , _random               :: StdGen
+        { _ui                  :: UI.State
+        , _backend             :: BackendState
+        , _actions             :: ActionState
+        , _collaboration       :: Collaboration.State
+        , _debug               :: DebugState
+        , _selectionHistory    :: [Set NodeLoc]
+        , _nodeSearcherData    :: NodeSearcherData
+        , _waitingForTc        :: Bool
+        , _preferedVisualizers :: HashMap TypeRep Visualizer
+        , _visualizers         :: Map VisualizerId VisualizerMatcher
+        , _random              :: StdGen
         }
 
 data ActionState = ActionState
@@ -65,7 +67,7 @@ makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerName VisualizerMatcher -> StdGen -> State
+mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerId VisualizerMatcher -> StdGen -> State
 mkState ref clientId' = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')

@@ -3,7 +3,10 @@ fs   = require 'fs'
 
 visBasePath = path.join __dirname, 'visualizers'
 
-listVisualizers = (visPath) -> (fs.readdirSync visPath).filter((p) -> fs.existsSync(path.join(visPath, p, "config.js")))
+listVisualizers = (visPath) -> 
+    if fs.existsSync visPath
+        (fs.readdirSync visPath).filter((p) -> fs.existsSync(path.join(visPath, p, "config.js")))
+    else []
 
 resolveVis = (p, name) ->
     normalizeVis p, name, require(path.join p, name, "config.js")
@@ -15,11 +18,17 @@ normalizeVis = (p, name, visConf) -> (cons) ->
         JSON.stringify(filesToLoad)
     else JSON.stringify(null)
 
-setupConfigMap = (path) ->
-    visualizers = listVisualizers(path)
+setupConfigMap = (projectVisPath) ->
+    visualizers = listVisualizers(visBasePath)
     result = {}
-    result[n] = resolveVis path, n for n in visualizers
-    window.visualizersPath = path
-    window.visualizers     = result
+    result[n] = resolveVis visBasePath, n for n in visualizers
+    window.internalVisualizersPath = visBasePath
+    window.internalVisualizers = result
+    if projectVisPath
+        visualizers = listVisualizers(projectVisPath)
+        result = {}
+        result[n] = resolveVis projectVisPath, n for n in visualizers
+        window.projectVisualizersPath = projectVisPath
+        window.projectVisualizers = result
 
-module.exports = () -> setupConfigMap visBasePath
+module.exports = () -> window.updateVisualizers = setupConfigMap

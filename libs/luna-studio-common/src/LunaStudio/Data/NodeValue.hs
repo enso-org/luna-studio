@@ -16,13 +16,35 @@ import qualified LunaStudio.Data.Error      as Error
 import           LunaStudio.Data.TypeRep    (TypeRep (TCons), toConstructorRep)
 import           Prologue                   hiding (Text, TypeRep)
 
+type VisualizerName = Text
+type VisualizerPath = Text
 
-type VisualizerName    = Text
-type VisualizerPath    = Text
-type VisualizerMatcher = TypeRep -> IO [VisualizerEntry]
-type Visualizer        = (VisualizerName, VisualizerPath)
-type VisualizationData = [Text]
-type VisualizationId   = UUID
+data VisualizerType = InternalVisualizer
+                    | ProjectVisualizer
+                    deriving (Eq, Generic, Show)
+
+makePrisms ''VisualizerType
+instance Binary   VisualizerType
+instance NFData   VisualizerType
+instance FromJSON VisualizerType
+instance ToJSON   VisualizerType
+
+
+data VisualizerId = VisualizerId { _visualizerName :: VisualizerName
+                                 , _visualizerType :: VisualizerType
+                                 } deriving (Eq, Generic, Show)
+
+makeLenses ''VisualizerId
+
+instance Ord VisualizerId where
+    (VisualizerId _ InternalVisualizer) `compare` (VisualizerId _ ProjectVisualizer)  = GT
+    (VisualizerId _ ProjectVisualizer)  `compare` (VisualizerId _ InternalVisualizer) = LT
+    visId1 `compare` visId2 = Text.unpack (visId1 ^. visualizerName) `compare` Text.unpack (visId2 ^. visualizerName)
+
+instance Binary   VisualizerId
+instance NFData   VisualizerId
+instance FromJSON VisualizerId
+instance ToJSON   VisualizerId
 
 data VisualizerEntry = VisualizerEntry { name :: Maybe VisualizerName
                                        , path :: VisualizerPath
@@ -32,9 +54,25 @@ instance NFData   VisualizerEntry
 instance FromJSON VisualizerEntry
 instance ToJSON   VisualizerEntry
 
-mdVisName, errorVisName :: Text
-mdVisName    = "base: markdown"
-errorVisName = "base: error"
+
+data Visualizer = Visualizer { _visualizerId      :: VisualizerId
+                             , _visualizerRelPath :: VisualizerPath
+                             } deriving (Eq, Generic, Ord, Show)
+
+makeLenses ''Visualizer
+
+instance Binary   Visualizer
+instance NFData   Visualizer
+instance FromJSON Visualizer
+instance ToJSON   Visualizer
+
+type VisualizationData = [Text]
+type VisualizationId   = UUID
+type VisualizerMatcher = TypeRep -> IO [VisualizerEntry]
+
+mdVisId, errorVisId :: VisualizerId
+mdVisId    = VisualizerId "base: markdown" InternalVisualizer
+errorVisId = VisualizerId "base: error"    InternalVisualizer
 
 transformJSVisualizerMatcher :: MonadIO m => (String -> m String) -> TypeRep -> m [VisualizerEntry]
 transformJSVisualizerMatcher f r = case toConstructorRep r of
@@ -45,17 +83,18 @@ fromJSVisualizersMap :: Map String (String -> IO String) -> Map VisualizerName V
 fromJSVisualizersMap = Map.fromList . map convertEntry . Map.toList where
     convertEntry (k, v) = (convert k, transformJSVisualizerMatcher v)
 
-applyType :: MonadIO m => TypeRep -> Map VisualizerName VisualizerMatcher -> m (Map VisualizerName VisualizerPath)
+applyType :: MonadIO m => TypeRep -> Map VisualizerId VisualizerMatcher -> m (Map VisualizerId VisualizerPath)
 applyType tpe = fmap (Map.fromList . concat) . liftIO . mapM applyToEntry . Map.toList where
     applyToEntry (k, f) = liftIO $ map (convertToEntry k) <$> f tpe
     convertToEntry k (VisualizerEntry Nothing  p) = (k, p)
-    convertToEntry k (VisualizerEntry (Just n) p) = (Text.concat [k, ": ", n], p)
+    convertToEntry k (VisualizerEntry (Just n) p) = (k & visualizerName %~ Text.concat . (:[": ", n]), p)
 
-getMdVis :: MonadIO m => Map VisualizerName VisualizerMatcher -> m (Maybe Visualizer)
-getMdVis visMap = fmap (mdVisName,) . Map.lookup mdVisName <$> applyType (TCons "Text" def) visMap
 
-getErrorVis :: MonadIO m => Map VisualizerName VisualizerMatcher -> m (Maybe Visualizer)
-getErrorVis visMap = fmap (errorVisName,) . Map.lookup errorVisName <$> applyType (TCons "Error" def) visMap
+getMdVis :: MonadIO m => Map VisualizerId VisualizerMatcher -> m (Maybe Visualizer)
+getMdVis visMap = fmap (Visualizer mdVisId) . Map.lookup mdVisId <$> applyType (TCons "Text" def) visMap
+
+getErrorVis :: MonadIO m => Map VisualizerId VisualizerMatcher -> m (Maybe Visualizer)
+getErrorVis visMap = fmap (Visualizer errorVisId) . Map.lookup errorVisId <$> applyType (TCons "Error" def) visMap
 
 type ShortValue = Text
 

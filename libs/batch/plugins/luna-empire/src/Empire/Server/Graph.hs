@@ -118,7 +118,7 @@ import qualified Path                                    as Path
 import           Prologue                                hiding (Item, when)
 import qualified Safe                                    as Safe
 import           System.Environment                      (getEnv)
-import           System.FilePath                         (replaceFileName, (</>))
+import           System.FilePath                         (dropFileName, replaceFileName, (</>))
 import qualified System.Log.MLogger                      as Logger
 import qualified ZMQ.Bus.Bus                             as Bus
 import qualified ZMQ.Bus.Config                          as Config
@@ -208,8 +208,8 @@ handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
 handleGetProgram = modifyGraph defInverse action replyResult where
     action (GetProgram.Request location' mayPrevSettings retrieveLocation) = do
         let moduleChanged = isNothing mayPrevSettings || isJust (maybe Nothing (view Project.visMap . snd) mayPrevSettings)
-        (graph, crumb, availableImports, typeRepToVisMap, camera, location) <- handle
-            (\(e :: SomeASTException) -> return (Left . Graph.prepareGraphError $ toException e, Breadcrumb [], def, mempty, def, location'))
+        (graph, crumb, availableImports, typeRepToVisMap, camera, location, mayVisPath) <- handle
+            (\(e :: SomeASTException) -> return (Left . Graph.prepareGraphError $ toException e, Breadcrumb [], def, mempty, def, location', def))
             $ do
                 let filePath = location' ^. GraphLocation.filePath
                     closestBc loc bc = getClosestBcLocation (GraphLocation.GraphLocation filePath def) bc
@@ -220,7 +220,8 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 graph            <- Graph.getGraph location
                 crumb            <- Graph.decodeLocation location
                 availableImports <- Graph.getAvailableImports location
-                let defaultCamera = maybe def (flip Camera.getCameraForRectangle def) . Position.minimumRectangle . map (view Node.position) $ graph ^. GraphAPI.nodes
+                let mayVisPath    = ((</> "visualizers") . dropFileName . fst) <$> mayProjectPathAndRelModulePath
+                    defaultCamera = maybe def (flip Camera.getCameraForRectangle def) . Position.minimumRectangle . map (view Node.position) $ graph ^. GraphAPI.nodes
                     (typeRepToVisMap, camera) = case mayModuleSettings of
                         Nothing -> (mempty, defaultCamera)
                         Just ms -> let visMap = if moduleChanged then Just $ ms ^. Project.typeRepToVisMap else Nothing
@@ -228,10 +229,10 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                                        bs     = Map.lookup bc $ ms ^. Project.breadcrumbsSettings
                                        cam    = maybe defaultCamera (view Project.breadcrumbCameraSettings) bs
                             in (visMap, cam)
-                return (Right graph, crumb, availableImports, typeRepToVisMap, camera, location)
+                return (Right graph, crumb, availableImports, typeRepToVisMap, camera, location, mayVisPath)
         code <- Graph.getCode location
         withJust mayPrevSettings $ \(gl, locSettings) -> saveSettings gl locSettings location
-        return $ GetProgram.Result graph code crumb availableImports typeRepToVisMap camera location
+        return $ GetProgram.Result graph code crumb availableImports typeRepToVisMap camera location mayVisPath
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph inverse action replyResult where

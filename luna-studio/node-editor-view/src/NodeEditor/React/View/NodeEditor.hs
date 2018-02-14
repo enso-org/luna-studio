@@ -102,8 +102,8 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
         lookupNode m     = ( m ^. MonadPath.monadType
                            , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads           = map lookupNode $ ne ^. NodeEditor.monads
-        visLibPath       = ne ^. NodeEditor.visualizersLibPath
-        maybeSearcher    = (,visLibPath) <$> ne ^. NodeEditor.searcher
+        visLibPaths      = ne ^. NodeEditor.visualizersLibPaths
+        maybeSearcher    = (,visLibPaths) <$> ne ^. NodeEditor.searcher
         visualizations   = NodeEditor.getVisualizations ne
         isAnyVisActive   = any (\visProp -> elem (visProp ^. visPropVisualization . visualizationMode) [Preview, FullScreen, Focused]) visualizations
         isAnyFullscreen  = any (\visProp -> elem (visProp ^. visPropVisualization . visualizationMode) [Preview, FullScreen]) visualizations
@@ -143,7 +143,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                         forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
                         forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
-                    when allowVisualizations . forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPath
+                    when allowVisualizations . forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPaths
 
 
                 planeNewConnection_ $ do

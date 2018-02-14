@@ -11,6 +11,8 @@ import qualified NodeEditor.Event.UI                 as UI
 import qualified NodeEditor.React.Event.App          as App
 import           NodeEditor.React.Event.Searcher
 import           NodeEditor.React.IsRef              (IsRef, dispatch)
+import           NodeEditor.React.Model.NodeEditor   (VisualizersPaths)
+import qualified NodeEditor.React.Model.NodeEditor   as NE
 import           NodeEditor.React.Model.Searcher     (Searcher)
 import qualified NodeEditor.React.Model.Searcher     as Searcher
 import qualified NodeEditor.React.View.Style         as Style
@@ -32,8 +34,8 @@ handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
             UI.AppEvent $ App.KeyDown k
         else UI.SearcherEvent $ KeyDown k
 
-searcher :: IsRef ref => ReactView (ref, Searcher, FilePath)
-searcher =  React.defineView name $ \(ref, s, visLibPath) -> do
+searcher :: IsRef ref => ReactView (ref, Searcher, VisualizersPaths)
+searcher =  React.defineView name $ \(ref, s, visLibPaths) -> do
     let mode        = s ^. Searcher.mode
         -- nodePos     = s ^. Searcher.position
         -- nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
@@ -59,7 +61,7 @@ searcher =  React.defineView name $ \(ref, s, visLibPath) -> do
         case s ^. Searcher.mode of
             Searcher.Command    results -> do results_ ref selected results
             Searcher.Node _ nmi results -> do results_ ref selected results
-                                              withJust (s ^. Searcher.docVis) $ docVisualization_ ref docPresent visLibPath
+                                              withJust (s ^. Searcher.docVis) $ docVisualization_ ref docPresent visLibPaths
             Searcher.NodeName _ results -> do results_ ref selected results
             Searcher.PortName _ results -> do results_ ref selected results
 
@@ -81,8 +83,8 @@ searcher =  React.defineView name $ \(ref, s, visLibPath) -> do
         --     ] $ withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
                                               -- . (Node.isExpandedControls .~ True)
 
-searcher_ :: IsRef ref => ref -> Searcher -> FilePath -> ReactElementM ViewEventHandler ()
-searcher_ ref model visLibPath = React.viewWithSKey searcher name (ref, model, visLibPath) mempty
+searcher_ :: IsRef ref => ref -> Searcher -> VisualizersPaths -> ReactElementM ViewEventHandler ()
+searcher_ ref model visLibPaths = React.viewWithSKey searcher name (ref, model, visLibPaths) mempty
 
 results_ :: IsRef ref => ref -> Int -> [Match] -> ReactElementM ViewEventHandler ()
 results_ ref selected results = if results == [] then return () else
