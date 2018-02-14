@@ -2,6 +2,8 @@ path = require 'path'
 fs   = require 'fs'
 
 visBasePath = path.join __dirname, 'visualizers'
+internalVisualizers = []
+projectVisualizers  = []
 
 listVisualizers = (visPath) -> 
     if fs.existsSync visPath
@@ -18,17 +20,19 @@ normalizeVis = (p, name, visConf) -> (cons) ->
         JSON.stringify(filesToLoad)
     else JSON.stringify(null)
 
-setupConfigMap = (projectVisPath) ->
-    visualizers = listVisualizers(visBasePath)
+getVisualizersForPath = (path) ->
+    visualizers = listVisualizers(path)
     result = {}
-    result[n] = resolveVis visBasePath, n for n in visualizers
-    window.internalVisualizersPath = visBasePath
-    window.internalVisualizers = result
-    if projectVisPath
-        visualizers = listVisualizers(projectVisPath)
-        result = {}
-        result[n] = resolveVis projectVisPath, n for n in visualizers
-        window.projectVisualizersPath = projectVisPath
-        window.projectVisualizers = result
+    result[n] = resolveVis path, n for n in visualizers
+    result
 
-module.exports = () -> window.updateVisualizers = setupConfigMap
+module.exports = () ->
+    window.getInternalVisualizersPath = () -> visBasePath
+    window.getInternalVisualizers     = () ->
+        internalVisualizers = getVisualizersForPath visBasePath
+        internalVisualizers
+    window.getProjectVisualizers      = (path) ->
+        projectVisualizers = getVisualizersForPath path
+        projectVisualizers
+    window.checkInternalVisualizer    = (name, tpeRep) -> internalVisualizers[name](tpeRep)
+    window.checkProjectVisualizer     = (name, tpeRep) -> projectVisualizers[name](tpeRep)

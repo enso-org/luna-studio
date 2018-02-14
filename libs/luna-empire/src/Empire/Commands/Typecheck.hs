@@ -22,7 +22,8 @@ import           System.FilePath                  (takeDirectory)
 
 import qualified LunaStudio.Data.Error            as APIError
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
-import           LunaStudio.Data.NodeValue        (NodeValue (..), VisualizationValue (..))
+import           LunaStudio.Data.NodeValue        (NodeValue (..))
+import           LunaStudio.Data.Visualization (VisualizationValue (..))
 import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..))
 
 import           Empire.ASTOp                     (runASTOp, runTypecheck, runModuleTypecheck)

@@ -24,6 +24,7 @@ import           NodeEditor.React.Model.NodeEditor          (GraphStatus (..), N
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.React.Model.Port                (InPortIndex (Self))
 import qualified NodeEditor.React.Model.Searcher            as Searcher
+import           NodeEditor.React.Model.SearcherProperties  (toSearcherProperties)
 import           NodeEditor.React.Model.Visualization       (VisualizationMode (Focused, FullScreen, Preview), visPropNodeLoc,
                                                              visPropVisualization, visualizationMode)
 import           NodeEditor.React.View.Connection           (connection_, halfConnection_)
@@ -103,7 +104,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                            , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads           = map lookupNode $ ne ^. NodeEditor.monads
         visLibPaths      = ne ^. NodeEditor.visualizersLibPaths
-        maybeSearcher    = (,visLibPaths) <$> ne ^. NodeEditor.searcher
+        maySearcher      = maybe def (Just . flip toSearcherProperties visLibPaths) $ ne ^. NodeEditor.searcher
         visualizations   = NodeEditor.getVisualizations ne
         isAnyVisActive   = any (\visProp -> elem (visProp ^. visPropVisualization . visualizationMode) [Preview, FullScreen, Focused]) visualizations
         isAnyFullscreen  = any (\visProp -> elem (visProp ^. visPropVisualization . visualizationMode) [Preview, FullScreen]) visualizations
@@ -113,7 +114,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
         allowVisualizations             = maybe True (null . (^. SidebarNode.inputSidebarPorts)) $ ne ^. NodeEditor.inputNode
     div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
                                                <> if allowVisualizations && isAnyFullscreen then ["studio-window--has-visualization-fullscreen"] else []
-                                               <> if maybeSearcher /= Nothing               then ["studio-window--has-searcher"]                 else []
+                                               <> if isJust maySearcher                     then ["studio-window--has-searcher"]                 else []
                                                )
          , "key" $= "studio-window"] $ do
 
@@ -134,7 +135,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                                               n
                                               isTopLevel
                                               (not . null $ ne ^. NodeEditor.posHalfConnections)
-                                              (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher)
+                                              (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
                                               (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)
                                               (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
                                               (not allowVisualizations)
@@ -149,7 +150,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                 planeNewConnection_ $ do
                     forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
 
-        withJust input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher) n
+        withJust input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher) n
         withJust output $ sidebar_ ref Nothing
 
         planeCanvas_ mempty --required for cursor lock

@@ -21,13 +21,13 @@ import           LunaStudio.Data.MonadPath                   (MonadPath)
 import           LunaStudio.Data.NodeMeta                    (NodeMeta)
 import           LunaStudio.Data.NodeSearcher                (ImportName, ModuleHints)
 import qualified LunaStudio.Data.NodeSearcher                as NS
-import           LunaStudio.Data.NodeValue                   (applyType, fromJSVisualizersMap)
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified LunaStudio.Data.PortRef                     as PortRef
 import           LunaStudio.Data.Position                    (Position)
 import           LunaStudio.Data.TypeRep                     (TypeRep (TStar), errorTypeRep)
+import           LunaStudio.Data.Visualizer                  (applyType, fromJSVisualizersMap)
 import qualified NodeEditor.Action.Batch                     as Batch
 import           NodeEditor.Action.State.App                 (get, getWorkspace, modify, modifyApp)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
@@ -307,11 +307,13 @@ removeBackupForNodes nls = modifyNodeEditor $ NE.visualizationsBackup . NE.backu
 
 updateVisualizers :: Maybe FilePath -> Command State ()
 updateVisualizers mayProjectVisPath = do
-    liftIO $ maybe JS.updateInternalVisualizers JS.updateVisualizers mayProjectVisPath
-    visLibPaths <- liftIO $ uncurry VisualizersPaths <$> JS.getVisualizersLibraryPaths
-    modifyNodeEditor $ NE.visualizersLibPaths .= visLibPaths
+    internalVisPath <- liftIO $ JS.getInternalVisualizersLibraryPath
+    modifyNodeEditor $ NE.visualizersLibPaths .= VisualizersPaths internalVisPath mayProjectVisPath
+
     internalVisMap <- liftIO $ Map.mapKeys (flip VisualizerId InternalVisualizer) . fromJSVisualizersMap <$> JS.mkInternalVisualizersMap
-    projectVisMap  <- liftIO $ Map.mapKeys (flip VisualizerId ProjectVisualizer)  . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap
+    projectVisMap  <- liftIO $ case mayProjectVisPath of
+        Nothing -> return mempty
+        Just fp -> liftIO $ Map.mapKeys (flip VisualizerId ProjectVisualizer)  . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap fp
     Global.visualizers .= Map.union internalVisMap projectVisMap
 
 getNodeVisualizations :: NodeLoc -> Command State (Maybe NodeVisualizations)

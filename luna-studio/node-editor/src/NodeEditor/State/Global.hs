@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.State.Global where
@@ -50,7 +49,9 @@ data ActionState = ActionState
         { _currentActions       :: Map ActionRep (SomeAction (Command State))
         -- TODO[LJK]: This is duplicate. Find way to remove it but make it possible to get Connect without importing its instance
         , _currentConnectAction :: Maybe Connect
-        } deriving (Default, Generic)
+        } deriving (Generic)
+
+instance Default ActionState
 
 data BackendState = BackendState
         { _pendingRequests      :: Map UUID UTCTime
@@ -60,14 +61,16 @@ data BackendState = BackendState
 data DebugState = DebugState
         { _lastEvent            :: Maybe Event
         , _eventNum             :: Int
-        } deriving (Default, Generic)
+        } deriving (Generic)
+
+instance Default DebugState
 
 makeLenses ''ActionState
 makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerId VisualizerMatcher -> StdGen -> State
+mkState :: Ref App -> ClientId -> StdGen -> State
 mkState ref clientId' = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')
@@ -77,6 +80,9 @@ mkState ref clientId' = State
     {- selectionHistory     -} def
     {- nodeSearcherData     -} def
     {- waitingForTc         -} False
+    {- preferedVisualizers  -} mempty
+    {- visualizers          -} mempty
+
 
 nextRandom :: Command State Word8
 nextRandom = uses random Random.random >>= \(val, rnd) -> random .= rnd >> return val

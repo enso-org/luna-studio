@@ -14,7 +14,6 @@ import           LunaStudio.Data.Matrix                     (invertedTranslation
 import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import qualified LunaStudio.Data.NodeSearcher               as NS
-import           LunaStudio.Data.NodeValue                  (getMdVis)
 import           LunaStudio.Data.PortRef                    (OutPortRef)
 import           LunaStudio.Data.Position                   (Position)
 import           LunaStudio.Data.ScreenPosition             (move, x, y)
@@ -40,7 +39,7 @@ import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import qualified NodeEditor.React.Model.Port                as Port
 import qualified NodeEditor.React.Model.Searcher            as Searcher
-import           NodeEditor.React.Model.Visualization       (RunningVisualization (RunningVisualization))
+import           NodeEditor.React.Model.Visualization       (RunningVisualization (RunningVisualization), getMdVisualizer)
 import qualified NodeEditor.React.View.App                  as App
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
 import           NodeEditor.State.Global                    (State)
@@ -58,7 +57,7 @@ instance Action (Command State) Searcher where
 
 mkDocVis :: Command State (Maybe RunningVisualization)
 mkDocVis = getUUID >>= \uuid -> do
-    mayVis <- use visualizers >>= getMdVis
+    mayVis <- use visualizers >>= getMdVisualizer
     when (isNothing mayVis) $ warning "Documentation unavailable. Cannot find markdown visualizer."
     liftIO $ registerVisualizerFrame uuid
     return $ RunningVisualization uuid def <$> mayVis

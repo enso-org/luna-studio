@@ -101,7 +101,7 @@ import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
 import           LunaStudio.Data.NodeMeta                (NodeMeta)
 import qualified LunaStudio.Data.NodeMeta                as NodeMeta
 import qualified LunaStudio.Data.NodeSearcher            as NS
-import           LunaStudio.Data.NodeValue               (NodeValue (NodeValue), VisualizationValue (..))
+import           LunaStudio.Data.NodeValue               (NodeValue (NodeValue))
 import           LunaStudio.Data.Port                    (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
                                                           PortState (..), getPortNumber)
 import qualified LunaStudio.Data.Port                    as Port
@@ -113,6 +113,7 @@ import qualified LunaStudio.Data.Position                as Position
 import           LunaStudio.Data.Project                 (LocationSettings)
 import qualified LunaStudio.Data.Project                 as Project
 import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
+import           LunaStudio.Data.Visualization           (VisualizationValue (..))
 import           Path                                    (fromAbsFile, fromRelFile, parseAbsFile)
 import qualified Path                                    as Path
 import           Prologue                                hiding (Item, when)

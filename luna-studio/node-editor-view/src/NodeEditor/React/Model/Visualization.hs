@@ -6,12 +6,13 @@ module NodeEditor.React.Model.Visualization
     ) where
 
 import           Common.Prelude
-import           Data.Map                  (Map)
-import qualified Data.Map                  as Map
-import           LunaStudio.Data.NodeLoc   (NodeLoc)
-import           LunaStudio.Data.NodeValue as X (VisualizationId, VisualizationValue (..), Visualizer (Visualizer),
-                                                 VisualizerId (VisualizerId), VisualizerMatcher, VisualizerName, VisualizerPath,
-                                                 VisualizerType (..), visualizerId, visualizerName, visualizerRelPath, visualizerType)
+import           Data.Map                      (Map)
+import qualified Data.Map                      as Map
+import           LunaStudio.Data.NodeLoc       (NodeLoc)
+import           LunaStudio.Data.Visualization as X (VisualizationId, VisualizationValue (..))
+import           LunaStudio.Data.Visualizer    as X (Visualizer (Visualizer), VisualizerId (VisualizerId), VisualizerMatcher,
+                                                     VisualizerName, VisualizerPath, VisualizerType (..), getErrorVisualizer,
+                                                     getMdVisualizer, visualizerId, visualizerName, visualizerRelPath, visualizerType)
 
 
 data VisualizationMode = Default

@@ -12,47 +12,43 @@ import           GHCJS.Marshal.Pure         (pFromJSVal)
 import           JavaScript.Array           (JSArray, toList)
 import           LunaStudio.Data.TypeRep    (ConstructorRep, errorTypeRep, toConstructorRep)
 
-foreign import javascript safe "window.updateVisualizers($1)"
-    updateVisualizers' :: JSString -> IO ()
 
-foreign import javascript safe "window.updateVisualizers()"
-    updateInternalVisualizers' :: IO ()
-
-foreign import javascript safe "Object.keys(typeof window.internalVisualizers == 'object' ? window.internalVisualizers : {})"
-    getInternalVisualizers' :: IO JSArray
-
-foreign import javascript safe "Object.keys(typeof window.projectVisualizers == 'object' ? window.projectVisualizers : {})"
-    getProjectVisualizers' :: IO JSArray
-
-updateVisualizers :: FilePath -> IO ()
-updateVisualizers = updateVisualizers' . convert
-
-updateInternalVisualizers :: IO ()
-updateInternalVisualizers = updateInternalVisualizers'
-
-getInternalVisualizers :: IO [String]
-getInternalVisualizers = fmap pFromJSVal . toList <$> getInternalVisualizers'
-
-getProjectVisualizers :: IO [String]
-getProjectVisualizers = fmap pFromJSVal . toList <$> getProjectVisualizers'
-
-getVisualizers :: IO ([String], [String])
-getVisualizers = (,) <$> getInternalVisualizers <*> getProjectVisualizers
-
-foreign import javascript safe "window.internalVisualizersPath"
+foreign import javascript safe "window.getInternalVisualizersPath()"
     getInternalVisualizersLibraryPath' :: IO JSString
 
 getInternalVisualizersLibraryPath :: IO FilePath
 getInternalVisualizersLibraryPath = convert <$> getInternalVisualizersLibraryPath'
 
-foreign import javascript safe "window.projectVisualizersPath"
-    getProjectVisualizersLibraryPath' :: IO JSVal
+foreign import javascript safe "res = window.getInternalVisualizers(); $r = Object.keys(typeof res == 'object' ? res : {});"
+    getInternalVisualizers' :: IO JSArray
 
-getProjectVisualizersLibraryPath :: IO (Maybe FilePath)
-getProjectVisualizersLibraryPath = join $ fromJSVal <$> getProjectVisualizersLibraryPath'
+getInternalVisualizers :: IO [String]
+getInternalVisualizers = fmap pFromJSVal . toList <$> getInternalVisualizers'
 
-getVisualizersLibraryPaths :: IO (FilePath, Maybe FilePath)
-getVisualizersLibraryPaths = (,) <$> getInternalVisualizersLibraryPath <*> getProjectVisualizersLibraryPath
+foreign import javascript safe "res = window.getProjectVisualizers($1); $r = Object.keys(typeof res == 'object' ? res : {});"
+    getProjectVisualizers' :: JSString -> IO JSArray
+
+getProjectVisualizers :: FilePath -> IO [String]
+getProjectVisualizers fp = fmap pFromJSVal . toList <$> getProjectVisualizers' (convert fp)
+
+foreign import javascript safe "window.checkInternalVisualizer($1, $2)"
+    checkInternalVisualizer' :: JSString -> JSString -> IO JSString
+
+checkInternalVisualizer :: String -> String -> IO String
+checkInternalVisualizer name rep = convert <$> checkInternalVisualizer' (convert name) (convert rep)
+
+foreign import javascript safe "window.checkProjectVisualizer($1, $2)"
+    checkProjectVisualizer' :: JSString -> JSString -> IO JSString
+
+checkProjectVisualizer :: String -> String -> IO String
+checkProjectVisualizer name rep = convert <$> checkProjectVisualizer' (convert name) (convert rep)
+
+mkInternalVisualizersMap :: IO (Map String (String -> IO String))
+mkInternalVisualizersMap = Map.fromList . fmap (id &&& checkInternalVisualizer) <$> getInternalVisualizers
+
+mkProjectVisualizersMap :: FilePath -> IO (Map String (String -> IO String))
+mkProjectVisualizersMap fp = Map.fromList . fmap (id &&& checkProjectVisualizer) <$> getProjectVisualizers fp
+
 
 
 foreign import javascript safe "visualizerFramesManager.sendData($1, $2, $3);"
@@ -79,21 +75,3 @@ registerVisualizerFrame = registerVisualizerFrame' . convert . show
 sendVisualizationData :: UUID -> ConstructorRep -> Text -> IO ()
 sendVisualizationData uid rep d' = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d) where
     d = if Just rep == toConstructorRep errorTypeRep then convert . BS.unpack . Aeson.encode $ d' else d'
-
-foreign import javascript safe "window.internalVisualizers[$1]($2)"
-    checkInternalVisualizer' :: JSString -> JSString -> IO JSString
-
-checkInternalVisualizer :: String -> String -> IO String
-checkInternalVisualizer name rep = convert <$> checkInternalVisualizer' (convert name) (convert rep)
-
-foreign import javascript safe "window.projectVisualizers[$1]($2)"
-    checkProjectVisualizer' :: JSString -> JSString -> IO JSString
-
-checkProjectVisualizer :: String -> String -> IO String
-checkProjectVisualizer name rep = convert <$> checkProjectVisualizer' (convert name) (convert rep)
-
-mkInternalVisualizersMap :: IO (Map String (String -> IO String))
-mkInternalVisualizersMap = Map.fromList . fmap (id &&& checkInternalVisualizer) <$> getInternalVisualizers
-
-mkProjectVisualizersMap :: IO (Map String (String -> IO String))
-mkProjectVisualizersMap = Map.fromList . fmap (id &&& checkProjectVisualizer) <$> getProjectVisualizers

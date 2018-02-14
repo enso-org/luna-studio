@@ -16,9 +16,9 @@ import           LunaStudio.Data.Error                (Error, GraphError)
 import           LunaStudio.Data.Graph                (Graph)
 import           LunaStudio.Data.GraphLocation        (GraphLocation)
 import           LunaStudio.Data.NodeSearcher         (ImportName)
-import           LunaStudio.Data.NodeValue            (Visualizer)
 import           LunaStudio.Data.Project              (LocationSettings)
 import           LunaStudio.Data.TypeRep              (TypeRep)
+import           LunaStudio.Data.Visualizer           (Visualizer)
 import           Prologue                             hiding (TypeRep)
 
 

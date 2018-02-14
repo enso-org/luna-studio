@@ -6,15 +6,14 @@ import qualified Data.Map                                   as Map
 import qualified Data.Text                                  as Text
 import           JS.Visualizers                             (notifyStreamRestart, sendStreamDatapoint, sendVisualizationData)
 import           LunaStudio.Data.Error                      (errorContent)
-import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue),
-                                                             VisualizationValue (StreamDataPoint, StreamStart, Value))
+import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue))
 import           LunaStudio.Data.TypeRep                    (errorTypeRep, toConstructorRep)
-import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeType, getNodeVisualizations,
-                                                             modifyExpressionNode, modifyNodeEditor, recoverVisualizations,
-                                                             updateVisualizationsForNode)
+import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeType, getNodeVisualizations, modifyExpressionNode,
+                                                             modifyNodeEditor, recoverVisualizations, updateVisualizationsForNode)
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), execTime, value)
-import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (StreamBackup, ValueBackup), backupMap, visualizationsBackup)
-import           NodeEditor.React.Model.Visualization       (visualizations)
+import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (StreamBackup, ValueBackup), backupMap,
+                                                             visualizationsBackup)
+import           NodeEditor.React.Model.Visualization       (VisualizationValue (StreamDataPoint, StreamStart, Value), visualizations)
 import           NodeEditor.State.Global                    (State)
 
 
