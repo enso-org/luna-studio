@@ -131,6 +131,8 @@ import qualified System.IO as IO
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
+logProjectPathNotFound :: MonadIO m => m ()
+logProjectPathNotFound = Project.logProjectSettingsError "Could not find project path."
 -- helpers
 
 
@@ -163,17 +165,19 @@ getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
 getProjectPathAndRelativeModulePath :: MonadIO m => FilePath -> m (Maybe (FilePath, FilePath))
 getProjectPathAndRelativeModulePath modulePath = do
-    let eitherToMaybe :: Either Path.PathException (Path.Path Path.Abs Path.File) -> Maybe (Path.Path Path.Abs Path.File)
-        eitherToMaybe (Left  e) = Nothing
-        eitherToMaybe (Right a) = Just a
-    liftIO . runMaybeT $ do
-        absModulePath  <- MaybeT . fmap eitherToMaybe . try $ parseAbsFile modulePath
+    let eitherToMaybe :: MonadIO m => Either Path.PathException (Path.Path Path.Abs Path.File) -> m (Maybe (Path.Path Path.Abs Path.File))
+        eitherToMaybe (Left  e) = Project.logProjectSettingsError e >> return def
+        eitherToMaybe (Right a) = return $ Just a
+    mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
+        absModulePath  <- MaybeT $ eitherToMaybe =<< try (parseAbsFile modulePath)
         absProjectPath <- MaybeT $ findProjectFileForFile absModulePath
         relModulePath  <- MaybeT $ getRelativePathForModule absProjectPath absModulePath
         return (fromAbsFile absProjectPath, fromRelFile relModulePath)
+    when (isNothing mayProjectPathAndRelModulePath) logProjectPathNotFound
+    return mayProjectPathAndRelModulePath
 
 saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
-saveSettings gl settings newGl = handle (\(e :: SomeException) -> print e) $ do
+saveSettings gl settings newGl = handle (\(e :: SomeException) -> Project.logProjectSettingsError e) $ do
     bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
     newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
     let filePath        = gl    ^. GraphLocation.filePath
@@ -395,8 +399,8 @@ handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request loca
         result <- try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ SearchNodes.Result <$> Graph.getImports location importsList
         case result of
             Left  (exc :: SomeException) -> do
-                let err = Graph.prepareLunaError exc
-                    msg = Response.error origReq invStatus err
+                err <- liftIO $ Graph.prepareLunaError exc
+                let msg = Response.error origReq invStatus err
                 atomically $ writeTChan toBusChan $ Message.Message (Topic.topic msg) $ Compress.pack $ Bin.encode msg
             Right (result, _) -> do
                 let msg = Response.result origReq () result
@@ -465,7 +469,9 @@ handleTypecheck req@(Request _ _ request) = do
     empireNotifEnv   <- use Env.empireNotif
     result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
     case result of
-        Left (exc :: SomeASTException) -> let err = Graph.prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ Graph.prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     return ()
 

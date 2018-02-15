@@ -7,9 +7,7 @@
 
 Luna is a developer’s whiteboard on steroids. Design, prototype, develop and refactor any application simply by connecting visual elements together. Collaborate with co-workers, interactively fine tune parameters, inspect the results and visually profile the performance in real-time.
 
-Visit www.luna-lang.org to learn more!
-
-
+Visit [luna-lang.org](https://www.luna-lang.org) to learn more!
 
 ## Quick installation
 
@@ -24,13 +22,36 @@ All you need to do is download and extract the zip and run the application. It w
 
 For a tutorial, documentation, explanation of the ideas behind Luna please visit http://docs.luna-lang.org. It is available in a form of a book, to provide a gentle and fairly complete introduction to the application as well as the new visual-textual paradigm.
 
-## Bootstrapping for development
+## Hacking on Luna Studio
+Luna's build system is nice and simple, allowing you to bootstrap the compiler
+as long as you have an installation of 
 
-However, if you want to develop Luna Studio, the installation process is a bit more involved. First of all, you will need the [Luna Manager](https://github.com/luna/luna-manager). The instructions for obtaining it are inside [its repository](https://github.com/luna/luna-manager).
+[The Haskell Stack](https://docs.haskellstack.org/en/stable/README/) and the
+Haskell parser generator `happy`. 
 
-NOTE: even though Luna Studio does support Windows as one of the target operating systems, it is not possible to develop the frontend part on Windows. This is dictated by the GHCJS project not targeting Windows right now.
+You can install the latter just by running `stack install happy`, which should
+build the tool for your system and put it in your `stack` binary folder. 
 
-The prerequisites for building Luna Studio are the following (with Ubuntu apt package names in the parentheses for convenience):
+### System Requirements
+While Luna Studio supports Windows as a target operating system, it is not 
+currently possible to develop the Luna Studio frontend on Windows. This is due
+to the current lack of support by [GHCJS](https://github.com/ghcjs/ghcjs) for
+Windows at the current time. 
+
+Otherwise, you should be able to develop Luna Studio on reasonably new Linuxes
+and MacOS. Luna Studio was mostly tested on Ubuntu >= 14.04, Fedora >= 23, MacOS
+\>= 10.11 (El Capitan) and Windows 10, although it should run fine on all Linux 
+distros like Mint, Debian or Arch. Please report any issues here on GitHub or 
+shoot an email to [contact@luna-lang.org](mailto:contact@luna-lang.org).
+
+### Bootstrapping for Development
+To develop Luna Studio, the installation process is quite involved. First of 
+all, you will need the [Luna Manager](https://github.com/luna/luna-manager), 
+which can be obtained from the linked repository.
+
+The prerequisites for building Luna Studio are the following (with Ubuntu 
+`apt-get` package names in parentheses for convenience):
+
 * wget
 * gcc, g++, make (build-essential)
 * libffi (libffi-dev)
@@ -49,28 +70,85 @@ The prerequisites for building Luna Studio are the following (with Ubuntu apt pa
 * alex
 * PIP for Python (python-pip)
 
-Once you make sure you have that installed, you can proceed to the environment setup. Assume you already have the `luna-manager` binary on your system, the command is the following:
-```
-$ luna-manager develop luna-studio
-```
-This will install Luna Studio along with some dependencies (including the Haskell ecosystem) to `$HOME/luna-develop/apps/luna-studio`. If you wish to install to a different location, please supply an additional `--path` argument to the `develop` command. From now on we will refer to this location as `$LUNA_STUDIO_REPO`.
+Once you are sure that you have the prerequisites installed, you can proceed to
+the environment setup. Assuming that you already have the `luna-manager` binary
+on your system and available on your `$PATH`, the command is the following:
 
-Once the `develop` command finishes, you are ready to start developing Luna Studio. To rebuild the whole application, use:
 ```
-$ ./build
+luna-manager develop luna-studio
 ```
-You can choose to rebuild only the backend or frontend part, by passing an additional `--backend` or `--frontend` flag, respectively.
+
+This will install Luna Studio, along with some dependencies (e.g. the Haskell
+ecosystem) to `$HOME/luna-develop/apps/luna-studio`. If you wish to install to
+a different location, please supply an additional `--path` argument to the
+`develop` command. From now on, we will refer to this location as 
+`$LUNA_STUDIO_REPO`.
+
+Once the `develop` command finishes executing, you are ready to start developing
+Luna Studio. To rebuild the whole application use:
+
+```sh
+./build
+```
+
+You can choose to rebuild only the frontend or backend part by passing an 
+additional flag (`--frontend` or `--backend` respectively).
 
 To run the application in developer mode, use:
+
+```sh
+$LUNA_STUDIO_REPO/dist/bin/main/luna-studio --develop
 ```
-$ $LUNA_STUDIO_REPO/dist/bin/main/luna-studio --develop
+
+### Troubleshooting
+Below are a couple of common errors and their resolution steps:
+
+- If during the development process you encounter errors related to missing 
+  files (caused by accidental removal of a dependency, for example) you can
+  try to execute the following:
+
+```sh
+luna-manager develop luna-studio --path $LUNA_STUDIO_REPO --download-dependencies
 ```
-  
-## Troubleshooting
-  * If anywhere during your development process you will encounter errors related to missing files (caused by accidental removal of a dependency, for example), you can try running: `luna-manager develop luna-studio --path $LUNA_STUDIO_REPO --download-dependencies`.
-    
-* [Linux] App image requires FUSE to run. While most Linux distributions have it pre-installed, it can be missing in your specific case. If your distro happens to lack FUSE, you can either install it or mount the AppImage yourself with:
-    ```
-    sudo mount -o loop Some.AppImage /mnt
-    /mnt/AppRun
-    ```
+
+- [Linux] The application image requires FUSE to run. While most Linux 
+  distributions have it pre-installed, it is sometimes missing. If your distro
+  happens to lack FUSE, you can either install it, or use the following command
+  to mount the app image manually:
+
+```sh
+sudo mount -o loop Some.AppImage /mnt
+/mnt/AppRun
+```
+
+## Contributing to Luna Studio
+If you are interested in contributing to the development of Luna, please read
+the 
+[`CONTRIBUTING.md`](https://github.com/luna/luna-studio/blob/master/CONTRIBUTING.md)
+file. 
+
+## License
+This repository is licensed under the
+[GNU Affero GPL 3.0](https://opensource.org/licenses/AGPL-3.0), as specified in the
+[LICENSE](https://github.com/luna/luna-studio/blob/master/LICENSE) file. 
+
+Please be aware that, as the commercial backing for Luna, 
+**New Byte Order Sp. z o. o.** reserves the right under the CLA to use 
+contributions made to this repository as part of commercially available Luna 
+products. 
+
+If these terms are unacceptable to you, please do not contribute to the 
+repository.
+
+### The Contributor License Agreement
+As part of your first contribution to this repository, you need to accept the 
+Contributor License Agreement. You will automatically be asked to sign the CLA 
+when you make your first pull request. 
+
+Any work intentionally submitted for inclusion in Luna shall be licensed under
+this CLA.
+
+The CLA you sign applies to all repositories associated with the Luna project 
+([Luna](https://github.com/luna/luna), 
+[Luna RFCs](https://github.com/luna/luna-rfcs), etc), so you will only have 
+to sign it once at the start of your contributions.

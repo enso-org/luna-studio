@@ -74,7 +74,7 @@ handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
         return r
     case result of
         Left (e :: SomeException) -> do
-            let err = Graph.prepareLunaError e
+            err <- liftIO $ Graph.prepareLunaError e
             replyFail logger err req (Response.Error err)
         Right _ -> do
             activeFiles <- use $ Env.empireEnv . Empire.activeFiles
@@ -90,8 +90,9 @@ handleOpenFile req@(Request _ _ (OpenFile.Request path)) = timeIt "handleOpenFil
     empireNotifEnv   <- use Env.empireNotif
     result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
     case result of
-        Left (exc :: SomeASTException) ->
-            let err = Graph.prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ Graph.prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (_, newEmpireEnv)  -> do
             Env.empireEnv .= newEmpireEnv
             replyOk req ()
@@ -116,8 +117,9 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
             Just _ -> return code
             _      -> Graph.addMetadataToCode inPath
     case res of
-        Left (exc :: SomeASTException) ->
-            let err = Graph.prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ Graph.prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (source, _newEmpireEnv) -> do
             -- we ignore the resulting state so addMetadataToCode can't mess with our code in buffer
             -- only result is useful so it's ok

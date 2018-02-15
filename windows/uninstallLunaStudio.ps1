@@ -20,7 +20,7 @@
  Write-Host "Removing $PSScriptRoot"
  Remove-Item -Force -Recurse $uncLunaStudio
 
- Write-Host "Removing $env:USERPROFILE\LunaStudio*"
+ Write-Host "Removing $env:USERPROFILE\.luna"
  Remove-Item -Force -Recurse "$env:USERPROFILE\.luna"
 
  Write-Host "Removing Start Menu shortcut"

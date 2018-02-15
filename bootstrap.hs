@@ -85,7 +85,7 @@ installPython = do
         unless pythonSuppertedVersionPresent $ do
             -- we need this because of https://github.com/pyenv/pyenv/issues/950
             when (currentHost == Darwin) $ do
-                opensslPath <- Shelly.cmd "brew" "--prefix" "openssl"
+                opensslPath <- T.stripEnd <$> Shelly.cmd "brew" "--prefix" "openssl"
                 Shelly.setenv "CFLAGS"  $ "-I" <> opensslPath <> "/include"
                 Shelly.setenv "LDFLAGS" $ "-L" <> opensslPath <> "/lib"
             Shelly.cmd "pyenv" "install" supportedPythonVersion
@@ -139,7 +139,7 @@ downloadLibs = do
     current <- currentPath
     let libsFolder    = current </> libs
         arch          = if currentHost == Darwin then "darwin" else "linux"
-        lunaStudioUrl = "https://s3-us-west-2.amazonaws.com/packages-luna/" <> arch <> "/libs/luna-studio-libs.tar.gz"
+        lunaStudioUrl = "http://packages.luna-lang.org/" <> arch <> "/studio/libs/luna-studio-libs.tar.gz"
     Shelly.chdir_p (parent libsFolder) $ do
         Shelly.cmd "wget" lunaStudioUrl
         Shelly.cmd  "tar" "-xpzf" "./luna-studio-libs.tar.gz" "--strip=1"

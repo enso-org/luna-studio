@@ -5,10 +5,10 @@ packages:
     versions:
       4.0.0:
         darwin.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/supervisord/4.0.0.dev/supervisord.tar.gz
+          path: http://packages.luna-lang.org/darwin/supervisord/4.0.0.dev/supervisord.tar.gz
           deps: []
         linux.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/supervisord/4.0.0.dev/supervisord.tar.gz
+          path: http://packages.luna-lang.org/linux/supervisord/4.0.0.dev/supervisord.tar.gz
           deps: []
     synopsis: supervisord synopsis
     appType: BatchApp
@@ -16,13 +16,13 @@ packages:
     versions:
       1.18.0:
         windows.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/windows/atom/atom-windows.tar.gz
+          path: http://packages.luna-lang.org/windows/atom/atom-windows.tar.gz
           deps: []
         darwin.x64:
           path: https://github.com/atom/atom/releases/download/v1.18.0/atom-mac.zip
           deps: []
         linux.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/atom/1.18.0/atom-linux.tar.gz
+          path: http://packages.luna-lang.org/linux/atom/1.18.0/atom-linux.tar.gz
           deps: []
     synopsis: studio synopsis
     appType: BatchApp
@@ -30,10 +30,10 @@ packages:
     versions:
       1.0.0:
         darwin.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/kill_supervisor/kill.tar.gz
+          path: http://packages.luna-lang.org/darwin/kill_supervisor/kill.tar.gz
           deps: []
         linux.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/kill-supervisor/kill.tar.gz
+          path: http://packages.luna-lang.org/linux/kill-supervisor/kill.tar.gz
           deps: []
     synopsis: studio synopsis
     appType: BatchApp
@@ -41,13 +41,13 @@ packages:
     versions:
       1.0.0:
         windows.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/windows/zmq/zmq1.zip
+          path: http://packages.luna-lang.org/windows/zmq/zmq1.zip
           deps: []
         darwin.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/darwin/zmq/zmq.zip
+          path: http://packages.luna-lang.org/darwin/zmq/zmq.zip
           deps: []
         linux.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/linux/zmq/lib.tar.gz
+          path: http://packages.luna-lang.org/linux/zmq/lib.tar.gz
           deps: []
     synopsis: zmq synopsis
     appType: Lib
@@ -55,13 +55,13 @@ packages:
     versions:
       1.0.0:
         windows.x64:
-          path: https://s3-us-west-2.amazonaws.com/packages-luna/windows/WinSW/WinSW.zip
+          path: http://packages.luna-lang.org/windows/WinSW/WinSW.zip
           deps: []
     synopsis: winSW synopsis
     appType: BatchApp
   luna-studio:
     versions:
-      1.0.0.1:
+      1.0.3:
         windows.x64:
           path: ./
           deps:

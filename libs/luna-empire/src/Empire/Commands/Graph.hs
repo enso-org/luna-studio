@@ -194,7 +194,7 @@ import qualified Path
 import qualified Safe
 import           System.Directory                 (canonicalizePath)
 import           System.Environment               (getEnv)
-import qualified System.IO as IO
+import           GHC.Stack                        (renderStack, whoCreated)
 
 addImports :: GraphLocation -> [Text] -> Empire ()
 addImports loc@(GraphLocation file _) modulesToImport = do
@@ -206,9 +206,7 @@ addImports loc@(GraphLocation file _) modulesToImport = do
         let newImports = map (\i -> Text.concat ["import ", i, "\n"]) neededImports
         return $ Text.concat $ newImports ++ [code]
     reloadCode loc newCode
-    liftIO $ print "FILE TC" >> IO.hFlush IO.stdout
     typecheckWithRecompute (GraphLocation file def)
-    liftIO $ print "FUNCTION TC" >> IO.hFlush IO.stdout
     typecheckWithRecompute loc
     withUnit (GraphLocation file def) $ do
         modulesMVar <- view modules
@@ -1505,8 +1503,10 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
 
 generateCollapsedDefCode :: GraphOp m => Text -> [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text, Maybe Text, Position)
 generateCollapsedDefCode defName inputs outputs bodyIds = do
+    (inputSidebar, _) <- GraphBuilder.getEdgePortMapping
     inputNames <- fmap (map (view _2) . sortOn fst) $ forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) -> do
-        position <- fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
+        position <- if nodeId == inputSidebar then return def
+                                              else fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
         name     <- ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
         return (position, name)
     outputNames <- forM outputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
@@ -1537,7 +1537,7 @@ generateCollapsedDefCode defName inputs outputs bodyIds = do
     returnBody <- case outputNames of
         []  -> do
             let lastNode = snd $ unsafeLast codeBegs
-            ASTRead.getNameOf lastNode
+            handle (\(e::NotUnifyException) -> return Nothing) (Just <$> (ASTRead.getVarNode lastNode >>= Code.getCodeOf))
         [a] -> return $ Just $ convert a
         _   -> return $ Just $ "(" <> Text.intercalate ", " (convert <$> outputNames) <> ")"
     let returnLine = case returnBody of
@@ -1559,7 +1559,8 @@ collapseToFunction loc@(GraphLocation file _) nids = do
         newName = generateNewFunctionName names "func"
     (defCode, useVarName, outputPosition) <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids
-        connections <- GraphBuilder.buildConnections
+        connections       <- GraphBuilder.buildConnections
+        (inputSidebar, _) <- GraphBuilder.getEdgePortMapping
         let srcInIds = flip Set.member ids . view PortRef.srcNodeId . fst
             dstInIds = flip Set.member ids . view PortRef.dstNodeId . snd
             inConns  = filter (\x -> dstInIds x && not (srcInIds x)) connections
@@ -1569,7 +1570,8 @@ collapseToFunction loc@(GraphLocation file _) nids = do
         let outputs  = nub $ fst <$> outConns'
             useSites = outConns' ^.. traverse . _2 . PortRef.dstNodeId
         (defCode, useCode, useVarName, outputPosition) <- generateCollapsedDefCode newName inputs outputs nids
-        insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) useCode
+        let inputsNodeIds = List.delete inputSidebar $ map (view PortRef.srcNodeId) inputs
+        insertCodeBetween useSites inputsNodeIds useCode
         return (defCode, useVarName, outputPosition)
     code <- insertCodeBeforeFunction loc defCode
     reloadCode  loc code
@@ -1978,8 +1980,13 @@ prepareGraphError :: SomeException -> ErrorAPI.Error ErrorAPI.GraphError
 prepareGraphError e | Just (BH.BreadcrumbDoesNotExistException content) <- fromException e = ErrorAPI.Error ErrorAPI.BreadcrumbDoesNotExist . convert $ show content
                     | otherwise                                                            = ErrorAPI.Error ErrorAPI.OtherGraphError        . convert $ displayException e
 
-prepareLunaError :: SomeException -> ErrorAPI.Error ErrorAPI.LunaError
+prettyException :: Exception e => e -> IO String
+prettyException e = do
+    stack <- whoCreated e
+    return $ displayException e ++ "\n" ++ renderStack stack
+
+prepareLunaError :: SomeException -> IO (ErrorAPI.Error ErrorAPI.LunaError)
 prepareLunaError e = case prepareGraphError e of
-    ErrorAPI.Error ErrorAPI.OtherGraphError _ -> ErrorAPI.Error ErrorAPI.OtherLunaError . convert $ displayException e
-    ErrorAPI.Error tpe content                -> ErrorAPI.Error (ErrorAPI.Graph tpe) content
+    ErrorAPI.Error ErrorAPI.OtherGraphError _ -> (ErrorAPI.Error ErrorAPI.OtherLunaError . convert) <$> prettyException e
+    ErrorAPI.Error tpe content                -> return $ ErrorAPI.Error (ErrorAPI.Graph tpe) content
 

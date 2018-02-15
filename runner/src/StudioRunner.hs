@@ -126,6 +126,12 @@ scriptDir, mainAppDir :: MonadIO m => m FilePath
 scriptDir  = (directory . decodeString) <$> liftIO getExecutablePath
 mainAppDir = (parent . parent . parent) <$> scriptDir
 
+mainHomeFolder ::  MonadRun m => m FilePath
+mainHomeFolder = do
+  runnerCfg <- get @RunnerConfig
+  home      <- decodeString <$> (liftIO getHomeDirectory)
+  return $ home </> (runnerCfg ^. mainHomeDir)
+
 relativeToDir :: MonadRun m => m FilePath -> [Getting FilePath RunnerConfig FilePath] -> m FilePath
 relativeToDir basePath segmentAccessors = do
     runnerCfg <- get @RunnerConfig
@@ -135,7 +141,7 @@ relativeToDir basePath segmentAccessors = do
 
 relativeToMainDir, relativeToHomeDir :: MonadRun m => [Getting FilePath RunnerConfig FilePath] -> m FilePath
 relativeToMainDir = relativeToDir mainAppDir
-relativeToHomeDir = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) . (mainHomeDir :)
+relativeToHomeDir = relativeToDir mainHomeFolder
 
 versionText :: MonadRun m => m T.Text
 versionText = do
@@ -220,11 +226,13 @@ setEnv name path = liftIO $ Environment.setEnv name $ encodeString path
 
 copyLunaStudio :: MonadRun m => m ()
 copyLunaStudio = do
+    mainHomePath    <- mainHomeFolder
     packageAtomHome <- packageStudioAtomHome
     atomHomeParent  <- parent <$> userStudioAtomHome
     Shelly.shelly $ do
         Shelly.mkdir_p atomHomeParent
         Shelly.cp_r packageAtomHome atomHomeParent
+    when (currentHost == Windows) $ liftIO $ runProcess_ $ shell $ "attrib +h " <> (encodeString mainHomePath)
 
 copyResourcesLinux :: MonadRun m => m ()
 copyResourcesLinux = when linux $ do

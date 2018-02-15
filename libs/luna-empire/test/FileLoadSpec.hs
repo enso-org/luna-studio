@@ -1227,6 +1227,44 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 nodes <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [0, 1, 2]
                 Graph.collapseToFunction loc $ map fromJust nodes
+        it "handles collapsing nodes connected to input" $ let
+            initialCode = [r|
+                def main a:
+                    «0»sum1 = a + 2
+                    None
+                |]
+            expectedCode = [r|
+                def func1 a:
+                    sum1 = a + 2
+                    sum1
+
+                def main a:
+                    sum1 = func1 a
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Just node <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.collapseToFunction loc [node]
+        it "handles collapsing pattern-match outputs" $ let
+            initialCode = [r|
+                def main:
+                    «1»a = (1, 2)
+                    «0»(a1, b1) = a
+                    None
+                |]
+            expectedCode = [r|
+                def func1:
+                    a = (1, 2)
+                    (a1, b1) = a
+                    (a1, b1)
+
+                def main:
+                    (a1, b1) = func1
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                nodes <- Graph.withGraph loc $ runASTOp $ mapM Graph.getNodeIdForMarker [0, 1]
+                Graph.collapseToFunction loc $ map fromJust nodes
         it "handles collapsing anonymous nodes into functions" $ let
             initialCode = [r|
                 def main:
