@@ -3,16 +3,18 @@ fs       = require 'fs-plus'
 path     = require 'path'
 yaml     = require 'js-yaml'
 
-VisualGuide      = require './guide'
-stats = require './stats'
-analytics = require './gen/analytics'
-LunaCodeEditorTab  = require './luna-code-editor-tab'
-LunaNodeEditorTab  = require './luna-node-editor-tab'
+analytics   = require './gen/analytics'
+report      = require './report'
+stats       = require './stats'
+VisualGuide = require './guide'
+LunaCodeEditorTab = require './luna-code-editor-tab'
+LunaNodeEditorTab = require './luna-node-editor-tab'
 LunaWelcomeTab = require './luna-welcome-tab'
 LunaToolbar = require './luna-toolbar'
 LunaSemanticGrammar = require './luna-grammar'
 projects  = require './projects'
 Statusbar = require './statusbar-view'
+version = require './version'
 (require './luna-visualizers')()
 codeEditor = (require './gen/text-editor-ghcjs.js')()
 nodeEditor = (require './gen/node-editor-ghcjs.js')()
@@ -30,12 +32,13 @@ module.exports = LunaStudio =
         stats.initialize()
         atom.grammars.addGrammar(new LunaSemanticGrammar(atom.grammars, codeEditor.lex))
         atom.workspace.addOpener @lunaOpener
-        codeEditor.connect(nodeEditor.connector)
+        codeEditor.connect nodeEditor.connector
+        nodeEditor.onNotification report.onNotification
         @welcome = new LunaWelcomeTab(codeEditor)
         @toolbar = new LunaToolbar(codeEditor)
         @guide   = new VisualGuide(nodeEditor)
         @moving = false
-
+        version.checkUpdates()
         actStatus = (act, arg1, arg2) =>
             switch act
                 when 'Init'
@@ -63,11 +66,11 @@ module.exports = LunaStudio =
                                 nodeEditor.pushEvent(tag: "UpdateFilePath", path: newUri)
 
         codeEditor.onStatus actStatus
-        atom.workspace.onDidChangeActivePaneItem (item) => @handleItemChange(item)
-        atom.workspace.onDidDestroyPaneItem (event) => @handleItemDestroy(event)
-        atom.workspace.observeTextEditors (editor) => @handleSaveAsLuna(editor)
-        atom.workspace.onDidAddPaneItem (pane)   => @handleItemChange(pane.item)
-        atom.project.onDidChangePaths (projectPaths) => @handleProjectPathsChange(projectPaths)
+        atom.workspace.onDidChangeActivePaneItem (item) => @handleItemChange item
+        atom.workspace.onDidDestroyPaneItem (event) => @handleItemDestroy event
+        atom.workspace.observeTextEditors (editor) => @handleSaveAsLuna editor
+        atom.workspace.onDidAddPaneItem (pane) => @handleItemChange pane.item
+        atom.project.onDidChangePaths (projectPaths) => @handleProjectPathsChange projectPaths
         atom.workspace.open(LUNA_STUDIO_URI, {split: atom.config.get('luna-studio.preferredNodeEditorPosition')})
         atom.commands.add 'atom-workspace',
             'application:add-project-folder': projects.selectLunaProject
@@ -102,7 +105,6 @@ module.exports = LunaStudio =
         actStatus = (status) ->
             if status == 'Init'
                 atom.workspace.open(uri, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
-
         codeEditor.statusListener actStatus
 
     lunaOpener: (uri) ->
@@ -130,7 +132,11 @@ module.exports = LunaStudio =
 
     handleItemChange: (item) ->
         if item instanceof LunaCodeEditorTab
-            @setNodeEditorUri item.uri
+            setNodeEditor = => @setNodeEditorUri item.uri
+            if item.initialized
+                setNodeEditor()
+            else
+                item.onInitialize = setNodeEditor
 
     handleItemDestroy: (event) =>
         if (event.item instanceof LunaCodeEditorTab)
@@ -152,9 +158,9 @@ module.exports = LunaStudio =
                 srcPath = projectPath
             return { defaultPath: srcPath }
         editor.onDidSave (e) =>
-            if path.extname(e.path) is ".luna" and not (editor instanceof LunaCodeEditorTab)
+            if path.extname(e.path) is ".luna"
                 atom.workspace.destroyActivePaneItem()
-                atom.workspace.open(e.path)
+                atom.workspace.open(e.path, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
 
     handleProjectPathsChange: (projectPaths) ->
         projectPath = projectPaths[0]

@@ -40,7 +40,6 @@ import           Empire.Commands.Autolayout              (autolayoutNodes)
 import qualified Empire.Commands.Graph                   as Graph
 import           Empire.Commands.GraphBuilder            (buildClassGraph, buildConnections, buildGraph, buildNodes, getNodeName)
 import qualified Empire.Commands.GraphUtils              as GraphUtils
-import qualified Empire.Commands.Persistence             as Persistence
 import           Empire.Data.AST                         (SomeASTException, astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.Graph                       as Graph (code, nodeCache)
 import           Empire.Empire                           (Empire)
@@ -55,6 +54,7 @@ import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Control.Interpreter      as Interpreter
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
+import qualified LunaStudio.API.Graph.AddImports         as AddImports
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
 import qualified LunaStudio.API.Graph.AddPort            as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
@@ -131,13 +131,8 @@ import qualified ZMQ.Bus.Trans                           as BusT
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
-saveCurrentProject :: GraphLocation -> StateT Env BusT ()
-saveCurrentProject loc = do
-  currentEmpireEnv <- use Env.empireEnv
-  empireNotifEnv   <- use Env.empireNotif
-  projectRoot      <- use Env.projectRoot
-  void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.saveLocation projectRoot loc
-
+logProjectPathNotFound :: MonadIO m => m ()
+logProjectPathNotFound = Project.logProjectSettingsError "Could not find project path."
 -- helpers
 
 
@@ -168,51 +163,63 @@ getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
 getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
 getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
-getProjectPathAndRelativeModulePath :: FilePath -> IO (Maybe (FilePath, FilePath))
+getProjectPathAndRelativeModulePath :: MonadIO m => FilePath -> m (Maybe (FilePath, FilePath))
 getProjectPathAndRelativeModulePath modulePath = do
-    let eitherToMaybe :: Either Path.PathException (Path.Path Path.Abs Path.File) -> Maybe (Path.Path Path.Abs Path.File)
-        eitherToMaybe (Left  e) = Nothing
-        eitherToMaybe (Right a) = Just a
-    runMaybeT $ do
-        absModulePath  <- MaybeT . fmap eitherToMaybe . try $ parseAbsFile modulePath
+    let eitherToMaybe :: MonadIO m => Either Path.PathException (Path.Path Path.Abs Path.File) -> m (Maybe (Path.Path Path.Abs Path.File))
+        eitherToMaybe (Left  e) = Project.logProjectSettingsError e >> return def
+        eitherToMaybe (Right a) = return $ Just a
+    mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
+        absModulePath  <- MaybeT $ eitherToMaybe =<< try (parseAbsFile modulePath)
         absProjectPath <- MaybeT $ findProjectFileForFile absModulePath
         relModulePath  <- MaybeT $ getRelativePathForModule absProjectPath absModulePath
         return (fromAbsFile absProjectPath, fromRelFile relModulePath)
+    when (isNothing mayProjectPathAndRelModulePath) logProjectPathNotFound
+    return mayProjectPathAndRelModulePath
 
-saveSettings :: GraphLocation -> LocationSettings -> Empire ()
-saveSettings gl settings = handle (\(e :: SomeException) -> return ()) $ do
-    bc <- Breadcrumb.toNames <$> Graph.decodeLocation gl
-    let filePath = gl ^. GraphLocation.filePath
-    mayProjectPathAndRelModulePath <- liftIO $ getProjectPathAndRelativeModulePath filePath
-    withJust mayProjectPathAndRelModulePath $ \(pf, mf) ->
-        liftIO $ Project.updateLocationSettings pf mf bc settings
+saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
+saveSettings gl settings newGl = handle (\(e :: SomeException) -> Project.logProjectSettingsError e) $ do
+    bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
+    newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
+    let filePath        = gl    ^. GraphLocation.filePath
+        newFilePath     = newGl ^. GraphLocation.filePath
+        lastBcInOldFile = if filePath == newFilePath then newBc else bc
+    withJustM (getProjectPathAndRelativeModulePath filePath) $ \(cp, fp) ->
+        Project.updateLocationSettings cp fp bc settings lastBcInOldFile
+    when (filePath /= newFilePath) $ withJustM (getProjectPathAndRelativeModulePath newFilePath) $ \(cp, fp) ->
+        Project.updateCurrentBreadcrumbSettings cp fp newBc
 
-findMainNodeId :: Graph -> Maybe NodeId
-findMainNodeId g = view Node.nodeId <$> find ((Just "main" ==) . view Node.name) (g ^. GraphAPI.nodes)
-
-getMainLocation :: GraphLocation -> Empire (Maybe GraphLocation)
-getMainLocation gl = do
+getClosestBcLocation :: GraphLocation -> Breadcrumb Text -> Empire GraphLocation
+getClosestBcLocation gl (Breadcrumb []) = return gl
+getClosestBcLocation gl (Breadcrumb (nodeName:newBcItems)) = do
     g <- Graph.getGraph gl
-    return $ maybe def (\nid -> Just $ gl & GraphLocation.breadcrumb . Breadcrumb.items %~ (<> [Breadcrumb.Definition nid])) $ findMainNodeId g
+    let mayN = find ((Just nodeName ==) . view Node.name) (g ^. GraphAPI.nodes)
+        processLocation n = do
+            let nid = n ^. Node.nodeId
+                bci = if n ^. Node.isDefinition then Breadcrumb.Definition nid else Breadcrumb.Lambda nid
+                nextLocation = gl & GraphLocation.breadcrumb . Breadcrumb.items %~ (<>[bci])
+            getClosestBcLocation nextLocation $ Breadcrumb newBcItems
+    maybe (return gl) processLocation mayN
+
 
 -- Handlers
 
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
 handleGetProgram = modifyGraph defInverse action replyResult where
-    action (GetProgram.Request location' mayPrevSettings enterMain) = do
+    action (GetProgram.Request location' mayPrevSettings retrieveLocation) = do
         let moduleChanged = isNothing mayPrevSettings || isJust (maybe Nothing (view Project.visMap . snd) mayPrevSettings)
-        withJust mayPrevSettings $ uncurry saveSettings
         (graph, crumb, availableImports, typeRepToVisMap, camera, location) <- handle
             (\(e :: SomeASTException) -> return (Left . Graph.prepareGraphError $ toException e, Breadcrumb [], def, mempty, def, location'))
             $ do
-                location <- if not enterMain then return location' else fromMaybe location' <$> getMainLocation location'
+                let filePath = location' ^. GraphLocation.filePath
+                    closestBc loc bc = getClosestBcLocation (GraphLocation.GraphLocation filePath def) bc
+                mayProjectPathAndRelModulePath <- liftIO $ getProjectPathAndRelativeModulePath filePath
+                mayModuleSettings              <- liftIO $ maybe (return def) (uncurry Project.getModuleSettings) mayProjectPathAndRelModulePath
+                location <- if not retrieveLocation then return location'
+                    else getClosestBcLocation (GraphLocation.GraphLocation filePath def) $ maybe (Breadcrumb ["main"]) (view Project.currentBreadcrumb) mayModuleSettings
                 graph            <- Graph.getGraph location
                 crumb            <- Graph.decodeLocation location
                 availableImports <- Graph.getAvailableImports location
-                let filePath = location ^. GraphLocation.filePath
-                mayProjectPathAndRelModulePath <- liftIO $ getProjectPathAndRelativeModulePath filePath
-                mayModuleSettings              <- liftIO $ maybe (return def) (uncurry Project.getModuleSettings) mayProjectPathAndRelModulePath
                 let defaultCamera = maybe def (flip Camera.getCameraForRectangle def) . Position.minimumRectangle . map (view Node.position) $ graph ^. GraphAPI.nodes
                     (typeRepToVisMap, camera) = case mayModuleSettings of
                         Nothing -> (mempty, defaultCamera)
@@ -223,6 +230,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                             in (visMap, cam)
                 return (Right graph, crumb, availableImports, typeRepToVisMap, camera, location)
         code <- Graph.getCode location
+        withJust mayPrevSettings $ \(gl, locSettings) -> saveSettings gl locSettings location
         return $ GetProgram.Result graph code crumb availableImports typeRepToVisMap camera location
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
@@ -235,6 +243,11 @@ handleAddConnection = modifyGraph inverse action replyResult where
             OutPortRef' portRef -> InPortRef (portRef ^. PortRef.nodeLoc) []
     action  (AddConnection.Request location src' dst') = withDefaultResult location $
         Graph.connectCondTC True location (getSrcPort src') (getDstPort dst')
+
+handleAddImports :: Request AddImports.Request -> StateT Env BusT ()
+handleAddImports = modifyGraph defInverse action replyResult where
+    action (AddImports.Request location modules) = withDefaultResult location $
+        Graph.addImports location modules
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
@@ -371,7 +384,7 @@ handleRenamePort = modifyGraph inverse action replyResult where
 
 handleSaveSettings :: Request SaveSettings.Request -> StateT Env BusT ()
 handleSaveSettings = modifyGraphOk defInverse action where
-    action (SaveSettings.Request gl settings) = saveSettings gl settings
+    action (SaveSettings.Request gl settings) = saveSettings gl settings gl
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request location importsList)) = do
@@ -386,8 +399,8 @@ handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request loca
         result <- try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ SearchNodes.Result <$> Graph.getImports location importsList
         case result of
             Left  (exc :: SomeException) -> do
-                let err = Graph.prepareLunaError exc
-                    msg = Response.error origReq invStatus err
+                err <- liftIO $ Graph.prepareLunaError exc
+                let msg = Response.error origReq invStatus err
                 atomically $ writeTChan toBusChan $ Message.Message (Topic.topic msg) $ Compress.pack $ Bin.encode msg
             Right (result, _) -> do
                 let msg = Response.result origReq () result
@@ -456,7 +469,9 @@ handleTypecheck req@(Request _ _ request) = do
     empireNotifEnv   <- use Env.empireNotif
     result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
     case result of
-        Left (exc :: SomeASTException) -> let err = Graph.prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ Graph.prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     return ()
 

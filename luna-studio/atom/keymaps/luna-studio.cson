@@ -144,6 +144,7 @@
   'cmd-l'             : 'luna-studio:autolayout-all-nodes'        # AutolayoutAllNodes
   # searcher
   'tab'               : 'luna-studio:searcher-open'             # SearcherOpen
+  'shift-tab'         : 'luna-studio:searcher-edit-expression'  # SearcherEditExpression
   # MockMonads
   'cmd-m'             : 'luna-studio:mock-add-monad'
   'ctrl-m'            : 'luna-studio:mock-add-monad'

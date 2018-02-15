@@ -90,7 +90,7 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 
 .luna-welcome__header__menu__links {
 	float:           right;
-	width:           11*@grid;
+	width:           18*@grid;
 	display:         flex;
 	align-items:     stretch;
 	justify-content: space-between;
@@ -107,13 +107,17 @@ atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a globa
 	background:      @b;
 	line-height:     @input-height - @a;
 	border-bottom:   @a solid transparent;
+	cursor:          pointer;
 	display:         block;
-	width:           5.438*@grid;
+	width:           4.88*@grid;
 	text-decoration: none !important;
 	&:hover {
 		background: @c;
 		color:      @button-color;
 	}
+}
+.luna-welcome-link--docs {
+	width:           7.88*@grid;
 }
 
 .luna-welcome-search {

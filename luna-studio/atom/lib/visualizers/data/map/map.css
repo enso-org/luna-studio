@@ -6,6 +6,7 @@ html, body, #chart-container {
 .leaflet-popup-content-wrapper, .leaflet-popup-content {
     border-radius: 0 !important;
 }
+
 .leaflet-marker-icon,
 .leaflet-marker-shadow {
     -webkit-transition: transform 1s ease;

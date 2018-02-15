@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Luna Studio
+Exec=luna-studio %F
+Icon=luna-studio
+Type=Application

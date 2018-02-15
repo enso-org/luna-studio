@@ -15,7 +15,7 @@ import           System.ZMQ4.Monadic             (ZMQ)
 import qualified System.ZMQ4.Monadic             as ZMQ
 
 import qualified Debug.Trace                     as T
-import           Prologue                        hiding (hoistEither, trace, liftIO)
+import           Prologue                        hiding (hoistEither, liftIO, trace)
 import           System.Log.MLogger
 import qualified ZMQ.Bus.Control.Handler.Methods as Methods
 import           ZMQ.Bus.Data.Flag               (Flag)
@@ -125,17 +125,13 @@ withTimeout action timeout = runExceptT $ do
 sendByteString :: ByteString -> Bus ()
 sendByteString msg = do
     push <- getPushSocket
-    logger trace "Sending message..."
     lift2 $ ZMQ.send push [] msg
-    logger trace "Message sent"
 
 
 receiveByteString :: Bus ByteString
 receiveByteString = do
     sub <- getSubSocket
-    logger trace "Waiting for a message..."
     bs <- lift2 $ ZMQ.receive sub
-    logger trace "Message received"
     pure bs
 
 

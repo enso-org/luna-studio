@@ -18,7 +18,10 @@ import           LunaStudio.Data.NodeValue                (Visualizer, Visualize
 import           LunaStudio.Data.TypeRep                  (TypeRep)
 import           NodeEditor.Event.Event                   (Event)
 import           NodeEditor.React.Model.App               (App)
+import qualified NodeEditor.React.Model.App               as App
+import           NodeEditor.React.Model.NodeEditor        (NodeEditor)
 import           NodeEditor.React.Store                   (Ref)
+import qualified NodeEditor.React.Store.Ref               as Ref
 import           NodeEditor.State.Action                  (ActionRep, Connect, SomeAction)
 import qualified NodeEditor.State.Collaboration           as Collaboration
 import qualified NodeEditor.State.UI                      as UI
@@ -76,6 +79,9 @@ mkState ref clientId' = State
 
 nextRandom :: Command State Word8
 nextRandom = uses random Random.random >>= \(val, rnd) -> random .= rnd >> return val
+
+getNodeEditor :: MonadIO m => State -> m NodeEditor
+getNodeEditor state = view App.nodeEditor <$> Ref.get (state ^. ui . UI.app)
 
 instance HasRequestTimes State where
     requestTimes = backend . pendingRequests

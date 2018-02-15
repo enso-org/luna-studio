@@ -43,6 +43,8 @@ data GraphStatus = GraphLoaded
                  | GraphError (Error.Error Error.GraphError)
                  deriving (Eq, Generic)
 
+makePrisms ''GraphStatus
+
 data NodeEditor = NodeEditor { _expressionNodes          :: ExpressionNodesMap
                              , _inputNode                :: Maybe InputNode
                              , _outputNode               :: Maybe OutputNode
@@ -93,6 +95,10 @@ makePrisms ''VisualizationBackup
 
 isGraphLoaded :: Getter NodeEditor Bool
 isGraphLoaded = graphStatus . to (== GraphLoaded)
+
+returnsGraphError :: Getter NodeEditor Bool
+returnsGraphError = to (has (graphStatus . _GraphError))
+
 
 screenTransform :: Lens' NodeEditor CameraTransformation
 screenTransform = layout . Layout.screenTransform

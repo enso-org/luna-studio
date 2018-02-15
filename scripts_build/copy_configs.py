@@ -54,11 +54,21 @@ def copy_atom_configs ():
     for config in configs_files:
         shutil.copy(ap.prep_path(config), dst_path)
 
+
+def rebrand_atom_logo():
+    if system.darwin():
+        src = ap.prep_path('../resources/logo.icns')
+        dst = ap.prep_path('../dist/third-party/Atom.app/Contents/Resources/atom.icns')
+        shutil.copy(src, dst)
+        subprocess.run(['touch', ap.prep_path('../dist/third-party/Atom.app')])
+
+
 def run():
     copy_configs(supervisor_dir,env_dir, windows_dir)
     copy_resources(resources_dir)
     link_resources()
     copy_atom_configs()
+    rebrand_atom_logo()
 
 if __name__ == '__main__':
     run()

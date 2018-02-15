@@ -1,6 +1,8 @@
 body {
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 0;
+  padding-right: 0;
+  margin: 0;
+  padding: 0;
 }
 table {
     font-size:   12px;
@@ -8,7 +10,6 @@ table {
     border-spacing: 0;
     margin: 0 0;
     width: 100%;
-    display: block;
 }
 
 td {

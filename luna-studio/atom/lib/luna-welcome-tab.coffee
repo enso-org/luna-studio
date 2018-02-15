@@ -1,7 +1,8 @@
 {View} = require 'atom-space-pen-views'
-etch = require 'etch'
+etch   = require 'etch'
+shell  = require 'shell'
 fuzzyFilter = null # defer until used
-{ProjectItem, privateNewClasses, communityNewClasses, tutorialClasses} = require './project-item'
+{ProjectItem, privateNewClasses, communityNewClasses} = require './project-item'
 projects = require './projects'
 analytics = require './gen/analytics'
 report = require './report'
@@ -25,14 +26,19 @@ class LunaWelcomeTab extends View
                                 placeholder: 'Search'
                                 outlet: 'searchInput'
                             @div class: 'luna-welcome__header__menu__links', =>
-                                @a
+                                @div
+                                    outlet: 'docsButton'
+                                    class: 'luna-welcome-link luna-welcome-link--docs'
+                                    title: 'Documentation'
+                                    'Documentation'
+                                @div
+                                    outlet: 'forumButton'
                                     class: 'luna-welcome-link luna-welcome-link--forum'
-                                    href: 'http://luna-lang.org'
                                     title: 'Forum'
                                     'Forum'
-                                @a
+                                @div
+                                    outlet: 'chatButton'
                                     class: 'luna-welcome-link luna-welcome-link--chat'
-                                    href: 'http://luna-lang.org'
                                     title: 'Chat'
                                     'Chat'
                     @div class: 'luna-welcome__body', =>
@@ -63,7 +69,6 @@ class LunaWelcomeTab extends View
                                     @div  class: 'luna-welcome__section__container', outlet: 'communityContainer', =>
 
     initialize: =>
-        @tutorialItems = {}
         @privateNew = new ProjectItem({name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
             projects.temporaryProject.open())
@@ -75,26 +80,24 @@ class LunaWelcomeTab extends View
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search
         @background.on 'click', @cancel
+        @forumButton.on 'click', -> shell.openExternal 'https://discuss.luna-lang.org'
+        @chatButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
+        @docsButton.on 'click', -> shell.openExternal 'http://docs.luna-lang.org'
 
-        projects.recent.refreshProjectsList @hideSearchResults
+        projects.recent.refreshList @hideSearchResults
 
         @noTutorialsMsg ?= 'Fetching tutorials list...'
         @redrawTutorials()
-        projects.tutorial.list (tutorial) =>
-            if tutorial.error?
-                @noTutorialsMsg = tutorial.error
-                @redrawTutorials()
-            else
-                @noTutorialsMsg = ''
-                item = new ProjectItem tutorial, tutorialClasses, (progress, finalize) =>
-                    projects.tutorial.open tutorial, progress, finalize
-                @tutorialItems[item.name] = item
-                @redrawTutorials()
+        projects.tutorial.refreshList (error) =>
+            @noTutorialsMsg = error
+            @noTutorialsMsg ?= ''
+            @redrawTutorials()
 
     redrawTutorials: =>
         @tutorialsContainer[0].innerText = @noTutorialsMsg
-        for name in Object.keys @tutorialItems
-            @tutorialsContainer.append(@tutorialItems[name].element)
+        tutorialItems = projects.tutorial.getItems()
+        for name in Object.keys tutorialItems
+            @tutorialsContainer.append(tutorialItems[name].element)
 
     getFilterKey: ->
         return 'name'

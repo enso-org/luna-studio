@@ -18,7 +18,7 @@
 
   var render = function (json) {
     var data = JSON.parse(json);
-    document.body.innerHTML = "<pre>" + escapeHtml(data) + "</pre>";
+    document.body.innerHTML = "<span>" + escapeHtml(data) + "</span>";
   };
 
   window.addEventListener("message", function (evt) {

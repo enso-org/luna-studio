@@ -126,12 +126,15 @@ startTCWorker env = liftIO $ do
     pmState <- Graph.defaultPMState
     let interpreterEnv = Empire.InterpreterEnv def def def undefined cleanup def
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
-        Empire.TCRequest loc g flush interpret recompute <- liftIO $ takeMVar reqs
-        when flush
-            Typecheck.flushCache
-        Empire.graph .= (g & Graph.clsAst . Graph.pmState .~ pmState)
-        liftIO performGC
-        catchAll (Typecheck.run modules loc interpret recompute) print
+        Empire.TCRequest loc g flush interpret recompute stop <- liftIO $ takeMVar reqs
+        case stop of
+            True  -> Typecheck.stop
+            False -> do
+                when flush
+                    Typecheck.flushCache
+                Empire.graph .= (g & Graph.clsAst . Graph.pmState .~ pmState)
+                liftIO performGC
+                catchAll (Typecheck.run modules loc interpret recompute) print
 
 startToBusWorker :: TChan Message -> Bus ()
 startToBusWorker toBusChan = forever $ do
@@ -186,17 +189,18 @@ handleMessage = do
     case msgFrame of
         Left err -> logger Logger.error $ "Unparseable message: " <> err
         Right (MessageFrame msg crlID senderID lastFrame) -> do
-            let topic = msg ^. Message.topic
-                logMsg = show (crlID ^. Message.messageID) <> ": " <> show senderID
-                         <> " -> (last = " <> show lastFrame
-                         <> ")\t:: " <> topic
+            time <- liftIO Utils.currentISO8601Time
+            let topic   = msg ^. Message.topic
+                logMsg  = time <> "\t:: received " <> topic
                 content = Compress.unpack $ msg ^. Message.message
             case Utils.lastPart '.' topic of
-                "update"  -> handleUpdate        logMsg topic content
-                "status"  -> handleStatus        logMsg topic content
-                "request" -> handleRequest       logMsg topic content
-                "debug"   -> handleDebug         logMsg topic content
-                _         -> handleNotRecognized logMsg topic content
+                "update"    -> handleUpdate        logMsg topic content
+                "status"    -> handleStatus        logMsg topic content
+                "request"   -> handleRequest       logMsg topic content
+                "debug"     -> handleDebug         logMsg topic content
+                "response"  -> handleResponse      logMsg topic content
+                "typecheck" -> handleTypecheck     logMsg topic content
+                _           -> handleNotRecognized logMsg topic content
 
 defaultHandler :: ByteString -> StateT Env BusT ()
 defaultHandler content = do
@@ -231,3 +235,11 @@ handleNotRecognized :: String -> String -> ByteString -> StateT Env BusT ()
 handleNotRecognized logMsg _ content = do
     logger Logger.error logMsg
     logger Logger.error $ show content
+
+handleResponse :: String -> String -> ByteString -> StateT Env BusT ()
+handleResponse logMsg _ content = do
+    logger Logger.info logMsg
+
+handleTypecheck :: String -> String -> ByteString -> StateT Env BusT ()
+handleTypecheck logMsg _ content = do
+    logger Logger.info logMsg

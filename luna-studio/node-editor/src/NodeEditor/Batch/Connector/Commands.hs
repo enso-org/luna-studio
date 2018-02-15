@@ -6,6 +6,7 @@ import qualified Data.Text                                as Text
 import           Data.UUID.Types                          (UUID)
 import qualified LunaStudio.API.Atom.OpenFile             as OpenFile
 import qualified LunaStudio.API.Graph.AddConnection       as AddConnection
+import qualified LunaStudio.API.Graph.AddImports          as AddImports
 import qualified LunaStudio.API.Graph.AddNode             as AddNode
 import qualified LunaStudio.API.Graph.AddPort             as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph         as AddSubgraph
@@ -68,12 +69,15 @@ dumpGraphViz workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibra
 
 
 getProgram :: Maybe (GraphLocation, LocationSettings) -> Bool -> Workspace -> UUID -> Maybe UUID -> IO ()
-getProgram maySettings enterMain workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace GetProgram.Request) maySettings enterMain
+getProgram maySettings retrieveLocation workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace GetProgram.Request) maySettings retrieveLocation
 
 addConnection :: Either OutPortRef NodeLoc -> Either AnyPortRef NodeLoc -> Workspace -> UUID -> Maybe UUID -> IO ()
 addConnection src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace AddConnection.Request (conv src) dst where
     conv (Left a)  = Left a --TODO normalise
     conv (Right a) = Right $ a ^. NodeLoc.nodeId
+
+addImports :: [Text] -> Workspace -> UUID -> Maybe UUID -> IO ()
+addImports imps workspace uuid guiID = sendRequest . Message uuid guiID . withLibrary workspace AddImports.Request $ imps
 
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Workspace -> UUID -> Maybe UUID -> IO ()
 addNode nodeLoc expression meta connectTo workspace uuid guiID =

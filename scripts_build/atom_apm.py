@@ -19,6 +19,7 @@ import stack_build
 import atom_prepare
 import re, tempfile
 
+
 #########################################################
 #                     PATHS                             #
 #########################################################
@@ -34,6 +35,8 @@ gui_package_path = ap.prep_path('../dist-package/gui.zip')
 studio_folder = ap.prep_path('../luna-studio/atom')
 version_file =ap.prep_path('../dist/config/version.txt')
 logo_ico =ap.prep_path('../resources/logo.ico')
+logo_png =ap.prep_path('../resources/logo.png')
+atom_logo=ap.prep_path('../dist/third-party/atom/usr/share/atom/resources/app/resources/atom.png')
 
 paths = {
     system.systems.WINDOWS: {
@@ -234,8 +237,9 @@ def modify_atom_icon():
         appdata = os.environ.get('APPDATA')
         winresourcer = os.path.join(appdata,'npm','node_modules','winresourcer','lib','WinResourcer')
         proc=run_process('node', winresourcer, '--operation=Update', '--exeFile='+atom, '--resourceType=Icongroup', '--resourceName=1', '--resourceFile='+logo_ico)
-
-        return print(proc)
+        print(proc)
+    elif system.linux():
+        shutil.copyfile(logo_png, atom_logo)
 
 
 def run(gui_url, frontend_args, link=False):

@@ -1,4 +1,0 @@
-#!/bin/sh
-export LUNAROOT=/etc/nodelab
-
-exec /usr/local/bin/nodelab/broker -v0 2>&1

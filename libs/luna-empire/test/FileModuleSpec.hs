@@ -90,19 +90,124 @@ specifyCodeChange :: Text -> Text -> (GraphLocation -> Empire a) -> Communicatio
 specifyCodeChange initialCode expectedCode act env = do
     let normalize = Text.pack . normalizeQQ . Text.unpack
     actualCode <- evalEmp env $ do
-        Library.createLibrary Nothing "TestPath"
-        let loc = GraphLocation "TestPath" $ Breadcrumb []
+        Library.createLibrary Nothing "/TestPath"
+        let loc = GraphLocation "/TestPath" $ Breadcrumb []
         Graph.loadCode loc $ normalize initialCode
-        [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
-        let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
-        act loc'
-        Graph.getCode loc'
+        main <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
+        case main of
+            [mainFun] -> do
+                let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (mainFun ^. Node.nodeId)]
+                act loc'
+                Graph.getCode loc'
+            [] -> do
+                let loc' = GraphLocation "/TestPath" $ Breadcrumb []
+                act loc'
+                Graph.getCode loc'
     Text.strip actualCode `shouldBe` normalize expectedCode
 
 
 spec :: Spec
 spec = around withChannels $ parallel $ do
+    describe "imports" $ do
+        xit "adds import" $
+            let initialCode = multiFunCode
+                expectedCode = [r|
+                    import Foo
+                    ## Docs
+                    def foo:
+                        5
+
+                    ## Docs
+                    def bar:
+                        "bar"
+
+                    ## Docs
+                    def main:
+                        print bar
+                    |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Graph.addImports loc ["Foo"]
+        xit "adds import 2" $
+            let initialCode = [r|
+                    import A
+                    import Std
+                    import Time
+                    import XML
+
+                    def foo:
+                        5
+
+                    def bar:
+                        "bar"
+
+                    def main:
+                        print bar
+                    |]
+                expectedCode = [r|
+                    import Foo
+                    import A
+                    import Std
+                    import Time
+                    import XML
+
+                    def foo:
+                        5
+
+                    def bar:
+                        "bar"
+
+                    def main:
+                        print bar
+                    |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Graph.addImports loc ["Foo"]
+        xit "adds import 3" $
+            let initialCode = [r|
+                    import Std.Geo
+                    import Time
+                    import XML
+
+                    def foo:
+                        5
+
+                    def bar:
+                        "bar"
+
+                    def main:
+                        print bar
+                    |]
+                expectedCode = [r|
+                    import Foo
+                    import Bar
+                    import Baz.Quux
+                    import Std.Geo
+                    import Time
+                    import XML
+
+                    def foo:
+                        5
+
+                    def bar:
+                        "bar"
+
+                    def main:
+                        print bar
+                    |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Graph.addImports loc ["Foo", "Bar", "Baz.Quux"]
     describe "multi-module files" $ do
+        it "adds a function to empty file" $
+            let initialCode = ""
+                expectedCode = [r|
+                    def main:
+                        number1 = 4
+                        None
+                    |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                u1 <- mkUUID
+                u2 <- mkUUID
+                Graph.addNode loc u1 "def main" def
+                Graph.addNode (loc |>= u1) u2 "4" def
         it "shows functions at file top-level" $ \env -> do
             nodes <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -583,8 +688,8 @@ spec = around withChannels $ parallel $ do
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
                 «0»def foo:
-                    «3»n1 = number1 * 5
                     «4»number1 = 5
+                    «3»n1 = number1 * 5
                     number1
                 «1»def bar:
                     «5»"bar"
@@ -825,7 +930,7 @@ spec = around withChannels $ parallel $ do
                         4
                     |]
             in specifyCodeChange initialCode expectedCode $ \_ -> do
-                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                let loc = GraphLocation "/TestPath" $ Breadcrumb []
                 nodes <- Graph.getNodes loc
                 let Just foo = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "foo") nodes
                     loc' = loc |>= foo
@@ -848,7 +953,7 @@ spec = around withChannels $ parallel $ do
                         4
                     |]
             in specifyCodeChange initialCode expectedCode $ \_ -> do
-                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                let loc = GraphLocation "/TestPath" $ Breadcrumb []
                 nodes <- Graph.getNodes loc
                 let Just foo = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "foo") nodes
                     loc' = loc |>= foo

@@ -13,11 +13,12 @@
 module Main where
 
 import           Prelude                       hiding (FilePath)
+import           Control.Exception.Safe        (MonadMask, MonadCatch, bracket_, catch)
 import           Control.Lens.Aeson
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.IO.Class        (MonadIO, liftIO)
-import           Control.Monad.State.Layered
+import           Control.Monad.State.Lazy
 import           Data.ByteString.Lazy          (unpack)
 import           Data.List.Split
 import qualified Data.List                     as List
@@ -35,6 +36,7 @@ import           System.Process.Typed          (shell, runProcess, runProcess_, 
 import           System.Environment            (getExecutablePath, getArgs)
 import qualified System.Environment            as Environment
 import qualified System.IO                     as IO
+import           System.IO.Error               (isDoesNotExistError)
 import qualified Shelly.Lifted                 as Shelly
 import           System.Host
 
@@ -68,11 +70,14 @@ data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _lunaProjects           :: FilePath
                                  , _tutorialsDirectory     :: FilePath
                                  , _userInfoFile           :: FilePath
+                                 , _resourcesFolder        :: FilePath
+                                 , _shareFolder            :: FilePath
+                                 , _windowsFolder          :: FilePath
                                  }
 
 makeLenses ''RunnerConfig
 
-type MonadRun m = (MonadStates '[RunnerConfig] m, MonadIO m)
+type MonadRun m = (MonadState RunnerConfig m, MonadIO m, MonadMask m)
 
 instance Monad m => MonadHostConfig RunnerConfig 'Linux arch m where
     defaultHostConfig = return $ RunnerConfig
@@ -103,6 +108,9 @@ instance Monad m => MonadHostConfig RunnerConfig 'Linux arch m where
         , _lunaProjects           = "luna" </> "projects"
         , _tutorialsDirectory     = "tutorials"
         , _userInfoFile           = "user_info.json"
+        , _resourcesFolder        = "public" </> "luna-studio" </> "resources"
+        , _shareFolder            = ".local" </> "share"
+        , _windowsFolder          = "windows"
         }
 
 instance Monad m => MonadHostConfig RunnerConfig 'Darwin arch m where
@@ -118,6 +126,12 @@ scriptDir, mainAppDir :: MonadIO m => m FilePath
 scriptDir  = (directory . decodeString) <$> liftIO getExecutablePath
 mainAppDir = (parent . parent . parent) <$> scriptDir
 
+mainHomeFolder ::  MonadRun m => m FilePath
+mainHomeFolder = do
+  runnerCfg <- get @RunnerConfig
+  home      <- decodeString <$> (liftIO getHomeDirectory)
+  return $ home </> (runnerCfg ^. mainHomeDir)
+
 relativeToDir :: MonadRun m => m FilePath -> [Getting FilePath RunnerConfig FilePath] -> m FilePath
 relativeToDir basePath segmentAccessors = do
     runnerCfg <- get @RunnerConfig
@@ -127,20 +141,32 @@ relativeToDir basePath segmentAccessors = do
 
 relativeToMainDir, relativeToHomeDir :: MonadRun m => [Getting FilePath RunnerConfig FilePath] -> m FilePath
 relativeToMainDir = relativeToDir mainAppDir
-relativeToHomeDir = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) . (mainHomeDir :)
+relativeToHomeDir = relativeToDir mainHomeFolder
+
+versionText :: MonadRun m => m T.Text
+versionText = do
+    versionFP  <- versionFilePath
+    versionStr <- liftIO $ readFile $ encodeString versionFP
+    return . T.pack $ versionStr
 
 version :: MonadRun m => m FilePath
 version = do
-    versionFP  <- versionFilePath
-    versionStr <- liftIO $ readFile $ encodeString versionFP
-    return . fromText . T.pack $ versionStr
+    versionTxt <- versionText
+    return $ fromText versionTxt
+
+printVersion :: (MonadRun m, MonadCatch m) => m ()
+printVersion = do
+    versionTxt <- catch versionText $ \e -> return $ if (isDoesNotExistError e) then "develop" else T.pack $ show e
+    liftIO $ print versionTxt
 
 -- paths --
 backendBinsPath, configPath, atomAppPath, backendDir                           :: MonadRun m => m FilePath
 supervisordBinPath, supervisorctlBinPath, killSupervisorBinPath                :: MonadRun m => m FilePath
 packageStudioAtomHome, userStudioAtomHome, localLogsDirectory, versionFilePath :: MonadRun m => m FilePath
+resourcesDirectory, windowsLogsDirectory                                       :: MonadRun m => m FilePath
 userLogsDirectory, userdataStorageDirectory, localdataStorageDirectory         :: MonadRun m => m FilePath
 lunaTmpPath, lunaProjectsPath, lunaTutorialsPath, userInfoPath                 :: MonadRun m => m FilePath
+sharePath, windowsScriptsPath                                                  :: MonadRun m => m FilePath
 
 backendBinsPath           = relativeToMainDir [binsFolder, backendBinsFolder]
 configPath                = relativeToMainDir [configFolder]
@@ -152,10 +178,14 @@ killSupervisorBinPath     = relativeToMainDir [thirdPartyFolder, supervisorKillF
 packageStudioAtomHome     = relativeToMainDir [userConfigFolder, studioHome]
 localLogsDirectory        = relativeToMainDir [logsFolder]
 versionFilePath           = relativeToMainDir [configFolder, versionFile]
+resourcesDirectory        = relativeToMainDir [binsFolder, resourcesFolder]
+windowsLogsDirectory      = relativeToMainDir [configFolder, logsFolder]
 userLogsDirectory         = relativeToHomeDir [logsFolder, appName] >>= (\p -> (fmap (p </>) version))
 userdataStorageDirectory  = relativeToHomeDir [configHomeFolder, appName, storageDataHomeFolder]
 localdataStorageDirectory = relativeToHomeDir [storageDataHomeFolder]
 userInfoPath              = relativeToHomeDir [userInfoFile]
+sharePath                 = relativeToDir (decodeString <$> (liftIO getHomeDirectory)) [shareFolder]
+windowsScriptsPath        = relativeToMainDir [configFolder, windowsFolder]
 userStudioAtomHome = do
     runnerCfg <- get @RunnerConfig
     baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= (\p -> (fmap (p </>) version))
@@ -173,9 +203,10 @@ lunaTutorialsPath = do
     lunaTmp   <- lunaTmpPath
     return $ lunaTmp </> (runnerCfg ^. tutorialsDirectory)
 
-atomHomeDir, logsDir, dataStorageDirectory :: MonadRun m => Bool -> m FilePath
+atomHomeDir, logsDir, windowsLogsDir, dataStorageDirectory :: MonadRun m => Bool -> m FilePath
 atomHomeDir          develop = if develop then packageStudioAtomHome     else userStudioAtomHome
 logsDir              develop = if develop then localLogsDirectory        else userLogsDirectory
+windowsLogsDir       develop = if develop then localLogsDirectory        else windowsLogsDirectory
 dataStorageDirectory develop = if develop then localdataStorageDirectory else userdataStorageDirectory
 -- misc runner utils --
 
@@ -195,11 +226,28 @@ setEnv name path = liftIO $ Environment.setEnv name $ encodeString path
 
 copyLunaStudio :: MonadRun m => m ()
 copyLunaStudio = do
+    mainHomePath    <- mainHomeFolder
     packageAtomHome <- packageStudioAtomHome
     atomHomeParent  <- parent <$> userStudioAtomHome
     Shelly.shelly $ do
         Shelly.mkdir_p atomHomeParent
         Shelly.cp_r packageAtomHome atomHomeParent
+    when (currentHost == Windows) $ liftIO $ runProcess_ $ shell $ "attrib +h " <> (encodeString mainHomePath)
+
+copyResourcesLinux :: MonadRun m => m ()
+copyResourcesLinux = when linux $ do
+  runnerCfg <- get @RunnerConfig
+  versionN  <- T.strip <$> versionText
+  resources <- resourcesDirectory
+  localShareFolder <- sharePath
+  let iconsFolder      = resources </> "icons"
+      desktopFile      = resources </> "app_shared.desktop"
+      localDesktop     = localShareFolder </> "applications" </> fromText (T.concat ["LunaStudio", versionN, ".desktop"])
+  Shelly.shelly $ do
+      Shelly.mkdir_p $ parent localShareFolder
+      Shelly.mkdir_p $ parent localDesktop
+      Shelly.cmd "cp" "-r" iconsFolder localShareFolder
+      Shelly.cp desktopFile localDesktop
 
 testDirectory :: MonadIO m => FilePath -> m Bool
 testDirectory path = Shelly.shelly $ Shelly.test_d path
@@ -280,13 +328,31 @@ runBackend forceRun = do
     setEnv "LUNA_STUDIO_CONFIG_PATH"  =<< configPath
     unixOnly $ runLunaEmpire logs "supervisord.conf" forceRun
 
+startServices :: MonadRun m => m ()
+startServices = case currentHost of
+    Windows -> do
+        path <- windowsScriptsPath
+        Shelly.shelly $ Shelly.silently $ Shelly.chdir path $ do
+            let startPath = path </> Shelly.fromText "start.bat"
+            Shelly.cmd startPath
+    _       -> return ()
+
+stopServices :: MonadRun m => m ()
+stopServices = case currentHost of
+    Windows -> do
+        path <- windowsScriptsPath
+        Shelly.shelly $ Shelly.silently $ Shelly.chdir path $ do
+            let stopPath = path </> Shelly.fromText "stop.bat"
+            Shelly.cmd stopPath
+    _       -> return ()
+
 runPackage :: MonadRun m => Bool -> Bool -> m ()
 runPackage develop forceRun = case currentHost of
     Windows -> do
         atom <- atomAppPath
         checkLunaHome
         setEnv "LUNA_STUDIO_DATA_PATH" =<< dataStorageDirectory develop
-        setEnv "LUNA_STUDIO_LOG_PATH"  =<< logsDir              develop
+        setEnv "LUNA_STUDIO_LOG_PATH"  =<< windowsLogsDir       develop
         setEnv "ATOM_HOME"             =<< userStudioAtomHome
         setEnv "LUNA_TMP"              =<< lunaTmpPath
         setEnv "LUNA_PROJECTS"         =<< lunaProjectsPath
@@ -294,7 +360,7 @@ runPackage develop forceRun = case currentHost of
         setEnv "LUNA_USER_INFO"        =<< userInfoPath
         setEnv "LUNA_VERSION_PATH"     =<< versionFilePath
         createStorageDataDirectory develop
-        Shelly.shelly $ Shelly.cmd atom
+        bracket_ startServices stopServices $ Shelly.shelly $ Shelly.cmd atom
 
     _ -> do
         runnerCfg <- get @RunnerConfig
@@ -314,8 +380,9 @@ runPackage develop forceRun = case currentHost of
         setEnv "LUNA_VERSION_PATH"           =<< versionFilePath
         when develop   $ liftIO $ Environment.setEnv "LUNA_STUDIO_DEVELOP" "True"
         createStorageDataDirectory develop
-        unless develop $ checkLunaHome
-
+        unless develop $ do
+            checkLunaHome
+            copyResourcesLinux
         runLunaEmpire logs supervisorConf forceRun
 
 runApp :: MonadRun m => Bool -> Bool -> Maybe String -> m ()
@@ -328,7 +395,8 @@ data Options = Options
     , backend  :: Bool
     , develop  :: Bool
     , forceRun :: Bool
-    , atom     :: Maybe String} deriving Show
+    , atom     :: Maybe String
+    , versioncheck  :: Bool} deriving Show
 
 optionParser :: Parser Options
 optionParser = Options
@@ -337,14 +405,18 @@ optionParser = Options
     <*> switch (long "develop"    <> short 'd')
     <*> switch (long "force-run"  <> short 'r')
     <*> (optional $ strOption $ long "atom" <> short 'a')
+    <*> switch (long "version")
 
-run :: MonadIO m => Options -> m ()
-run (Options frontend backend develop forceRun atom) = evalDefHostConfigs @'[RunnerConfig] $ do
-    if  frontend
-    then runFrontend $ T.pack <$> atom
-    else if backend
-    then runBackend forceRun
-    else runApp develop forceRun atom
+run :: Options -> IO ()
+run (Options frontend backend develop forceRun atom versionCheck) = do
+    hostConfig <- defHostConfig @RunnerConfig
+    flip evalStateT hostConfig $ do
+        if versionCheck then printVersion
+        else if  frontend
+        then runFrontend $ T.pack <$> atom
+        else if backend
+        then runBackend forceRun
+        else runApp develop forceRun atom
 
 filterArg :: String -> Bool
 filterArg = not . List.isInfixOf "-psn"

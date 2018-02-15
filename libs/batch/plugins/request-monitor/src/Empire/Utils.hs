@@ -5,8 +5,6 @@ import           Prologue
 import qualified Text.Show.Pretty as Pretty
 
 
--- similar code is duplicated in BusLogger - consider extracting somewhere
-
 lastPart :: Eq a => a -> [a] -> [a]
 lastPart = lastPartIntern []
 

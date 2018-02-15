@@ -10,6 +10,7 @@ import qualified LunaStudio.API.Atom.Paste                  as AtomPaste
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
 import qualified LunaStudio.API.Control.EmpireStarted       as EmpireStarted
 import qualified LunaStudio.API.Graph.AddConnection         as AddConnection
+import qualified LunaStudio.API.Graph.AddImports            as AddImports
 import qualified LunaStudio.API.Graph.AddNode               as AddNode
 import qualified LunaStudio.API.Graph.AddPort               as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph           as AddSubgraph
@@ -42,6 +43,7 @@ import qualified LunaStudio.API.Graph.Undo                  as Undo
 
 data Event = UnknownEvent                             String
            | AddConnectionResponse             AddConnection.Response
+           | AddImportsResponse                   AddImports.Response
            | AddNodeResponse                         AddNode.Response
            | AddPortResponse                         AddPort.Response
            | AddSubgraphResponse                 AddSubgraph.Response

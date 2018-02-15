@@ -1,4 +1,5 @@
 {View} = require 'atom-space-pen-views'
+logo   = require 'luna-logo'
 
 module.exports =
 class LunaToolbar extends View
@@ -13,9 +14,8 @@ class LunaToolbar extends View
                     class: 'luna-toolbar__container'
                     outlet: 'logoContainer'
                     =>
-                        @img
+                        @div
                             class: 'luna-toolbar__button luna-toolbar__logo'
-                            src: 'atom://luna-studio/rsc/logo.svg'
                             outlet: 'buttonLogo'
                 @div
                     class: 'luna-toolbar__container'
@@ -45,6 +45,7 @@ class LunaToolbar extends View
     attach: =>
         @panel ?= atom.workspace.addLeftPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
+        @buttonLogo[0].innerHTML = logo.generateInAppLogo 48
         @panel.show()
 
     detach: =>

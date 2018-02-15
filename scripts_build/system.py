@@ -29,5 +29,11 @@ else:
 def unix():
     return system in [systems.LINUX, systems.DARWIN]
 
+def linux():
+    return system == systems.LINUX
+
 def windows():
     return system == systems.WINDOWS
+
+def darwin():
+    return system == systems.DARWIN

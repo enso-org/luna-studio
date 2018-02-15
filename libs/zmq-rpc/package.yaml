@@ -1,6 +1,6 @@
 name:       zmq-rpc
 version:    0.0.1
-author:     New Byte Order <contact@newbyteorder.com>
+author:     New Byte Order <contact@luna-lang.org>
 
 default-extensions:
     - NoImplicitPrelude

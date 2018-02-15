@@ -11,7 +11,8 @@
 {-# LANGUAGE ViewPatterns          #-}
 
 module Empire.Commands.Graph
-    ( addNode
+    ( addImports
+    , addNode
     , addNodeCondTC
     , addNodeWithConnection
     , addPort
@@ -96,6 +97,7 @@ import           Control.Monad.State              hiding (when)
 import           Data.Aeson                       (FromJSON, ToJSON)
 import qualified Data.Aeson                       as Aeson
 import qualified Data.Aeson.Text                  as Aeson
+import qualified Data.Bimap                       as Bimap
 import           Data.Coerce                      (coerce)
 import           Data.Char                        (isSeparator, isSpace, isUpper)
 import           Data.Foldable                    (toList)
@@ -134,8 +136,8 @@ import qualified Empire.Commands.GraphUtils       as GraphUtils
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Publisher        as Publisher
 import           Empire.Data.AST                  (InvalidConnectionException (..), EdgeRef, NodeRef, NotInputEdgeException (..),
-                                                   NotUnifyException, PortDoesNotExistException(..), SomeASTException,
-                                                   astExceptionFromException, astExceptionToException)
+                                                   NotUnifyException, PortDoesNotExistException(..), ConnectionException(..),
+                                                   SomeASTException, astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy  as BH
 import           Empire.Data.Graph                (ClsGraph, Graph)
 import qualified Empire.Data.Graph                as Graph
@@ -186,10 +188,32 @@ import qualified LunaStudio.Data.Position         as Position
 import           LunaStudio.Data.Range            (Range(..))
 import qualified LunaStudio.Data.Range            as Range
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrow, replace)
+import           OCI.IR.Name.Qualified            (QualName)
 import qualified Path
 import qualified Safe
 import           System.Directory                 (canonicalizePath)
 import           System.Environment               (getEnv)
+import           GHC.Stack                        (renderStack, whoCreated)
+
+addImports :: GraphLocation -> [Text] -> Empire ()
+addImports loc@(GraphLocation file _) modulesToImport = do
+    newCode <- withUnit (GraphLocation file def) $ do
+        existingImports <- runASTOp getImportsInFile
+        let imports = nativeModuleName : "Std.Base" : existingImports
+        let neededImports = filter (`notElem` imports) modulesToImport
+        code <- use Graph.code
+        let newImports = map (\i -> Text.concat ["import ", i, "\n"]) neededImports
+        return $ Text.concat $ newImports ++ [code]
+    reloadCode loc newCode
+    withUnit (GraphLocation file def) $ do
+        modulesMVar <- view modules
+        importPaths <- liftIO $ getImportPaths loc
+        Lifted.modifyMVar modulesMVar $ \cmpModules -> do
+            res     <- runModuleTypecheck importPaths cmpModules
+            case res of
+                Left err                          -> liftIO (print err) >> return (cmpModules, ())
+                Right (newImports, newCmpModules) -> return (newCmpModules, ())
+
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNode = addNodeCondTC True
@@ -251,7 +275,8 @@ insertFunAfter previousFunction function code = do
                              <> Text.replicate (fromIntegral off') "\n"
             Code.insertAt funBlockStart indentedCode
             LeftSpacedSpan (SpacedSpan _ funLen) <- view CodeSpan.realSpan <$> IR.getLayer @CodeSpan function
-            IR.putLayer @CodeSpan function $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off funLen))
+            let newOffset = if funBlockStart == 0 then 0 else off
+            IR.putLayer @CodeSpan function $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan newOffset funLen))
             return $ Text.length indentedCode
         Just pf -> do
             funBlockStart <- Code.functionBlockStartRef pf
@@ -484,8 +509,8 @@ setOutputTo out = do
     newSeq   <- reconnectOut oldSeq out blockEnd
     traverse_ (updateGraphSeq . Just) newSeq
 
-updateGraphSeq :: GraphOp m => Maybe NodeRef -> m ()
-updateGraphSeq newOut = do
+updateGraphSeqWithWhilelist :: GraphOp m => [NodeRef] -> Maybe NodeRef -> m ()
+updateGraphSeqWithWhilelist whitelist newOut = do
     currentTgt   <- ASTRead.getCurrentASTTarget
     Just outLink <- ASTRead.getFirstNonLambdaLink currentTgt
     oldSeq       <- IR.source outLink
@@ -503,9 +528,12 @@ updateGraphSeq newOut = do
             blockEnd <- Code.getCurrentBlockEnd
             Code.insertAt (blockEnd - noneLen) "None"
             return ()
-    IR.deepDeleteWithWhitelist oldSeq $ Set.fromList $ maybeToList newOut
+    IR.deepDeleteWithWhitelist oldSeq $ Set.union (Set.fromList whitelist) (Set.fromList (maybeToList newOut))
     oldRef <- use $ Graph.breadcrumbHierarchy . BH.self
     when (oldRef == oldSeq) $ for_ newOut (Graph.breadcrumbHierarchy . BH.self .=)
+
+updateGraphSeq :: GraphOp m => Maybe NodeRef -> m ()
+updateGraphSeq newOut = updateGraphSeqWithWhilelist [] newOut
 
 updateCodeSpan' :: GraphOp m => NodeRef -> m _
 updateCodeSpan' ref = IR.matchExpr ref $ \case
@@ -620,8 +648,8 @@ removeExprMarker ref = do
     let newExprMap = Map.filter (/= ref) exprMap
     setExprMap newExprMap
 
-removeSequenceElement :: GraphOp m => NodeRef -> NodeRef -> m (Maybe NodeRef, Bool)
-removeSequenceElement seq ref = IR.matchExpr seq $ \case
+unpinSequenceElement :: GraphOp m => NodeRef -> NodeRef -> m (Maybe NodeRef, Bool)
+unpinSequenceElement seq ref = IR.matchExpr seq $ \case
     IR.Seq l r -> do
         rt <- IR.source r
         if rt == ref
@@ -634,13 +662,14 @@ removeSequenceElement seq ref = IR.matchExpr seq $ \case
                 return (Just lt, True)
             else do
                 lt    <- IR.source l
-                recur <- removeSequenceElement lt ref
+                recur <- unpinSequenceElement lt ref
                 case recur of
                     (Just newRef, True) -> do -- left child changed
                         len    <- IR.getLayer @SpanLength ref
                         indent <- Code.getCurrentIndentationLength
                         Code.gossipLengthsChangedBy (negate $ len + indent + 1) lt
-                        IR.replace newRef lt
+                        ASTModify.substitute newRef lt
+                        IR.delete lt
                         return (Just newRef, False)
                     (Nothing, True)     -> do -- left child removed, right child replaces whole seq
                         roff     <- IR.getLayer @SpanOffset r
@@ -655,11 +684,16 @@ removeSequenceElement seq ref = IR.matchExpr seq $ \case
         Code.removeAt offset (offset + len)
         return (Nothing, True)
 
+unpinFromSequence :: GraphOp m => NodeRef -> m ()
+unpinFromSequence ref = do
+    oldSeq <- ASTRead.getCurrentBody
+    (newS, shouldUpdate) <- unpinSequenceElement oldSeq ref
+    when shouldUpdate (updateGraphSeqWithWhilelist [ref] newS)
+
 removeFromSequence :: GraphOp m => NodeRef -> m ()
 removeFromSequence ref = do
-    oldSeq <- ASTRead.getCurrentBody
-    (newS, shouldUpdate) <- removeSequenceElement oldSeq ref
-    when shouldUpdate (updateGraphSeq newS)
+    unpinFromSequence ref
+    IR.deleteSubtree ref
 
 removePort :: GraphLocation -> OutPortRef -> Empire ()
 removePort loc portRef = do
@@ -786,6 +820,37 @@ connect loc outPort anyPort = do
     resendCode loc
     return connection
 
+reorder :: GraphOp m => NodeId -> NodeId -> m ()
+reorder dst src = do
+    dstDownstream <- getNodeDownstream dst
+    let wouldIntroduceCycle = src `elem` dstDownstream
+    if wouldIntroduceCycle then return () else do
+        dstDownAST    <- mapM ASTRead.getASTRef dstDownstream
+        nodes         <- ASTRead.getCurrentBody >>= AST.readSeq
+        srcAst        <- ASTRead.getASTRef src
+        let srcIndex    = List.elemIndex srcAst nodes
+            downIndices = sortOn snd $ map (\a -> (a, a `List.elemIndex` nodes)) dstDownAST
+            leftToSrc   = map fst $ filter ((< srcIndex) . snd) downIndices
+        let f acc e = do
+                oldSeq   <- ASTRead.getCurrentBody
+                code     <- Code.getCodeOf e
+                unpinFromSequence e
+                blockEnd <- Code.getCurrentBlockEnd
+                oldSeq'   <- ASTRead.getCurrentBody
+                insertAfterAndUpdate oldSeq' (Just acc) e blockEnd code
+                return e
+        foldM f srcAst leftToSrc
+        return ()
+
+getNodeDownstream :: GraphOp m => NodeId -> m [NodeId]
+getNodeDownstream nodeId = do
+    conns <- map (\(a,b) -> (a^.PortRef.srcNodeId, b^.PortRef.dstNodeId)) <$> GraphBuilder.buildConnections
+    (_, output) <- GraphBuilder.getEdgePortMapping
+    let connsWithoutOutput = filter ((/= output) . snd) conns
+        go c n             = let next = map snd $ filter ((== n) . fst) c
+                             in next ++ concatMap (go c) next
+    return $ nodeId : go connsWithoutOutput nodeId
+
 connectPersistent :: GraphOp m => OutPortRef -> AnyPortRef -> m Connection
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     -- FIXME[MK]: passing the `generateNodeName` here is a hack arising from cyclic module deps. Need to remove together with modules refactoring.
@@ -798,6 +863,15 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst
             var <- ASTRead.getASTVar srcNodeId
             setOutputTo var
     srcAst <- ASTRead.getASTOutForPort srcNodeId srcPort
+    (input, output) <- GraphBuilder.getEdgePortMapping
+    when (input /= srcNodeId && output /= dstNodeId) $ do
+        src'   <- ASTRead.getASTRef srcNodeId
+        dstAst <- ASTRead.getASTRef dstNodeId
+        s      <- ASTRead.getCurrentBody
+        nodes  <- AST.readSeq s
+        let srcPos = List.elemIndex src' nodes
+            dstPos = List.elemIndex dstAst nodes
+        when (dstPos < srcPos) $ reorder dstNodeId srcNodeId
     case dstPort of
         [] -> makeWhole srcAst dstNodeId
         _  -> makeInternalConnection srcAst dstNodeId dstPort
@@ -809,8 +883,20 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' ds
             connectPersistent src (InPortRef' (InPortRef d []))
         _ : _ -> throwM InvalidConnectionException
 
+
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
-connectNoTC loc outPort anyPort = runASTOp $ connectPersistent outPort anyPort
+connectNoTC loc outPort anyPort = runASTOp $ do
+    (inputSidebar, outputSidebar) <- GraphBuilder.getEdgePortMapping
+    let OutPortRef (convert -> outNodeId) outPortId = outPort
+        inNodeId = anyPort ^. PortRef.nodeId
+        inPortId = anyPort ^. PortRef.portId
+    let codeForId id | id == inputSidebar  = return "input sidebar"
+                     | id == outputSidebar = return "output sidebar"
+                     | otherwise           = ASTRead.getASTPointer id >>= Code.getCodeOf
+    outNodeCode <- codeForId outNodeId `catch` (\(_e::SomeASTException) -> return "unknown code")
+    inNodeCode  <- codeForId inNodeId `catch` (\(_e::SomeASTException) -> return "unknown code")
+    connectPersistent outPort anyPort `catch` (\(e::SomeASTException) ->
+        throwM $ ConnectionException outNodeId outNodeCode outPortId inNodeId inNodeCode inPortId e)
 
 data SelfPortDefaultException = SelfPortDefaultException InPortRef
     deriving (Show)
@@ -1414,8 +1500,10 @@ insertCodeBetween beforeNodes afterNodes codeToInsert = do
 
 generateCollapsedDefCode :: GraphOp m => Text -> [OutPortRef] -> [OutPortRef] -> [NodeId] -> m (Text, Text, Maybe Text, Position)
 generateCollapsedDefCode defName inputs outputs bodyIds = do
+    (inputSidebar, _) <- GraphBuilder.getEdgePortMapping
     inputNames <- fmap (map (view _2) . sortOn fst) $ forM inputs $ \(OutPortRef (NodeLoc _ nodeId) pid) -> do
-        position <- fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
+        position <- if nodeId == inputSidebar then return def
+                                              else fmap (view NodeMeta.position) <$> AST.getNodeMeta nodeId
         name     <- ASTRead.getASTOutForPort nodeId pid >>= ASTRead.getVarName
         return (position, name)
     outputNames <- forM outputs $ \(OutPortRef (NodeLoc _ nodeId) pid) ->
@@ -1446,7 +1534,7 @@ generateCollapsedDefCode defName inputs outputs bodyIds = do
     returnBody <- case outputNames of
         []  -> do
             let lastNode = snd $ unsafeLast codeBegs
-            ASTRead.getNameOf lastNode
+            handle (\(e::NotUnifyException) -> return Nothing) (Just <$> (ASTRead.getVarNode lastNode >>= Code.getCodeOf))
         [a] -> return $ Just $ convert a
         _   -> return $ Just $ "(" <> Text.intercalate ", " (convert <$> outputNames) <> ")"
     let returnLine = case returnBody of
@@ -1468,7 +1556,8 @@ collapseToFunction loc@(GraphLocation file _) nids = do
         newName = generateNewFunctionName names "func"
     (defCode, useVarName, outputPosition) <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids
-        connections <- GraphBuilder.buildConnections
+        connections       <- GraphBuilder.buildConnections
+        (inputSidebar, _) <- GraphBuilder.getEdgePortMapping
         let srcInIds = flip Set.member ids . view PortRef.srcNodeId . fst
             dstInIds = flip Set.member ids . view PortRef.dstNodeId . snd
             inConns  = filter (\x -> dstInIds x && not (srcInIds x)) connections
@@ -1478,7 +1567,8 @@ collapseToFunction loc@(GraphLocation file _) nids = do
         let outputs  = nub $ fst <$> outConns'
             useSites = outConns' ^.. traverse . _2 . PortRef.dstNodeId
         (defCode, useCode, useVarName, outputPosition) <- generateCollapsedDefCode newName inputs outputs nids
-        insertCodeBetween useSites (view PortRef.srcNodeId <$> inputs) useCode
+        let inputsNodeIds = List.delete inputSidebar $ map (view PortRef.srcNodeId) inputs
+        insertCodeBetween useSites inputsNodeIds useCode
         return (defCode, useVarName, outputPosition)
     code <- insertCodeBeforeFunction loc defCode
     reloadCode  loc code
@@ -1667,23 +1757,26 @@ pasteText loc@(GraphLocation file _) ranges (Text.concat -> text) = do
 nativeModuleName :: Text
 nativeModuleName = "Native"
 
+getImportsInFile :: ClassOp m => m [Text]
+getImportsInFile = do
+    unit <- use Graph.clsClass
+    IR.matchExpr unit $ \case
+        IR.Unit imps _ _ -> do
+            imps' <- IR.source imps
+            IR.matchExpr imps' $ \case
+                IR.UnresolvedImportHub imps -> forM imps $ \imp -> do
+                    imp' <- IR.source imp
+                    IR.matchExpr imp' $ \case
+                        IR.UnresolvedImport a _ -> do
+                            a' <- IR.source a
+                            IR.matchExpr a' $ \case
+                                IR.UnresolvedImportSrc n -> case n of
+                                    Term.Absolute n -> return $ convert n
+        IR.ClsASG{} -> return [] -- why does it put ClsASG and not Unit when file does not parse???
+
 getAvailableImports :: GraphLocation -> Empire [ImportName]
 getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Breadcrumb [])) $ do
-    explicitImports <- runASTOp $ do
-        unit <- use Graph.clsClass
-        IR.matchExpr unit $ \case
-            IR.Unit imps _ _ -> do
-                imps' <- IR.source imps
-                IR.matchExpr imps' $ \case
-                    IR.UnresolvedImportHub imps -> forM imps $ \imp -> do
-                        imp' <- IR.source imp
-                        IR.matchExpr imp' $ \case
-                            IR.UnresolvedImport a _ -> do
-                                a' <- IR.source a
-                                IR.matchExpr a' $ \case
-                                    IR.UnresolvedImportSrc n -> case n of
-                                        Term.Absolute n -> return $ convert n
-            IR.ClsASG{} -> return [] -- why does it put ClsASG and not Unit when file does not parse???
+    explicitImports <- runASTOp getImportsInFile
     let implicitImports = Set.fromList [nativeModuleName, "Std.Base"]
         resultSet       = Set.fromList explicitImports `Set.union` implicitImports
     return $ Set.toList resultSet
@@ -1719,24 +1812,37 @@ filterPrimMethods (Module.Imports classes funs) = Module.Imports classes properF
         properFuns = Map.filterWithKey (\k _ -> not $ isPrimMethod k) funs
         isPrimMethod (nameToString -> n) = "prim" `List.isPrefixOf` n || n == "#uminus#"
 
-getImports :: GraphLocation -> [ImportName] -> Empire ImportsHints
-getImports (GraphLocation file _) imports = do
+qualNameToText :: QualName -> Text
+qualNameToText = convert
+
+getImports :: GraphLocation -> [Text] -> Empire ImportsHints
+getImports loc _ = getSearcherHints loc
+
+getImportPaths :: GraphLocation -> IO (Map.Map IR.Name FilePath)
+getImportPaths (GraphLocation file _) = do
     lunaroot        <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
     currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
     let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
+    return $ Map.fromList importPaths
+
+getSearcherHints :: GraphLocation -> Empire ImportsHints
+getSearcherHints (GraphLocation file _) = do
+    currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
+    projectSources  <- liftIO $ case currentProjPath of
+        Nothing -> return []
+        Just p  -> Bimap.elems <$> Project.findProjectSources p
+    lunaroot        <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
+    lunaRootSources <- liftIO $ Project.findProjectSources =<< Path.parseAbsDir (lunaroot <> "/Std")
+    let stdModules   = map ((Text.append "Std.") . qualNameToText) $ Bimap.elems lunaRootSources
+    let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
     importsMVar     <- view modules
-    hints <- forM imports $ \i -> do
-        cmpModules <- liftIO $ readMVar importsMVar
-        if i == nativeModuleName then return (i, cmpModules ^. Compilation.prims . to filterPrimMethods) else do
-            case Map.lookup (convert i) (cmpModules ^. Compilation.modules) of
-                Just m -> return (i, m)
-                _      -> do
-                    Lifted.modifyMVar importsMVar $ \imps -> do
-                        (f, nimps) <- withUnit (GraphLocation file (Breadcrumb [])) $ do
-                            let defaultModule = (Module.Imports def def, Compilation.CompiledModules def def)
-                            fromRight defaultModule <$> runModuleTypecheck (Map.fromList importPaths) imps
-                        return (nimps, (i, f))
-    return $ Map.fromList $ map (_2 %~ importsToHints) hints
+    cmpModules  <- liftIO $ readMVar importsMVar
+    std         <- liftIO $ Compilation.requestModules (Map.fromList importPaths) (map convert stdModules) cmpModules
+    proj        <- liftIO $ Compilation.requestModules (Map.fromList importPaths) projectSources cmpModules
+    stdImports  <- either (\e -> liftIO (print e) >> return def) (return . fst) std
+    projImports <- either (\e -> liftIO (print e) >> return def) (return . fst) std
+    let allImports = Map.union stdImports projImports
+    return $ Map.fromList $ map (\(a, b) -> (qualNameToText a, importsToHints b)) $ Map.toList allImports
 
 setInterpreterState :: Interpreter.Request -> Empire ()
 setInterpreterState (Interpreter.Start loc) = do
@@ -1871,8 +1977,13 @@ prepareGraphError :: SomeException -> ErrorAPI.Error ErrorAPI.GraphError
 prepareGraphError e | Just (BH.BreadcrumbDoesNotExistException content) <- fromException e = ErrorAPI.Error ErrorAPI.BreadcrumbDoesNotExist . convert $ show content
                     | otherwise                                                            = ErrorAPI.Error ErrorAPI.OtherGraphError        . convert $ displayException e
 
-prepareLunaError :: SomeException -> ErrorAPI.Error ErrorAPI.LunaError
+prettyException :: Exception e => e -> IO String
+prettyException e = do
+    stack <- whoCreated e
+    return $ displayException e ++ "\n" ++ renderStack stack
+
+prepareLunaError :: SomeException -> IO (ErrorAPI.Error ErrorAPI.LunaError)
 prepareLunaError e = case prepareGraphError e of
-    ErrorAPI.Error ErrorAPI.OtherGraphError _ -> ErrorAPI.Error ErrorAPI.OtherLunaError . convert $ displayException e
-    ErrorAPI.Error tpe content                -> ErrorAPI.Error (ErrorAPI.Graph tpe) content
+    ErrorAPI.Error ErrorAPI.OtherGraphError _ -> (ErrorAPI.Error ErrorAPI.OtherLunaError . convert) <$> prettyException e
+    ErrorAPI.Error tpe content                -> return $ ErrorAPI.Error (ErrorAPI.Graph tpe) content
 

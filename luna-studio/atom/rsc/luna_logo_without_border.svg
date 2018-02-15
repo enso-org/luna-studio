@@ -31,5 +31,5 @@
       </g>
 
     </defs>
-    <use xlink:href="#logo" fill="#CF1C3B" transform="scale(2.8125)"/>
+    <use xlink:href="#logo" fill="rgb(255,255,255)" opacity="0.2" transform="scale(2.8125)"/>
   </svg>

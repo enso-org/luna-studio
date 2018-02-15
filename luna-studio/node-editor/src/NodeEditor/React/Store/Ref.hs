@@ -39,5 +39,5 @@ continueModify action = liftIO . flip modifyStoreNoCommit (return . runState' ac
 commit :: Typeable s => Ref s -> Command a ()
 commit = liftIO . storeCommit
 
-get :: Ref p -> Command s p
+get :: MonadIO m => Ref p -> m p
 get rf = _dt <$> liftIO (getStoreData rf)

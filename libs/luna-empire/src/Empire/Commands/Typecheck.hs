@@ -166,15 +166,19 @@ getCurrentScope imports file = do
         Just f -> return f
         _      -> recomputeCurrentScope imports file
 
+stop :: Command InterpreterEnv ()
+stop = do
+    cln <- use cleanUp
+    threads <- use listeners
+    listeners .= []
+    liftIO $ mapM killThread threads
+    liftIO cln
+
 run :: MVar CompiledModules -> GraphLocation -> Bool -> Bool -> Command InterpreterEnv ()
 run imports loc@(GraphLocation file br) interpret recompute = do
-    cln        <- use cleanUp
-    threads    <- use listeners
-    listeners .= []
+    stop
     case br of
         Breadcrumb [] -> do
-            liftIO $ mapM killThread threads
-            liftIO cln
             void $ recomputeCurrentScope imports file
         _             -> do
             std        <- liftIO $ readMVar imports
@@ -184,8 +188,6 @@ run imports loc@(GraphLocation file br) interpret recompute = do
                 runTC imps
                 updateNodes  loc
                 {-updateMonads loc-}
-                liftIO $ mapM killThread threads
-                liftIO cln
                 when interpret $ do
                     scope <- runInterpreter file imps
                     traverse_ (updateValues loc) scope

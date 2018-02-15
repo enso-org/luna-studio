@@ -41,12 +41,18 @@ type instance Outputs    Attr  PatternTransformation = '[]
 type instance Outputs    Event PatternTransformation = '[New // AnyExpr, New // AnyExprLink, Delete // AnyExpr, Delete // AnyExprLink, OnDeepDelete // AnyExpr]
 type instance Preserves        PatternTransformation = '[]
 
-runPatternTransformation :: (MonadRef m, MonadPassManager m) => Pass PatternTransformation m
+runPatternTransformation :: (MonadRef m, MonadPassManager m, MonadThrow m) => Pass PatternTransformation m
 runPatternTransformation = do
     roots <- unwrap <$> getAttr @ExprRoots
     mapM_ transformPatterns roots
 
-dumpConsApplication :: (MonadRef m, MonadPassManager m) => Expr Draft -> SubPass PatternTransformation m (Name, [Expr Draft], [Link (Expr Draft) (Expr Draft)])
+data ParseError = ParseError P.String
+    deriving (Show)
+
+instance Exception ParseError where
+    displayException (ParseError s) = "Parse error: " <> s
+
+dumpConsApplication :: (MonadRef m, MonadPassManager m, MonadThrow m) => Expr Draft -> SubPass PatternTransformation m (Name, [Expr Draft], [Link (Expr Draft) (Expr Draft)])
 dumpConsApplication expr = matchExpr expr $ \case
     Grouped g -> dumpConsApplication =<< source g
     Cons n _  -> return (n, [], [])
@@ -54,8 +60,9 @@ dumpConsApplication expr = matchExpr expr $ \case
         (n, args, links) <- dumpConsApplication =<< source f
         arg <- source a
         return (n, arg : args, a:links)
+    _         -> throwM $ ParseError "Invalid pattern match in code"
 
-flattenPattern :: (MonadRef m, MonadPassManager m) => Expr Draft -> SubPass PatternTransformation m (Expr Draft)
+flattenPattern :: (MonadRef m, MonadPassManager m, MonadThrow m) => Expr Draft -> SubPass PatternTransformation m (Expr Draft)
 flattenPattern expr = matchExpr expr $ \case
     Grouped g -> do
         a <- flattenPattern =<< source g
@@ -88,7 +95,7 @@ flattenPattern expr = matchExpr expr $ \case
         return res
     _         -> return expr
 
-transformPatterns :: (MonadRef m, MonadPassManager m) => Expr Draft -> SubPass PatternTransformation m ()
+transformPatterns :: (MonadRef m, MonadPassManager m, MonadThrow m) => Expr Draft -> SubPass PatternTransformation m ()
 transformPatterns expr = matchExpr expr $ \case
     Lam i o   -> do
         inp <- source i

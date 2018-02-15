@@ -17,14 +17,14 @@ import qualified NodeEditor.State.Global            as Global
 
 
 loadGraph :: GraphLocation -> Maybe (GraphLocation, LocationSettings) -> Bool -> Command State ()
-loadGraph location prevSettings enterMain = do
+loadGraph location prevSettings retrieveLocation = do
     resetGraph
     visLibPath <- liftIO $ getVisualizersLibraryPath
     modifyNodeEditor $ visualizersLibPath .= visLibPath
     setGraphStatus GraphLoading
     modifyApp $ workspace . _Just . currentLocation .= location
     Atom.setActiveLocation location
-    Batch.getProgram prevSettings enterMain
+    Batch.getProgram prevSettings retrieveLocation
 
 navigateToGraph :: GraphLocation -> Command State ()
 navigateToGraph location = do

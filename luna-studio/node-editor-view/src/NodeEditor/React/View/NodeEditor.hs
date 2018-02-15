@@ -86,7 +86,7 @@ nodeEditor = React.defineView name $ \(ref, ne, isTopLevel) -> do
         GraphError e -> div_ ["className" $= Style.prefixFromList [ "graph-container", "graph-container--error" ] ] $ do
             graph_ ref ne isTopLevel
             div_ ["className" $= Style.prefix "graph-error"] $ div_ ["className" $= Style.prefix "graph-error__message"] $ elemString $ convert $ e ^. errorContent
-            
+
 
 graph_ :: IsRef r => r -> NodeEditor -> Bool -> ReactElementM ViewEventHandler ()
 graph_ ref ne isTopLevel = React.viewWithSKey graph name (ref, ne, isTopLevel) mempty
@@ -110,8 +110,8 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
         visWithSelection = map (\vis -> (vis, NodeEditor.isVisualizationNodeSelected vis ne)) visualizations
         mayEditedTextPortControlPortRef = ne ^. NodeEditor.textControlEditedPortRef
     div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
-                                               <> if isAnyFullscreen          then ["studio-window--has-visualization-fullscreen"] else []
-                                               <> if maybeSearcher /= Nothing then ["studio-window--has-searcher"]                 else []
+                                               <> if isAnyFullscreen      then ["studio-window--has-visualization-fullscreen"] else []
+                                               <> if isJust maybeSearcher then ["studio-window--has-searcher"]                 else []
                                                )
          , "key" $= "studio-window"] $ do
 

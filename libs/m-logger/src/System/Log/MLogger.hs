@@ -4,10 +4,10 @@ module System.Log.MLogger (
     module X,
 ) where
 
-import           Prelude                     (fail)
 import qualified Data.Maybe                  as Maybe
 import qualified Data.String.Utils           as StringUtils
-import           Prologue                    hiding (log, fail)
+import           Prelude                     (fail)
+import           Prologue                    hiding (fail, log)
 import qualified System.Console.ANSI         as ANSI
 import           System.IO                   (stderr)
 import           System.Log.Logger           (Priority (..))
@@ -25,42 +25,7 @@ getLogger name action msg = action msg name
 
 log :: MonadIO m => Priority -> String -> String -> m ()
 log pri msg name = liftIO $ do
-    let sgr   = case pri of
-                   DEBUG       -> [ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Magenta]
-                   INFO        -> [ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Green  ]
-                   WARNING     -> [ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Yellow ]
-                   ERROR       -> [ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Red    ]
-                   CRITICAL    -> [ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Red    ]
-
-        componentsOfName :: String -> [String]
-        componentsOfName n =
-          let joinComp [] _ = []
-              joinComp (x:xs) [] = x : joinComp xs x
-              joinComp (x:xs) accum =
-                  let newlevel = accum <> "." <> x in
-                      newlevel : joinComp xs newlevel
-              in
-              HSLogger.rootLoggerName : joinComp (StringUtils.split "." n) []
-
-        parentLoggers [] = return []
-        parentLoggers n = do
-            let pname = (unsafeHead . drop 1 . reverse . componentsOfName) n
-            parent <- HSLogger.getLogger pname
-            next <- parentLoggers pname
-            return (parent : next)
-
-        getLoggerPriority :: String -> IO Priority
-        getLoggerPriority n = do
-            l <- HSLogger.getLogger n
-            pl <- parentLoggers n
-            case Maybe.mapMaybe HSLogger.getLevel (l : pl) of
-                [] -> return HSLogger.DEBUG
-                (x:_) -> return x
-
-    lpri <- getLoggerPriority name
-    when (pri >= lpri) $ ANSI.hSetSGR stderr sgr
-    HSLogger.logM name pri msg
-    when (pri >= lpri) $ ANSI.hSetSGR stderr []
+  HSLogger.logM name pri (show pri <> " " <> msg)
 
 trace, debug, info, warning, error, critical :: MonadIO m => String -> String -> m ()
 trace    = log DEBUG

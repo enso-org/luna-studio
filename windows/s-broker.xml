@@ -1,0 +1,22 @@
+
+<configuration>
+  <id>s-broker</id>
+  <name>Luna Broker Service</name>
+  <description>Communication bus for Luna backend</description>
+  <executable>%BASE%\..\..\bin\private\broker.exe</executable>
+  <startmode>manual</startmode>
+
+  <onfailure action="restart" delay="1 sec"/>
+  <onfailure action="restart" delay="1 sec"/>
+  <onfailure action="restart" delay="1 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+
+  <resetfailure>1 hour</resetfailure>
+
+  <env name="LUNAROOT" value="%BASE%\..\env" />
+  <env name="LUNA_STUDIO_LOG_PATH" value="%BASE%\..\logs" />
+
+  <logpath>%LUNA_STUDIO_LOG_PATH%</logpath>
+  <log mode="roll-by-size">
+  </log>
+</configuration>

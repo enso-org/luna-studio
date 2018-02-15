@@ -64,6 +64,12 @@ addConnection src dst = do
     collaborativeModify [nl]
     withWorkspace $ BatchCmd.addConnection src dst
 
+addImport :: Text -> Command State ()
+addImport = addImports . return
+
+addImports :: [Text] -> Command State ()
+addImports = withWorkspace . BatchCmd.addImports
+
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Command State ()
 addNode nl expr nm connectTo = withWorkspace $ BatchCmd.addNode nl expr nm connectTo
 

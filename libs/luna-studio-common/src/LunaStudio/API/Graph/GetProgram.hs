@@ -24,7 +24,7 @@ import           Prologue                             hiding (TypeRep)
 
 data Request = Request { _location             :: GraphLocation
                        , _prevLocationSettings :: Maybe (GraphLocation, LocationSettings)
-                       , _enterMain            :: Bool
+                       , _retrieveLocation     :: Bool
                        } deriving (Eq, Generic, Show)
 
 data Result  = Result  { _graph            :: Either (Error GraphError) Graph

@@ -33,6 +33,9 @@
             onEachFeature: function (f, l) {
                 if (f.properties && f.properties.popupContent)
                     l.bindPopup(f.properties.popupContent);
+            },
+            pointToLayer: function (f, l) {
+                return L.circleMarker(l, { radius: 6, fillColor: "#e74c3c", color: "white", fillOpacity: 1, weight: 1 });
             }
         });
         layer.addTo(map);
@@ -47,6 +50,9 @@
                 onEachFeature: function (f, l) {
                     if (f.properties && f.properties.popupContent)
                         l.bindPopup(f.properties.popupContent);
+                },
+                pointToLayer: function (f, l) {
+                    return L.circleMarker(l, { radius: 6, fillColor: "#e74c3c", color: "white", fillOpacity: 1, weight: 1 });
                 }
             })
             layer.addTo(map);

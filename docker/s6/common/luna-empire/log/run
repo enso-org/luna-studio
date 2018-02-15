@@ -1,3 +1,0 @@
-#!/bin/sh
-
-s6-log -bp n20 s1000000 T 1 T /var/log/luna-empire

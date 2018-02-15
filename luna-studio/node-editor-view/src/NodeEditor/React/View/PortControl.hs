@@ -13,7 +13,7 @@ import           LunaStudio.Data.PortRef     (InPortRef (InPortRef))
 import           LunaStudio.Data.TypeRep     (TypeRep (TCons))
 import           NodeEditor.Data.Slider      (InitValue (Continous, Discrete))
 import qualified NodeEditor.Event.UI         as UI
-import qualified NodeEditor.React.Event.Node as Node
+import qualified NodeEditor.React.Event.Port as Port
 import           NodeEditor.React.IsRef      (IsRef, dispatch)
 import           NodeEditor.React.Model.Node (NodeLoc)
 import           NodeEditor.React.Model.Port (InPort)
@@ -108,7 +108,7 @@ portControl = React.defineView "portControl" $ \(ref, nl, port, isTextEdited) ->
                         let tConsElem :: PortDefault.PortValue -> ReactElementM ViewEventHandler ()
                             tConsElem zeroValue = button_
                                 [ "className" $= Style.prefix "ctrl--set"
-                                , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef $ PortDefault.Constant zeroValue
+                                , onClick $ \_ _ -> dispatch ref $ UI.PortEvent $ Port.PortSetPortDefault portRef $ PortDefault.Constant zeroValue
                                 ] $ elemString "set"
                         case port ^. Port.valueType of
                             TCons "Int"  _ -> tConsElem $ PortDefault.IntValue  def
@@ -123,14 +123,14 @@ portControl = React.defineView "portControl" $ \(ref, nl, port, isTextEdited) ->
                             div_
                                 [ "className" $= Style.prefixFromList [ "ctrl--slider", "ctrl--slider--int" ]
                                 --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
-                                , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Discrete value)
+                                , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.PortEvent $ Port.PortInitSlider m portRef $ Discrete value)
                                 ] $ elemString $ show value
                         TCons "Real" _ -> do
                             let value = fromMaybe 0.0 $ defVal ^? PortDefault._Constant . PortDefault._RealValue
                             div_
                                 [ "className" $= Style.prefixFromList [ "ctrl--slider", "ctrl--slider--real" ]
                                 --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
-                                , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Continous value)
+                                , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.PortEvent $ Port.PortInitSlider m portRef $ Continous value)
                                 ] $ do
                                     let val = show $ roundTo 3 value
                                     div_ [ "className" $= Style.prefix "ctrl--slider__left"  ] $ elemString $ integer val
@@ -145,16 +145,16 @@ portControl = React.defineView "portControl" $ \(ref, nl, port, isTextEdited) ->
                                 , "className" $= className
                                 , valProp     $= convert value
                                 , onMouseDown $ \e _ -> [stopPropagation e]
-                                , onFocus     $ \e _ -> dispatch ref (UI.NodeEvent $ Node.EditTextPortControl portRef (convert value))
+                                , onFocus     $ \e _ -> dispatch ref (UI.PortEvent $ Port.EditTextPortControl portRef (convert value))
                                 , onChange    $ \e   -> let val = target e "value" in
-                                                     dispatch ref (UI.NodeEvent $ Node.EditTextPortControl portRef val)
-                                , onBlur      $ \e _ -> dispatch ref (UI.NodeEvent Node.EditTextPortControlBlur)
+                                                     dispatch ref (UI.PortEvent $ Port.EditTextPortControl portRef val)
+                                , onBlur      $ \e _ -> dispatch ref (UI.PortEvent $ Port.EditTextPortControlBlur portRef)
                                 ]
                         TCons "Bool" _ -> do
                             let value = fromMaybe True $ defVal ^? PortDefault._Constant . PortDefault._BoolValue
                                 defaultValue = PortDefault.Constant $ PortDefault.BoolValue $ not value
                             div_
-                                [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
+                                [ onClick $ \_ _ -> dispatch ref $ UI.PortEvent $ Port.PortSetPortDefault portRef defaultValue
                                 , "className" $= Style.prefix ("ctrl--bool--" <> jsShow value)
                                 ] mempty
                         _ -> elemString ""

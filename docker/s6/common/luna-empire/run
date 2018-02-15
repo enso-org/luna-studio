@@ -1,3 +1,0 @@
-#!/bin/sh
-export LUNAROOT=/etc/nodelab
-/usr/local/bin/nodelab/luna-empire -v0  2>&1

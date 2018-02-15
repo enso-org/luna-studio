@@ -22,6 +22,7 @@ type Handler = BSL.ByteString -> StateT Env BusT ()
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
     [ makeHandler Graph.handleAddConnection
+    , makeHandler Graph.handleAddImports
     , makeHandler Graph.handleAddNode
     , makeHandler Graph.handleAddPort
     , makeHandler Graph.handleAddSubgraph

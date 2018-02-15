@@ -91,7 +91,7 @@ visualizersMenu = React.defineView visMenuName $ \(ref, visParent, visId, actVis
     when (Map.size visualizersMap > 1 || (Map.size visualizersMap == 1 && Map.notMember actVisName visualizersMap)) $ do
         let menuEntry :: Text -> ReactElementM ViewEventHandler ()
             menuEntry name = when (name /= actVisName) $
-                li_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.SelectVisualizer visParent visId name ] $ elemString $ convert name
+                li_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Event visParent $ Visualization.SelectVisualizer visId name ] $ elemString $ convert name
         div_
             [ "className" $= Style.prefix (if visible then "dropdown" else "hide")
             ] $ do
@@ -108,7 +108,7 @@ visualization = React.defineView viewName $ \(ref, visLibPath, visParent, vis, i
         vmode          = vis ^. visualizationMode
         visualizer     = vis ^. runningVisualizer
         coverHandler   = if vmode == Default
-            then [ onClick $ \_ _   -> dispatch ref $ UI.VisualizationEvent $ Visualization.Focus visParent visId]
+            then [ onClick $ \_ _   -> dispatch ref $ UI.VisualizationEvent $ Visualization.Event visParent $ Visualization.Focus visId]
             else [ onWheel $ \e _ _ -> [stopPropagation e, preventDefault e] ]
     div_
         [ "className" $= Style.prefixFromList [ "noselect", "visualization-container" ]

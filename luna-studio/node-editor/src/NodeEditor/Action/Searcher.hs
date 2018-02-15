@@ -24,6 +24,7 @@ import           LunaStudio.Data.Vector2                    (Vector2 (Vector2))
 import           NodeEditor.Action.Basic                    (createNode, localClearSearcherHints, localUpdateSearcherHints, modifyCamera,
                                                              renameNode, renamePort, setNodeExpression, updateDocs)
 import qualified NodeEditor.Action.Basic                    as Basic
+import           NodeEditor.Action.Batch                    (addImport)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.App                (renderIfNeeded)
@@ -74,6 +75,11 @@ emptyInputError m = fieldName <> " cannot be empty." where
 
 clearSearcherError :: Command State ()
 clearSearcherError = modifySearcher $ Searcher.searcherError .= def
+
+editSelectedNodeExpression :: Command State ()
+editSelectedNodeExpression = getSelectedNodes >>= \case
+    [n] -> editExpression $ n ^. ExpressionNode.nodeLoc
+    _   -> return ()
 
 editExpression :: NodeLoc -> Command State ()
 editExpression nodeLoc = do
@@ -195,8 +201,10 @@ handleTabPressed action = withJustM getSearcher $ \s ->
 updateInputWithSelectedHint :: Searcher -> Command State Bool
 updateInputWithSelectedHint action = getSearcher >>= maybe (return False) updateWithSearcher where
     updateWithSearcher s = if s ^. Searcher.selected == 0 then return True else do
-        let mayExpr         = s ^? Searcher.selectedMatch . _Just . NS.name
+        let mayMatch        = s ^. Searcher.selectedMatch
+            mayExpr         = (view NS.name) <$> mayMatch
             mayDividedInput = s ^? Searcher.input . Searcher._Divided
+        withJust mayMatch includeImport
         withJust ((,) <$> mayExpr <*> mayDividedInput) $ \(expr, divInput) -> do
             let divInput' = divInput & Searcher.query .~ expr'
                 lastChar = divInput ^? Searcher.suffix . ix 0
@@ -264,6 +272,9 @@ updateInputWithHint hintNum' action = let hintNum = (hintNum' - 1) `mod` 10 in
     withJustM (view Searcher.selected `fmap2` getSearcher) $ \selected ->
         whenM_ (selectHint (max selected 1 + hintNum) action) $
             updateInputWithSelectedHint action
+
+includeImport :: NS.Match -> Command State ()
+includeImport m = withJust (m ^. NS.importInfo) $ \ii -> unless (ii ^. NS.imported) . addImport $ ii ^. NS.importName
 
 selectHint :: Int -> Searcher -> Command State Bool
 selectHint i _ = do

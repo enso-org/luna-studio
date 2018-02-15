@@ -2,8 +2,8 @@
 module NodeEditor.Event.Shortcut where
 
 import           Common.Analytics  (IsTrackedEvent)
-import           Common.Prelude
 import           Common.Data.Event (EventName (eventName))
+import           Common.Prelude
 import           Data.Aeson        (FromJSON)
 
 
@@ -51,6 +51,7 @@ data Command = Cancel
              | ZoomVisualization
              -- searcher
              | SearcherOpen
+             | SearcherEditExpression
              -- undo/redo
              | Undo
              | Redo

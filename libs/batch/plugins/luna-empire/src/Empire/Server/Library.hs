@@ -35,8 +35,9 @@ handleCreateLibrary req@(Request _ _ request) = do
         (request ^. CreateLibrary.libraryName)
         (fromString $ request ^. CreateLibrary.path)
     case result of
-        Left (exc :: SomeASTException) ->
-            let err = prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (library, newEmpireEnv) -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ CreateLibrary.Result $_NOT_IMPLEMENTED $ DataLibrary.toAPI library
@@ -48,8 +49,9 @@ handleListLibraries req@(Request _ _ request) = do
     empireNotifEnv   <- use Env.empireNotif
     result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries
     case result of
-        Left (exc :: SomeASTException) ->
-            let err = prepareLunaError $ toException exc in replyFail logger err req (Response.Error err)
+        Left (exc :: SomeASTException) -> do
+            err <- liftIO $ prepareLunaError $ toException exc
+            replyFail logger err req (Response.Error err)
         Right (librariesList, newEmpireEnv) -> do
             Env.empireEnv .= newEmpireEnv
             let libraries = zip [0..] (map DataLibrary.toAPI librariesList)

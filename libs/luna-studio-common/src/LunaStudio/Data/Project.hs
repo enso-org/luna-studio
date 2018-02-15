@@ -1,8 +1,8 @@
 module LunaStudio.Data.Project where
 
-import           Data.Aeson.Types                     (ToJSON)
 import qualified Control.Lens.Aeson                   as Lens
 import           Data.Aeson                           (FromJSON (parseJSON), ToJSON (toEncoding, toJSON))
+import           Data.Aeson.Types                     (ToJSON)
 import           Data.Binary                          (Binary)
 import           Data.Binary                          (Binary (..))
 import           Data.Hashable                        (Hashable)
@@ -19,6 +19,8 @@ import           LunaStudio.Data.Library              (Library)
 import           LunaStudio.Data.NodeValue            (Visualizer)
 import           LunaStudio.Data.TypeRep              (TypeRep)
 import           Prologue                             hiding (TypeRep)
+import           System.FilePath                      (splitDirectories)
+import           System.IO                            (hFlush, stdout)
 
 
 type ProjectId = UUID
@@ -34,16 +36,16 @@ instance ToJSON Project
 
 
 --TODO: Add and handle this: _breadcrumbVisualizerPreferences :: HashMap TypeRep Visualizer
-data BreadcrumbSettings = BreadcrumbSettings { _breadcrumbCameraSettings        :: CameraTransformation
+data BreadcrumbSettings = BreadcrumbSettings { _breadcrumbCameraSettings :: CameraTransformation
                                              } deriving (Eq, Generic, Show)
 
---TODO: Add and handle this: _moduleCurrentBreadcrumb :: Breadcrumb Text
-data ModuleSettings = ModuleSettings { _typeRepToVisMap     :: HashMap TypeRep Visualizer
+data ModuleSettings = ModuleSettings { _currentBreadcrumb   :: Breadcrumb Text
+                                     , _typeRepToVisMap     :: HashMap TypeRep Visualizer
                                      , _breadcrumbsSettings :: Map (Breadcrumb Text) BreadcrumbSettings
                                      } deriving (Eq, Generic, Show)
 
 --TODO: Add and handle this: _projectVisualizerPreferences :: HashMap TypeRep Visualizer
-data ProjectSettings = ProjectSettings { _modulesSettings              :: Map FilePath ModuleSettings
+data ProjectSettings = ProjectSettings { _modulesSettings :: Map FilePath ModuleSettings
                                        } deriving (Eq, Generic, Show)
 
 data LocationSettings = LocationSettings { _visMap   :: Maybe (HashMap TypeRep Visualizer)
@@ -79,17 +81,43 @@ instance (Hashable k, Eq k, Binary k, Binary v) => Binary (HashMap k v) where
     put = put . HashMap.toList
     get = HashMap.fromList <$> get
 
+prefixError :: Show a => a -> String
+prefixError e = "Error while processing project settings: " <> show e
 
-getModuleSettings :: FilePath -> FilePath -> IO (Maybe ModuleSettings)
-getModuleSettings configPath modulePath = either def (Map.lookup modulePath . view modulesSettings) <$> decodeFileEither configPath
+logProjectSettingsError :: (MonadIO m, Show a) => a -> m ()
+logProjectSettingsError e = liftIO $ print (prefixError e) >> hFlush stdout
 
-updateLocationSettings :: FilePath -> FilePath -> Breadcrumb Text -> LocationSettings -> IO ()
-updateLocationSettings configPath filePath bc settings = decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+toCommonPathFormat :: FilePath -> FilePath
+toCommonPathFormat = intercalate "/" . splitDirectories
+
+getModuleSettings :: MonadIO m => FilePath -> FilePath -> m (Maybe ModuleSettings)
+getModuleSettings configPath modulePath' = liftIO $ do
+    eitherFile <- decodeFileEither configPath
+    let modulePath = toCommonPathFormat modulePath'
+        modulePathNotFoundInFileMsg = "Could not find key: " <> show modulePath <> " in project settings located at: " <> show configPath
+        logProblemAndReturnDef e    = logProjectSettingsError e >> return def
+        logIfIsNothing mayMs        = if isJust mayMs then return mayMs else logProblemAndReturnDef modulePathNotFoundInFileMsg
+        findModulePathInSettings    = logIfIsNothing . Map.lookup modulePath . view modulesSettings
+    either logProblemAndReturnDef findModulePathInSettings eitherFile
+
+updateCurrentBreadcrumbSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> m ()
+updateCurrentBreadcrumbSettings configPath filePath' bc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+    filePath                = toCommonPathFormat filePath'
+    createProjectSettings   = ProjectSettings $ Map.singleton filePath createModuleSettings
+    updateProjectSettings   = either (const createProjectSettings) updateModuleSettings
+    createModuleSettings    = ModuleSettings bc HashMap.empty def
+    updateModuleSettings ps = case ps ^. modulesSettings . to (Map.lookup filePath) of
+        Nothing -> ps & modulesSettings . at filePath ?~ createModuleSettings
+        Just ms -> ps & modulesSettings . at filePath ?~ (ms & currentBreadcrumb .~ bc)
+
+updateLocationSettings :: MonadIO m => FilePath -> FilePath -> Breadcrumb Text -> LocationSettings -> Breadcrumb Text -> m ()
+updateLocationSettings configPath filePath' bc settings currentBc = liftIO $ decodeFileEither configPath >>= encodeFile configPath . updateProjectSettings where
+    filePath                 = toCommonPathFormat filePath'
     createProjectSettings    = ProjectSettings $ Map.singleton filePath createModuleSettings
     updateProjectSettings    = either (const createProjectSettings) updateModuleSettings
-    createModuleSettings     = ModuleSettings (fromMaybe mempty $ settings ^. visMap) $ Map.singleton bc createBreadcrumbSettings
+    createModuleSettings     = ModuleSettings currentBc (fromMaybe mempty $ settings ^. visMap) $ Map.singleton bc createBreadcrumbSettings
     updateModuleSettings' ms = do
         let visMap' = fromMaybe (ms ^. typeRepToVisMap) $ settings ^. visMap
-        ModuleSettings visMap' $ Map.insert bc createBreadcrumbSettings $ ms ^. breadcrumbsSettings
+        ModuleSettings currentBc visMap' $ Map.insert bc createBreadcrumbSettings $ ms ^. breadcrumbsSettings
     updateModuleSettings  ps = ps & modulesSettings . at filePath %~ Just . maybe createModuleSettings updateModuleSettings'
     createBreadcrumbSettings = BreadcrumbSettings $ settings ^. camera

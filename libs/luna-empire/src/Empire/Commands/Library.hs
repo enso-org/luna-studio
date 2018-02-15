@@ -16,7 +16,7 @@ import qualified Data.Text               as Text
 import           Data.Text.IO            as Text
 import           Empire.Prelude
 
-import           Empire.Data.AST         (astExceptionToException, astExceptionFromException)
+import           Empire.Data.AST         (astExceptionFromException, astExceptionToException)
 import           Empire.Data.Graph       as Graph
 import           Empire.Data.Library     (Library)
 import qualified Empire.Data.Library     as Library
@@ -64,12 +64,3 @@ withLibrary file cmd = do
             Just lib -> do
                 let result = (_2 %~ Just) <$> Empire.runEmpire notifEnv lib cmd
                 Empire.empire $ const $ const result
-                -- (result, state) <- liftIO $ Empire.runEmpire notifEnv lib cmd
-                -- put $ Just state
-                -- -- pure result
-                -- Empire.empire $ const $ const result
---
--- getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
--- getBuffer path Nothing = withLibrary path $ do
---     source <- use $ Library.body . Graph.code
---     pure source

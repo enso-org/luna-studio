@@ -1,52 +1,154 @@
-# Luna Studio
+<p align="center">
+<img src="https://github.com/luna/luna-studio/raw/master/resources/logo.ico" style="margin: 0 auto;">
+</p>
 
-## Requirements
+<h1 align="center">Luna Studio</h1>
+<h3 align="center">Visual and textual functional programming language with a focus on productivity, collaboration and development ergonomics.</h3>
 
-TODO: GHC reqs
+Luna is a developer’s whiteboard on steroids. Design, prototype, develop and refactor any application simply by connecting visual elements together. Collaborate with co-workers, interactively fine tune parameters, inspect the results and visually profile the performance in real-time.
 
-## Building
-  1. Download [luna-manager](http://luna-lang.org/luna-manager) or [build it from source](https://github.com/luna/luna-manager)
-  2. Run `luna-manager develop luna-studio`, which will create a directory at `~/luna-develop`. You can optionally pass `--path PATH` command line argument to manually specify the destination.  
-  3. For your convenience export following environment variables:
-     * `export LUNA_DEV=~/luna-develop`
-     * `export LUNA_STUDIO_DEV=$LUNA_DEV/apps/luna-studio`
-  4. Change your working directory to `cd $LUNA_STUDIO_DEV`
-  5. To build `luna-studio` from sources call `./build`. For further usage information call `./build --help`.
-  6. After successful build you can test your new `luna-studio` version at `./dist/bin/main/luna-studio --develop`. Use `--help` for available running options.
+Visit [luna-lang.org](https://www.luna-lang.org) to learn more!
 
-## Build environment
-  * Your luna-studio build environment `$LUNA_STUDIO_DEV` is a `git` repository and you can use it just as a regular source code repository.
-  * Note that using `git clean -x` will remove the `$LUNA_STUDIO_DEV/dist` directory content, containing dependencies needed for building `luna-studio`, which were downloaded there by `luna-manager`. To setup them again again call `luna-manager develop luna-studio --path $LUNA_STUDIO_DEV --download-dependencies`.
-  
-## Troubleshooting
-  * If this problem occurs during build:
-    ```text
-    Initializing APM in: PATH_TO_LUNA_STUDIO/dist/user-config/atom/packages/luna-studio
-    Traceback (most recent call last):
-      File "./build", line 66, in <module>
-        main()
-      File "./build", line 64, in main
-        else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, not args.release)
-      File "./build", line 21, in build_app
-        atom_apm.run(dev_mode) # RENAME: LunaStudioInstallInAtom ?
-      File "PATH_TO_LUNA_STUDIO/scripts_build/atom_apm.py", line 162, in run
-        init_apm(link)
-      File "PATH_TO_LUNA_STUDIO/scripts_build/atom_apm.py", line 124, in init_apm
-        output = run_apm('install', '.')
-      File "PATH_TO_LUNA_STUDIO/scripts_build/atom_apm.py", line 87, in run_apm
-        return run_process(apm_path, command, *args)
-      File "PATH_TO_LUNA_STUDIO/scripts_build/atom_apm.py", line 75, in run_process
-        proc = subprocess.Popen(pargs, stdout=subprocess.PIPE)
-      File "/usr/local/Cellar/python3/3.6.1/Frameworks/Python.framework/Versions/3.6/lib/python3.6/subprocess.py", line 707, in __init__
-        restore_signals, start_new_session)
-      File "/usr/local/Cellar/python3/3.6.1/Frameworks/Python.framework/Versions/3.6/lib/python3.6/subprocess.py", line 1326, in _execute_child
-        raise child_exception_type(errno_num, err_msg)
-    FileNotFoundError: [Errno 2] No such file or directory: 'PATH_TO_LUNA_STUDIO/dist/third-party/Atom.app/Contents/Resources/app/apm/bin/apm'
-    ```
-    Please do: `luna-manager develop luna-studio --path $LUNA_STUDIO_DEV --download-dependencies`.
-    
-* [Linux] App image requires FUSE to run. While most Linux distributions have it pre-installed, it can be missing in your specific case. If your distro happens to lack FUSE, you can either install it or mount the AppImage yourself with:
-    ```
-    sudo mount -o loop Some.AppImage /mnt
-    /mnt/AppRun
-    ```
+## Quick installation
+
+The easiest way of installing Luna Studio is by using the graphical Luna Installer, which can be downloaded using the following links:
+* Mac OS: http://packages.luna-lang.org/darwin/lunaInstaller.zip
+* Linux: http://packages.luna-lang.org/linux/lunaInstaller.zip
+* Windows: http://packages.luna-lang.org/windows/lunaInstaller.zip
+
+All you need to do is download and extract the zip and run the application. It will then guide you through the installation process.
+
+## Using Luna Studio
+
+For a tutorial, documentation, explanation of the ideas behind Luna please visit http://docs.luna-lang.org. It is available in a form of a book, to provide a gentle and fairly complete introduction to the application as well as the new visual-textual paradigm.
+
+## Hacking on Luna Studio
+Luna's build system is nice and simple, allowing you to bootstrap the compiler
+as long as you have an installation of 
+
+[The Haskell Stack](https://docs.haskellstack.org/en/stable/README/) and the
+Haskell parser generator `happy`. 
+
+You can install the latter just by running `stack install happy`, which should
+build the tool for your system and put it in your `stack` binary folder. 
+
+### System Requirements
+While Luna Studio supports Windows as a target operating system, it is not 
+currently possible to develop the Luna Studio frontend on Windows. This is due
+to the current lack of support by [GHCJS](https://github.com/ghcjs/ghcjs) for
+Windows at the current time. 
+
+Otherwise, you should be able to develop Luna Studio on reasonably new Linuxes
+and MacOS. Luna Studio was mostly tested on Ubuntu >= 14.04, Fedora >= 23, MacOS
+\>= 10.11 (El Capitan) and Windows 10, although it should run fine on all Linux 
+distros like Mint, Debian or Arch. Please report any issues here on GitHub or 
+shoot an email to [contact@luna-lang.org](mailto:contact@luna-lang.org).
+
+### Bootstrapping for Development
+To develop Luna Studio, the installation process is quite involved. First of 
+all, you will need the [Luna Manager](https://github.com/luna/luna-manager), 
+which can be obtained from the linked repository.
+
+The prerequisites for building Luna Studio are the following (with Ubuntu 
+`apt-get` package names in parentheses for convenience):
+
+* wget
+* gcc, g++, make (build-essential)
+* libffi (libffi-dev)
+* libgmp (libgmp-dev)
+* xz-utils
+* zlib (zlib1g-dev)
+* git
+* gnupg
+* ZeroMQ >= 4 (which, interestingly, is libzmq3-dev on Ubuntu)
+* libpng (libpng-dev)
+* openssl
+* SetupTools for Python (python-setuptools)
+* libssl (libssl-dev)
+* libtinfo (libtinfo-dev)
+* pkg-config
+* alex
+* PIP for Python (python-pip)
+
+Once you are sure that you have the prerequisites installed, you can proceed to
+the environment setup. Assuming that you already have the `luna-manager` binary
+on your system and available on your `$PATH`, the command is the following:
+
+```
+luna-manager develop luna-studio
+```
+
+This will install Luna Studio, along with some dependencies (e.g. the Haskell
+ecosystem) to `$HOME/luna-develop/apps/luna-studio`. If you wish to install to
+a different location, please supply an additional `--path` argument to the
+`develop` command. From now on, we will refer to this location as 
+`$LUNA_STUDIO_REPO`.
+
+Once the `develop` command finishes executing, you are ready to start developing
+Luna Studio. To rebuild the whole application use:
+
+```sh
+./build
+```
+
+You can choose to rebuild only the frontend or backend part by passing an 
+additional flag (`--frontend` or `--backend` respectively).
+
+To run the application in developer mode, use:
+
+```sh
+$LUNA_STUDIO_REPO/dist/bin/main/luna-studio --develop
+```
+
+### Troubleshooting
+Below are a couple of common errors and their resolution steps:
+
+- If during the development process you encounter errors related to missing 
+  files (caused by accidental removal of a dependency, for example) you can
+  try to execute the following:
+
+```sh
+luna-manager develop luna-studio --path $LUNA_STUDIO_REPO --download-dependencies
+```
+
+- [Linux] The application image requires FUSE to run. While most Linux 
+  distributions have it pre-installed, it is sometimes missing. If your distro
+  happens to lack FUSE, you can either install it, or use the following command
+  to mount the app image manually:
+
+```sh
+sudo mount -o loop Some.AppImage /mnt
+/mnt/AppRun
+```
+
+## Contributing to Luna Studio
+If you are interested in contributing to the development of Luna, please read
+the 
+[`CONTRIBUTING.md`](https://github.com/luna/luna-studio/blob/master/CONTRIBUTING.md)
+file. 
+
+## License
+This repository is licensed under the
+[GNU Affero GPL 3.0](https://opensource.org/licenses/AGPL-3.0), as specified in the
+[LICENSE](https://github.com/luna/luna-studio/blob/master/LICENSE) file. 
+
+Please be aware that, as the commercial backing for Luna, 
+**New Byte Order Sp. z o. o.** reserves the right under the CLA to use 
+contributions made to this repository as part of commercially available Luna 
+products. 
+
+If these terms are unacceptable to you, please do not contribute to the 
+repository.
+
+### The Contributor License Agreement
+As part of your first contribution to this repository, you need to accept the 
+Contributor License Agreement. You will automatically be asked to sign the CLA 
+when you make your first pull request. 
+
+Any work intentionally submitted for inclusion in Luna shall be licensed under
+this CLA.
+
+The CLA you sign applies to all repositories associated with the Luna project 
+([Luna](https://github.com/luna/luna), 
+[Luna RFCs](https://github.com/luna/luna-rfcs), etc), so you will only have 
+to sign it once at the start of your contributions.

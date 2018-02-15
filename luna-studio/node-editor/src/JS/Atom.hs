@@ -4,13 +4,16 @@ module JS.Atom
     , setActiveLocation
     , onEvent
     ) where
-import           Common.Data.Event             (EventName (eventName))
+
 import           Common.Prelude
 import           Common.Report                 (error)
 import           Data.Aeson                    (Result (Success), fromJSON)
+import qualified Data.Aeson                    as Aeson
+import qualified Data.ByteString.Lazy.Char8    as BS
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal                 (fromJSVal, toJSVal_aeson)
 import           GHCJS.Types                   (JSVal)
+import qualified JS.Event                      as JS
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           NodeEditor.Event.Event        (Event (Atom, Shortcut, UI))
 import           NodeEditor.Event.UI           (UIEvent (SearcherEvent))
@@ -46,5 +49,5 @@ parseEvent jsval = do
 setActiveLocation :: MonadIO m => GraphLocation -> m ()
 setActiveLocation gl = liftIO $ setActiveLocation' =<< toJSVal_aeson gl
 
-acceptEvent :: EventName e => e -> Bool
-acceptEvent = acceptEvent' . convert . eventName
+acceptEvent :: JS.Event -> Bool
+acceptEvent = acceptEvent' . convert . BS.unpack . Aeson.encode

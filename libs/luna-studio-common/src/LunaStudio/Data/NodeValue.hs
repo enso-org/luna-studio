@@ -34,8 +34,8 @@ instance ToJSON   VisualizerEntry
 
 mdVisName, errorVisName, placeholderVisName :: Text
 mdVisName          = "base: markdown"
-errorVisName       = "error"
-placeholderVisName = "placeholder"
+errorVisName       = "internal: error"
+placeholderVisName = "internal: placeholder"
 
 transformJSVisualizerMatcher :: MonadIO m => (String -> m String) -> TypeRep -> m [VisualizerEntry]
 transformJSVisualizerMatcher f r = case toConstructorRep r of
