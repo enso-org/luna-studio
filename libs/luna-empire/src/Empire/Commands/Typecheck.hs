@@ -195,7 +195,6 @@ stop = do
 
 run :: MVar CompiledModules -> GraphLocation -> Bool -> Bool -> Command InterpreterEnv ()
 run imports loc@(GraphLocation file br) interpret recompute = do
-    stop
     case br of
         Breadcrumb [] -> do
             void $ mask_ $ recomputeCurrentScope imports file

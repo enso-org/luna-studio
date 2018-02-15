@@ -125,8 +125,8 @@ prepareStdlib = do
     (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
     return (std, cleanup)
 
-killPreviousTC :: Maybe (Async Empire.InterpreterEnv) -> IO ()
-killPreviousTC prevAsync = case prevAsync of
+killPreviousTC :: Empire.CommunicationEnv -> Maybe (Async Empire.InterpreterEnv) -> IO ()
+killPreviousTC env prevAsync = case prevAsync of
     Just a -> do
         res <- Async.poll a
         case res of
@@ -134,7 +134,7 @@ killPreviousTC prevAsync = case prevAsync of
                 Left exc     -> logger Logger.warning $ "[TCWorker]: TC failed with: " <> displayException exc
                 Right intEnv -> do
                     logger Logger.info "[TCWorker]: killing listeners"
-                    mapM_ Async.uninterruptibleCancel $ view Empire.listeners intEnv
+                    void $ Empire.evalEmpire env intEnv Typecheck.stop
             _      -> do
                 logger Logger.info "[TCWorker]: cancelling previous request"
                 Async.uninterruptibleCancel a
@@ -151,7 +151,7 @@ startTCWorker compiledStdlib env = liftIO $ do
     forever $ do
         Empire.TCRequest loc g flush interpret recompute stop <- takeMVar reqs
         prevAsync <- tryTakeMVar tcAsync
-        killPreviousTC prevAsync
+        killPreviousTC env prevAsync
         async     <- Async.asyncOn tcCapability (Empire.evalEmpire env interpreterEnv $ do
             case stop of
                 True  -> Typecheck.stop
