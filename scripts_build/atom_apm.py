@@ -150,7 +150,9 @@ def init_apm(gui_url, frontend_args, link):
     package_path = atom_home_path + '/packages/' + studio_package_name
     print("Initializing APM in: {}".format(package_path))
     oniguruma_package_path = package_path + '/node_modules/oniguruma'
+    oniguruma_studio_path = studio_atom_source_path + '/node_modules/oniguruma'
     if link:
+        dir_util.copy_tree(oniguruma_path, oniguruma_studio_path)
         with working_directory(studio_atom_source_path):
             print('Installing Luna Studio')
             output = run_apm('install', '.')
