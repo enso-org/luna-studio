@@ -12,7 +12,6 @@ import           LunaStudio.Data.NodeLoc (HasNodeLoc (nodeLoc), NodeLoc)
 import           React.Flux              (KeyboardEvent, MouseEvent)
 
 
-
 data Event = Event { _nodeLoc' :: NodeLoc
                    , _evtType  :: EventType
                    } deriving (Show, Generic, NFData, Typeable)
@@ -25,7 +24,6 @@ data EventType = EditExpression
                | SetExpression   Text
                | MouseEnter
                | MouseLeave
-               | ShowFullError
                deriving (Show, Generic, NFData, Typeable)
 
 makeLenses ''Event

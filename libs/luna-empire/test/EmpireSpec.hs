@@ -13,10 +13,10 @@ import qualified Empire.ASTOps.Parse             as Parser
 import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST (dumpGraphViz, isTrivialLambda)
-import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
-                                                           getNodeIdForMarker, getNodes, loadCode, movePort, removeNodes, removePort,
-                                                           renameNode, renamePort, setNodeExpression, setNodeMeta, withGraph,
-                                                           addPortWithConnections, importsToHints, filterPrimMethods)
+import qualified Empire.Commands.Graph           as Graph (addNode, addPort, addPortWithConnections, connect, disconnect, filterPrimMethods,
+                                                           getConnections, getGraph, getNodeIdForMarker, getNodes, importsToHints, loadCode,
+                                                           movePort, removeNodes, removePort, renameNode, renamePort, setNodeExpression,
+                                                           setNodeMeta, withGraph)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import           Empire.Commands.Library         (createLibrary, withLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
@@ -26,10 +26,11 @@ import           Empire.Data.Graph               (ast, breadcrumbHierarchy)
 import qualified Empire.Data.Graph               as Graph (code)
 import qualified Empire.Data.Library             as Library (body)
 import qualified Empire.Data.Library             as Library (body)
+import           Empire.Empire                   (InterpreterEnv (..))
+import           Empire.Prelude                  hiding (mapping, toList, (|>))
 import qualified Luna.Builtin.Data.Class         as Class
 import qualified Luna.Builtin.Data.Function      as Function
 import qualified Luna.Builtin.Data.Module        as Module
-import           Empire.Empire                   (InterpreterEnv (..))
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
@@ -46,11 +47,10 @@ import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..
 import qualified LunaStudio.Data.Position        as Position
 import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
 import           OCI.IR.Class                    (exprs, links)
-import           Empire.Prelude                  hiding (mapping, toList, (|>))
 
 import           Test.Hspec                      (Selector, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
-                                                  shouldContain, shouldMatchList, shouldSatisfy, shouldStartWith, shouldThrow, xdescribe,
-                                                  xit, shouldNotBe)
+                                                  shouldContain, shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow,
+                                                  xdescribe, xit)
 
 import           EmpireUtils
 

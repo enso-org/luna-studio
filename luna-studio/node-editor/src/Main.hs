@@ -7,7 +7,7 @@ import qualified Control.Concurrent.Chan    as Chan
 import           Control.Concurrent.MVar
 import qualified JS.Mount                   as Mount
 import           JS.UUID                    (generateUUID)
-import           JS.Visualizers             (mkVisualizersMap)
+import           JS.Visualizers             (getInternalVisualizers, mkVisualizersMap)
 import           LunaStudio.Data.NodeValue  (fromJSVisualizersMap)
 import           NodeEditor.Event.Engine    (LoopRef (LoopRef))
 import qualified NodeEditor.Event.Engine    as Engine
@@ -25,13 +25,14 @@ runApp chan socket = do
     random         <- newStdGen
     clientId       <- generateUUID
     visualizersMap <- fromJSVisualizersMap <$> mkVisualizersMap
+    internalVisMap <- getInternalVisualizers
     let openedFile = Mount.openedFile
     mdo
         let loop = LoopRef chan state
         Engine.scheduleInit loop
         appRef <- Store.createApp (App.mk openedFile) $ Engine.scheduleEvent loop
         React.reactRender Mount.mountPoint (App.app appRef) ()
-        let initState = mkState appRef clientId mempty visualizersMap random
+        let initState = mkState appRef clientId mempty visualizersMap internalVisMap random
         state <- newMVar initState
         Engine.connectEventSources socket loop
     App.focus

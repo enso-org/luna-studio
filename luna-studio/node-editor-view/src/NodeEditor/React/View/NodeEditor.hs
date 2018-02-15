@@ -15,11 +15,10 @@ import           LunaStudio.Data.NodeLoc                    (NodePath)
 import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef))
 import           NodeEditor.React.IsRef                     (IsRef)
 import qualified NodeEditor.React.Model.Connection          as Connection
-import           NodeEditor.React.Model.Constants           (nodeRadius)
+import           NodeEditor.React.Model.Constants           (nodeRadius, selectionPadding)
 import qualified NodeEditor.React.Model.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
-import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
 import           NodeEditor.React.Model.NodeEditor          (GraphStatus (..), NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.React.Model.Port                (InPortIndex (Self))
@@ -64,12 +63,12 @@ show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: 
 applySearcherHints :: NodeEditor -> NodeEditor
 applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
     connect srcPortRef dstPortRef ne' = ne' & NodeEditor.connections . at dstPortRef ?~ Connection.Connection srcPortRef dstPortRef False Connection.Normal
-    tryConnect    nl nn ne'           = maybe ne' (\srcPortRef -> connect srcPortRef (InPortRef nl [Self]) ne') $ nn ^. Searcher.predPortRef
-    toModel       n  nl pos           = moveNodeToTop $ (convert (def :: NodePath, n)) & ExpressionNode.nodeLoc  .~ nl
-                                                                                       & ExpressionNode.position .~ pos
-    updateNode    nl n ne'            = maybe ne' (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne'
-    moveNodeToTop n                   = n & ExpressionNode.zPos .~ (ne ^. NodeEditor.topZIndex) + 1
-    replaceNode   s                   = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
+    tryConnect    nl nn ne' = maybe ne' (\srcPortRef -> connect srcPortRef (InPortRef nl [Self]) ne') $ nn ^. Searcher.predPortRef
+    toModel       n nl pos  = moveNodeToTop $ (convert (def :: NodePath, n)) & ExpressionNode.nodeLoc  .~ nl
+                                                                             & ExpressionNode.position .~ pos
+    updateNode    nl n ne'  = maybe ne' (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne'
+    moveNodeToTop n         = n & ExpressionNode.zPos .~ (ne ^. NodeEditor.topZIndex) + 1
+    replaceNode   s         = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
         (Searcher.Node nl (Searcher.NodeModeInfo _ Nothing   _ _) _, Just n) -> updateNode nl n ne
         (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _ _) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
         (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _ _) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (moveNodeToTop $ ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
@@ -110,16 +109,15 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
         nodesWithVis     = Set.fromList $ map (^. visPropNodeLoc) visualizations
         visWithSelection = map (\vis -> (vis, NodeEditor.isVisualizationNodeSelected vis ne)) visualizations
         mayEditedTextPortControlPortRef = ne ^. NodeEditor.textControlEditedPortRef
-        allowVisualizations             = maybe True (null . (^. SidebarNode.inputSidebarPorts)) $ ne ^. NodeEditor.inputNode
     div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
-                                               <> if allowVisualizations && isAnyFullscreen then ["studio-window--has-visualization-fullscreen"] else []
-                                               <> if maybeSearcher /= Nothing               then ["studio-window--has-searcher"]                 else []
+                                               <> if isAnyFullscreen          then ["studio-window--has-visualization-fullscreen"] else []
+                                               <> if maybeSearcher /= Nothing then ["studio-window--has-searcher"]                 else []
                                                )
          , "key" $= "studio-window"] $ do
 
         div_ [ "className" $= Style.prefix "studio-window__center", "key" $= "studio-window__center" ] $
             div_
-                [ "className" $= Style.prefixFromList (["graph"] <> if allowVisualizations && isAnyVisActive then ["graph--has-visualization-active"] else [])
+                [ "className" $= Style.prefixFromList (["graph"] <> if isAnyVisActive  then ["graph--has-visualization-active"] else [])
                 , "key"       $= "graph"
                 ] $ do
 
@@ -137,13 +135,12 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                                               (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maybeSearcher)
                                               (filterOutEditedTextControlIfNotRelated (n ^. Node.nodeLoc) mayEditedTextPortControlPortRef)
                                               (Set.filter (ExpressionNode.containsNode (n ^. Node.nodeLoc)) nodesWithVis)
-                                              (not allowVisualizations)
                     planeConnections_ $ do
                         forM_ (ne ^. NodeEditor.posConnections ) $ connection_ ref
                         forM_ (ne ^. NodeEditor.selectionBox   ) selectionBox_
                         forM_ (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
-                    when allowVisualizations . forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPath
+                    forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPath
 
 
                 planeNewConnection_ $ do
@@ -196,7 +193,7 @@ dynamicScale = React.defineView objDynStyle $ \cameraScale -> do
 
           --collapsed nodes
           elemString $ ".luna-port-io-shape-mask  { r: " <> show (nodeRadius - opticalCorrection + (opticalCorrection / scale)) <> "px }"
-          elemString $ ".luna-port-io-select-mask { r: " <> show (nodeRadius - opticalCorrection + (opticalCorrection / scale)) <> "px }"
+          elemString $ ".luna-port-io-select-mask { r: " <> show (nodeRadius + selectionPadding - opticalCorrection + (opticalCorrection / scale)) <> "px }"
 
           --expanded nodes
           elemString $ "circle.luna-port__shape { r: " <> show (3 + (1 / scale)) <> "px }"

@@ -28,7 +28,7 @@ import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
 import           LunaStudio.Data.NodeValue                (ShortValue, Visualizer)
 import qualified LunaStudio.Data.PortRef                  as PortRef
 import           LunaStudio.Data.Position                 (Position, move)
-import           LunaStudio.Data.TypeRep                  (TypeRep, errorTypeRep)
+import           LunaStudio.Data.TypeRep                  (TypeRep)
 import           LunaStudio.Data.Vector2                  (Vector2 (Vector2))
 import           NodeEditor.Data.Color                    (Color)
 import           NodeEditor.React.Model.Constants         (nodeRadius)
@@ -52,12 +52,11 @@ data ExpressionNode = ExpressionNode { _nodeLoc'                  :: NodeLoc
                                      , _visEnabled                :: Bool
                                      , _errorVisEnabled           :: Bool
                                      , _code                      :: Text
-                                     , _value                     :: Maybe Value
+                                     , _value                     :: Value
                                      , _zPos                      :: Int
                                      , _isSelected                :: Bool
                                      , _isMouseOver               :: Bool
                                      , _mode                      :: Mode
-                                     , _isErrorExpanded           :: Bool
                                      , _execTime                  :: Maybe Integer
                                      , _collaboration             :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
@@ -78,9 +77,13 @@ data Subgraph = Subgraph { _expressionNodes :: ExpressionNodesMap
                          , _monads          :: [MonadPath]
                          } deriving (Default, Eq, Generic, NFData, Show)
 
-data Value = ShortValue ShortValue
+data Value = AwaitingTypecheck
+           | AwaitingData
+           | ShortValue ShortValue
            | Error      (Error NodeError)
            deriving (Eq, Generic, NFData, Show)
+
+instance Default Value where def = AwaitingTypecheck
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, Color)
                                    , _modify :: Map ClientId  UTCTime
@@ -115,7 +118,6 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- isSelected                -} False
         {- isMouseOver               -} False
         {- mode                      -} def
-        {- isErrorExpanded           -} False
         {- execTime                  -} def
         {- collaboration             -} def
 
@@ -162,8 +164,14 @@ subgraphs = mode . _Expanded . _Function
 
 returnsError :: ExpressionNode -> Bool
 returnsError node = case node ^. value of
-    Just (Error _) -> True
-    _              -> False
+    Error _ -> True
+    _       -> False
+
+hasData :: ExpressionNode -> Bool
+hasData node = case node ^. value of
+    ShortValue {} -> True
+    Error      {} -> True
+    _             -> False
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'
@@ -191,15 +199,12 @@ findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findSuccessorPosition n nodes = Empire.findSuccessorPosition (convert n) $ map convert nodes
 
 nodeType :: Getter ExpressionNode (Maybe TypeRep)
-nodeType = to nodeType' where
-    nodeType' n = if has (value . _Just . _Error) n
-        then Just errorTypeRep
-        else (n ^? outPortAt [] . Port.valueType)
+nodeType = to (^? outPortAt [] . Port.valueType)
 
 visualizationsEnabled :: Lens' ExpressionNode Bool
 visualizationsEnabled = lens getVisualizationEnabled setVisualizationEnabled where
-    getVisualizationEnabled n   = if n ^. nodeType == Just errorTypeRep then n ^. errorVisEnabled else n ^. visEnabled
-    setVisualizationEnabled n v = if n ^. nodeType == Just errorTypeRep then n & errorVisEnabled .~ v else n & visEnabled .~ v
+    getVisualizationEnabled n   = if returnsError n then n ^. errorVisEnabled     else n ^. visEnabled
+    setVisualizationEnabled n v = if returnsError n then n & errorVisEnabled .~ v else n & visEnabled .~ v
 
 nodeMeta :: Lens' ExpressionNode NodeMeta
 nodeMeta = lens getNodeMeta setNodeMeta where

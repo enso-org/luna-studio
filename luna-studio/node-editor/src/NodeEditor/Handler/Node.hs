@@ -39,7 +39,6 @@ handle (UI (NodeEvent    (Node.Event nl (Node.Select        kevt))))    = Just $
 handle (UI (NodeEvent    (Node.Event nl (Node.SetExpression expr))))    = Just $ setNodeExpression nl expr
 handle (UI (NodeEvent    (Node.Event nl Node.MouseEnter)))              = Just $ Node.handleMouseEnter nl
 handle (UI (NodeEvent    (Node.Event nl Node.MouseLeave)))              = Just $ Node.handleMouseLeave nl
-handle (UI (NodeEvent    (Node.Event nl Node.ShowFullError)))           = Just $ Node.showFullError nl
 handle _                                                                = Nothing
 
 handleCommand :: Shortcut.Command -> Command State ()

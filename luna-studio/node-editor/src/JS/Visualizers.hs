@@ -10,13 +10,20 @@ import           Data.UUID.Types            (UUID)
 import           GHCJS.Marshal              (toJSValListOf)
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import           JavaScript.Array           (JSArray, toList)
-import           LunaStudio.Data.TypeRep    (ConstructorRep, errorTypeRep, toConstructorRep)
+import           LunaStudio.Data.TypeRep    (ConstructorRep)
 
 foreign import javascript safe "Object.keys(typeof window.visualizers == 'object' ? window.visualizers : {})"
     getVisualizers' :: IO JSArray
 
 getVisualizers :: IO [String]
 getVisualizers = fmap pFromJSVal . toList <$> getVisualizers'
+
+foreign import javascript safe "(typeof window.internalVisualizers == 'string' ? window.internalVisualizers : '{}')"
+    getInternalVisualizers' :: IO JSString
+
+getInternalVisualizers :: IO (Map Text Text)
+getInternalVisualizers = fromMaybe def . Aeson.decode . BS.pack . convert <$> getInternalVisualizers'
+
 
 foreign import javascript safe "window.visualizersPath"
     getVisualizersLibraryPath' :: IO JSString
@@ -27,6 +34,9 @@ getVisualizersLibraryPath = convert <$> getVisualizersLibraryPath'
 
 foreign import javascript safe "visualizerFramesManager.sendData($1, $2, $3);"
     sendVisualizationData' :: JSString -> JSString -> JSString -> IO ()
+
+foreign import javascript safe "visualizerFramesManager.sendInternalData($1, $2);"
+    sendInternalData' :: JSString -> JSString -> IO ()
 
 foreign import javascript safe "visualizerFramesManager.sendDatapoint($1, $2);"
     sendStreamDatapoint' :: JSString -> JSString -> IO ()
@@ -47,8 +57,10 @@ registerVisualizerFrame :: UUID -> IO ()
 registerVisualizerFrame = registerVisualizerFrame' . convert . show
 
 sendVisualizationData :: UUID -> ConstructorRep -> Text -> IO ()
-sendVisualizationData uid rep d' = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d) where
-    d = if Just rep == toConstructorRep errorTypeRep then convert . BS.unpack . Aeson.encode $ d' else d'
+sendVisualizationData uid rep d = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d)
+
+sendInternalData :: UUID -> Text -> IO ()
+sendInternalData uid d = sendInternalData' (convert $ show uid) (convert d)
 
 foreign import javascript safe "window.visualizers[$1]($2)"
     checkVisualizer' :: JSString -> JSString -> IO JSString

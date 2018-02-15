@@ -9,7 +9,6 @@ module NodeEditor.Action.Node
     , editName
     , snap
     , snapCoord
-    , showFullError
     ) where
 
 import           Common.Action.Command                      (Command)
@@ -21,7 +20,7 @@ import           NodeEditor.Action.Searcher                 (editExpression)
 import           NodeEditor.Action.Searcher                 (editName)
 import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
 import           NodeEditor.React.Model.Node                (NodeLoc)
-import           NodeEditor.React.Model.Node.ExpressionNode (argConstructorMode, isErrorExpanded, isMouseOver)
+import           NodeEditor.React.Model.Node.ExpressionNode (argConstructorMode, isMouseOver)
 import qualified NodeEditor.React.Model.Port                as Port
 import           NodeEditor.State.Global                    (State)
 
@@ -38,6 +37,3 @@ handleMouseLeave nl = do
     modifyExpressionNode nl $ do
         isMouseOver        .= False
         argConstructorMode .= if isConnSrc then Port.Highlighted else Port.Invisible
-
-showFullError :: NodeLoc -> Command State ()
-showFullError  nl = modifyExpressionNode nl $ isErrorExpanded .= True

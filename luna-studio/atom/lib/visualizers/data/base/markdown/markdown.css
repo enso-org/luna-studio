@@ -1,5 +1,6 @@
 body {
-	font-family: Droid, sans-serif;
+	font-family: 'hasklig-regular', 'hasklig', monospace;
+	color:       #888;
     overflow: scroll;
 }
 p {

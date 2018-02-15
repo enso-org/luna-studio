@@ -10,7 +10,6 @@
 /////////////////////////////
 
 .luna-node__short-value-positioner {
-    pointer-events: none;
     display:        flex;
     flex-direction: column;
     align-items:    center;
@@ -18,18 +17,32 @@
 
 .luna-node__short-value {
     .color(4);
-    font-size:          10rem;
-    line-height:        16rem;
-    margin-bottom:      16rem;
-    margin-top:        -5rem;
-    max-height:         45rem;
-    text-align:         center;
-    width:              200rem;
-
-    display:           -webkit-box; //---------------
-    -webkit-line-clamp: 3;          // 3-line text
-    -webkit-box-orient: vertical;   // with ellipsis
-    overflow-y:         hidden;     //---------------
+    font-size:     10rem;
+    line-height:   16rem;
+    margin-bottom: 16rem;
+    margin-top:   -5rem;
+    max-height:    45rem;
+    text-align:    center;
+    width:         200rem;
+    cursor:        pointer;
+    &::before {
+        display:     inline-block;
+        transition:  transform 50ms linear;
+        content:     "\23F5";
+        font-size:   18rem;
+        line-height: 0;
+        top:         4rem;
+        position:    relative;
+        opacity:     0.5;
+    }
+    &.luna-arrow-expanded {
+        height: 16rem;
+        overflow: hidden;
+        &::before {
+            opacity:   1 !important;
+            transform: rotate(90deg) translateY(2rem) translateX(0rem);
+        }
+    }
 }
 
 /////////////////////////////
@@ -41,16 +54,20 @@
 
     .luna-node-translate {
         position: absolute;
-        top:      32rem;
+        top:      42rem;
     }
+}
+.luna-node--expanded ~ .luna-visualization {
+    .luna-node-translate { top: 26rem; }
 }
 
 .luna-visualization-container {
     position:      relative;
     width:         @luna-visualization-width * 1px;
-    background:    transparent;
+    //background:    transparent;
     border-radius: @luna-border-radius * 1px;
-    overflow:      hidden;
+    //overflow:      hidden;
+    .luna-visualization-container-hover;
 }
 
 .luna-visualization-cover {

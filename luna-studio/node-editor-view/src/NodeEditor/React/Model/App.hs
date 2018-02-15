@@ -7,11 +7,11 @@ module NodeEditor.React.Model.App (
 ) where
 
 import           Common.Prelude
+import qualified LunaStudio.Data.GraphLocation      as GraphLocation
 import           NodeEditor.Batch.Workspace         (Workspace)
 import qualified NodeEditor.Batch.Workspace         as Workspace
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumbs)
 import           NodeEditor.React.Model.NodeEditor  (NodeEditor)
-import qualified LunaStudio.Data.GraphLocation      as GraphLocation
 
 
 data App = App { _breadcrumbs       :: Breadcrumbs

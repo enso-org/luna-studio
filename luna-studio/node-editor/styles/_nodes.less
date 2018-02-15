@@ -73,19 +73,6 @@
     .luna-searcher__results {
         display: none;
     }
-
-    .luna-ctrl-icon {
-        .graphBackground;
-        fill:           @luna-syntax-text-color;
-        border-radius:  0 1000px 1000px 0;
-        opacity:        0;
-        position:       absolute;
-        width:          calc(@ui ~'*' 24px);
-        height:         calc(@ui ~'*' @luna-grid-size * 1px);
-        transform:      translate(0, calc(@ui ~'*' -2px));
-        left:           auto;
-        pointer-events: all;
-    }
 }
 
 .luna-node__name--positioner {
@@ -100,17 +87,17 @@
 }
 
 .luna-node__expression {
-    @l: @luna-grid-size * 1px;
-    @a: @luna-superline-height * 1px;
+    @l:   @luna-grid-size * 1px;
+    @a:   @luna-superline-height * 1px;
     @ph: (@a - @l)/2;
-    @pv: @a/3;
+    @pv:  @a/3;
     .roundCorners;
     .outlineStroke;
+    .background(0.5);
     overflow:      hidden;
     text-overflow: ellipsis;
     padding:       calc(@ui ~'*' @ph)
                    calc(@ui ~'*' @pv);
-    .background(0.5);
     min-width:     calc(@ui ~'*' @a - 2 * @pv);
 }
 
@@ -129,6 +116,19 @@
     y:     -100px;
     width:  10px;
     height: 10px;
+}
+
+.luna-ctrl-icon {
+    .graphBackground;
+    fill:           @luna-syntax-text-color;
+    border-radius:  0 1000px 1000px 0;
+    opacity:        0;
+    position:       absolute;
+    width:          calc(@ui ~'*' 24px);
+    height:         calc(@ui ~'*' @luna-grid-size * 1px);
+    transform:      translate(0, calc(@ui ~'*' -2px));
+    left:           auto;
+    pointer-events: all;
 }
 
 /////////////////////////////

@@ -87,6 +87,7 @@ module NodeEditor.Action.Basic
     , setNodesMeta
     , setOutputSidebarPortMode
     , setPortDefault
+    , setVisualizationData
     , toggleSelect
     , toggleSelectedNodesMode
     , toggleSelectedNodesUnfold
@@ -146,7 +147,7 @@ import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpress
                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
                                                               localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode)
-import           NodeEditor.Action.Basic.UpdateNodeValue     (setNodeProfilingData, updateNodeValueAndVisualization)
+import           NodeEditor.Action.Basic.UpdateNodeValue     (setNodeProfilingData, setVisualizationData, updateNodeValueAndVisualization)
 import           NodeEditor.Action.Basic.UpdateSearcherHints (localAddSearcherHints, localClearSearcherHints, localUpdateSearcherHints,
                                                               selectHint, setCurrentImports, updateDocs)
 import           NodeEditor.Action.State.Model               (isArgConstructorConnectSrc, updateAllPortsMode, updateArgConstructorMode,

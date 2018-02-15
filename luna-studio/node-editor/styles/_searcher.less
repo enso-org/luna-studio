@@ -133,14 +133,17 @@
         height:        @y;
         width:         calc(@ui ~'*' @searcherWidth/2);
         white-space:   normal;
+        overflow:      hidden;
         &.luna-visualization--active {
             .luna-visualization-container {
                 .background(@a + 1);
             }
         }
         .luna-visualization-container {
-            background: inherit !important;
-            width:      200px;
+            background:    inherit !important;
+            border:        none;
+            width:         200px;
+            border-radius: 0;
         }
         iframe {
             width: 100%;

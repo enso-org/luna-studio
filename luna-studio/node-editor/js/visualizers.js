@@ -35,6 +35,10 @@ var sendData = function (id, type, data) {
   send(id, { event: "data", type: type, data: data });
 };
 
+var sendInternalData = function (id, data) {
+  send(id, { event: "internalData", data: data });
+};
+
 var sendDatapoint = function (id, data) {
   send(id, { event: "datapoint", data: data });
 };
@@ -47,5 +51,6 @@ module.exports = {
   sendData: sendData,
   register: register,
   notifyStreamRestart: notifyStreamRestart,
-  sendDatapoint: sendDatapoint
+  sendDatapoint: sendDatapoint,
+  sendInternalData: sendInternalData
 };

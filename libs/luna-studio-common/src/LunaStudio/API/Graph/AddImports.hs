@@ -15,8 +15,8 @@ import           Prologue
 
 
 data Request = Request { _location :: GraphLocation
-					   , _modules  :: [Text]
-					   } deriving (Eq, Generic, Show)
+                                           , _modules  :: [Text]
+                                           } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 instance Binary Request

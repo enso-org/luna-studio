@@ -14,7 +14,7 @@ import           Data.Word                                (Word8)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           LunaStudio.Data.NodeLoc                  (NodeLoc)
 import           LunaStudio.Data.NodeSearcher             (NodeSearcherData)
-import           LunaStudio.Data.NodeValue                (Visualizer, VisualizerMatcher, VisualizerName)
+import           LunaStudio.Data.NodeValue                (Visualizer, VisualizerMatcher, VisualizerName, VisualizerPath)
 import           LunaStudio.Data.TypeRep                  (TypeRep)
 import           NodeEditor.Event.Event                   (Event)
 import           NodeEditor.React.Model.App               (App)
@@ -41,6 +41,7 @@ data State = State
         , _waitingForTc         :: Bool
         , _preferedVisualizers  :: HashMap TypeRep Visualizer
         , _visualizers          :: Map VisualizerName VisualizerMatcher
+        , _internalVisualizers  :: Map VisualizerName VisualizerPath
         , _random               :: StdGen
         }
 
@@ -65,7 +66,7 @@ makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerName VisualizerMatcher -> StdGen -> State
+mkState :: Ref App -> ClientId -> HashMap TypeRep Visualizer -> Map VisualizerName VisualizerMatcher -> Map VisualizerName VisualizerPath -> StdGen -> State
 mkState ref clientId' = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')

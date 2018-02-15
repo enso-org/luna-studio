@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE StrictData     #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 module NodeEditor.React.Model.Visualization
     ( module NodeEditor.React.Model.Visualization
     , module X
@@ -67,3 +68,9 @@ toIdleVisualization vs = IdleVisualization vs . view runningVisualizer
 stopVisualizations :: NodeVisualizations -> NodeVisualizations
 stopVisualizations nodeVis = nodeVis & visualizations     .~ def
                                      & idleVisualizations .~ (nodeVis ^. idleVisualizations) <> (map (toIdleVisualization Ready) . Map.elems $ nodeVis ^. visualizations)
+
+
+awaitingDataMsg, noVisMsg, noDataMsg :: Text
+awaitingDataMsg = "AWAITING DATA"
+noVisMsg        = "NO VIS FOR TYPE"
+noDataMsg       = "NO DATA"

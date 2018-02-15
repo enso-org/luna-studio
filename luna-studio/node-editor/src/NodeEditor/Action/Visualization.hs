@@ -1,31 +1,34 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.Action.Visualization where
 
 import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Map                                   as Map
-import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendVisualizationData)
+import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendInternalData,
+                                                             sendVisualizationData)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import           LunaStudio.Data.NodeValue                  (VisualizerName)
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
-import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta)
+import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta, setVisualizationData)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, checkAction, checkIfActionPerfoming, continueActionWithKey,
                                                              removeActionFromState, updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getExpressionNodeType, getNodeMeta, getNodeVisualizations,
-                                                             getSelectedNodes, getVisualizationsBackupMap, modifyExpressionNode,
-                                                             modifyNodeEditor, modifySearcher, updateDefaultVisualizer,
-                                                             updatePreferedVisualizer)
+                                                             getSelectedNodes, getVisualizationsBackupMap, getVisualizersForType,
+                                                             modifyExpressionNode, modifyNodeEditor, modifySearcher,
+                                                             updateDefaultVisualizer, updatePreferedVisualizer)
 import           NodeEditor.Action.UUID                     (getUUID)
-import           NodeEditor.React.Model.Node.ExpressionNode (nodeLoc, visualizationsEnabled)
-import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (StreamBackup, ValueBackup), nodeVisualizations)
+import           NodeEditor.React.Model.Node.ExpressionNode (hasData, nodeLoc, returnsError, visualizationsEnabled)
+import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (ErrorBackup, MessageBackup, StreamBackup, ValueBackup),
+                                                             nodeVisualizations)
 import qualified NodeEditor.React.Model.Searcher            as Searcher
 import           NodeEditor.React.Model.Visualization       (IdleVisualization (IdleVisualization),
                                                              RunningVisualization (RunningVisualization), VisualizationId,
                                                              VisualizationMode (Focused, FullScreen, Preview),
                                                              VisualizationParent (Node, Searcher), VisualizationStatus (Outdated, Ready),
-                                                             idleVisualizations, idleVisualizer, runningVisualizer, stopVisualizations,
-                                                             visualizationId, visualizationMode, visualizationStatus, visualizations,
-                                                             visualizers)
+                                                             awaitingDataMsg, idleVisualizations, idleVisualizer, noVisMsg,
+                                                             runningVisualizer, stopVisualizations, visualizationId, visualizationMode,
+                                                             visualizationStatus, visualizations, visualizers)
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
                                                              DocVisualizationActive (DocVisualizationActive),
                                                              VisualizationActive (VisualizationActive), docVisualizationActiveAction,
@@ -84,7 +87,7 @@ selectVisualizer (Node nl) visId visName = withJustM (getNodeVisualizations nl) 
     withJust ((,) <$> Map.lookup visId (nodeVis ^. visualizations) <*> Map.lookup visName (nodeVis ^. visualizers)) $ \(prevVis, visPath) -> do
         continue (end :: VisualizationActive -> Command State ())
         let visualizer' = (visName, visPath)
-        updateDefaultVisualizer nl (Just visualizer') True True
+        updateDefaultVisualizer nl (Just visualizer') True
         when (prevVis ^. runningVisualizer /= visualizer') $ getVisualizationsBackupMap >>= \visBackup ->
             case Map.lookup nl visBackup of
                 Just (StreamBackup backup) -> do
@@ -109,12 +112,7 @@ selectVisualizer (Node nl) visId visName = withJustM (getNodeVisualizations nl) 
                         liftIO $ do
                             registerVisualizerFrame uuid
                             sendVisualizationData   uuid cRep backup
-                _ -> do
-                    modifyNodeEditor $ do
-                        nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                        nodeVisualizations . ix nl . idleVisualizations %= (IdleVisualization Ready visualizer' :)
-                    withJustM (getExpressionNodeType nl) $ \tpe ->
-                        updatePreferedVisualizer tpe visualizer'
+                _ -> withJustM (getExpressionNodeType nl) $ flip updatePreferedVisualizer visualizer'
 selectVisualizer Searcher _ _ = $notImplemented
 
 
@@ -173,23 +171,21 @@ startReadyVisualizations :: NodeLoc -> Command State ()
 startReadyVisualizations nl = do
     mayVisBackup <- Map.lookup nl <$> getVisualizationsBackupMap
     mayNodeVis   <- getNodeVisualizations nl
-    mayCRep      <- maybe def toConstructorRep <$> getExpressionNodeType nl
-    ent <- getExpressionNodeType nl
-    withJust ((,,) <$> mayVisBackup <*> mayNodeVis <*> mayCRep) $ \(visBackup, nodeVis, cRep) -> case visBackup of
-        StreamBackup backup -> do
-            let activateWithStreamStart newNodeVis vis = if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
-                    uuid <- getUUID
-                    liftIO $ registerVisualizerFrame uuid >> notifyStreamRestart uuid cRep (reverse backup)
-                    return $ newNodeVis & visualizations %~ Map.insert uuid (RunningVisualization uuid def $ vis ^. idleVisualizer)
-            nVis <- foldlM activateWithStreamStart (nodeVis & idleVisualizations .~ def) $ nodeVis ^. idleVisualizations
+    ent          <- getExpressionNodeType nl
+    let activateWith newNodeVis vis =
+            if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
+                uuid <- getUUID
+                liftIO $ registerVisualizerFrame uuid
+                return $ newNodeVis & visualizations %~ Map.insert uuid (RunningVisualization uuid def $ vis ^. idleVisualizer)
+        updateVis nodeVis (Just backup) = do
+            nVis <- foldlM activateWith (nodeVis & idleVisualizations .~ def) $ nodeVis ^. idleVisualizations
             modifyNodeEditor $ nodeVisualizations . at nl ?= nVis
-        ValueBackup backup -> do
-            let activateWithValue newNodeVis vis = if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
-                    uuid <- getUUID
-                    liftIO $ registerVisualizerFrame uuid >> sendVisualizationData uuid cRep backup
-                    return $ newNodeVis & visualizations %~ Map.insert uuid (RunningVisualization uuid def $ vis ^. idleVisualizer)
-            nVis <- foldlM activateWithValue (nodeVis & idleVisualizations .~ def) $ nodeVis ^. idleVisualizations
-            modifyNodeEditor $ nodeVisualizations . at nl ?= nVis
+            setVisualizationData nl backup True
+        updateVis nodeVis Nothing = do
+            hasVisualizers <- maybe (return False) (fmap isJust . getVisualizersForType) =<< getExpressionNodeType nl
+            let msg = if hasVisualizers then awaitingDataMsg else noVisMsg
+            updateVis nodeVis $ Just $ MessageBackup msg
+    withJust mayNodeVis $ flip updateVis mayVisBackup
 
 -- instance Action (Command State) VisualizationDrag where
 --     begin    = beginActionWithKey    visualizationDragAction
