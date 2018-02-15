@@ -18,6 +18,7 @@ module Empire.ASTOp (
   , ASTOpReq
   , EmpirePass
   , PMStack
+  , getImportedModules
   , putNewIR
   , putNewIRCls
   , runAliasAnalysis
@@ -50,6 +51,7 @@ import           Luna.IR              as IR hiding (Marker, match)
 import           Luna.IR.Layer.Succs  (Succs)
 import qualified Luna.IR.Term.Unit    as Term
 import           OCI.IR.Layout.Typed  (type (>>))
+import           OCI.IR.Name.Qualified (QualName)
 import           OCI.Pass.Class       (Inputs, Outputs, Preserves, KnownPass)
 import           OCI.IR.Class         (Import)
 import qualified OCI.Pass.Class       as Pass (SubPass, eval')
@@ -250,36 +252,51 @@ runTypecheck imports = do
         return (st, passSt)
     put $ newG & Graph.ast .~ AST st passSt
 
+evalTC g ir pmState = flip runStateT g
+                    . withVis
+                    . dropLogs
+                    . DepState.evalDefStateT @Cache
+                    . flip evalIRBuilder ir
+                    . flip evalPassManager pmState
+
+tcInit = do
+    Pass.setAttr (getTypeDesc @WorldExpr)                 $ error "Data not provided: WorldExpr"
+    Pass.setAttr (getTypeDesc @UnitLoader.UnitsToLoad)    $ error "Data not provided: UnitsToLoad"
+    Pass.setAttr (getTypeDesc @UnitLoader.SourcesManager) $ error "Data not provided: SourcesManager"
+    Pass.setAttr (getTypeDesc @UnitSet)                   $ error "Data not provided: UnitSet"
+    Pass.setAttr (getTypeDesc @Invalids)                  $ (mempty :: Invalids)
+    initNameGen
+
+extractImportedModules unit = do
+    impNames <- Pass.eval' $ do
+        imphub   <- unit @^. Term.imports
+        imps     <- readWrappedSources (unsafeGeneralize imphub :: Expr (UnresolvedImportHub >> UnresolvedImport >> UnresolvedImportSrc))
+        impNames <- for imps $ \imp -> do
+            src <- imp @^. Term.termUnresolvedImport_source
+            Term.Absolute path <- src @. wrapped
+            return path
+        cls <- IR.matchExpr unit $ \case
+            IR.Unit _ _ c -> IR.source c
+        UnitLoader.partitionASGCls $ IR.unsafeGeneralize cls
+        return impNames
+    let impNamesWithBase = Set.insert "Std.Base" $ Set.fromList impNames
+    return impNamesWithBase
+
+getImportedModules :: Command ClsGraph (Set.Set QualName)
+getImportedModules = do
+    unit :: Expr Unit <- uses Graph.clsClass unsafeGeneralize
+    g <- get
+    AST ir pmState <- use Graph.clsAst
+    fst <$> liftIO (evalTC g ir pmState $ tcInit >> extractImportedModules unit)
+
 runModuleTypecheck :: Map.Map Name FilePath -> CompiledModules -> Command ClsGraph (Either Compilation.ModuleCompilationError (Imports, CompiledModules))
 runModuleTypecheck sources cmpMods@(CompiledModules _ prims) = do
     unit :: Expr Unit <- uses Graph.clsClass unsafeGeneralize
     g <- get
     AST ir pmState <- use Graph.clsAst
-    let evalIR = flip runStateT g
-               . withVis
-               . dropLogs
-               . DepState.evalDefStateT @Cache
-               . flip evalIRBuilder ir
-               . flip evalPassManager pmState
-    (res, newG) <- liftIO $ evalIR $ do
-        Pass.setAttr (getTypeDesc @WorldExpr)                 $ error "Data not provided: WorldExpr"
-        Pass.setAttr (getTypeDesc @UnitLoader.UnitsToLoad)    $ error "Data not provided: UnitsToLoad"
-        Pass.setAttr (getTypeDesc @UnitLoader.SourcesManager) $ error "Data not provided: SourcesManager"
-        Pass.setAttr (getTypeDesc @UnitSet)                   $ error "Data not provided: UnitSet"
-        Pass.setAttr (getTypeDesc @Invalids)                  $ (mempty :: Invalids)
-        initNameGen
-        impNames <- Pass.eval' $ do
-            imphub   <- unit @^. Term.imports
-            imps     <- readWrappedSources (unsafeGeneralize imphub :: Expr (UnresolvedImportHub >> UnresolvedImport >> UnresolvedImportSrc))
-            impNames <- for imps $ \imp -> do
-                src <- imp @^. Term.termUnresolvedImport_source
-                Term.Absolute path <- src @. wrapped
-                return path
-            cls <- IR.matchExpr unit $ \case
-                IR.Unit _ _ c -> IR.source c
-            UnitLoader.partitionASGCls $ IR.unsafeGeneralize cls
-            return impNames
-        let impNamesWithBase = Set.toList $ Set.insert "Std.Base" $ Set.fromList impNames
+    (res, newG) <- liftIO $ evalTC g ir pmState $ do
+        tcInit
+        impNamesWithBase <- Set.toList <$> extractImportedModules unit
         result <- liftIO $ Compilation.requestModules sources impNamesWithBase cmpMods
         case result of
             Right (imports, newCmpMods) -> do

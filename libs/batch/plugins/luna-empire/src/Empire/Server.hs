@@ -8,6 +8,7 @@ module Empire.Server where
 
 import qualified Compress
 import           Control.Concurrent                   (forkIO, forkOn)
+import           Control.Concurrent.Async             (Async)
 import qualified Control.Concurrent.Async             as Async
 import           Control.Concurrent.MVar
 import           Control.Concurrent.STM               (STM)
@@ -54,7 +55,6 @@ import           Prologue                             hiding (Text)
 import           System.Directory                     (canonicalizePath)
 import           System.Environment                   (getEnv)
 import qualified System.Log.MLogger                   as Logger
-import qualified System.IO as IO
 import           System.IO.Unsafe                     (unsafePerformIO)
 import           System.Mem                           (performGC)
 
@@ -100,10 +100,8 @@ run endPoints topics formatted projectRoot = do
     forkOn tcCapability $ do
         writeIORef minCapabilityNumber 1
         updateCapabilities
-        liftIO $ print "compiling stdlib" >> IO.hFlush IO.stdout
         (std, cleanup) <- prepareStdlib
         pmState <- Graph.defaultPMState
-        liftIO $ print "compiled stdlib" >> IO.hFlush IO.stdout
         putMVar compiledStdlib (std, cleanup, pmState)
     forkOn tcCapability $ void $ Bus.runBus endPoints $ startTCWorker commEnv
     waiting <- newEmptyMVar
@@ -130,6 +128,21 @@ prepareStdlib = do
     (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
     return (std, cleanup)
 
+killPreviousTC :: Maybe (Async Empire.InterpreterEnv) -> IO ()
+killPreviousTC prevAsync = case prevAsync of
+    Just a -> do
+        res <- Async.poll a
+        case res of
+            Just m -> case m of
+                Left exc     -> logger Logger.warning $ "[TCWorker]: TC failed with: " <> displayException exc
+                Right intEnv -> do
+                    logger Logger.info "[TCWorker]: killing listeners"
+                    mapM_ Async.uninterruptibleCancel $ view Empire.listeners intEnv
+            _      -> do
+                logger Logger.info "[TCWorker]: cancelling previous request"
+                Async.uninterruptibleCancel a
+    _      -> return ()
+
 startTCWorker :: Empire.CommunicationEnv -> Bus ()
 startTCWorker env = liftIO $ do
     tcAsync <- newEmptyMVar
@@ -138,25 +151,11 @@ startTCWorker env = liftIO $ do
     (std, cleanup, pmState) <- readMVar compiledStdlib
     putMVar modules $ unwrap std
     let interpreterEnv = Empire.InterpreterEnv def def def undefined cleanup def
-    liftIO $ print "prepared tc" >> IO.hFlush IO.stdout    
     forever $ do
-        liftIO $ print "receiving request" >> IO.hFlush IO.stdout
-        Empire.TCRequest loc g flush interpret recompute stop <- liftIO $ takeMVar reqs
+        Empire.TCRequest loc g flush interpret recompute stop <- takeMVar reqs
         prevAsync <- tryTakeMVar tcAsync
-        case prevAsync of
-            Just a -> do
-                res <- Async.poll a
-                case res of
-                    Just m -> case m of
-                        Left exc     -> liftIO $ print ("TC failed with: " <> displayException exc) >> IO.hFlush IO.stdout
-                        Right intEnv -> do
-                            liftIO (print "killing residual listeners" >> IO.hFlush IO.stdout)
-                            mapM_ Async.uninterruptibleCancel $ view Empire.listeners intEnv
-                            liftIO $ print "killed residual listeners" >> IO.hFlush IO.stdout
-                    _      -> Async.uninterruptibleCancel a >> liftIO (print "TC ASYNC CANCELLED" >> IO.hFlush IO.stdout)
-            _      -> return ()
-        liftIO $ print "starting tc" >> IO.hFlush IO.stdout
-        async <- Async.asyncOn tcCapability (Empire.evalEmpire env interpreterEnv $ do
+        killPreviousTC prevAsync
+        async     <- Async.asyncOn tcCapability (Empire.evalEmpire env interpreterEnv $ do
             case stop of
                 True  -> Typecheck.stop
                 False -> do
@@ -164,9 +163,7 @@ startTCWorker env = liftIO $ do
                         Typecheck.flushCache
                     Empire.graph .= (g & Graph.clsAst . Graph.pmState .~ pmState)
                     liftIO performGC
-                    liftIO $ print "main tc" >> IO.hFlush IO.stdout
-                    Typecheck.run modules loc interpret recompute `Exception.onException` Typecheck.stop
-                    liftIO $ print "tc done" >> IO.hFlush IO.stdout)
+                    Typecheck.run modules loc interpret recompute `Exception.onException` Typecheck.stop)
         when recompute $ void (Async.waitCatch async)
         putMVar tcAsync async
 

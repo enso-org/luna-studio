@@ -483,11 +483,9 @@ handleSubstitute = modifyGraph defInverse action replyResult where
         newImports  <- Graph.getAvailableImports location
         let importChange = if Set.fromList prevImports == Set.fromList newImports then Nothing else Just newImports
         if isJust importChange then do
-            liftIO $ print "IMPORTS - RECOMPUTE" >> IO.hFlush IO.stdout
             Graph.typecheckWithRecompute (GraphLocation file def)
             Graph.typecheckWithRecompute location
         else do
-            interpret <- use Empire.activeInterpreter
             Graph.withTC location False (return ())
         return $ Substitute.Result res importChange
 
