@@ -97,13 +97,14 @@ run endPoints topics formatted projectRoot = do
     let commEnv = env ^. Env.empireNotif
     forkIO $ void $ Bus.runBus endPoints $ BusT.runBusT $ evalStateT (startAsyncUpdateWorker fromEmpireChan) env
     forkIO $ void $ Bus.runBus endPoints $ startToBusWorker toBusChan
+    compiledStdlib <- newEmptyMVar
     forkOn tcCapability $ do
         writeIORef minCapabilityNumber 1
         updateCapabilities
         (std, cleanup) <- prepareStdlib
         pmState <- Graph.defaultPMState
         putMVar compiledStdlib (std, cleanup, pmState)
-    forkOn tcCapability $ void $ Bus.runBus endPoints $ startTCWorker commEnv
+    forkOn tcCapability $ void $ Bus.runBus endPoints $ startTCWorker compiledStdlib commEnv
     waiting <- newEmptyMVar
     requestThread <- forkOn requestCapability $ void $ Bus.runBus endPoints $ do
         mapM_ Bus.subscribe topics
@@ -117,10 +118,6 @@ runBus formatted projectRoot = do
     Env.projectRoot .= projectRoot
     createDefaultState
     forever handleMessage
-
-compiledStdlib :: MVar (Scope, IO (), Graph.PMState a)
-compiledStdlib = unsafePerformIO newEmptyMVar
-{-# NOINLINE compiledStdlib #-}
 
 prepareStdlib :: IO (Scope, IO ())
 prepareStdlib = do
@@ -143,8 +140,8 @@ killPreviousTC prevAsync = case prevAsync of
                 Async.uninterruptibleCancel a
     _      -> return ()
 
-startTCWorker :: Empire.CommunicationEnv -> Bus ()
-startTCWorker env = liftIO $ do
+startTCWorker :: MVar (Scope, IO (), Graph.PMState ClsGraph) -> Empire.CommunicationEnv -> Bus ()
+startTCWorker compiledStdlib env = liftIO $ do
     tcAsync <- newEmptyMVar
     let reqs = env ^. Empire.typecheckChan
         modules = env ^. Empire.modules
