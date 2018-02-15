@@ -311,7 +311,7 @@ updateVisualizers mayProjectVisPath = do
     modifyNodeEditor $ NE.visualizersLibPaths .= VisualizersPaths internalVisPath mayProjectVisPath
 
     internalVisMap <- liftIO $ Map.mapKeys (flip VisualizerId InternalVisualizer) . fromJSVisualizersMap <$> JS.mkInternalVisualizersMap
-    projectVisMap  <- liftIO $ case mayProjectVisPath of
+    projectVisMap  <- case mayProjectVisPath of
         Nothing -> return mempty
         Just fp -> liftIO $ Map.mapKeys (flip VisualizerId ProjectVisualizer)  . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap fp
     Global.visualizers .= Map.union internalVisMap projectVisMap
