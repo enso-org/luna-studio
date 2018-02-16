@@ -490,7 +490,6 @@ handleSubstitute = modifyGraph defInverse action replyResult where
         newImports  <- Graph.getAvailableImports location
         let importChange = if Set.fromList prevImports == Set.fromList newImports then Nothing else Just newImports
         if isJust importChange then do
-            Graph.typecheckWithRecompute (GraphLocation file def)
             Graph.typecheckWithRecompute location
         else do
             Graph.withTC location False (return ())

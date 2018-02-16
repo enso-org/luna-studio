@@ -206,7 +206,6 @@ addImports loc@(GraphLocation file _) modulesToImport = do
         let newImports = map (\i -> Text.concat ["import ", i, "\n"]) neededImports
         return $ Text.concat $ newImports ++ [code]
     reloadCode loc newCode
-    typecheckWithRecompute (GraphLocation file def)
     typecheckWithRecompute loc
     withUnit (GraphLocation file def) $ do
         modulesMVar <- view modules
