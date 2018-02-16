@@ -12,17 +12,43 @@ import           GHCJS.Marshal.Pure         (pFromJSVal)
 import           JavaScript.Array           (JSArray, toList)
 import           LunaStudio.Data.TypeRep    (ConstructorRep, errorTypeRep, toConstructorRep)
 
-foreign import javascript safe "Object.keys(typeof window.visualizers == 'object' ? window.visualizers : {})"
-    getVisualizers' :: IO JSArray
 
-getVisualizers :: IO [String]
-getVisualizers = fmap pFromJSVal . toList <$> getVisualizers'
+foreign import javascript safe "window.getInternalVisualizersPath()"
+    getInternalVisualizersLibraryPath' :: IO JSString
 
-foreign import javascript safe "window.visualizersPath"
-    getVisualizersLibraryPath' :: IO JSString
+getInternalVisualizersLibraryPath :: IO FilePath
+getInternalVisualizersLibraryPath = convert <$> getInternalVisualizersLibraryPath'
 
-getVisualizersLibraryPath :: IO FilePath
-getVisualizersLibraryPath = convert <$> getVisualizersLibraryPath'
+foreign import javascript safe "res = window.getInternalVisualizers(); $r = Object.keys(typeof res == 'object' ? res : {});"
+    getInternalVisualizers' :: IO JSArray
+
+getInternalVisualizers :: IO [String]
+getInternalVisualizers = fmap pFromJSVal . toList <$> getInternalVisualizers'
+
+foreign import javascript safe "res = window.getProjectVisualizers($1); $r = Object.keys(typeof res == 'object' ? res : {});"
+    getProjectVisualizers' :: JSString -> IO JSArray
+
+getProjectVisualizers :: FilePath -> IO [String]
+getProjectVisualizers fp = fmap pFromJSVal . toList <$> getProjectVisualizers' (convert fp)
+
+foreign import javascript safe "window.checkInternalVisualizer($1, $2)"
+    checkInternalVisualizer' :: JSString -> JSString -> IO JSString
+
+checkInternalVisualizer :: String -> String -> IO String
+checkInternalVisualizer name rep = convert <$> checkInternalVisualizer' (convert name) (convert rep)
+
+foreign import javascript safe "window.checkProjectVisualizer($1, $2)"
+    checkProjectVisualizer' :: JSString -> JSString -> IO JSString
+
+checkProjectVisualizer :: String -> String -> IO String
+checkProjectVisualizer name rep = convert <$> checkProjectVisualizer' (convert name) (convert rep)
+
+mkInternalVisualizersMap :: IO (Map String (String -> IO String))
+mkInternalVisualizersMap = Map.fromList . fmap (id &&& checkInternalVisualizer) <$> getInternalVisualizers
+
+mkProjectVisualizersMap :: FilePath -> IO (Map String (String -> IO String))
+mkProjectVisualizersMap fp = Map.fromList . fmap (id &&& checkProjectVisualizer) <$> getProjectVisualizers fp
+
 
 
 foreign import javascript safe "visualizerFramesManager.sendData($1, $2, $3);"
@@ -49,12 +75,3 @@ registerVisualizerFrame = registerVisualizerFrame' . convert . show
 sendVisualizationData :: UUID -> ConstructorRep -> Text -> IO ()
 sendVisualizationData uid rep d' = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d) where
     d = if Just rep == toConstructorRep errorTypeRep then convert . BS.unpack . Aeson.encode $ d' else d'
-
-foreign import javascript safe "window.visualizers[$1]($2)"
-    checkVisualizer' :: JSString -> JSString -> IO JSString
-
-checkVisualizer :: String -> String -> IO String
-checkVisualizer name rep = convert <$> checkVisualizer' (convert name) (convert rep)
-
-mkVisualizersMap :: IO (Map String (String -> IO String))
-mkVisualizersMap = Map.fromList . fmap (id &&& checkVisualizer) <$> getVisualizers

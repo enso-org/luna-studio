@@ -6,10 +6,13 @@ module NodeEditor.React.Model.Visualization
     ) where
 
 import           Common.Prelude
-import           Data.Map                  (Map)
-import qualified Data.Map                  as Map
-import           LunaStudio.Data.NodeLoc   (NodeLoc)
-import           LunaStudio.Data.NodeValue as X (VisualizationId, VisualizationValue (..), Visualizer, VisualizerName, VisualizerPath)
+import           Data.Map                      (Map)
+import qualified Data.Map                      as Map
+import           LunaStudio.Data.NodeLoc       (NodeLoc)
+import           LunaStudio.Data.Visualization as X (VisualizationId, VisualizationValue (..))
+import           LunaStudio.Data.Visualizer    as X (Visualizer (Visualizer), VisualizerId (VisualizerId), VisualizerMatcher,
+                                                     VisualizerName, VisualizerPath, VisualizerType (..), getErrorVisualizer,
+                                                     getMdVisualizer, visualizerId, visualizerName, visualizerRelPath, visualizerType)
 
 
 data VisualizationMode = Default
@@ -40,14 +43,14 @@ data IdleVisualization = IdleVisualization { _visualizationStatus :: Visualizati
 
 data NodeVisualizations = NodeVisualizations { _visualizations     :: Map VisualizationId RunningVisualization
                                              , _idleVisualizations :: [IdleVisualization]
-                                             , _visualizers        :: Map VisualizerName VisualizerPath
+                                             , _visualizers        :: Map VisualizerId VisualizerPath
                                              } deriving (Eq, Generic, NFData, Show)
 
 
 data VisualizationProperties = VisualizationProperties { _visPropNodeLoc        :: NodeLoc
                                                        , _visPropIsNodeExpanded :: Bool
                                                        , _visPropArgPortsNumber :: Int
-                                                       , _visPropVisualizers    :: Map VisualizerName VisualizerPath
+                                                       , _visPropVisualizers    :: Map VisualizerId VisualizerPath
                                                        , _visPropVisualization  :: RunningVisualization
                                                        } deriving (Eq, Generic, NFData, Show)
 

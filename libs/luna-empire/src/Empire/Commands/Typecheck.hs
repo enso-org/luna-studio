@@ -26,10 +26,11 @@ import           System.Environment               (getEnv)
 import           System.FilePath                  (takeDirectory)
 import qualified Path
 
-import qualified LunaStudio.Data.Error            as APIError
+import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem(Definition))
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
-import           LunaStudio.Data.NodeValue        (NodeValue (..), VisualizationValue (..))
-import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem(..))
+import qualified LunaStudio.Data.Error            as APIError
+import           LunaStudio.Data.NodeValue        (NodeValue (..))
+import           LunaStudio.Data.Visualization    (VisualizationValue (..))
 
 import           Empire.ASTOp                     (getImportedModules, runASTOp, runTypecheck, runModuleTypecheck)
 import qualified Empire.ASTOps.Read               as ASTRead

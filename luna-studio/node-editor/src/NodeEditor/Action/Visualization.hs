@@ -6,7 +6,6 @@ import           Common.Prelude
 import qualified Data.Map                                   as Map
 import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendVisualizationData)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
-import           LunaStudio.Data.NodeValue                  (VisualizerName)
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
 import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, checkAction, checkIfActionPerfoming, continueActionWithKey,
@@ -23,8 +22,9 @@ import           NodeEditor.React.Model.Visualization       (IdleVisualization (
                                                              RunningVisualization (RunningVisualization), VisualizationId,
                                                              VisualizationMode (Focused, FullScreen, Preview),
                                                              VisualizationParent (Node, Searcher), VisualizationStatus (Outdated, Ready),
-                                                             idleVisualizations, idleVisualizer, runningVisualizer, stopVisualizations,
-                                                             visualizationId, visualizationMode, visualizationStatus, visualizations,
+                                                             Visualizer (Visualizer), VisualizerId, VisualizerName, idleVisualizations,
+                                                             idleVisualizer, runningVisualizer, stopVisualizations, visualizationId,
+                                                             visualizationMode, visualizationStatus, visualizations, visualizerName,
                                                              visualizers)
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
                                                              DocVisualizationActive (DocVisualizationActive),
@@ -79,11 +79,11 @@ exitDocVisualizationMode :: DocVisualizationActive -> Command State ()
 exitDocVisualizationMode = end
 
 
-selectVisualizer :: VisualizationParent -> VisualizationId -> VisualizerName -> Command State ()
-selectVisualizer (Node nl) visId visName = withJustM (getNodeVisualizations nl) $ \nodeVis ->
-    withJust ((,) <$> Map.lookup visId (nodeVis ^. visualizations) <*> Map.lookup visName (nodeVis ^. visualizers)) $ \(prevVis, visPath) -> do
+selectVisualizer :: VisualizationParent -> VisualizationId -> VisualizerId -> Command State ()
+selectVisualizer (Node nl) visId visualizerId = withJustM (getNodeVisualizations nl) $ \nodeVis ->
+    withJust ((,) <$> Map.lookup visId (nodeVis ^. visualizations) <*> Map.lookup visualizerId (nodeVis ^. visualizers)) $ \(prevVis, visPath) -> do
         continue (end :: VisualizationActive -> Command State ())
-        let visualizer' = (visName, visPath)
+        let visualizer' = Visualizer visualizerId visPath
         updateDefaultVisualizer nl (Just visualizer') True True
         when (prevVis ^. runningVisualizer /= visualizer') $ getVisualizationsBackupMap >>= \visBackup ->
             case Map.lookup nl visBackup of

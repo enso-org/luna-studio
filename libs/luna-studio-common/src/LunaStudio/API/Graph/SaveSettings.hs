@@ -14,9 +14,9 @@ import qualified LunaStudio.API.Response              as Response
 import qualified LunaStudio.API.Topic                 as T
 import           LunaStudio.Data.CameraTransformation (CameraTransformation)
 import           LunaStudio.Data.GraphLocation        (GraphLocation)
-import           LunaStudio.Data.NodeValue            (Visualizer)
 import           LunaStudio.Data.Project              (LocationSettings)
 import           LunaStudio.Data.TypeRep              (TypeRep)
+import           LunaStudio.Data.Visualizer           (Visualizer)
 import           Prologue                             hiding (TypeRep)
 
 

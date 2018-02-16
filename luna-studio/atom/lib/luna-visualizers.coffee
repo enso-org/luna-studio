@@ -2,8 +2,13 @@ path = require 'path'
 fs   = require 'fs'
 
 visBasePath = path.join __dirname, 'visualizers'
+internalVisualizers = []
+projectVisualizers  = []
 
-listVisualizers = (visPath) -> (fs.readdirSync visPath).filter((p) -> fs.existsSync(path.join(visPath, p, "config.js")))
+listVisualizers = (visPath) -> 
+    if fs.existsSync visPath
+        (fs.readdirSync visPath).filter((p) -> fs.existsSync(path.join(visPath, p, "config.js")))
+    else []
 
 resolveVis = (p, name) ->
     normalizeVis p, name, require(path.join p, name, "config.js")
@@ -15,11 +20,19 @@ normalizeVis = (p, name, visConf) -> (cons) ->
         JSON.stringify(filesToLoad)
     else JSON.stringify(null)
 
-setupConfigMap = (path) ->
+getVisualizersForPath = (path) ->
     visualizers = listVisualizers(path)
     result = {}
     result[n] = resolveVis path, n for n in visualizers
-    window.visualizersPath = path
-    window.visualizers     = result
+    result
 
-module.exports = () -> setupConfigMap visBasePath
+module.exports = () ->
+    window.getInternalVisualizersPath = () -> visBasePath
+    window.getInternalVisualizers     = () ->
+        internalVisualizers = getVisualizersForPath visBasePath
+        internalVisualizers
+    window.getProjectVisualizers      = (path) ->
+        projectVisualizers = getVisualizersForPath path
+        projectVisualizers
+    window.checkInternalVisualizer    = (name, tpeRep) -> internalVisualizers[name](tpeRep)
+    window.checkProjectVisualizer     = (name, tpeRep) -> projectVisualizers[name](tpeRep)
