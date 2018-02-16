@@ -34,6 +34,7 @@ import           Empire.Prelude       hiding (Type, mempty, toList)
 import           Prologue             (mempty)
 
 import           Control.Monad.Catch  (MonadCatch(..))
+import           Control.Monad.Raise  (MonadException)
 import           Control.Monad.State  (MonadState, StateT, runStateT, get, put)
 import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
@@ -252,6 +253,11 @@ runTypecheck imports = do
         return (st, passSt)
     put $ newG & Graph.ast .~ AST st passSt
 
+evalTC :: ClsGraph
+       -> IR
+       -> State (Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT ClsGraph IO))))))
+       -> Pass.PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT ClsGraph IO))))) a
+       -> IO (a, ClsGraph)
 evalTC g ir pmState = flip runStateT g
                     . withVis
                     . dropLogs
@@ -259,6 +265,7 @@ evalTC g ir pmState = flip runStateT g
                     . flip evalIRBuilder ir
                     . flip evalPassManager pmState
 
+tcInit :: MonadPassManager m => m ()
 tcInit = do
     Pass.setAttr (getTypeDesc @WorldExpr)                 $ error "Data not provided: WorldExpr"
     Pass.setAttr (getTypeDesc @UnitLoader.UnitsToLoad)    $ error "Data not provided: UnitsToLoad"
@@ -267,6 +274,7 @@ tcInit = do
     Pass.setAttr (getTypeDesc @Invalids)                  $ (mempty :: Invalids)
     initNameGen
 
+extractImportedModules :: (MonadPassManager m, MonadException PassEvalError m) => Expr Unit -> m (Set.Set QualName)
 extractImportedModules unit = do
     impNames <- Pass.eval' $ do
         imphub   <- unit @^. Term.imports
