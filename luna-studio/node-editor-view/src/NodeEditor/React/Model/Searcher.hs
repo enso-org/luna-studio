@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData        #-}
-module NodeEditor.React.Model.Searcher where
+module NodeEditor.React.Model.Searcher
+    ( module NodeEditor.React.Model.Searcher
+    , Match
+    ) where
 
 import           Common.Prelude
 import qualified Data.Map.Lazy                              as Map
@@ -215,15 +218,6 @@ isNodeName = to matchNodeName where
     matchNodeName searcher = case searcher ^. mode of
         NodeName {} -> True
         _           -> False
-
-isSearcherRelated :: NodeLoc -> Searcher -> Bool
-isSearcherRelated nl s = isPrefixOf nlIdPath sIdPath where
-    nlIdPath = NodeLoc.toNodeIdList nl
-    sIdPath = case s ^. mode of
-        Node     snl   _ _ -> NodeLoc.toNodeIdList snl
-        NodeName snl     _ -> NodeLoc.toNodeIdList snl
-        PortName portRef _ -> NodeLoc.toNodeIdList $ portRef ^. PortRef.nodeLoc
-        _                  -> []
 
 data OtherCommands = AddNode
                    deriving (Bounded, Enum, Eq, Generic, Read, Show)

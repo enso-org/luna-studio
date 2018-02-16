@@ -25,7 +25,7 @@ import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), No
 import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
 import           LunaStudio.Data.NodeMeta                 (NodeMeta (NodeMeta))
 import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
-import           LunaStudio.Data.NodeValue                (ShortValue, Visualizer)
+import           LunaStudio.Data.NodeValue                (ShortValue)
 import qualified LunaStudio.Data.PortRef                  as PortRef
 import           LunaStudio.Data.Position                 (Position, move)
 import           LunaStudio.Data.TypeRep                  (TypeRep)
@@ -37,6 +37,7 @@ import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode
 import           NodeEditor.React.Model.Port              (AnyPortId (InPortId', OutPortId'), InPort, InPortId, InPortTree, OutPort,
                                                            OutPortId, OutPortTree)
 import qualified NodeEditor.React.Model.Port              as Port
+import           NodeEditor.React.Model.Visualization     (Visualizer)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'                  :: NodeLoc

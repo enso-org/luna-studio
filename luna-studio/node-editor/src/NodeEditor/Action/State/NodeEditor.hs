@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -14,21 +13,21 @@ import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
 import           Data.Monoid                                 (First (First), getFirst)
 import qualified Data.Set                                    as Set
-import           JS.Visualizers                              (registerVisualizerFrame)
+import qualified Data.Text                                   as Text
+import qualified JS.Visualizers                              as JS
 import           LunaStudio.Data.CameraTransformation        (CameraTransformation)
 import           LunaStudio.Data.GraphLocation               (breadcrumb)
 import           LunaStudio.Data.MonadPath                   (MonadPath)
 import           LunaStudio.Data.NodeMeta                    (NodeMeta)
 import           LunaStudio.Data.NodeSearcher                (ImportName, ModuleHints)
 import qualified LunaStudio.Data.NodeSearcher                as NS
-import           LunaStudio.Data.NodeValue                   (VisualizationId, Visualizer, VisualizerName, VisualizerPath, applyType,
-                                                              errorVisName, placeholderVisName)
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified LunaStudio.Data.PortRef                     as PortRef
 import           LunaStudio.Data.Position                    (Position)
 import           LunaStudio.Data.TypeRep                     (TypeRep (TStar))
+import           LunaStudio.Data.Visualizer                  (applyType, fromJSInternalVisualizersMap, fromJSVisualizersMap)
 import qualified NodeEditor.Action.Batch                     as Batch
 import           NodeEditor.Action.State.App                 (get, getWorkspace, modify, modifyApp)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
@@ -46,16 +45,23 @@ import           NodeEditor.React.Model.Node                 (InputNode, Node (E
                                                               inPortsList, nodeLoc, outPortAt, outPortsList, toNodesMap)
 import           NodeEditor.React.Model.Node.ExpressionNode  (ExpressionNode, isSelected)
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
-import           NodeEditor.React.Model.NodeEditor           (GraphStatus, NodeEditor, VisualizationBackup)
+import           NodeEditor.React.Model.NodeEditor           (GraphStatus, NodeEditor, VisualizationBackup,
+                                                              VisualizersPaths (VisualizersPaths))
 import qualified NodeEditor.React.Model.NodeEditor           as NE
 import           NodeEditor.React.Model.Port                 (InPort, OutPort, state)
 import qualified NodeEditor.React.Model.Port                 as Port
 import           NodeEditor.React.Model.Searcher             (Searcher)
 import qualified NodeEditor.React.Model.Searcher             as Searcher
-import           NodeEditor.React.Model.Visualization        (NodeVisualizations)
+import           NodeEditor.React.Model.Visualization        (NodeVisualizations, VisualizationId, Visualizer (Visualizer),
+                                                              VisualizerId (VisualizerId), VisualizerPath,
+                                                              VisualizerProperties (VisualizerProperties),
+                                                              VisualizerType (InternalVisualizer, LunaVisualizer, ProjectVisualizer),
+                                                              errorVisId, placeholderVisId, visualizerId, visualizerId, visualizerRelPath,
+                                                              visualizerType, _InternalVisualizer)
 import qualified NodeEditor.React.Model.Visualization        as Visualization
 import           NodeEditor.State.Global                     (State, internalVisualizers, nodeSearcherData, preferedVisualizers,
                                                               visualizers)
+import qualified NodeEditor.State.Global                     as Global
 
 
 getNodeEditor :: Command State NodeEditor
@@ -303,18 +309,32 @@ getVisualizationsBackupMap = view (NE.visualizationsBackup . NE.backupMap) <$> g
 removeBackupForNodes :: [NodeLoc] -> Command State ()
 removeBackupForNodes nls = modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap %= \backupMap -> foldl (flip Map.delete) backupMap nls
 
+updateVisualizers :: Maybe FilePath -> Command State ()
+updateVisualizers mayProjectVisPath = do
+    internalVisPath <- liftIO $ JS.getInternalVisualizersLibraryPath
+    lunaVisPath     <- liftIO $ JS.getLunaVisualizersLibraryPath
+    modifyNodeEditor $ NE.visualizersLibPaths .= VisualizersPaths internalVisPath lunaVisPath mayProjectVisPath
+
+    internalVisMap <- liftIO $ fromJSInternalVisualizersMap <$> JS.mkInternalVisualizersMap
+    lunaVisMap     <- liftIO $ Map.mapKeys (flip VisualizerId LunaVisualizer) . fromJSVisualizersMap <$> JS.mkLunaVisualizersMap
+    projectVisMap  <- case mayProjectVisPath of
+        Nothing -> return mempty
+        Just fp -> liftIO $ Map.mapKeys (flip VisualizerId ProjectVisualizer)  . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap fp
+    Global.visualizers         .= Map.union lunaVisMap projectVisMap
+    Global.internalVisualizers .= internalVisMap
+
 getNodeVisualizations :: NodeLoc -> Command State (Maybe NodeVisualizations)
 getNodeVisualizations nl = (^? NE.nodeVisualizations . ix nl) <$> getNodeEditor
 
-getVisualizersForType :: TypeRep -> Command State (Maybe (Visualizer, Map VisualizerName VisualizerPath))
+getVisualizersForType :: TypeRep -> Command State (Maybe (Visualizer, Map VisualizerId VisualizerPath))
 getVisualizersForType tpe = do
-    mayPrefVis  <- HashMap.lookup tpe <$> use preferedVisualizers
+    mayPrefVis   <- HashMap.lookup tpe <$> use preferedVisualizers
     visualizers' <- use visualizers >>= applyType tpe
     let mayDefVis = case mayPrefVis of
-            Just (prefName, prefPath) -> if Map.lookup prefName visualizers' == Just prefPath
+            Just visualizer -> if Map.lookup (visualizer ^. visualizerId) visualizers' == Just (visualizer ^. visualizerRelPath)
                 then mayPrefVis
-                else listToMaybe $ Map.toList visualizers'
-            _ -> listToMaybe $ Map.toList visualizers'
+                else fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
+            _ -> fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
     return $ if isNothing mayDefVis || Map.null visualizers'
         then Nothing
         else (, visualizers') <$> mayDefVis
@@ -325,7 +345,7 @@ addVisualizationForNode nl = withJustM (getExpressionNode nl) $ \n -> do
                 else if ExpressionNode.hasData n && isJust (n ^. ExpressionNode.defaultVisualizer) then return $ n ^. ExpressionNode.defaultVisualizer
                 else getPlaceholderVisualizer
     withJust mayVisualizer $ \visualizer' -> do
-        let newVis = Visualization.IdleVisualization Visualization.Ready visualizer'
+        let newVis = Visualization.IdleVisualization Visualization.Ready $ VisualizerProperties visualizer' (Just $ visualizer' ^. visualizerId)
             updateNodeVisualizations _ nodeVis = nodeVis & Visualization.idleVisualizations %~ (newVis :)
         modifyNodeEditor $ NE.nodeVisualizations %= Map.insertWith updateNodeVisualizations
                                                                    nl
@@ -346,18 +366,18 @@ recoverVisualizations nl = getNodeVisualizations nl >>= \case
         let (ready, outdated) = partition ((== Visualization.Ready) . view Visualization.visualizationStatus) $ nodeVis ^. Visualization.idleVisualizations
         running <- fmap Map.fromList . forM ready $ \vis -> do
             visId <- getUUID
-            liftIO $ registerVisualizerFrame visId
-            return (visId, Visualization.RunningVisualization visId def $ vis ^. Visualization.idleVisualizer)
+            liftIO $ JS.registerVisualizerFrame visId
+            return (visId, Visualization.RunningVisualization visId def $ vis ^. Visualization.idleVisualizerProperties)
         modifyNodeEditor $ do
             NE.nodeVisualizations . ix nl . Visualization.visualizations     %= Map.union running
             NE.nodeVisualizations . ix nl . Visualization.idleVisualizations .= outdated
         maybe def (Map.keys . view Visualization.visualizations) <$> getNodeVisualizations nl
 
 getPlaceholderVisualizer :: Command State (Maybe Visualizer)
-getPlaceholderVisualizer = fmap (placeholderVisName, ) . Map.lookup placeholderVisName <$> use internalVisualizers
+getPlaceholderVisualizer = fmap (Visualizer placeholderVisId) . Map.lookup placeholderVisId <$> use internalVisualizers
 
 getErrorVisualizer :: Command State (Maybe Visualizer)
-getErrorVisualizer = fmap (errorVisName, ) . Map.lookup errorVisName <$> use internalVisualizers
+getErrorVisualizer = fmap (Visualizer errorVisId) . Map.lookup errorVisId <$> use internalVisualizers
 
 clearVisualizationsForNode :: NodeLoc -> Command State ()
 clearVisualizationsForNode nl = modifyNodeEditor $ NE.nodeVisualizations . ix nl .= def
@@ -372,8 +392,8 @@ setPlaceholderVisualization nl = getExpressionNode nl >>= \mayN -> do
                 mayVis <- maybe (return def) getVisualizersForType $ n ^. ExpressionNode.nodeType
                 modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
                     let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                        running     = Map.filter ((placeholderVis ==) . view Visualization.runningVisualizer) prevVis
-                        idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready placeholderVis] else []
+                        running     = Map.filter ((placeholderVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
+                        idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties placeholderVis def] else []
                         visualizers = maybe def snd mayVis
                     Map.insert nl (Visualization.NodeVisualizations running idle visualizers) visMap
     recoverVisualizations nl
@@ -386,8 +406,8 @@ setErrorVisualization nl = getExpressionNode nl >>= \mayN -> do
             Nothing       -> clearVisualizationsForNode nl
             Just errorVis -> modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
                 let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                    running     = Map.filter ((errorVis ==) . view Visualization.runningVisualizer) prevVis
-                    idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready errorVis] else []
+                    running     = Map.filter ((errorVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
+                    idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties errorVis def] else []
                 Map.insert nl (Visualization.NodeVisualizations running idle def) visMap
     recoverVisualizations nl
 
@@ -404,8 +424,8 @@ updateVisualizationsForNode nl = do
                 else withJust mayVis $ \vis -> do
                     modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
                         let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                            running     = Map.filter (not . flip elem [placeholderVisName, errorVisName] . fst . view Visualization.runningVisualizer) prevVis
-                            idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ fst vis] else []
+                            running     = Map.filter (not . has (Visualization.visualizerProperties . Visualization.runningVisualizer . visualizerId . visualizerType . _InternalVisualizer)) prevVis
+                            idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties (fst vis) $ Just $ (fst vis) ^. visualizerId] else []
                         Map.insert nl (Visualization.NodeVisualizations running idle $ snd vis) visMap
                     updateDefaultVisualizer nl (Just $ fst vis) False
                     recoverVisualizations nl

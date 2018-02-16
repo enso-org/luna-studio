@@ -1,45 +1,56 @@
 path = require 'path'
 fs   = require 'fs'
 
-visPath         = path.join __dirname, 'visualizers'
-dataVisName     = 'data'
+lunaBaseVisPath = path.join __dirname, 'visualizers'
 internalVisName = 'internal'
+lunaVisName     = 'data'
+lunaVisPath     = path.join lunaBaseVisPath, lunaVisName
 
-listVisualizers = (visPath) -> (fs.readdirSync visPath).filter((p) -> fs.existsSync(path.join(visPath, p, "config.js")))
+internalVisualizers = []
+lunaVisualizers     = []
+projectVisualizers  = []
 
-listInternalVisualizers = (visPath) -> (fs.readdirSync visPath).filter((p) -> p == internalVisName && fs.existsSync(path.join(visPath, p, "config.js")))
+
+listVisualizers = (visPath, name) -> 
+    if not fs.existsSync visPath
+        []
+    else
+        dirs = []
+        if name?
+            dirs = [name]
+        else
+            dirs = fs.readdirSync visPath
+        dirs.filter((p) -> fs.existsSync(path.join(visPath, p, "config.js")))
 
 resolveVis = (p, name) ->
     normalizeVis p, name, require(path.join p, name, "config.js")
 
-resolveInternalVis = (p, name) ->
-    visConf = require(path.join p, name, "config.js")
-    filesToLoad = visConf()
+normalizeVis = (p, name, visConf) -> (cons) ->
+    filesToLoad = if cons? then visConf(JSON.parse cons) else visConf()
     if filesToLoad?
         f.path = path.join(name, f.path) for f in filesToLoad
         JSON.stringify(filesToLoad)
     else JSON.stringify(null)
 
-normalizeVis = (p, name, visConf) -> (cons) ->
-    filesToLoad = visConf (JSON.parse cons)
-    if filesToLoad?
-        f.path = path.join(dataVisName, name, f.path) for f in filesToLoad
-        JSON.stringify(filesToLoad)
-    else JSON.stringify(null)
-
-setupConfigMap = (visPath) ->
-    visDataPath = path.join visPath, dataVisName
-    visualizers = listVisualizers(visDataPath)
-    internalVisualizers = listVisualizers(visPath)
+getVisualizersForPath = (path, name) ->
+    visualizers = listVisualizers(path, name)
     result = {}
-    result[n] = resolveVis visDataPath, n for n in visualizers
-    internalResult = {}
-    for n in internalVisualizers
-        entries = JSON.parse(resolveInternalVis visPath, n)
-        if entries
-            internalResult[entry.name] = entry.path for entry in entries
-    window.visualizersPath     = visPath
-    window.visualizers         = result
-    window.internalVisualizers = JSON.stringify internalResult
+    result[n] = resolveVis path, n for n in visualizers
+    result
 
-module.exports = () -> setupConfigMap visPath
+module.exports = () ->
+    window.getInternalVisualizersPath = () -> lunaBaseVisPath
+    window.getInternalVisualizers = () -> 
+        internalVisualizers = getVisualizersForPath lunaBaseVisPath, internalVisName
+        internalVisualizers
+    window.getLunaVisualizersPath = () -> lunaVisPath
+    window.getLunaVisualizers     = () ->
+        lunaVisualizers = getVisualizersForPath lunaVisPath
+        lunaVisualizers
+    window.getProjectVisualizers      = (path) ->
+        projectVisualizers = getVisualizersForPath path
+        projectVisualizers
+    window.checkInternalVisualizer = (name)         -> internalVisualizers[name]()
+    window.checkLunaVisualizer     = (name, tpeRep) -> lunaVisualizers[name](tpeRep)
+    window.checkProjectVisualizer  = (name, tpeRep) -> projectVisualizers[name](tpeRep)
+

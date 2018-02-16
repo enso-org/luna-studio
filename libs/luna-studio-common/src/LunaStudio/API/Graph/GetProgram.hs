@@ -16,9 +16,9 @@ import           LunaStudio.Data.Error                (Error, GraphError)
 import           LunaStudio.Data.Graph                (Graph)
 import           LunaStudio.Data.GraphLocation        (GraphLocation)
 import           LunaStudio.Data.NodeSearcher         (ImportName)
-import           LunaStudio.Data.NodeValue            (Visualizer)
 import           LunaStudio.Data.Project              (LocationSettings)
 import           LunaStudio.Data.TypeRep              (TypeRep)
+import           LunaStudio.Data.Visualizer           (Visualizer)
 import           Prologue                             hiding (TypeRep)
 
 
@@ -27,13 +27,14 @@ data Request = Request { _location             :: GraphLocation
                        , _retrieveLocation     :: Bool
                        } deriving (Eq, Generic, Show)
 
-data Result  = Result  { _graph            :: Either (Error GraphError) Graph
-                       , _code             :: Text
-                       , _breadcrumb       :: Breadcrumb (Named BreadcrumbItem)
-                       , _availableImports :: [ImportName]
-                       , _typeRepToVisMap  :: Maybe (HashMap TypeRep Visualizer)
-                       , _camera           :: CameraTransformation
-                       , _newLocation      :: GraphLocation
+data Result  = Result  { _graph                  :: Either (Error GraphError) Graph
+                       , _code                   :: Text
+                       , _breadcrumb             :: Breadcrumb (Named BreadcrumbItem)
+                       , _availableImports       :: [ImportName]
+                       , _typeRepToVisMap        :: Maybe (HashMap TypeRep Visualizer)
+                       , _camera                 :: CameraTransformation
+                       , _newLocation            :: GraphLocation
+                       , _projectVisualizersPath :: Maybe FilePath
                        } deriving (Eq, Generic, Show)
 
 makeLenses ''Request

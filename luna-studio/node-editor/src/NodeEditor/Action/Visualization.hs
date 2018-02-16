@@ -8,7 +8,6 @@ import qualified Data.Map                                   as Map
 import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendInternalData,
                                                              sendVisualizationData)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
-import           LunaStudio.Data.NodeValue                  (VisualizerName)
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
 import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta, setVisualizationData)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, checkAction, checkIfActionPerfoming, continueActionWithKey,
@@ -26,9 +25,13 @@ import           NodeEditor.React.Model.Visualization       (IdleVisualization (
                                                              RunningVisualization (RunningVisualization), VisualizationId,
                                                              VisualizationMode (Focused, FullScreen, Preview),
                                                              VisualizationParent (Node, Searcher), VisualizationStatus (Outdated, Ready),
-                                                             awaitingDataMsg, idleVisualizations, idleVisualizer, noVisMsg,
-                                                             runningVisualizer, stopVisualizations, visualizationId, visualizationMode,
-                                                             visualizationStatus, visualizations, visualizers)
+                                                             Visualizer (Visualizer), VisualizerId, VisualizerName,
+                                                             VisualizerProperties (VisualizerProperties), awaitingDataMsg,
+                                                             idleVisualizations, idleVisualizerProperties, noVisMsg, runningVisualizer,
+                                                             selectedVisualizerId, stopVisualizations, visualizationId, visualizationMode,
+                                                             visualizationStatus, visualizations, visualizerName, visualizerProperties,
+                                                             visualizers)
+import qualified NodeEditor.React.Model.Visualization       as Vis
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
                                                              DocVisualizationActive (DocVisualizationActive),
                                                              VisualizationActive (VisualizationActive), docVisualizationActiveAction,
@@ -82,19 +85,19 @@ exitDocVisualizationMode :: DocVisualizationActive -> Command State ()
 exitDocVisualizationMode = end
 
 
-selectVisualizer :: VisualizationParent -> VisualizationId -> VisualizerName -> Command State ()
-selectVisualizer (Node nl) visId visName = withJustM (getNodeVisualizations nl) $ \nodeVis ->
-    withJust ((,) <$> Map.lookup visId (nodeVis ^. visualizations) <*> Map.lookup visName (nodeVis ^. visualizers)) $ \(prevVis, visPath) -> do
+selectVisualizer :: VisualizationParent -> VisualizationId -> VisualizerId -> Command State ()
+selectVisualizer (Node nl) visId visualizerId = withJustM (getNodeVisualizations nl) $ \nodeVis ->
+    withJust ((,) <$> Map.lookup visId (nodeVis ^. visualizations) <*> Map.lookup visualizerId (nodeVis ^. visualizers)) $ \(prevVis, visPath) -> do
         continue (end :: VisualizationActive -> Command State ())
-        let visualizer' = (visName, visPath)
+        let visualizer' = Visualizer visualizerId visPath
         updateDefaultVisualizer nl (Just visualizer') True
-        when (prevVis ^. runningVisualizer /= visualizer') $ getVisualizationsBackupMap >>= \visBackup ->
+        when (prevVis ^. visualizerProperties . runningVisualizer /= visualizer') $ getVisualizationsBackupMap >>= \visBackup ->
             case Map.lookup nl visBackup of
                 Just (StreamBackup backup) -> do
                     uuid <- getUUID
                     modifyNodeEditor $ do
                         nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                        nodeVisualizations . ix nl . visualizations . at uuid ?= RunningVisualization uuid def visualizer'
+                        nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
                     mayTpe <- getExpressionNodeType nl
                     withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
                         updatePreferedVisualizer tpe visualizer'
@@ -105,14 +108,16 @@ selectVisualizer (Node nl) visId visName = withJustM (getNodeVisualizations nl) 
                     uuid <- getUUID
                     modifyNodeEditor $ do
                         nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                        nodeVisualizations . ix nl . visualizations . at uuid ?= RunningVisualization uuid def visualizer'
+                        nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
                     mayTpe <- getExpressionNodeType nl
                     withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
                         updatePreferedVisualizer tpe visualizer'
                         liftIO $ do
                             registerVisualizerFrame uuid
                             sendVisualizationData   uuid cRep backup
-                _ -> withJustM (getExpressionNodeType nl) $ flip updatePreferedVisualizer visualizer'
+                _ -> do
+                    modifyNodeEditor $ nodeVisualizations . ix nl . visualizations . ix (prevVis ^. visualizationId) . visualizerProperties . selectedVisualizerId ?= visualizerId
+                    withJustM (getExpressionNodeType nl) $ flip updatePreferedVisualizer visualizer'
 selectVisualizer Searcher _ _ = $notImplemented
 
 
@@ -176,7 +181,7 @@ startReadyVisualizations nl = do
             if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
                 uuid <- getUUID
                 liftIO $ registerVisualizerFrame uuid
-                return $ newNodeVis & visualizations %~ Map.insert uuid (RunningVisualization uuid def $ vis ^. idleVisualizer)
+                return $ newNodeVis & visualizations %~ Map.insert uuid (RunningVisualization uuid def $ vis ^. idleVisualizerProperties)
         updateVis nodeVis (Just backup) = do
             nVis <- foldlM activateWith (nodeVis & idleVisualizations .~ def) $ nodeVis ^. idleVisualizations
             modifyNodeEditor $ nodeVisualizations . at nl ?= nVis

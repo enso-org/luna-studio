@@ -8,8 +8,7 @@ import qualified Data.Text                                  as Text
 import           JS.Visualizers                             (notifyStreamRestart, sendInternalData, sendStreamDatapoint,
                                                              sendVisualizationData)
 import           LunaStudio.Data.Error                      (errorContent)
-import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue),
-                                                             VisualizationValue (StreamDataPoint, StreamStart, Value))
+import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue))
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeType, getNodeVisualizations, getVisualizersForType,
                                                              modifyExpressionNode, modifyNodeEditor, recoverVisualizations,
@@ -18,7 +17,8 @@ import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeTy
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, Value (Error, ShortValue), execTime, value)
 import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (ErrorBackup, MessageBackup, StreamBackup, ValueBackup),
                                                              backupMap, visualizationsBackup, _StreamBackup)
-import           NodeEditor.React.Model.Visualization       (noDataMsg, noVisMsg, visualizations)
+import           NodeEditor.React.Model.Visualization       (VisualizationValue (StreamDataPoint, StreamStart, Value), noDataMsg, noVisMsg,
+                                                             visualizations, visualizations)
 import           NodeEditor.State.Global                    (State)
 
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode)

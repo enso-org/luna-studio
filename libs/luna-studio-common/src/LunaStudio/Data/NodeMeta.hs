@@ -1,9 +1,9 @@
 module LunaStudio.Data.NodeMeta where
 
-import           Data.Aeson.Types          (FromJSON, ToJSON)
-import           Data.Binary               (Binary)
-import           LunaStudio.Data.NodeValue (Visualizer)
-import           LunaStudio.Data.Position  (Position)
+import           Data.Aeson.Types           (FromJSON, ToJSON)
+import           Data.Binary                (Binary)
+import           LunaStudio.Data.Position   (Position)
+import           LunaStudio.Data.Visualizer (Visualizer)
 import           Prologue
 
 
