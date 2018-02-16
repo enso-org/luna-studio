@@ -126,7 +126,6 @@ import qualified ZMQ.Bus.Data.Message                    as Message
 import qualified ZMQ.Bus.EndPoint                        as EP
 import           ZMQ.Bus.Trans                           (BusT (..))
 import qualified ZMQ.Bus.Trans                           as BusT
-import qualified System.IO as IO
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

@@ -11,22 +11,18 @@ module Empire.Commands.Typecheck where
 import           Control.Arrow                    ((***), (&&&))
 import           Control.Concurrent.Async         (Async)
 import qualified Control.Concurrent.Async         as Async
-import           Control.Concurrent               (MVar, forkIO, killThread, readMVar)
+import           Control.Concurrent               (MVar, readMVar)
 import qualified Control.Concurrent.MVar.Lifted   as Lifted
-import           Control.Exception.Base           (getMaskingState)
-import           Control.Exception.Safe           (mask_, uninterruptibleMask)
+import           Control.Exception.Safe           (mask_)
 import           Control.Monad                    (void)
 import           Control.Monad.Except             hiding (when)
 import           Control.Monad.Reader             (ask, runReaderT)
-import           Control.Monad.State              (get, execStateT, runStateT)
+import           Control.Monad.State              (execStateT)
 import qualified Data.Map                         as Map
-import           Data.Maybe                       (maybeToList)
-import qualified Data.Set                         as Set
-import           Empire.Prelude                   hiding (toList)
-import           Prologue                         (catMaybes, mapping)
-import           System.Directory                 (withCurrentDirectory)
-import           System.Directory                     (canonicalizePath)
-import           System.Environment                   (getEnv)
+import           Data.Maybe                       (catMaybes, maybeToList)
+import           Empire.Prelude                   hiding (mapping, toList)
+import           System.Directory                 (canonicalizePath, withCurrentDirectory)
+import           System.Environment               (getEnv)
 import           System.FilePath                  (takeDirectory)
 import qualified Path
 
@@ -46,8 +42,6 @@ import           Empire.Data.Graph                (Graph)
 import qualified Empire.Data.Graph                as Graph
 import           Empire.Empire
 
-import qualified Control.Monad.State.Dependent    as DepState
-import           Data.TypeDesc                    (getTypeDesc)
 import           Luna.Builtin.Data.LunaEff        (runError, runIO)
 import           Luna.Builtin.Data.Module         (Imports (..), unionImports, unionsImports)
 import           Luna.Builtin.Prim                (SingleRep (..), ValueRep (..), getReps)
@@ -56,17 +50,9 @@ import qualified Luna.Project                     as Project
 import           Luna.Compilation                 (CompiledModules (..))
 import qualified Luna.IR                          as IR
 import           Luna.Pass.Data.ExprMapping
-import           Luna.Pass.Data.UniqueNameGen     (initNameGen)
 import qualified Luna.Pass.Evaluation.Interpreter as Interpreter
 import qualified Luna.IR.Layer.Errors             as Errors
-import qualified Luna.IR.Term.Unit                as Term
-import qualified Luna.Pass.Sourcing.UnitLoader    as UnitLoader
-import           Luna.Syntax.Text.Parser.Errors   (Invalids)
-import           OCI.IR.Layout.Typed              (type (>>))
 import           OCI.IR.Name.Qualified            (QualName)
-import qualified OCI.Pass.Class                   as Pass (SubPass, eval')
-import qualified OCI.Pass.Manager                 as Pass (PassManager, setAttr, State)
-import           System.Log                                   (DropLogger(..), dropLogs)
 
 runTC :: Imports -> Command Graph ()
 runTC imports = do

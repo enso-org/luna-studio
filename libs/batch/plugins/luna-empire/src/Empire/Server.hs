@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -127,17 +128,15 @@ prepareStdlib = do
 
 killPreviousTC :: Empire.CommunicationEnv -> Maybe (Async Empire.InterpreterEnv) -> IO ()
 killPreviousTC env prevAsync = case prevAsync of
-    Just a -> do
-        res <- Async.poll a
-        case res of
-            Just m -> case m of
-                Left exc     -> logger Logger.warning $ "[TCWorker]: TC failed with: " <> displayException exc
-                Right intEnv -> do
-                    logger Logger.info "[TCWorker]: killing listeners"
-                    void $ Empire.evalEmpire env intEnv Typecheck.stop
-            _      -> do
-                logger Logger.info "[TCWorker]: cancelling previous request"
-                Async.uninterruptibleCancel a
+    Just a -> Async.poll a >>= \case
+        Just finished -> case finished of
+            Left exc     -> logger Logger.warning $ "[TCWorker]: TC failed with: " <> displayException exc
+            Right intEnv -> do
+                logger Logger.info "[TCWorker]: killing listeners"
+                void $ Empire.evalEmpire env intEnv Typecheck.stop
+        _      -> do
+            logger Logger.info "[TCWorker]: cancelling previous request"
+            Async.uninterruptibleCancel a
     _      -> return ()
 
 startTCWorker :: MVar (Scope, IO (), Graph.PMState ClsGraph) -> Empire.CommunicationEnv -> Bus ()
