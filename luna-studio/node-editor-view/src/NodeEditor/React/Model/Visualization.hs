@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 {-# LANGUAGE StrictData        #-}
 module NodeEditor.React.Model.Visualization
     ( module NodeEditor.React.Model.Visualization
@@ -89,6 +90,6 @@ stopVisualizations nodeVis = nodeVis & visualizations     .~ def
 
 
 awaitingDataMsg, noVisMsg, noDataMsg :: Text
-awaitingDataMsg = "AWAITING DATA"
-noVisMsg        = "NO VIS FOR TYPE"
-noDataMsg       = "NO DATA"
+awaitingDataMsg = "AWAITING_DATA"
+noVisMsg        = "NO_VIS_FOR_TYPE"
+noDataMsg       = "NO_DATA"

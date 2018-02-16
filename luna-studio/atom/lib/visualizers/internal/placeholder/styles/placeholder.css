@@ -1,0 +1,14 @@
+p {
+  text-align: center;
+  margin: 15px 15% 0px 15%;
+}
+
+img.no-vis {
+  opacity: 0.25;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  left: 50%;
+  position: relative;
+  margin-left: -15px;
+}
