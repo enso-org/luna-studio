@@ -3,41 +3,41 @@
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE StrictData        #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
-module NodeEditor.React.Model.Node.ExpressionNode
-    ( module NodeEditor.React.Model.Node.ExpressionNode
-    , module X
-    , NodeId
-    , NodeLoc
-    ) where
+module NodeEditor.React.Model.Node.ExpressionNode (module NodeEditor.React.Model.Node.ExpressionNode, module X) where
 
-import           Common.Prelude
-import           Data.Convert                             (Convertible (convert))
-import           Data.HashMap.Strict                      (HashMap)
-import           Data.Map.Lazy                            (Map)
-import           Data.Time.Clock                          (UTCTime)
-import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
-import           LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
-import           LunaStudio.Data.Error                    (Error, NodeError)
-import           LunaStudio.Data.MonadPath                (MonadPath)
-import           LunaStudio.Data.Node                     (NodeId)
-import qualified LunaStudio.Data.Node                     as Empire
-import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
-import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
-import           LunaStudio.Data.NodeMeta                 (NodeMeta (NodeMeta))
-import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
-import           LunaStudio.Data.NodeValue                (ShortValue)
-import qualified LunaStudio.Data.PortRef                  as PortRef
-import           LunaStudio.Data.Position                 (Position, move)
-import           LunaStudio.Data.TypeRep                  (TypeRep)
-import           LunaStudio.Data.Vector2                  (Vector2 (Vector2))
-import           NodeEditor.Data.Color                    (Color)
-import           NodeEditor.React.Model.Constants         (nodeRadius)
-import           NodeEditor.React.Model.IsNode            as X
-import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
-import           NodeEditor.React.Model.Port              (AnyPortId (InPortId', OutPortId'), InPort, InPortId, InPortTree, OutPort,
-                                                           OutPortId, OutPortTree)
-import qualified NodeEditor.React.Model.Port              as Port
-import           NodeEditor.React.Model.Visualization     (Visualizer)
+import LunaStudio.Data.Node          as X (NodeId)
+import LunaStudio.Data.NodeLoc       as X (NodeLoc)
+import NodeEditor.React.Model.IsNode as X
+
+import Common.Prelude
+
+import qualified LunaStudio.Data.Node        as Empire
+import qualified LunaStudio.Data.NodeLoc     as NodeLoc
+import qualified LunaStudio.Data.NodeMeta    as NodeMeta
+import qualified LunaStudio.Data.PortRef     as PortRef
+import qualified NodeEditor.React.Model.Port as Port
+import qualified LunaStudio.Data.Project     as Project
+
+import Data.Convert                             (Convertible (convert))
+import Data.HashMap.Strict                      (HashMap)
+import Data.Map.Lazy                            (Map)
+import Data.Time.Clock                          (UTCTime)
+import LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
+import LunaStudio.Data.Error                    (Error, NodeError)
+import LunaStudio.Data.MonadPath                (MonadPath)
+import LunaStudio.Data.Node                     (NodeId)
+import LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import LunaStudio.Data.NodeMeta                 (NodeMeta (NodeMeta))
+import LunaStudio.Data.NodeValue                (ShortValue)
+import LunaStudio.Data.Position                 (Position, move)
+import LunaStudio.Data.TypeRep                  (TypeRep)
+import LunaStudio.Data.Vector2                  (Vector2 (Vector2))
+import NodeEditor.Data.Color                    (Color)
+import NodeEditor.React.Model.Constants         (nodeRadius)
+import NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
+import NodeEditor.React.Model.Port              (AnyPortId (InPortId', OutPortId'), InPort, InPortId, InPortTree, OutPort, OutPortId, OutPortTree)
+import NodeEditor.React.Model.Visualization     (Visualizer)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'                  :: NodeLoc
@@ -110,7 +110,7 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- argConstructorHighlighted -} Port.Invisible
         {- canEnter                  -} (n ^. Empire.canEnter)
         {- position                  -} (n ^. Empire.position)
-        {- defaultVisualizer         -} (n ^. Empire.nodeMeta . NodeMeta.selectedVisualizer)
+        {- defaultVisualizer         -} (Project.fromOldAPI <$> n ^. Empire.nodeMeta . NodeMeta.selectedVisualizer)
         {- visEnabled                -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- errorVisEnabled           -} False
         {- code                      -} (n ^. Empire.code)
@@ -131,7 +131,7 @@ instance Convertible ExpressionNode Empire.ExpressionNode where
         {- code         -} (n ^. code)
         {- inPorts      -} (convert <$> n ^. inPorts)
         {- outPorts     -} (convert <$> n ^. outPorts)
-        {- nodeMeta     -} (NodeMeta.NodeMeta (n ^. position) (n ^. visEnabled) (n ^. defaultVisualizer))
+        {- nodeMeta     -} (NodeMeta.NodeMeta (n ^. position) (n ^. visEnabled) (Project.toOldAPI <$> n ^. defaultVisualizer))
         {- canEnter     -} (n ^. canEnter)
 
 instance Default Mode where def = Collapsed
@@ -209,10 +209,10 @@ visualizationsEnabled = lens getVisualizationEnabled setVisualizationEnabled whe
 
 nodeMeta :: Lens' ExpressionNode NodeMeta
 nodeMeta = lens getNodeMeta setNodeMeta where
-    getNodeMeta n    = NodeMeta (n ^. position) (n ^. visEnabled) (n ^. defaultVisualizer)
+    getNodeMeta n    = NodeMeta (n ^. position) (n ^. visEnabled) (Project.toOldAPI <$> n ^. defaultVisualizer)
     setNodeMeta n nm = n & position              .~ nm ^. NodeMeta.position
                          & visEnabled            .~ nm ^. NodeMeta.displayResult
-                         & defaultVisualizer     .~ nm ^. NodeMeta.selectedVisualizer
+                         & defaultVisualizer     .~ (Project.fromOldAPI <$> nm ^. NodeMeta.selectedVisualizer)
 
 containsNode :: NodeLoc -> NodeLoc -> Bool
 containsNode nl nlToCheck = inSubgraph False $ NodeLoc.toNodeIdList nl where

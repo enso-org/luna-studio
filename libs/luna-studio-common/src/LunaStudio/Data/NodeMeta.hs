@@ -3,13 +3,13 @@ module LunaStudio.Data.NodeMeta where
 import           Data.Aeson.Types           (FromJSON, ToJSON)
 import           Data.Binary                (Binary)
 import           LunaStudio.Data.Position   (Position)
-import           LunaStudio.Data.Visualizer (Visualizer)
+import           LunaStudio.Data.Visualizer (VisualizerName, VisualizerPath)
 import           Prologue
 
 
 data NodeMeta = NodeMeta { _position           :: Position
                          , _displayResult      :: Bool
-                         , _selectedVisualizer :: Maybe Visualizer
+                         , _selectedVisualizer :: Maybe (VisualizerName, VisualizerPath)
                          } deriving (Eq, Generic, Ord, Show)
 
 makeLenses ''NodeMeta
