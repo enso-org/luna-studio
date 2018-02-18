@@ -4,33 +4,42 @@
 {-# LANGUAGE TypeFamilies           #-}
 module NodeEditor.Action.State.NodeEditor where
 
-import           Common.Action.Command                       (Command)
 import           Common.Prelude                              hiding (get)
-import           Control.Arrow                               ((&&&))
+
 import qualified Control.Monad.State                         as M
 import qualified Data.HashMap.Strict                         as HashMap
-import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Data.Monoid                                 (First (First), getFirst)
 import qualified Data.Set                                    as Set
 import qualified Data.Text                                   as Text
 import qualified JS.Visualizers                              as JS
+import qualified LunaStudio.Data.NodeSearcher                as NS
+import qualified LunaStudio.Data.PortRef                     as PortRef
+import qualified NodeEditor.Action.Batch                     as Batch
+import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
+import qualified NodeEditor.React.Model.Layout               as Scene
+import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
+import qualified NodeEditor.React.Model.NodeEditor           as NE
+import qualified NodeEditor.React.Model.Port                 as Port
+import qualified NodeEditor.React.Model.Searcher             as Searcher
+import qualified NodeEditor.React.Model.Visualization        as Visualization
+import qualified NodeEditor.State.Global                     as Global
+
+import           Common.Action.Command                       (Command)
+import           Control.Arrow                               ((&&&))
+import           Data.Map.Lazy                               (Map)
+import           Data.Monoid                                 (First (First), getFirst)
 import           LunaStudio.Data.CameraTransformation        (CameraTransformation)
 import           LunaStudio.Data.GraphLocation               (breadcrumb)
 import           LunaStudio.Data.MonadPath                   (MonadPath)
 import           LunaStudio.Data.NodeMeta                    (NodeMeta)
 import           LunaStudio.Data.NodeSearcher                (ImportName, ModuleHints)
-import qualified LunaStudio.Data.NodeSearcher                as NS
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified LunaStudio.Data.PortRef                     as PortRef
 import           LunaStudio.Data.Position                    (Position)
 import           LunaStudio.Data.TypeRep                     (TypeRep (TStar))
 import           LunaStudio.Data.Visualizer                  (applyType, fromJSInternalVisualizersMap, fromJSVisualizersMap)
-import qualified NodeEditor.Action.Batch                     as Batch
 import           NodeEditor.Action.State.App                 (get, getWorkspace, modify, modifyApp)
-import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
 import           NodeEditor.Action.UUID                      (getUUID)
 import           NodeEditor.Batch.Workspace                  (currentLocation)
 import           NodeEditor.Data.Graph                       (Graph (Graph))
@@ -40,28 +49,21 @@ import           NodeEditor.React.Model.Connection           (Connection, Connec
                                                               connectionId, containsNode, containsPortRef, dstNodeLoc, srcNodeLoc,
                                                               toConnectionsMap)
 import           NodeEditor.React.Model.Layout               (Layout, Scene)
-import qualified NodeEditor.React.Model.Layout               as Scene
 import           NodeEditor.React.Model.Node                 (InputNode, Node (Expression, Input, Output), NodeLoc, OutputNode, inPortAt,
                                                               inPortsList, nodeLoc, outPortAt, outPortsList, toNodesMap)
 import           NodeEditor.React.Model.Node.ExpressionNode  (ExpressionNode, isSelected)
-import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
 import           NodeEditor.React.Model.NodeEditor           (GraphStatus, NodeEditor, VisualizationBackup,
                                                               VisualizersPaths (VisualizersPaths))
-import qualified NodeEditor.React.Model.NodeEditor           as NE
 import           NodeEditor.React.Model.Port                 (InPort, OutPort, state)
-import qualified NodeEditor.React.Model.Port                 as Port
 import           NodeEditor.React.Model.Searcher             (Searcher)
-import qualified NodeEditor.React.Model.Searcher             as Searcher
 import           NodeEditor.React.Model.Visualization        (NodeVisualizations, VisualizationId, Visualizer (Visualizer),
                                                               VisualizerId (VisualizerId), VisualizerPath,
                                                               VisualizerProperties (VisualizerProperties),
                                                               VisualizerType (InternalVisualizer, LunaVisualizer, ProjectVisualizer),
                                                               errorVisId, placeholderVisId, visualizerId, visualizerId, visualizerRelPath,
                                                               visualizerType, _InternalVisualizer)
-import qualified NodeEditor.React.Model.Visualization        as Visualization
 import           NodeEditor.State.Global                     (State, internalVisualizers, nodeSearcherData, preferedVisualizers,
                                                               visualizers)
-import qualified NodeEditor.State.Global                     as Global
 
 
 getNodeEditor :: Command State NodeEditor
@@ -325,6 +327,16 @@ updateVisualizers mayProjectVisPath = do
         Just fp -> liftIO $ Map.mapKeys (flip VisualizerId ProjectVisualizer)  . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap fp
     Global.visualizers         .= Map.union lunaVisMap projectVisMap
     Global.internalVisualizers .= internalVisMap
+
+updateNodeVisualizers :: NodeLoc -> Command State ()
+updateNodeVisualizers nl = getExpressionNodeType nl >>= maybe (return def) getVisualizersForType >>= applyVisualizers where
+    applyVisualizers    mayVis = modifyNodeEditor $ NE.nodeVisualizations . ix nl %= updateNodeVis mayVis
+    updateSelectedVisId vis vp = vp & Visualization.selectedVisualizerId      .~ (view visualizerId . fst <$> vis)
+    updateRunningVis    vis rv = rv & Visualization.visualizerProperties      %~ updateSelectedVisId vis
+    updateIdleVis       vis iv = iv & Visualization.idleVisualizerProperties  %~ updateSelectedVisId vis
+    updateNodeVis       vis nv = nv & Visualization.visualizations            %~ (updateRunningVis   vis <$>)
+                                    & Visualization.idleVisualizations        %~ (updateIdleVis      vis <$>)
+                                    & Visualization.visualizers               .~ maybe def snd vis
 
 getNodeVisualizations :: NodeLoc -> Command State (Maybe NodeVisualizations)
 getNodeVisualizations nl = (^? NE.nodeVisualizations . ix nl) <$> getNodeEditor

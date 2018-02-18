@@ -3,6 +3,7 @@ module NodeEditor.Action.Basic.UpdateNode where
 
 import           Common.Action.Command                       (Command)
 import           Common.Prelude
+import qualified Data.Map                                    as Map
 import           JS.Visualizers                              (sendInternalData)
 import           LunaStudio.Data.Node                        (NodeTypecheckerUpdate, tcNodeId)
 import qualified LunaStudio.Data.Node                        as Empire
@@ -19,7 +20,7 @@ import qualified NodeEditor.React.Model.Node.SidebarNode     as SidebarNode
 import           NodeEditor.React.Model.NodeEditor           (VisualizationBackup (MessageBackup))
 import           NodeEditor.React.Model.Port                 (isSelf, mode, portId)
 import qualified NodeEditor.React.Model.Searcher             as Searcher
-import           NodeEditor.React.Model.Visualization        (awaitingDataMsg, noVisMsg)
+import           NodeEditor.React.Model.Visualization        (awaitingDataMsg, noVisMsg, visualizers)
 import           NodeEditor.State.Global                     (State)
 
 
@@ -77,8 +78,9 @@ localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (nod
         NodeEditor.addExpressionNode updatedNode
         updateSearcherClassName updatedNode
         when (prevNode ^. ExpressionNode.nodeType /= updatedNode ^. ExpressionNode.nodeType) $ do
-            hasVisualizers <- maybe (return False) (fmap isJust . NodeEditor.getVisualizersForType) $ updatedNode ^. ExpressionNode.nodeType
-            let msg = if hasVisualizers then awaitingDataMsg else noVisMsg
+            NodeEditor.updateNodeVisualizers $ updatedNode ^. ExpressionNode.nodeLoc
+            noVisualizers <- maybe True (Map.null . view visualizers) <$> NodeEditor.getNodeVisualizations (updatedNode ^. ExpressionNode.nodeLoc)
+            let msg = if noVisualizers then noVisMsg else awaitingDataMsg
             setVisualizationData (node ^. ExpressionNode.nodeLoc) (MessageBackup msg) True
         return True
 
