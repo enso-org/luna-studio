@@ -70,7 +70,7 @@ data VisualizersPaths    = VisualizersPaths { _internalVisualizersPath :: FilePa
                                             , _projectVisualizersPath  :: Maybe FilePath
                                             } deriving (Default, Eq, Generic)
 
-data VisualizationBackup     = ValueBackup Text | StreamBackup [Text] | MessageBackup Text | ErrorBackup Text deriving (Generic, Show)
+data VisualizationBackup     = ValueBackup Text | StreamBackup [Text] | MessageBackup Text | ErrorBackup Text deriving (Generic, Eq, Show)
 data VisualizationsBackupMap = VisualizationsBackupMap { _backupMap :: Map NodeLoc VisualizationBackup
                                                        } deriving (Generic, Default)
 instance Eq VisualizationsBackupMap where _ == _ = True

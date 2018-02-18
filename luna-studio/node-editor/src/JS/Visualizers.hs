@@ -97,7 +97,7 @@ registerVisualizerFrame :: UUID -> IO ()
 registerVisualizerFrame = registerVisualizerFrame' . convert . show
 
 sendVisualizationData :: UUID -> ConstructorRep -> Text -> IO ()
-sendVisualizationData uid rep d = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d) where
+sendVisualizationData uid rep d = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d)
 
 sendInternalData :: UUID -> Text -> IO ()
 sendInternalData uid d = sendInternalData' (convert $ show uid) (convert d)

@@ -75,11 +75,11 @@ localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (nod
             updatePortSelfMode n' selfPid m = n' & inPortAt selfPid . mode .~ m
         updatedNode <- maybe (return n) (\sPid -> updatePortSelfMode n sPid <$> calculatePortSelfMode n) mayPortSelfId
         NodeEditor.addExpressionNode updatedNode
-        NodeEditor.updateVisualizationsForNode (updatedNode ^. nodeLoc)
         updateSearcherClassName updatedNode
-        unless (preventPorts) $ do
-            visIds <- NodeEditor.updateVisualizationsForNode (node ^. nodeLoc)
-            liftIO . forM_ visIds $ \visId -> sendInternalData visId awaitingDataMsg
+        when (prevNode ^. ExpressionNode.nodeType /= updatedNode ^. ExpressionNode.nodeType) $ do
+            hasVisualizers <- maybe (return False) (fmap isJust . NodeEditor.getVisualizersForType) $ updatedNode ^. ExpressionNode.nodeType
+            let msg = if hasVisualizers then awaitingDataMsg else noVisMsg
+            setVisualizationData (node ^. ExpressionNode.nodeLoc) (MessageBackup msg) True
         return True
 
 localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()
@@ -97,9 +97,6 @@ localUpdateNodeTypecheck path update = do
                 node & ExpressionNode.inPorts  .~ convert `fmap` inPorts
                      & ExpressionNode.outPorts .~ convert `fmap` outPorts
                      & ExpressionNode.value    .~ ExpressionNode.AwaitingData
-            hasVisualizers <- maybe (return False) (fmap isJust . NodeEditor.getVisualizersForType) =<< NodeEditor.getExpressionNodeType nl
-            let msg = if hasVisualizers then awaitingDataMsg else noVisMsg
-            setVisualizationData nl (MessageBackup msg) True
         Empire.OutputSidebarUpdate _ inPorts -> NodeEditor.modifyOutputNode nl $
             SidebarNode.outputSidebarPorts .= convert `fmap` inPorts
         Empire.InputSidebarUpdate _ outPorts -> NodeEditor.modifyInputNode nl $

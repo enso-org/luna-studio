@@ -65,7 +65,6 @@ import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz
 import qualified LunaStudio.API.Graph.GetProgram         as GetProgram
 import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs
 import qualified LunaStudio.API.Graph.MovePort           as MovePort
-import qualified LunaStudio.API.Graph.NodeResultUpdate   as NodeResultUpdate
 import qualified LunaStudio.API.Graph.Paste              as Paste
 import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes

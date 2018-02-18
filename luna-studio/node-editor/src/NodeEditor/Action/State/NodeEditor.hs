@@ -306,6 +306,9 @@ getLocalFunctions = do
 getVisualizationsBackupMap :: Command State (Map NodeLoc VisualizationBackup)
 getVisualizationsBackupMap = view (NE.visualizationsBackup . NE.backupMap) <$> getNodeEditor
 
+getVisualizationBackup :: NodeLoc -> Command State (Maybe VisualizationBackup)
+getVisualizationBackup nl = Map.lookup nl <$> getVisualizationsBackupMap
+
 removeBackupForNodes :: [NodeLoc] -> Command State ()
 removeBackupForNodes nls = modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap %= \backupMap -> foldl (flip Map.delete) backupMap nls
 
