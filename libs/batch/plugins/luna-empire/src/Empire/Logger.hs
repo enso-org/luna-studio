@@ -5,16 +5,22 @@
 
 module Empire.Logger where
 
-import           Control.Monad                     (forever)
-import           Control.Monad.State               (StateT, evalStateT)
-import qualified Data.Binary                       as Bin
-import           Data.ByteString                   (ByteString)
-import           Data.ByteString.Char8             (unpack)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
-import           Data.Map.Strict                   (Map)
-import qualified Data.Map.Strict                   as Map
+import           Control.Monad                         (forever)
+import           Control.Monad.State                   (StateT, evalStateT)
+import qualified Data.Binary                           as Bin
+import           Data.ByteString                       (ByteString)
+import           Data.ByteString.Char8                 (unpack)
+import           Data.ByteString.Lazy                  (fromStrict, toStrict)
+import           Data.Map.Strict                       (Map)
+import qualified Data.Map.Strict                       as Map
 import           Prologue
 
+import qualified Empire.Commands.Library               as Library
+import qualified Empire.Empire                         as Empire
+import           Empire.Env                            (LoggerEnv)
+import qualified Empire.Env                            as Env
+import qualified Empire.Handlers                       as Handlers
+import qualified Empire.Utils                          as Utils
 import qualified LunaStudio.API.Control.EmpireStarted  as EmpireStarted
 import qualified LunaStudio.API.Graph.AddConnection    as AddConnection
 import qualified LunaStudio.API.Graph.AddNode          as AddNode
@@ -31,21 +37,15 @@ import qualified LunaStudio.API.Library.CreateLibrary  as CreateLibrary
 import qualified LunaStudio.API.Library.ListLibraries  as ListLibraries
 import           LunaStudio.API.Request                (Request)
 import qualified LunaStudio.API.Topic                  as Topic
-import qualified Empire.Commands.Library           as Library
-import qualified Empire.Empire                     as Empire
-import           Empire.Env                        (LoggerEnv)
-import qualified Empire.Env                        as Env
-import qualified Empire.Handlers                   as Handlers
-import qualified Empire.Utils                      as Utils
 
-import qualified System.Log.MLogger                as Logger
-import qualified ZMQ.Bus.Bus                       as Bus
-import qualified ZMQ.Bus.Data.Message              as Message
-import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
-import           ZMQ.Bus.Data.Topic                (Topic)
-import           ZMQ.Bus.EndPoint                  (BusEndPoints)
-import           ZMQ.Bus.Trans                     (BusT (..))
-import qualified ZMQ.Bus.Trans                     as Bus
+import qualified System.Log.MLogger                    as Logger
+import qualified ZMQ.Bus.Bus                           as Bus
+import qualified ZMQ.Bus.Data.Message                  as Message
+import           ZMQ.Bus.Data.MessageFrame             (MessageFrame (MessageFrame))
+import           ZMQ.Bus.Data.Topic                    (Topic)
+import           ZMQ.Bus.EndPoint                      (BusEndPoints)
+import           ZMQ.Bus.Trans                         (BusT (..))
+import qualified ZMQ.Bus.Trans                         as Bus
 
 
 logger :: Logger.Logger

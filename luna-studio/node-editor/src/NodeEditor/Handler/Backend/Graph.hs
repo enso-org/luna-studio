@@ -144,12 +144,12 @@ handle (Event.Batch ev) = Just $ case ev of
                         output      = convert . (NodeLoc.empty,) <$> graph ^. Graph.outputSidebar
                         connections = graph ^. Graph.connections
                         monads      = graph ^. Graph.monads
-                    updateGraph nodes input output connections monads
-                    setGraphStatus GraphLoaded
-                    setScreenTransform $ result ^. GetProgram.camera
                     whenM (isOwnRequest requestId) $ do
                         withJust (result ^. GetProgram.typeRepToVisMap) $ \visMap -> Global.preferedVisualizers .= visMap
                         updateVisualizers $ result ^. GetProgram.projectVisualizersPath
+                    updateGraph nodes input output connections monads
+                    setGraphStatus GraphLoaded
+                    setScreenTransform $ result ^. GetProgram.camera
                     updateScene
         failure err _ = handleLunaError err
 

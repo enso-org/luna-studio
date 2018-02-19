@@ -19,10 +19,10 @@ import           NodeEditor.React.Model.Visualization       (RunningVisualizatio
                                                              VisualizationMode (Default, Focused, FullScreen, Preview),
                                                              VisualizationParent (Node, Searcher), VisualizationProperties, Visualizer,
                                                              VisualizerId, VisualizerName, VisualizerPath, VisualizerType (..),
-                                                             runningVisualizer, visPropArgPortsNumber, visPropIsNodeExpanded,
-                                                             visPropNodeLoc, visPropVisualization, visPropVisualizers, visualizationId,
-                                                             visualizationMode, visualizerId, visualizerName, visualizerRelPath,
-                                                             visualizerType)
+                                                             runningVisualizer, selectedVisualizerId, visPropArgPortsNumber,
+                                                             visPropIsNodeExpanded, visPropNodeLoc, visPropVisualization,
+                                                             visPropVisualizers, visualizationId, visualizationMode, visualizerId,
+                                                             visualizerName, visualizerProperties, visualizerRelPath, visualizerType)
 import qualified NodeEditor.React.View.Style                as Style
 import           React.Flux                                 hiding (image_)
 import qualified React.Flux                                 as React
@@ -44,6 +44,7 @@ objNameShortVal = "node-short-value"
 
 getVisualizerPath :: VisualizerType -> VisualizersPaths -> Maybe FilePath
 getVisualizerPath InternalVisualizer = Just . (^. NE.internalVisualizersPath)
+getVisualizerPath LunaVisualizer     = Just . (^. NE.lunaVisualizersPath)
 getVisualizerPath ProjectVisualizer  = (^. NE.projectVisualizersPath)
 
 
@@ -62,7 +63,7 @@ nodeVisualization = React.defineView objNameVis $ \(ref, visLibPaths, visProp, i
         nSelectedClass = if isNodeSelected then [ "visualization--node-selected" ] else []
         classes        = if vmode == Preview || vmode == FullScreen then [ "visualization", "visualization--fullscreen", "noselect" ] else [ "visualization", "noselect" ]
         visShift       = show $ 4 + lineHeight * if visProp ^. visPropIsNodeExpanded then fromIntegral $ visProp ^. visPropArgPortsNumber else 0
-        mayVisLibPath  = getVisualizerPath (vis ^. runningVisualizer . visualizerId . visualizerType) visLibPaths
+        mayVisLibPath  = getVisualizerPath (vis ^. visualizerProperties . runningVisualizer . visualizerId . visualizerType) visLibPaths
     withJust mayVisLibPath $ \visLibPath -> div_
         [ "key"       $= visKey vis
         , "id"        $= (nodePrefix <> fromString (show nid))
@@ -74,7 +75,7 @@ nodeVisualization = React.defineView objNameVis $ \(ref, visLibPaths, visProp, i
             [ "className" $= Style.prefix "node-translate"
             ] $ do
             visualization_   ref visLibPath (Node nl) vis True
-            visualizersMenu_ ref (Node nl) (vis ^. visualizationId) (vis ^. runningVisualizer . visualizerId) visualizers' menuVisible
+            visualizersMenu_ ref (Node nl) vis visualizers' menuVisible
 
 docVisualization_ :: IsRef r => r -> Bool -> FilePath -> RunningVisualization -> ReactElementM ViewEventHandler ()
 docVisualization_ ref docPresent visLibPath vis = React.viewWithSKey docVisualization (visKey vis) (ref, docPresent, visLibPath, vis) mempty
@@ -92,17 +93,19 @@ docVisualization = React.defineView docViewName $ \(ref, docPresent, visLibPath,
         ] $ visualization_ ref visLibPath Searcher vis docPresent
 
 
-visualizersMenu_ :: IsRef r => r -> VisualizationParent -> VisualizationId -> VisualizerId -> Map VisualizerId VisualizerPath -> Bool -> ReactElementM ViewEventHandler ()
-visualizersMenu_ ref visParent visId activeVisualizerId visMap visible = React.view visualizersMenu (ref, visParent, visId, activeVisualizerId, visMap, visible) mempty
+visualizersMenu_ :: IsRef r => r -> VisualizationParent -> RunningVisualization -> Map VisualizerId VisualizerPath -> Bool -> ReactElementM ViewEventHandler ()
+visualizersMenu_ ref visParent vis visMap visible = React.view visualizersMenu (ref, visParent, vis, visMap, visible) mempty
 
-visualizersMenu :: IsRef r => ReactView (r, VisualizationParent, VisualizationId, VisualizerId, Map VisualizerId VisualizerPath, Bool)
-visualizersMenu = React.defineView visMenuName $ \(ref, visParent, visId, activeVisualizerId, visualizersMap, visible) ->
-    when (Map.size visualizersMap > 1 || (Map.size visualizersMap == 1 && Map.notMember activeVisualizerId visualizersMap)) $ do
+visualizersMenu :: IsRef r => ReactView (r, VisualizationParent, RunningVisualization, Map VisualizerId VisualizerPath, Bool)
+visualizersMenu = React.defineView visMenuName $ \(ref, visParent, vis, visualizersMap, visible) -> do
+    let selectedVisId = vis ^. visualizerProperties . selectedVisualizerId
+        visId         = vis ^. visualizationId
+    when (Map.size visualizersMap > 1 && Map.keys visualizersMap /= maybeToList selectedVisId) $ do
         let getVisualizerName visualizerId = case visualizerId ^. visualizerType of
-                InternalVisualizer -> visualizerId ^. visualizerName
-                ProjectVisualizer  -> "project: " <> (visualizerId ^. visualizerName)
+                ProjectVisualizer -> "project: " <> (visualizerId ^. visualizerName)
+                LunaVisualizer    -> visualizerId ^. visualizerName
             menuEntry :: VisualizerId -> ReactElementM ViewEventHandler ()
-            menuEntry visualizerId = when (visualizerId /= activeVisualizerId) $
+            menuEntry visualizerId = when (Just visualizerId /= selectedVisId) $
                 li_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Event visParent $ Visualization.SelectVisualizer visId visualizerId ] . elemString . convert $ getVisualizerName visualizerId
         div_
             [ "className" $= Style.prefix (if visible then "dropdown" else "hide")
@@ -113,12 +116,11 @@ visualizersMenu = React.defineView visMenuName $ \(ref, visParent, visId, active
 visualization_ :: IsRef r => r -> FilePath -> VisualizationParent -> RunningVisualization -> Bool -> ReactElementM ViewEventHandler ()
 visualization_ ref visLibPath visParent vis isVisible = React.view visualization (ref, visLibPath, visParent, vis, isVisible) mempty
 
-
 visualization :: IsRef r => ReactView (r, FilePath, VisualizationParent, RunningVisualization, Bool)
 visualization = React.defineView viewName $ \(ref, visLibPath, visParent, vis, isVisible) -> do
     let visId         = vis ^. visualizationId
         vmode         = vis ^. visualizationMode
-        visualizer    = vis ^. runningVisualizer
+        visualizer    = vis ^. visualizerProperties . runningVisualizer
         coverHandler  = if vmode == Default
             then [ onClick $ \_ _   -> dispatch ref $ UI.VisualizationEvent $ Visualization.Event visParent $ Visualization.Focus visId]
             else [ onWheel $ \e _ _ -> [stopPropagation e, preventDefault e] ]

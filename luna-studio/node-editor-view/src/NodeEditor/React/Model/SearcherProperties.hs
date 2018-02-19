@@ -7,7 +7,7 @@ import           Common.Prelude
 import           LunaStudio.Data.NodeLoc              (NodeLoc)
 import qualified LunaStudio.Data.NodeLoc              as NodeLoc
 import qualified LunaStudio.Data.PortRef              as PortRef
-import           NodeEditor.React.Model.NodeEditor    (VisualizersPaths, internalVisualizersPath)
+import           NodeEditor.React.Model.NodeEditor    (VisualizersPaths, lunaVisualizersPath)
 import           NodeEditor.React.Model.Searcher      (Match, Mode (..), Searcher, docVisInfo, selectedMatch)
 import qualified NodeEditor.React.Model.Searcher      as Searcher
 import           NodeEditor.React.Model.Visualization (RunningVisualization)
@@ -24,12 +24,12 @@ data SearcherProperties = SearcherProperties { _selected      :: Int
 makeLenses ''SearcherProperties
 
 toSearcherProperties :: Searcher -> VisualizersPaths -> SearcherProperties
-toSearcherProperties s vp = SearcherProperties (s ^. Searcher.selected)
-                                               (s ^. Searcher.selectedMatch)
-                                               (s ^. Searcher.mode)
-                                               (s ^. Searcher.inputText)
-                                               (s ^. Searcher.replaceInput)
-                                               (vp ^. internalVisualizersPath)
+toSearcherProperties s vp = SearcherProperties (s  ^. Searcher.selected)
+                                               (s  ^. Searcher.selectedMatch)
+                                               (s  ^. Searcher.mode)
+                                               (s  ^. Searcher.inputText)
+                                               (s  ^. Searcher.replaceInput)
+                                               (vp ^. lunaVisualizersPath)
 
 docVis :: Getter SearcherProperties (Maybe RunningVisualization)
 docVis = to docVis' where

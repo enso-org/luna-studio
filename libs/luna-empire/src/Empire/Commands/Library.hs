@@ -16,7 +16,7 @@ import qualified Data.Text               as Text
 import           Data.Text.IO            as Text
 import           Empire.Prelude
 
-import           Empire.Data.AST         (astExceptionToException, astExceptionFromException)
+import           Empire.Data.AST         (astExceptionFromException, astExceptionToException)
 import           Empire.Data.Graph       as Graph
 import           Empire.Data.Library     (Library)
 import qualified Empire.Data.Library     as Library

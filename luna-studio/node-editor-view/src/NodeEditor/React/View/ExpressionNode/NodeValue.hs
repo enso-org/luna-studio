@@ -30,14 +30,14 @@ nodeValue = React.defineView nodeValueName $ \(ref, n) ->
             [ "key"       $= "shortValue"
             , "className" $= Style.prefixFromList ["node__short-value", "noselect" ]
             , onDoubleClick $ \e _ -> [stopPropagation e]
-            , onClick       $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Event (n ^. Node.nodeLoc) Node.ShowFullError
             ] $ elemString $ strValue n
 
 strValue :: ExpressionNode -> String
 strValue n = case n ^. Node.value of
-    Nothing -> ""
-    Just (ShortValue value) -> Text.unpack value
-    Just (Error      msg  ) -> showError msg --limitString errorLen (convert $ showError msg)
+    ShortValue value -> Text.unpack value
+    Error      msg   -> showError msg
+    _ -> ""
+
 
 showError :: LunaError.Error LunaError.NodeError -> String
 showError = showErrorSep ""

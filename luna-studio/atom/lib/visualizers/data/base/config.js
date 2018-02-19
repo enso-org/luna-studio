@@ -4,6 +4,5 @@ module.exports = function (type) {
     var mdVis    = type.constructor === "Text" ? [{name: "markdown",  path: "markdown/markdown.html"}]   : [];
     var yamlVis  = [{name: "yaml", path: "yaml/yaml.html"}];
     var jsonVis  = [{name: "json", path: "json/json.html"}];
-    var errorVis = type.constructor === "Error" ? [{name: "error",  path: "error/error.html"}]   : [];
-    return [].concat(listVis, textVis, yamlVis, jsonVis, mdVis, errorVis);
+    return [].concat(listVis, textVis, yamlVis, jsonVis, mdVis);
 };

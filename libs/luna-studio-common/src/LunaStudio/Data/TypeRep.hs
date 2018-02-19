@@ -60,6 +60,3 @@ matchTypes :: TypeRep -> TypeRep -> Bool
 matchTypes TStar _ = True
 matchTypes _ TStar = True
 matchTypes t1 t2 = t1 == t2
-
-errorTypeRep :: TypeRep
-errorTypeRep = TCons "Error" def

@@ -65,7 +65,6 @@ import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz
 import qualified LunaStudio.API.Graph.GetProgram         as GetProgram
 import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs
 import qualified LunaStudio.API.Graph.MovePort           as MovePort
-import qualified LunaStudio.API.Graph.NodeResultUpdate   as NodeResultUpdate
 import qualified LunaStudio.API.Graph.Paste              as Paste
 import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
@@ -224,10 +223,11 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                     defaultCamera = maybe def (flip Camera.getCameraForRectangle def) . Position.minimumRectangle . map (view Node.position) $ graph ^. GraphAPI.nodes
                     (typeRepToVisMap, camera) = case mayModuleSettings of
                         Nothing -> (mempty, defaultCamera)
-                        Just ms -> let visMap = if moduleChanged then Just $ ms ^. Project.typeRepToVisMap else Nothing
-                                       bc     = Breadcrumb.toNames crumb
-                                       bs     = Map.lookup bc $ ms ^. Project.breadcrumbsSettings
-                                       cam    = maybe defaultCamera (view Project.breadcrumbCameraSettings) bs
+                        Just ms -> let visMap' = if moduleChanged then Just $ ms ^. Project.typeRepToVisMap else Nothing
+                                       visMap  = fmap2 Project.fromOldAPI $ visMap'
+                                       bc      = Breadcrumb.toNames crumb
+                                       bs      = Map.lookup bc $ ms ^. Project.breadcrumbsSettings
+                                       cam     = maybe defaultCamera (view Project.breadcrumbCameraSettings) bs
                             in (visMap, cam)
                 return (Right graph, crumb, availableImports, typeRepToVisMap, camera, location, mayVisPath)
         code <- Graph.getCode location

@@ -3,41 +3,41 @@
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE StrictData        #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
-module NodeEditor.React.Model.Node.ExpressionNode
-    ( module NodeEditor.React.Model.Node.ExpressionNode
-    , module X
-    , NodeId
-    , NodeLoc
-    ) where
+module NodeEditor.React.Model.Node.ExpressionNode (module NodeEditor.React.Model.Node.ExpressionNode, module X) where
 
-import           Common.Prelude
-import           Data.Convert                             (Convertible (convert))
-import           Data.HashMap.Strict                      (HashMap)
-import           Data.Map.Lazy                            (Map)
-import           Data.Time.Clock                          (UTCTime)
-import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
-import           LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
-import           LunaStudio.Data.Error                    (Error, NodeError)
-import           LunaStudio.Data.MonadPath                (MonadPath)
-import           LunaStudio.Data.Node                     (NodeId)
-import qualified LunaStudio.Data.Node                     as Empire
-import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
-import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
-import           LunaStudio.Data.NodeMeta                 (NodeMeta (NodeMeta))
-import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
-import           LunaStudio.Data.NodeValue                (ShortValue)
-import qualified LunaStudio.Data.PortRef                  as PortRef
-import           LunaStudio.Data.Position                 (Position, move)
-import           LunaStudio.Data.TypeRep                  (TypeRep, errorTypeRep)
-import           LunaStudio.Data.Vector2                  (Vector2 (Vector2))
-import           NodeEditor.Data.Color                    (Color)
-import           NodeEditor.React.Model.Constants         (nodeRadius)
-import           NodeEditor.React.Model.IsNode            as X
-import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
-import           NodeEditor.React.Model.Port              (AnyPortId (InPortId', OutPortId'), InPort, InPortId, InPortTree, OutPort,
-                                                           OutPortId, OutPortTree)
-import qualified NodeEditor.React.Model.Port              as Port
-import           NodeEditor.React.Model.Visualization     (Visualizer)
+import LunaStudio.Data.Node          as X (NodeId)
+import LunaStudio.Data.NodeLoc       as X (NodeLoc)
+import NodeEditor.React.Model.IsNode as X
+
+import Common.Prelude
+
+import qualified LunaStudio.Data.Node        as Empire
+import qualified LunaStudio.Data.NodeLoc     as NodeLoc
+import qualified LunaStudio.Data.NodeMeta    as NodeMeta
+import qualified LunaStudio.Data.PortRef     as PortRef
+import qualified NodeEditor.React.Model.Port as Port
+import qualified LunaStudio.Data.Project     as Project
+
+import Data.Convert                             (Convertible (convert))
+import Data.HashMap.Strict                      (HashMap)
+import Data.Map.Lazy                            (Map)
+import Data.Time.Clock                          (UTCTime)
+import LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
+import LunaStudio.Data.Error                    (Error, NodeError)
+import LunaStudio.Data.MonadPath                (MonadPath)
+import LunaStudio.Data.Node                     (NodeId)
+import LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import LunaStudio.Data.NodeMeta                 (NodeMeta (NodeMeta))
+import LunaStudio.Data.NodeValue                (ShortValue)
+import LunaStudio.Data.Position                 (Position, move)
+import LunaStudio.Data.TypeRep                  (TypeRep)
+import LunaStudio.Data.Vector2                  (Vector2 (Vector2))
+import NodeEditor.Data.Color                    (Color)
+import NodeEditor.React.Model.Constants         (nodeRadius)
+import NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
+import NodeEditor.React.Model.Port              (AnyPortId (InPortId', OutPortId'), InPort, InPortId, InPortTree, OutPort, OutPortId, OutPortTree)
+import NodeEditor.React.Model.Visualization     (Visualizer)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'                  :: NodeLoc
@@ -53,12 +53,11 @@ data ExpressionNode = ExpressionNode { _nodeLoc'                  :: NodeLoc
                                      , _visEnabled                :: Bool
                                      , _errorVisEnabled           :: Bool
                                      , _code                      :: Text
-                                     , _value                     :: Maybe Value
+                                     , _value                     :: Value
                                      , _zPos                      :: Int
                                      , _isSelected                :: Bool
                                      , _isMouseOver               :: Bool
                                      , _mode                      :: Mode
-                                     , _isErrorExpanded           :: Bool
                                      , _execTime                  :: Maybe Integer
                                      , _collaboration             :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
@@ -79,9 +78,13 @@ data Subgraph = Subgraph { _expressionNodes :: ExpressionNodesMap
                          , _monads          :: [MonadPath]
                          } deriving (Default, Eq, Generic, NFData, Show)
 
-data Value = ShortValue ShortValue
+data Value = AwaitingTypecheck
+           | AwaitingData
+           | ShortValue ShortValue
            | Error      (Error NodeError)
            deriving (Eq, Generic, NFData, Show)
+
+instance Default Value where def = AwaitingTypecheck
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, Color)
                                    , _modify :: Map ClientId  UTCTime
@@ -107,7 +110,7 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- argConstructorHighlighted -} Port.Invisible
         {- canEnter                  -} (n ^. Empire.canEnter)
         {- position                  -} (n ^. Empire.position)
-        {- defaultVisualizer         -} (n ^. Empire.nodeMeta . NodeMeta.selectedVisualizer)
+        {- defaultVisualizer         -} (Project.fromOldAPI <$> n ^. Empire.nodeMeta . NodeMeta.selectedVisualizer)
         {- visEnabled                -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- errorVisEnabled           -} False
         {- code                      -} (n ^. Empire.code)
@@ -116,7 +119,6 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- isSelected                -} False
         {- isMouseOver               -} False
         {- mode                      -} def
-        {- isErrorExpanded           -} False
         {- execTime                  -} def
         {- collaboration             -} def
 
@@ -129,7 +131,7 @@ instance Convertible ExpressionNode Empire.ExpressionNode where
         {- code         -} (n ^. code)
         {- inPorts      -} (convert <$> n ^. inPorts)
         {- outPorts     -} (convert <$> n ^. outPorts)
-        {- nodeMeta     -} (NodeMeta.NodeMeta (n ^. position) (n ^. visEnabled) (n ^. defaultVisualizer))
+        {- nodeMeta     -} (NodeMeta.NodeMeta (n ^. position) (n ^. visEnabled) (Project.toOldAPI <$> n ^. defaultVisualizer))
         {- canEnter     -} (n ^. canEnter)
 
 instance Default Mode where def = Collapsed
@@ -163,8 +165,14 @@ subgraphs = mode . _Expanded . _Function
 
 returnsError :: ExpressionNode -> Bool
 returnsError node = case node ^. value of
-    Just (Error _) -> True
-    _              -> False
+    Error _ -> True
+    _       -> False
+
+hasData :: ExpressionNode -> Bool
+hasData node = case node ^. value of
+    ShortValue {} -> True
+    Error      {} -> True
+    _             -> False
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'
@@ -192,22 +200,19 @@ findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findSuccessorPosition n nodes = Empire.findSuccessorPosition (convert n) $ map convert nodes
 
 nodeType :: Getter ExpressionNode (Maybe TypeRep)
-nodeType = to nodeType' where
-    nodeType' n = if has (value . _Just . _Error) n
-        then Just errorTypeRep
-        else (n ^? outPortAt [] . Port.valueType)
+nodeType = to (^? outPortAt [] . Port.valueType)
 
 visualizationsEnabled :: Lens' ExpressionNode Bool
 visualizationsEnabled = lens getVisualizationEnabled setVisualizationEnabled where
-    getVisualizationEnabled n   = if n ^. nodeType == Just errorTypeRep then n ^. errorVisEnabled else n ^. visEnabled
-    setVisualizationEnabled n v = if n ^. nodeType == Just errorTypeRep then n & errorVisEnabled .~ v else n & visEnabled .~ v
+    getVisualizationEnabled n   = if returnsError n then n ^. errorVisEnabled     else n ^. visEnabled
+    setVisualizationEnabled n v = if returnsError n then n & errorVisEnabled .~ v else n & visEnabled .~ v
 
 nodeMeta :: Lens' ExpressionNode NodeMeta
 nodeMeta = lens getNodeMeta setNodeMeta where
-    getNodeMeta n    = NodeMeta (n ^. position) (n ^. visEnabled) (n ^. defaultVisualizer)
+    getNodeMeta n    = NodeMeta (n ^. position) (n ^. visEnabled) (Project.toOldAPI <$> n ^. defaultVisualizer)
     setNodeMeta n nm = n & position              .~ nm ^. NodeMeta.position
                          & visEnabled            .~ nm ^. NodeMeta.displayResult
-                         & defaultVisualizer     .~ nm ^. NodeMeta.selectedVisualizer
+                         & defaultVisualizer     .~ (Project.fromOldAPI <$> nm ^. NodeMeta.selectedVisualizer)
 
 containsNode :: NodeLoc -> NodeLoc -> Bool
 containsNode nl nlToCheck = inSubgraph False $ NodeLoc.toNodeIdList nl where

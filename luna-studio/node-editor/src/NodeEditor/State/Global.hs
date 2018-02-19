@@ -20,7 +20,7 @@ import           NodeEditor.Event.Event                   (Event)
 import           NodeEditor.React.Model.App               (App)
 import qualified NodeEditor.React.Model.App               as App
 import           NodeEditor.React.Model.NodeEditor        (NodeEditor)
-import           NodeEditor.React.Model.Visualization     (Visualizer, VisualizerId, VisualizerMatcher)
+import           NodeEditor.React.Model.Visualization     (Visualizer, VisualizerId, VisualizerMatcher, VisualizerName, VisualizerPath)
 import           NodeEditor.React.Store                   (Ref)
 import qualified NodeEditor.React.Store.Ref               as Ref
 import           NodeEditor.State.Action                  (ActionRep, Connect, SomeAction)
@@ -42,6 +42,7 @@ data State = State
         , _waitingForTc        :: Bool
         , _preferedVisualizers :: HashMap TypeRep Visualizer
         , _visualizers         :: Map VisualizerId VisualizerMatcher
+        , _internalVisualizers :: Map VisualizerId VisualizerPath
         , _random              :: StdGen
         }
 
@@ -82,6 +83,7 @@ mkState ref clientId' = State
     {- waitingForTc         -} False
     {- preferedVisualizers  -} mempty
     {- visualizers          -} mempty
+    {- internalVisualizers  -} mempty
 
 
 nextRandom :: Command State Word8

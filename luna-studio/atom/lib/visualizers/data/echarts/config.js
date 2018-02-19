@@ -1,4 +1,4 @@
-var cfgHelper = require("../visualization-config-helper.js")
+var cfgHelper = require("../../visualization-config-helper.js")
 
 module.exports = function (type) {
     var plotPattern = { constructor: ["Stream", "List"]

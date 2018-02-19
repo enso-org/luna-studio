@@ -5,11 +5,11 @@ import           Control.Concurrent.STM.TChan               (writeTChan)
 import           Control.Monad.Reader                       hiding (liftIO)
 import           Control.Monad.STM                          (atomically)
 import           Data.Text                                  (Text)
-import           Empire.Data.Graph                          (Graph, ClsGraph, defaultClsGraph)
+import           Empire.Data.Graph                          (ClsGraph, Graph, defaultClsGraph)
 import           Empire.Empire
 import           Empire.Prelude
 import           LunaStudio.API.AsyncUpdate                 (AsyncUpdate (..))
-import           LunaStudio.Data.Diff                       (Diff(..))
+import           LunaStudio.Data.Diff                       (Diff (..))
 import           LunaStudio.Data.GraphLocation              (GraphLocation (..))
 import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (NodeId, NodeTypecheckerUpdate)

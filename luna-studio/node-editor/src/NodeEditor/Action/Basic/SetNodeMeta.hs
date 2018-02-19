@@ -1,15 +1,19 @@
 module NodeEditor.Action.Basic.SetNodeMeta where
 
-import           Common.Action.Command                      (Command)
 import           Common.Prelude
+
+import qualified LunaStudio.Data.NodeMeta           as NodeMeta
+import qualified LunaStudio.Data.Project            as Project
+import qualified NodeEditor.Action.Batch            as Batch
+import qualified NodeEditor.Action.State.NodeEditor as NodeEditor
+
+import           Common.Action.Command                      (Command)
 import           Control.Monad                              (filterM)
 import           LunaStudio.Data.NodeMeta                   (NodeMeta (NodeMeta))
-import qualified LunaStudio.Data.NodeMeta                   as NodeMeta
 import           LunaStudio.Data.Position                   (Position)
-import qualified NodeEditor.Action.Batch                    as Batch
-import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, defaultVisualizer, position, visEnabled)
 import           NodeEditor.State.Global                    (State)
+
 
 moveNode :: (NodeLoc, Position) -> Command State ()
 moveNode = moveNodes . return
@@ -21,14 +25,14 @@ moveNodes :: [(NodeLoc, Position)] -> Command State ()
 moveNodes nodesPos = do
     update <- fmap catMaybes . forM nodesPos $ \(nl, pos) ->
         flip fmap2 (NodeEditor.getExpressionNode nl) $
-            \node -> (nl, NodeMeta pos (node ^. visEnabled) (node ^. defaultVisualizer))
+            \node -> (nl, NodeMeta pos (node ^. visEnabled) (Project.toOldAPI <$> node ^. defaultVisualizer))
     setNodesMeta update
 
 localMoveNodes :: [(NodeLoc, Position)] -> Command State [NodeLoc]
 localMoveNodes nodesPos = do
     update <- fmap catMaybes . forM nodesPos $ \(nl, pos) ->
         flip fmap2 (NodeEditor.getExpressionNode nl) $
-            \node -> (nl, NodeMeta pos (node ^. visEnabled) (node ^. defaultVisualizer))
+            \node -> (nl, NodeMeta pos (node ^. visEnabled) (Project.toOldAPI <$> node ^. defaultVisualizer))
     localSetNodesMeta update
 
 setNodeMeta :: (NodeLoc, NodeMeta) -> Command State ()

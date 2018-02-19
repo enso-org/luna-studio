@@ -146,7 +146,6 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
 
                     when allowVisualizations . forM_ visWithSelection . uncurry $ nodeVisualization_ ref visLibPaths
 
-
                 planeNewConnection_ $ do
                     forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
 

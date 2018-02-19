@@ -1,8 +1,8 @@
 module Empire.Utils where
 
-import           Prologue
 import           Data.Time.Clock  (UTCTime, getCurrentTime)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
+import           Prologue
 import qualified Text.Show.Pretty as Pretty
 
 

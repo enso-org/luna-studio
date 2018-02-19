@@ -5,14 +5,14 @@ module NodeEditor.React.View.Breadcrumbs (
     breadcrumbs_
 ) where
 
-import qualified NodeEditor.Event.UI                as UI
 import           Common.Prelude
+import qualified NodeEditor.Event.UI                as UI
+import           NodeEditor.React.IsRef             (IsRef, dispatch)
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumbs)
 import qualified NodeEditor.React.Model.Breadcrumbs as B
-import           NodeEditor.React.IsRef             (IsRef, dispatch)
-import qualified NodeEditor.React.View.Style       as Style
+import qualified NodeEditor.React.View.Style        as Style
 import           React.Flux
-import qualified React.Flux                          as React
+import qualified React.Flux                         as React
 
 
 name :: JSString

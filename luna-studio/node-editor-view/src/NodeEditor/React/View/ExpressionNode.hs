@@ -72,11 +72,11 @@ handleMouseDown ref nodeLoc e m =
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.Event nodeLoc $ Node.MouseDown m)
     else []
 
-nodeName_ :: IsRef ref => ref -> NodeLoc -> Maybe Text -> Maybe Bool -> Maybe SearcherProperties -> ReactElementM ViewEventHandler ()
-nodeName_ ref nl name' visVisible mayS = React.viewWithSKey nodeName  "node-name" (ref, nl, name', visVisible, mayS) mempty
+nodeName_ :: IsRef ref => ref -> NodeLoc -> Maybe Text -> Bool -> Maybe SearcherProperties -> Bool -> ReactElementM ViewEventHandler ()
+nodeName_ ref nl name' visVisible mayS blockVisInBc = React.viewWithSKey nodeName  "node-name" (ref, nl, name', visVisible, mayS, blockVisInBc) mempty
 
-nodeName :: IsRef ref => ReactView (ref, NodeLoc, Maybe Text, Maybe Bool, Maybe SearcherProperties)
-nodeName = React.defineView "node-name" $ \(ref, nl, name', mayVisualizationVisible, mayS) -> do
+nodeName :: IsRef ref => ReactView (ref, NodeLoc, Maybe Text, Bool, Maybe SearcherProperties, Bool)
+nodeName = React.defineView "node-name" $ \(ref, nl, name', visualizationVisible, mayS, blockVisInBc) -> do
     let regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.Event nl Node.EditName)]
                                  , elemString . convert $ fromMaybe def name' )
         (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
@@ -90,21 +90,20 @@ nodeName = React.defineView "node-name" $ \(ref, nl, name', mayVisualizationVisi
             [ "className" $= Style.prefix "node__name--positioner"
             ] $ do
             nameElement
-            withJust mayVisualizationVisible $ \isVisualization ->
-                svg_
-                    [ "key"       $= "ctrlSwitch"
-                    , "className" $= Style.prefix "ctrl-icon"
-                    , "xmlns"     $= "http://www.w3.org/2000/svg"
-                    , "viewBox"   $= "0 0 24 24"
-                    , onDoubleClick $ \e _ -> [stopPropagation e]
-                    , onClick       $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Event (Vis.Node nl) Visualization.ToggleVisualizations
-                    ] $ if isVisualization
-                        then path_ [ "d"         $= Style.iconEye
-                                   , "className" $= Style.prefix "icon--on"
-                                   ] mempty
-                        else path_ [ "d"         $= Style.iconEyeDisabled
-                                   , "className" $= Style.prefixFromList ["icon--off"]
-                                   ] mempty
+            unless (blockVisInBc) $ svg_
+                [ "key"       $= "ctrlSwitch"
+                , "className" $= Style.prefix "ctrl-icon"
+                , "xmlns"     $= "http://www.w3.org/2000/svg"
+                , "viewBox"   $= "0 0 24 24"
+                , onDoubleClick $ \e _ -> [stopPropagation e]
+                , onClick       $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ Visualization.Event (Vis.Node nl) Visualization.ToggleVisualizations
+                ] $ if visualizationVisible
+                    then path_ [ "d"         $= Style.iconEye
+                               , "className" $= Style.prefix "icon--on"
+                               ] mempty
+                    else path_ [ "d"         $= Style.iconEyeDisabled
+                               , "className" $= Style.prefixFromList ["icon--off"]
+                               ] mempty
 
 
 nodeExpression_ :: IsRef ref => ref -> NodeLoc -> Text -> Maybe SearcherProperties -> ReactElementM ViewEventHandler ()
@@ -178,7 +177,7 @@ node = React.defineView name $ \(ref, n, isTopLevel, performConnect, maySearcher
                 [ "className" $= Style.prefixFromList [ "node-translate","node__text", "noselect" ]
                 , "key"       $= "nodeText"
                 ] $ do
-                nodeName_ ref nodeLoc (n ^. Node.name) mayVisVisible maySearcher
+                nodeName_ ref nodeLoc (n ^. Node.name) (n ^. Node.visualizationsEnabled) maySearcher blockVisInBc
                 unless (isTopLevel && isDef) $ nodeExpression_ ref nodeLoc expression maySearcher
             nodeBody_ ref n mayEditedTextPortControlPortRef
             when showValue $ nodeValue_ ref n

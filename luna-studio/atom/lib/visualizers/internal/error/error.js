@@ -16,8 +16,7 @@
     });
   }
 
-  var render = function (json) {
-    var data = JSON.parse(json);
+  var render = function (data) {
     document.body.innerHTML = "<pre>" + escapeHtml(data) + "</pre>";
   };
 

@@ -1,26 +1,32 @@
+{-# LANGUAGE OverloadedStrings #-}
 module LunaStudio.Data.Project where
 
-import qualified Control.Lens.Aeson                   as Lens
-import           Data.Aeson                           (FromJSON (parseJSON), ToJSON (toEncoding, toJSON))
-import           Data.Aeson.Types                     (ToJSON)
-import           Data.Binary                          (Binary)
-import           Data.Binary                          (Binary (..))
-import           Data.Hashable                        (Hashable)
-import           Data.HashMap.Strict                  (HashMap)
-import qualified Data.HashMap.Strict                  as HashMap
-import           Data.IntMap.Lazy                     (IntMap)
-import           Data.Map                             (Map)
-import qualified Data.Map                             as Map
-import           Data.UUID.Types                      (UUID)
-import           Data.Yaml                            (decodeFileEither, encodeFile)
-import           LunaStudio.Data.Breadcrumb           (Breadcrumb)
-import           LunaStudio.Data.CameraTransformation (CameraTransformation)
-import           LunaStudio.Data.Library              (Library)
-import           LunaStudio.Data.TypeRep              (TypeRep)
-import           LunaStudio.Data.Visualizer           (Visualizer)
-import           Prologue                             hiding (TypeRep)
-import           System.FilePath                      (splitDirectories)
-import           System.IO                            (hFlush, stdout)
+import Prologue hiding (TypeRep)
+
+import qualified Control.Lens.Aeson  as Lens
+import qualified Data.HashMap.Strict as HashMap
+import qualified Data.Map            as Map
+import qualified Data.Text           as Text
+
+import Data.Aeson                           (FromJSON (parseJSON), ToJSON (toEncoding, toJSON))
+import Data.Aeson.Types                     (ToJSON)
+import Data.Binary                          (Binary (put, get))
+import Data.Hashable                        (Hashable)
+import Data.HashMap.Strict                  (HashMap)
+import Data.IntMap.Lazy                     (IntMap)
+import Data.Map                             (Map)
+import Data.Maybe                           (listToMaybe)
+import Data.UUID.Types                      (UUID)
+import Data.Yaml                            (decodeFileEither, encodeFile)
+import LunaStudio.Data.Breadcrumb           (Breadcrumb)
+import LunaStudio.Data.CameraTransformation (CameraTransformation)
+import LunaStudio.Data.Library              (Library)
+import LunaStudio.Data.TypeRep              (TypeRep)
+import LunaStudio.Data.Visualizer           (Visualizer (Visualizer), VisualizerId (VisualizerId), VisualizerName, VisualizerPath,
+                                             VisualizerType (InternalVisualizer, LunaVisualizer, ProjectVisualizer), visualizerId,
+                                             visualizerName, visualizerRelPath, visualizerType)
+import System.FilePath                      (splitDirectories)
+import System.IO                            (hFlush, stdout)
 
 
 type ProjectId = UUID
@@ -39,8 +45,9 @@ instance ToJSON Project
 data BreadcrumbSettings = BreadcrumbSettings { _breadcrumbCameraSettings :: CameraTransformation
                                              } deriving (Eq, Generic, Show)
 
+--TODO: Replace (VisualizerName, VisualizerPath) with VisualizerId but manage conflicts between versions
 data ModuleSettings = ModuleSettings { _currentBreadcrumb   :: Breadcrumb Text
-                                     , _typeRepToVisMap     :: HashMap TypeRep Visualizer
+                                     , _typeRepToVisMap     :: HashMap TypeRep (VisualizerName, VisualizerPath)
                                      , _breadcrumbsSettings :: Map (Breadcrumb Text) BreadcrumbSettings
                                      } deriving (Eq, Generic, Show)
 
@@ -48,7 +55,8 @@ data ModuleSettings = ModuleSettings { _currentBreadcrumb   :: Breadcrumb Text
 data ProjectSettings = ProjectSettings { _modulesSettings :: Map FilePath ModuleSettings
                                        } deriving (Eq, Generic, Show)
 
-data LocationSettings = LocationSettings { _visMap   :: Maybe (HashMap TypeRep Visualizer)
+--TODO: Replace (VisualizerName, VisualizerPath) with VisualizerId but manage conflicts between versions
+data LocationSettings = LocationSettings { _visMap   :: Maybe (HashMap TypeRep (VisualizerName, VisualizerPath))
                                          , _camera   :: CameraTransformation
                                          } deriving (Eq, Generic, Show)
 
@@ -121,3 +129,24 @@ updateLocationSettings configPath filePath' bc settings currentBc = liftIO $ dec
         ModuleSettings currentBc visMap' $ Map.insert bc createBreadcrumbSettings $ ms ^. breadcrumbsSettings
     updateModuleSettings  ps = ps & modulesSettings . at filePath %~ Just . maybe createModuleSettings updateModuleSettings'
     createBreadcrumbSettings = BreadcrumbSettings $ settings ^. camera
+
+
+--TODO: Provide some version system to fix version problem
+toOldAPI :: Visualizer -> (VisualizerName, VisualizerPath)
+toOldAPI v = (prefixedName, visPath) where
+    getPrefix (InternalVisualizer) = "InternalVisualizer: "
+    getPrefix (LunaVisualizer)     = "LunaVisualizer: "
+    getPrefix (ProjectVisualizer)  = "ProjectVisualizer: "
+    visId        = v ^. visualizerId
+    visType      = visId ^. visualizerType
+    visName      = visId ^. visualizerName
+    visPath      = v ^. visualizerRelPath
+    prefixedName = getPrefix visType <> visName
+
+fromOldAPI :: (VisualizerName, VisualizerPath) -> Visualizer
+fromOldAPI (visName, visPath) = Visualizer visId visPath where
+    visId          = uncurry VisualizerId nameAndType
+    mayInternalVis = (, InternalVisualizer) <$> Text.stripPrefix "InternalVisualizer: " visName
+    mayLunaVis     = (, LunaVisualizer)     <$> Text.stripPrefix "LunaVisualizer: "     visName
+    mayProjectVis  = (, ProjectVisualizer)  <$> Text.stripPrefix "ProjectVisualizer: "  visName
+    nameAndType    = fromMaybe (visName, LunaVisualizer) . listToMaybe $ catMaybes [mayInternalVis, mayLunaVis, mayProjectVis]

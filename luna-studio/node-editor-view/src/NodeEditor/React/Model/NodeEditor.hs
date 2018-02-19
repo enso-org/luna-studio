@@ -65,11 +65,12 @@ data NodeEditor = NodeEditor { _expressionNodes          :: ExpressionNodesMap
                              , _topZIndex                :: Int
                              } deriving (Eq, Generic)
 
-data VisualizersPaths = VisualizersPaths { _internalVisualizersPath :: FilePath
-                                         , _projectVisualizersPath  :: Maybe FilePath
-                                         } deriving (Default, Eq, Generic)
+data VisualizersPaths    = VisualizersPaths { _internalVisualizersPath :: FilePath
+                                            , _lunaVisualizersPath     :: FilePath
+                                            , _projectVisualizersPath  :: Maybe FilePath
+                                            } deriving (Default, Eq, Generic)
 
-data VisualizationBackup = ValueBackup Text | StreamBackup [Text] deriving (Generic, Show)
+data VisualizationBackup     = ValueBackup Text | StreamBackup [Text] | MessageBackup Text | ErrorBackup Text deriving (Generic, Eq, Show)
 data VisualizationsBackupMap = VisualizationsBackupMap { _backupMap :: Map NodeLoc VisualizationBackup
                                                        } deriving (Generic, Default)
 instance Eq VisualizationsBackupMap where _ == _ = True
@@ -96,6 +97,7 @@ instance Default NodeEditor where
 makeLenses ''VisualizersPaths
 makeLenses ''VisualizationsBackupMap
 makeLenses ''NodeEditor
+makePrisms ''VisualizationBackup
 
 isGraphLoaded :: Getter NodeEditor Bool
 isGraphLoaded = graphStatus . to (== GraphLoaded)

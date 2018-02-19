@@ -4,10 +4,10 @@ module System.Log.MLogger (
     module X,
 ) where
 
-import           Prelude                     (fail)
 import qualified Data.Maybe                  as Maybe
 import qualified Data.String.Utils           as StringUtils
-import           Prologue                    hiding (log, fail)
+import           Prelude                     (fail)
+import           Prologue                    hiding (fail, log)
 import qualified System.Console.ANSI         as ANSI
 import           System.IO                   (stderr)
 import           System.Log.Logger           (Priority (..))
