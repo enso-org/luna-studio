@@ -32,6 +32,7 @@ localRemoveNode :: NodeLoc -> Command State (Maybe NodeLoc)
 localRemoveNode = fmap listToMaybe . localRemoveNodes . return
 
 localRemoveNodes :: [NodeLoc] -> Command State [NodeLoc]
+localRemoveNodes []       = return []
 localRemoveNodes nodeLocs = do
     nls <- filterM inGraph nodeLocs
     void $ localRemoveConnectionsContainingNodes nls
