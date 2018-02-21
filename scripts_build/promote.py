@@ -34,14 +34,13 @@ def update_atom_package_json(unpacked_package, old_v, new_v):
 
 
 def run(unpacked_package, old_v, new_v):
-    print(unpacked_package)
     update_atom_package_json(unpacked_package,old_v, new_v)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Bump the version of a Luna package.')
+    parser = ArgumentParser(description='Bump the version of a Luna package.')
     parser.add_argument('package_path', metavar='PACKAGE_PATH', help='Path to the (unpacked) Luna Studio package.')
-    parser.add_argument('old_version, metavar='OLD_VERSION, help='The old version (source).')
-    parser.add_argument('new_version, metavar='NEW_VERSION, help='The new version (target).')
+    parser.add_argument('old_version', metavar='OLD_VERSION', help='The old version (source).')
+    parser.add_argument('new_version', metavar='NEW_VERSION', help='The new version (target).')
     args = parser.parse_args()
     run(args.package_path, args.old_version, args.new_version)
