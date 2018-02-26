@@ -3,31 +3,31 @@ module NodeEditor.Action.Basic.AddNode where
 
 import           Common.Prelude
 
-import qualified Data.Text                               as Text
-import qualified LunaStudio.Data.Node                    as Empire
-import qualified NodeEditor.Action.Batch                 as Batch
-import qualified NodeEditor.Action.State.NodeEditor      as NodeEditor
+import qualified Data.Text                            as Text
+import qualified LunaStudio.Data.Node                 as Empire
+import qualified NodeEditor.Action.Batch              as Batch
+import qualified NodeEditor.Action.State.NodeEditor   as NodeEditor
 
-import           Common.Action.Command                   (Command)
-import           Data.Text                               (Text)
-import           LunaStudio.Data.Geometry                (snap)
-import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
-import           LunaStudio.Data.NodeMeta                (NodeMeta (NodeMeta))
-import           LunaStudio.Data.Port                    (InPortIndex (Arg), Port (Port), PortState (NotConnected))
-import           LunaStudio.Data.Position                (Position)
-import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
-import           NodeEditor.Action.Basic.FocusNode       (focusNode)
-import           NodeEditor.Action.Basic.SelectNode      (selectNode)
-import           NodeEditor.Action.Basic.UpdateNodeValue (setVisualizationData)
-import           NodeEditor.Action.State.Model           (calculatePortSelfMode)
-import           NodeEditor.Action.State.NodeEditor      (addInputNode, addOutputNode, getSelectedNodes, updateNodeVisualizers)
-import           NodeEditor.Action.UUID                  (getUUID)
-import           NodeEditor.React.Model.Node             (ExpressionNode, InputNode, NodeLoc (NodeLoc), NodePath, OutputNode, inPortAt,
-                                                          inPortsList, nodeLoc)
-import           NodeEditor.React.Model.NodeEditor       (VisualizationBackup (MessageBackup))
-import           NodeEditor.React.Model.Port             (isSelf, mode, portId)
-import           NodeEditor.React.Model.Visualization    (awaitingDataMsg)
-import           NodeEditor.State.Global                 (State)
+import           Common.Action.Command                (Command)
+import           Data.Text                            (Text)
+import           LunaStudio.Data.Geometry             (snap)
+import           LunaStudio.Data.LabeledTree          (LabeledTree (LabeledTree))
+import           LunaStudio.Data.NodeMeta             (NodeMeta (NodeMeta))
+import           LunaStudio.Data.Port                 (InPortIndex (Arg), Port (Port), PortState (NotConnected))
+import           LunaStudio.Data.Position             (Position)
+import           LunaStudio.Data.TypeRep              (TypeRep (TStar))
+import           NodeEditor.Action.Basic.FocusNode    (focusNode)
+import           NodeEditor.Action.Basic.SelectNode   (selectNode)
+import           NodeEditor.Action.State.Model        (calculatePortSelfMode)
+import           NodeEditor.Action.State.NodeEditor   (addInputNode, addOutputNode, getSelectedNodes, setVisualizationData,
+                                                       updateNodeVisualizers)
+import           NodeEditor.Action.UUID               (getUUID)
+import           NodeEditor.React.Model.Node          (ExpressionNode, InputNode, NodeLoc (NodeLoc), NodePath, OutputNode, inPortAt,
+                                                       inPortsList, nodeLoc)
+import           NodeEditor.React.Model.NodeEditor    (VisualizationBackup (MessageBackup))
+import           NodeEditor.React.Model.Port          (isSelf, mode, portId)
+import           NodeEditor.React.Model.Visualization (awaitingDataMsg)
+import           NodeEditor.State.Global              (State)
 
 
 createNode :: NodePath -> Position -> Text -> Bool -> Command State ()

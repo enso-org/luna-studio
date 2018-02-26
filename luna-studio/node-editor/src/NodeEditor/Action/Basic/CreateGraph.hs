@@ -33,7 +33,7 @@ updateGraph nodes input output connections monads = do
     let nlsSet = Set.fromList $ map (view nodeLoc) nodes
     nlsToRemove <- filter (not . flip Set.member nlsSet) . map (view nodeLoc) <$> getExpressionNodes
     void $ localRemoveNodes nlsToRemove
-    mapM_ localUpdateOrAddExpressionNode nodes
+    mapM_ (localUpdateOrAddExpressionNode def) nodes
 
     case input of
         Nothing -> modifyNodeEditor $ NE.inputNode .= def
