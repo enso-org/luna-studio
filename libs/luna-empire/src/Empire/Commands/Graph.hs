@@ -136,6 +136,7 @@ import qualified Empire.Commands.GraphBuilder     as GraphBuilder
 import qualified Empire.Commands.GraphUtils       as GraphUtils
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Publisher        as Publisher
+import qualified Empire.Commands.Typecheck        as Typecheck
 import           Empire.Data.AST                  (InvalidConnectionException (..), EdgeRef, NodeRef, NotInputEdgeException (..),
                                                    NotUnifyException, PortDoesNotExistException(..), ConnectionException(..),
                                                    SomeASTException, astExceptionFromException, astExceptionToException)
@@ -207,11 +208,12 @@ addImports loc@(GraphLocation file _) modulesToImport = do
         return $ Text.concat $ newImports ++ [code]
     reloadCode loc newCode
     typecheckWithRecompute loc
+    qualName <- Typecheck.filePathToQualName file
     withUnit (GraphLocation file def) $ do
         modulesMVar <- view modules
         importPaths <- liftIO $ getImportPaths loc
         Lifted.modifyMVar modulesMVar $ \cmpModules -> do
-            res     <- runModuleTypecheck importPaths cmpModules
+            res     <- runModuleTypecheck qualName importPaths cmpModules
             case res of
                 Left err                          -> liftIO (print err) >> return (cmpModules, ())
                 Right (newImports, newCmpModules) -> return (newCmpModules, ())

@@ -42,7 +42,17 @@ strValue n = case n ^. Node.value of
 showError :: LunaError.Error LunaError.NodeError -> String
 showError = showErrorSep ""
 
+showSourceLocation :: LunaError.SourceLocation -> String
+showSourceLocation (LunaError.SourceLocation mod klass fun) =
+    "    " <> convert mod <> maybe "" (("." <>) . convert) klass <> "." <> convert fun <> "\n"
+
+showCompileErrorBacktrace :: LunaError.CompileErrorDetails -> String
+showCompileErrorBacktrace (LunaError.CompileErrorDetails arisingFrom requiredBy) =
+    "\n" <>
+    (if null arisingFrom then "" else ("arising from:\n" <> concatMap showSourceLocation arisingFrom <> "\n")) <>
+    "required by:\n" <> concatMap showSourceLocation requiredBy
+
 showErrorSep :: String -> LunaError.Error LunaError.NodeError -> String
 showErrorSep sep err = case err of
-    LunaError.Error LunaError.CompileError msg -> "Compile error: " <> sep <> convert msg
+    LunaError.Error (LunaError.CompileError details) msg -> "Compile error: " <> sep <> convert msg <> sep <> showCompileErrorBacktrace details
     LunaError.Error LunaError.RuntimeError msg -> "Runtime error: " <> sep <> convert msg

@@ -297,8 +297,8 @@ getImportedModules = do
     AST ir pmState <- use Graph.clsAst
     fst <$> liftIO (evalTC g ir pmState $ tcInit >> extractImportedModules unit)
 
-runModuleTypecheck :: Map.Map Name FilePath -> CompiledModules -> Command ClsGraph (Either Compilation.ModuleCompilationError (Imports, CompiledModules))
-runModuleTypecheck sources cmpMods@(CompiledModules _ prims) = do
+runModuleTypecheck :: QualName -> Map.Map Name FilePath -> CompiledModules -> Command ClsGraph (Either Compilation.ModuleCompilationError (Imports, CompiledModules))
+runModuleTypecheck moduleName sources cmpMods@(CompiledModules _ prims) = do
     unit :: Expr Unit <- uses Graph.clsClass unsafeGeneralize
     g <- get
     AST ir pmState <- use Graph.clsAst
@@ -309,7 +309,7 @@ runModuleTypecheck sources cmpMods@(CompiledModules _ prims) = do
         case result of
             Right (imports, newCmpMods) -> do
                 let imps = unionsImports $ prims : Map.elems imports
-                res <- ModuleTC.processModule imps "<<interactive>>" (IR.unsafeGeneralize unit)
+                res <- ModuleTC.processModule imps (convert moduleName) (IR.unsafeGeneralize unit)
                 return $ Right (res, newCmpMods)
             Left err -> return $ Left err
     return res

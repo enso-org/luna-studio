@@ -90,7 +90,11 @@ updateNodes loc@(GraphLocation _ br) = do
             errs <- IR.getLayer @IR.Errors =<< ASTRead.getASTRef nid
             case errs of
                 []     -> return Nothing
-                e : es -> return $ Just $ (nid, NodeError $ APIError.Error APIError.CompileError $ e ^. Errors.description)
+                e : es -> do
+                    let toSrcLoc (Errors.ModuleTagged mod (Errors.FromMethod klass method)) = APIError.SourceLocation (convert mod) (Just (convert klass)) (convert method)
+                        toSrcLoc (Errors.ModuleTagged mod (Errors.FromFunction function))   = APIError.SourceLocation (convert mod) Nothing (convert function)
+                    let errorDetails = APIError.CompileErrorDetails (map toSrcLoc (e ^. Errors.arisingFrom)) (map toSrcLoc (e ^. Errors.requiredBy))
+                    return $ Just $ (nid, NodeError $ APIError.Error (APIError.CompileError errorDetails) $ e ^. Errors.description)
         return (sidebarUpdates <> nodeUpdates, errors)
     mask_ $ do
         traverse_ (Publisher.notifyNodeTypecheck loc) updates
@@ -155,12 +159,12 @@ recomputeCurrentScope imports file = do
         lunaroot    <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
         currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
         let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
+        qualName <- filePathToQualName file
         (f, nimps) <- zoom graph $ do
-            t <- runModuleTypecheck (Map.fromList importPaths) imps
+            t <- runModuleTypecheck qualName (Map.fromList importPaths) imps
             case t of
                 Right (a, b) -> return (a, b)
                 Left e  -> error $ show e <> " " <> file
-        qualName <- filePathToQualName file
         let nimpsF = nimps & Compilation.modules . at qualName ?~ f
         return (nimpsF, f)
 

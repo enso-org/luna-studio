@@ -27,6 +27,8 @@ import NodeEditor.State.Global                    (State)
 
 import NodeEditor.Action.State.NodeEditor         (getExpressionNode)
 
+import NodeEditor.React.View.ExpressionNode.NodeValue (showError)
+
 updateNodeValueAndVisualization :: NodeLoc -> NodeValue -> Command State ()
 updateNodeValueAndVisualization nl = \case
     NodeValue sv (Just (StreamDataPoint visVal)) -> do
@@ -45,7 +47,7 @@ updateNodeValueAndVisualization nl = \case
         setVisualizationData nl (MessageBackup msg) True
     NodeError e -> do
         modifyExpressionNode nl $ value .= Error e
-        setVisualizationData nl (ErrorBackup $ e ^. errorContent) True
+        setVisualizationData nl (ErrorBackup $ convert $ showError e) True
 
 
 setNodeProfilingData :: NodeLoc -> Integer -> Command State ()
