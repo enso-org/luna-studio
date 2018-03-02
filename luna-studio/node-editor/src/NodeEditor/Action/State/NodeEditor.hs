@@ -345,11 +345,9 @@ getVisualizersForType :: TypeRep -> Command State (Maybe (Visualizer, Map Visual
 getVisualizersForType tpe = do
     mayPrefVis   <- HashMap.lookup tpe <$> use preferedVisualizers
     visualizers' <- use visualizers >>= applyType tpe
-    let mayDefVis = case mayPrefVis of
-            Just visualizer -> if Map.lookup (visualizer ^. visualizerId) visualizers' == Just (visualizer ^. visualizerRelPath)
-                then mayPrefVis
-                else fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
-            _ -> fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
+    let mayFirstVisInMap = fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
+        fromPrefVis vis  = maybe mayFirstVisInMap (Just . Visualizer (vis ^. visualizerId)) $ Map.lookup (vis ^. visualizerId) visualizers'
+        mayDefVis        = maybe mayFirstVisInMap fromPrefVis mayPrefVis
     return $ if isNothing mayDefVis || Map.null visualizers'
         then Nothing
         else (, visualizers') <$> mayDefVis
