@@ -9,12 +9,12 @@ import           JS.Visualizers                             (notifyStreamRestart
                                                              sendVisualizationData)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
-import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta, setVisualizationData)
+import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, checkAction, checkIfActionPerfoming, continueActionWithKey,
                                                              removeActionFromState, updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getExpressionNodeType, getNodeMeta, getNodeVisualizations,
-                                                             getSelectedNodes, getVisualizationsBackupMap, getVisualizersForType,
-                                                             modifyExpressionNode, modifyNodeEditor, modifySearcher,
+                                                             getSelectedNodes, getVisualizationBackup, getVisualizersForType,
+                                                             modifyExpressionNode, modifyNodeEditor, modifySearcher, setVisualizationData,
                                                              updateDefaultVisualizer, updatePreferedVisualizer)
 import           NodeEditor.Action.UUID                     (getUUID)
 import           NodeEditor.React.Model.Node.ExpressionNode (hasData, nodeLoc, returnsError, visualizationsEnabled)
@@ -91,33 +91,32 @@ selectVisualizer (Node nl) visId visualizerId = withJustM (getNodeVisualizations
         continue (end :: VisualizationActive -> Command State ())
         let visualizer' = Visualizer visualizerId visPath
         updateDefaultVisualizer nl (Just visualizer') True
-        when (prevVis ^. visualizerProperties . runningVisualizer /= visualizer') $ getVisualizationsBackupMap >>= \visBackup ->
-            case Map.lookup nl visBackup of
-                Just (StreamBackup backup) -> do
-                    uuid <- getUUID
-                    modifyNodeEditor $ do
-                        nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                        nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
-                    mayTpe <- getExpressionNodeType nl
-                    withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
-                        updatePreferedVisualizer tpe visualizer'
-                        liftIO $ do
-                            registerVisualizerFrame uuid
-                            notifyStreamRestart     uuid cRep (reverse backup)
-                Just (ValueBackup backup) -> do
-                    uuid <- getUUID
-                    modifyNodeEditor $ do
-                        nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                        nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
-                    mayTpe <- getExpressionNodeType nl
-                    withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
-                        updatePreferedVisualizer tpe visualizer'
-                        liftIO $ do
-                            registerVisualizerFrame uuid
-                            sendVisualizationData   uuid cRep backup
-                _ -> do
-                    modifyNodeEditor $ nodeVisualizations . ix nl . visualizations . ix (prevVis ^. visualizationId) . visualizerProperties . selectedVisualizerId ?= visualizerId
-                    withJustM (getExpressionNodeType nl) $ flip updatePreferedVisualizer visualizer'
+        when (prevVis ^. visualizerProperties . runningVisualizer /= visualizer') $ getVisualizationBackup nl >>= \case
+            Just (StreamBackup backup) -> do
+                uuid <- getUUID
+                modifyNodeEditor $ do
+                    nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
+                    nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
+                mayTpe <- getExpressionNodeType nl
+                withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
+                    updatePreferedVisualizer tpe visualizer'
+                    liftIO $ do
+                        registerVisualizerFrame uuid
+                        notifyStreamRestart     uuid cRep (reverse backup)
+            Just (ValueBackup backup) -> do
+                uuid <- getUUID
+                modifyNodeEditor $ do
+                    nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
+                    nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
+                mayTpe <- getExpressionNodeType nl
+                withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
+                    updatePreferedVisualizer tpe visualizer'
+                    liftIO $ do
+                        registerVisualizerFrame uuid
+                        sendVisualizationData   uuid cRep backup
+            _ -> do
+                modifyNodeEditor $ nodeVisualizations . ix nl . visualizations . ix (prevVis ^. visualizationId) . visualizerProperties . selectedVisualizerId ?= visualizerId
+                withJustM (getExpressionNodeType nl) $ flip updatePreferedVisualizer visualizer'
 selectVisualizer Searcher _ _ = $notImplemented
 
 
@@ -174,9 +173,9 @@ stopVisualizationsForNode nl = modifyNodeEditor $ nodeVisualizations . ix nl %= 
 
 startReadyVisualizations :: NodeLoc -> Command State ()
 startReadyVisualizations nl = do
-    mayVisBackup <- Map.lookup nl <$> getVisualizationsBackupMap
-    mayNodeVis   <- getNodeVisualizations nl
-    ent          <- getExpressionNodeType nl
+    mayVisBackup <- getVisualizationBackup nl
+    mayNodeVis   <- getNodeVisualizations  nl
+    ent          <- getExpressionNodeType  nl
     let activateWith newNodeVis vis =
             if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
                 uuid <- getUUID
@@ -187,8 +186,8 @@ startReadyVisualizations nl = do
             modifyNodeEditor $ nodeVisualizations . at nl ?= nVis
             setVisualizationData nl backup True
         updateVis nodeVis Nothing = do
-            hasVisualizers <- maybe (return False) (fmap isJust . getVisualizersForType) =<< getExpressionNodeType nl
-            let msg = if hasVisualizers then awaitingDataMsg else noVisMsg
+            noVisForType <- maybe (return False) (fmap isNothing . getVisualizersForType) =<< getExpressionNodeType nl
+            let msg = if noVisForType then noVisMsg else awaitingDataMsg
             updateVis nodeVis $ Just $ MessageBackup msg
     withJust mayNodeVis $ flip updateVis mayVisBackup
 
