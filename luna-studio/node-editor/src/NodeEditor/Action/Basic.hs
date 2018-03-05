@@ -1,5 +1,6 @@
 module NodeEditor.Action.Basic
-    ( addPort
+    ( NodeUpdateModification (KeepPorts, KeepNodeMeta)
+    , addPort
     , addSubgraph
     , centerGraph
     , collapseToFunction
@@ -44,12 +45,10 @@ module NodeEditor.Action.Basic
     , localUnmerge
     , localUpdateConnection
     , localUpdateExpressionNode
-    , localUpdateExpressionNodePreventingPorts
     , localUpdateExpressionNodes
     , localUpdateInputNode
     , localUpdateNodeTypecheck
     , localUpdateOrAddExpressionNode
-    , localUpdateOrAddExpressionNodePreventingPorts
     , localUpdateOrAddInputNode
     , localUpdateOrAddOutputNode
     , localUpdateOutputNode
@@ -83,11 +82,9 @@ module NodeEditor.Action.Basic
     , setInputSidebarPortMode
     , setNodeExpression
     , setNodeMeta
-    , setNodeProfilingData
     , setNodesMeta
     , setOutputSidebarPortMode
     , setPortDefault
-    , setVisualizationData
     , toggleSelect
     , toggleSelectedNodesMode
     , toggleSelectedNodesUnfold
@@ -143,11 +140,11 @@ import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPor
 import           NodeEditor.Action.Basic.Undo                (redo, undo)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodePreventingPorts,
+import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts), localUpdateExpressionNode,
                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
-                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode)
-import           NodeEditor.Action.Basic.UpdateNodeValue     (setNodeProfilingData, setVisualizationData, updateNodeValueAndVisualization)
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
+                                                              localUpdateOrAddOutputNode, localUpdateOutputNode)
+import           NodeEditor.Action.Basic.UpdateNodeValue     (updateNodeValueAndVisualization)
 import           NodeEditor.Action.Basic.UpdateSearcherHints (localAddSearcherHints, localClearSearcherHints, localUpdateSearcherHints,
                                                               selectHint, setCurrentImports, updateDocs)
 import           NodeEditor.Action.State.Model               (isArgConstructorConnectSrc, updateAllPortsMode, updateArgConstructorMode,
