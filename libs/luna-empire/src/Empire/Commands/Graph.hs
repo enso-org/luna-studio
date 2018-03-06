@@ -213,7 +213,7 @@ addImports loc@(GraphLocation file _) modulesToImport = do
         modulesMVar <- view modules
         importPaths <- liftIO $ getImportPaths loc
         Lifted.modifyMVar modulesMVar $ \cmpModules -> do
-            res     <- runModuleTypecheck qualName importPaths cmpModules
+            res <- runModuleTypecheck qualName importPaths cmpModules
             case res of
                 Left err                          -> liftIO (print err) >> return (cmpModules, ())
                 Right (newImports, newCmpModules) -> return (newCmpModules, ())
