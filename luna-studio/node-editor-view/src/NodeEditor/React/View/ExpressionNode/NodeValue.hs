@@ -50,7 +50,7 @@ showCompileErrorBacktrace :: LunaError.CompileErrorDetails -> String
 showCompileErrorBacktrace (LunaError.CompileErrorDetails arisingFrom requiredBy) =
     "\n" <>
     (if null arisingFrom then "" else ("arising from:\n" <> concatMap showSourceLocation arisingFrom <> "\n")) <>
-    "required by:\n" <> concatMap showSourceLocation requiredBy
+    (if null requiredBy  then "" else ("required by:\n" <> concatMap showSourceLocation requiredBy))
 
 showErrorSep :: String -> LunaError.Error LunaError.NodeError -> String
 showErrorSep sep err = case err of

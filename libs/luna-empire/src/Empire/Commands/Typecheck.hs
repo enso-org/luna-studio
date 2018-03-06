@@ -52,12 +52,14 @@ import           Luna.Compilation                 (CompiledModules (..))
 import qualified Luna.IR                          as IR
 import           Luna.Pass.Data.ExprMapping
 import qualified Luna.Pass.Evaluation.Interpreter as Interpreter
+import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget(TgtDef))
 import qualified Luna.IR.Layer.Errors             as Errors
 import           OCI.IR.Name.Qualified            (QualName)
 
-runTC :: Imports -> Command Graph ()
-runTC imports = do
-    runTypecheck imports
+runTC :: QualName -> String -> Imports -> Command Graph ()
+runTC moduleName functionName imports = do
+    let currentTarget = TgtDef (convert moduleName) (convert functionName)
+    runTypecheck currentTarget imports
     runASTOp $ do
         mapping <- unwrap <$> IR.getAttr @ExprMapping
         Graph.breadcrumbHierarchy . BH.refs %= (\x -> Map.findWithDefault x x mapping)
@@ -197,8 +199,10 @@ run imports loc@(GraphLocation file br) interpret recompute = do
                 let CompiledModules cmpMods cmpPrims = std
                     visibleModules = CompiledModules (Map.restrictKeys cmpMods importedModules) cmpPrims
                     moduleEnv      = unionImports (flattenScope $ Scope visibleModules) scope
+                modName <- filePathToQualName file
+                funName <- preuse $ Graph.clsFuns . at uuid . _Just . Graph.funName
                 withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
-                    runTC moduleEnv
+                    runTC modName (fromMaybe "unknown function" funName) moduleEnv
                     updateNodes  loc
                     {-updateMonads loc-}
                     if interpret then do

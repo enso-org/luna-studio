@@ -235,8 +235,8 @@ runAliasAnalysis = do
     runPass inits PatternTransformation.runPatternTransformation
     runPass inits AliasAnalysis.runAliasAnalysis
 
-runTypecheck :: Imports -> Command Graph ()
-runTypecheck imports = do
+runTypecheck :: CurrentTarget -> Imports -> Command Graph ()
+runTypecheck currentTarget imports = do
     g <- get
     AST currentStateIR currentStatePass <- use Graph.ast
     root <- use $ Graph.breadcrumbHierarchy . BH.self
@@ -247,7 +247,7 @@ runTypecheck imports = do
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
     ((st, passSt), newG) <- liftIO $ evalIR $ do
-        Typecheck.typecheck TgtNone imports [unsafeGeneralize root]
+        Typecheck.typecheck currentTarget imports [unsafeGeneralize root]
         st     <- snapshot
         passSt <- DepState.get @Pass.State
         return (st, passSt)
