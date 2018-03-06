@@ -3,9 +3,12 @@ module NodeEditor.Action.Basic.UpdateNodeValue where
 
 import Common.Prelude
 
-
+import qualified Data.Aeson                                 as Aeson
+import qualified Data.Aeson.Encoding                        as Aeson
 import qualified Data.Map                                   as Map
 import qualified Data.Text                                  as Text
+import qualified Data.Text.Lazy                             as Text.Lazy
+import qualified Data.Text.Lazy.Encoding                    as Text.Lazy
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 
 
@@ -27,7 +30,8 @@ import NodeEditor.State.Global                    (State)
 
 import NodeEditor.Action.State.NodeEditor         (getExpressionNode)
 
-import NodeEditor.React.View.ExpressionNode.NodeValue (showError)
+encodeToLazyText :: Aeson.ToJSON a => a -> Text.Text
+encodeToLazyText = Text.Lazy.toStrict . Text.Lazy.decodeUtf8 . Aeson.encodingToLazyByteString . Aeson.toEncoding
 
 updateNodeValueAndVisualization :: NodeLoc -> NodeValue -> Command State ()
 updateNodeValueAndVisualization nl = \case
@@ -47,7 +51,7 @@ updateNodeValueAndVisualization nl = \case
         setVisualizationData nl (MessageBackup msg) True
     NodeError e -> do
         modifyExpressionNode nl $ value .= Error e
-        setVisualizationData nl (ErrorBackup $ convert $ showError e) True
+        setVisualizationData nl (ErrorBackup $ encodeToLazyText e) True
 
 
 setNodeProfilingData :: NodeLoc -> Integer -> Command State ()
