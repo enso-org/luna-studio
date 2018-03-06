@@ -139,7 +139,7 @@ downloadLibs = do
     current <- currentPath
     let libsFolder    = current </> libs
         arch          = if currentHost == Darwin then "darwin" else "linux"
-        lunaStudioUrl = "http://packages.luna-lang.org/" <> arch <> "/studio/libs/luna-studio-libs.tar.gz"
+        lunaStudioUrl = "http://packages.luna-lang.org/" <> arch <> "/libs/luna-studio-libs.tar.gz"
     Shelly.chdir_p (parent libsFolder) $ do
         Shelly.cmd "wget" lunaStudioUrl
         Shelly.cmd  "tar" "-xpzf" "./luna-studio-libs.tar.gz" "--strip=1"
