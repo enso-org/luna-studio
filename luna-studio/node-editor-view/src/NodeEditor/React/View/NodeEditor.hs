@@ -111,7 +111,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
         nodesWithVis     = Set.fromList $ map (^. visPropNodeLoc) visualizations
         visWithSelection = map (\vis -> (vis, NodeEditor.isVisualizationNodeSelected vis ne)) visualizations
         mayEditedTextPortControlPortRef = ne ^. NodeEditor.textControlEditedPortRef
-        allowVisualizations             = maybe True (null . (^. SidebarNode.inputSidebarPorts)) $ ne ^. NodeEditor.inputNode
+        allowVisualizations             = not isTopLevel && hasn't (NodeEditor.inputNode . _Just . SidebarNode.inputSidebarPorts . traverse) ne
     div_ [ "className" $= Style.prefixFromList ( ["studio-window"]
                                                <> if allowVisualizations && isAnyFullscreen then ["studio-window--has-visualization-fullscreen"] else []
                                                <> if isJust maySearcher                     then ["studio-window--has-searcher"]                 else []

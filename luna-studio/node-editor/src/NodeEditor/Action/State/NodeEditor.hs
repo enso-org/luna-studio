@@ -37,7 +37,7 @@ import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           LunaStudio.Data.Position                    (Position)
-import           LunaStudio.Data.TypeRep                     (TypeRep (TStar))
+import           LunaStudio.Data.TypeRep                     (TypeRep (TStar), toConstructorRep)
 import           LunaStudio.Data.Visualizer                  (applyType, fromJSInternalVisualizersMap, fromJSVisualizersMap)
 import           NodeEditor.Action.State.App                 (get, getWorkspace, modify, modifyApp)
 import           NodeEditor.Action.UUID                      (getUUID)
@@ -345,11 +345,9 @@ getVisualizersForType :: TypeRep -> Command State (Maybe (Visualizer, Map Visual
 getVisualizersForType tpe = do
     mayPrefVis   <- HashMap.lookup tpe <$> use preferedVisualizers
     visualizers' <- use visualizers >>= applyType tpe
-    let mayDefVis = case mayPrefVis of
-            Just visualizer -> if Map.lookup (visualizer ^. visualizerId) visualizers' == Just (visualizer ^. visualizerRelPath)
-                then mayPrefVis
-                else fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
-            _ -> fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
+    let mayFirstVisInMap = fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
+        fromPrefVis vis  = maybe mayFirstVisInMap (Just . Visualizer (vis ^. visualizerId)) $ Map.lookup (vis ^. visualizerId) visualizers'
+        mayDefVis        = maybe mayFirstVisInMap fromPrefVis mayPrefVis
     return $ if isNothing mayDefVis || Map.null visualizers'
         then Nothing
         else (, visualizers') <$> mayDefVis
@@ -451,6 +449,36 @@ updatePreferedVisualizer tpe vis = preferedVisualizers . at tpe ?= vis
 getExpressionNodeType :: NodeLoc -> Command State (Maybe TypeRep)
 getExpressionNodeType = fmap (maybe def (view ExpressionNode.nodeType)) . getExpressionNode
 
+setNodeProfilingData :: NodeLoc -> Integer -> Command State ()
+setNodeProfilingData nl t = modifyExpressionNode nl $ ExpressionNode.execTime ?= t
+
+isNewData :: NodeLoc -> VisualizationBackup -> Command State Bool
+isNewData nl vp = (Just vp /=) <$> getVisualizationBackup nl
+
+setVisualizationData :: NodeLoc -> VisualizationBackup -> Bool -> Command State ()
+setVisualizationData nl backup@(NE.ValueBackup val) overwrite = whenM ((overwrite ||) <$> isNewData nl backup) $ do
+    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+    visIds <- updateVisualizationsForNode nl
+    withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl) $ \cRep ->
+        liftIO . forM_ visIds $ \visId -> JS.sendVisualizationData visId cRep val
+setVisualizationData nl backup@(NE.StreamBackup values) overwrite@True = whenM (isNewData nl backup) $ do
+    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+    visIds <- updateVisualizationsForNode nl
+    withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl) $ \cRep ->
+        liftIO . forM_ visIds $ \visId -> JS.notifyStreamRestart visId cRep $ reverse values
+setVisualizationData nl backup@(NE.StreamBackup values) overwrite@False = do
+    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . ix nl . NE._StreamBackup %= (values <>)
+    visIds <- maybe def (Map.keys . view Visualization.visualizations) <$> getNodeVisualizations nl
+    liftIO . forM_ visIds $ forM_ values . JS.sendStreamDatapoint
+setVisualizationData nl backup@(NE.MessageBackup msg) overwrite = whenM ((overwrite ||) <$> isNewData nl backup) $ do
+    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+    visIds <- setPlaceholderVisualization nl
+    liftIO . forM_ visIds $ flip JS.sendInternalData msg
+setVisualizationData nl backup@(NE.ErrorBackup msg) overwrite = whenM ((overwrite ||) <$> isNewData nl backup) $ do
+    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+    visIds <- setErrorVisualization nl
+    liftIO . forM_ visIds $ flip JS.sendInternalData msg
+
 resetSuccessors :: NodeLoc -> Command State ()
 resetSuccessors nl = do
     outConnections <- filter (\c -> c ^. srcNodeLoc == nl) <$> getConnections
@@ -462,12 +490,13 @@ resetNode :: NodeLoc -> Command State Bool
 resetNode nl = do
     maySuccess <- modifyExpressionNode nl $ do
         let resetPort = Port.valueType .~ TStar
-        oldInPorts <- use ExpressionNode.inPorts
+        oldInPorts  <- use ExpressionNode.inPorts
         oldOutPorts <- use ExpressionNode.inPorts
         ExpressionNode.inPorts  %= fmap resetPort
         ExpressionNode.outPorts %= fmap resetPort
         ExpressionNode.value .= def
-        newInPorts <- use ExpressionNode.inPorts
+        newInPorts  <- use ExpressionNode.inPorts
         newOutPorts <- use ExpressionNode.inPorts
         return $ First $ Just $ (oldInPorts /= newInPorts) && (oldOutPorts /= newOutPorts)
+    setVisualizationData nl (NE.MessageBackup Visualization.awaitingDataMsg) True
     return $ fromMaybe False $ getFirst maySuccess
