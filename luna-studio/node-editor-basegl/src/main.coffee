@@ -1,3 +1,5 @@
+require "babel-core/register"
+require "babel-polyfill"
 import * as basegl from 'basegl'
 
 import {Connection}      from 'view/Connection'

@@ -3,7 +3,7 @@ var webpack = require('webpack');
 const path = require('path');
 
 module.exports =
-  { entry: './main.coffee'
+  { entry:  ['babel-polyfill', './main.coffee']
   , context: path.resolve(__dirname, "src")
   , output:
     { path: path.resolve(__dirname, 'dist', 'js')
@@ -36,9 +36,23 @@ module.exports =
   module:
     { strictExportPresence: true
     , rules:
-      [ { use: [{loader: path.resolve('./basegl-loader.js')}, 'coffee-loader']  , test: /\.(coffee)$/ }
-      , { use: 'raw-loader'     , test: /\.(glsl|vert|frag)$/ , exclude: /node_modules/ }
-      , { use: 'glslify-loader' , test: /\.(glsl|vert|frag)$/ , exclude: /node_modules/ }
+      [ { test: /\.(coffee)$/
+        , use:
+          [ { loader: 'babel-loader'
+            , options: { presets: ['env'] }
+            }
+          , { loader: path.resolve('./basegl-loader.js')}
+          , 'coffee-loader'
+          ]
+        }
+      , { test: /\.(glsl|vert|frag)$/
+        , use: 'raw-loader'
+        , exclude: /node_modules/
+        }
+      , { test: /\.(glsl|vert|frag)$/
+        , use: 'glslify-loader'
+        , exclude: /node_modules/
+        }
       ]
     }
   , plugins:
