@@ -39,6 +39,8 @@ import qualified System.IO                     as IO
 import           System.IO.Error               (isDoesNotExistError)
 import qualified Shelly.Lifted                 as Shelly
 import           System.Host
+import           System.Random                 (randomRs, newStdGen)
+import           System.IO.Unsafe              (unsafePerformIO)
 
 default (T.Text)
 
@@ -66,7 +68,7 @@ data RunnerConfig = RunnerConfig { _versionFile            :: FilePath
                                  , _supervisorKillFolder   :: FilePath
                                  , _supervisorKillBin      :: FilePath
                                  , _atomBinPath            :: FilePath
-                                 , _mainTmpDirectory       :: FilePath
+                                 , _mainTmpDirectory       :: T.Text
                                  , _lunaProjects           :: FilePath
                                  , _tutorialsDirectory     :: FilePath
                                  , _userInfoFile           :: FilePath
@@ -159,6 +161,9 @@ printVersion = do
     versionTxt <- catch versionText $ \e -> return $ if (isDoesNotExistError e) then "develop" else T.pack $ show e
     liftIO $ print versionTxt
 
+randomFolderNameEnd :: T.Text
+randomFolderNameEnd = T.pack $ take 10 $ randomRs ('a','z') $ unsafePerformIO newStdGen
+
 -- paths --
 backendBinsPath, configPath, atomAppPath, backendDir                           :: MonadRun m => m FilePath
 supervisordBinPath, supervisorctlBinPath, killSupervisorBinPath                :: MonadRun m => m FilePath
@@ -193,7 +198,7 @@ userStudioAtomHome = do
 lunaTmpPath       = do
     runnerCfg <- get @RunnerConfig
     tmp       <- liftIO getTemporaryDirectory
-    return $ (decodeString tmp) </> (runnerCfg ^. mainTmpDirectory)
+    return $ (decodeString tmp) </> (fromText $ (runnerCfg ^. mainTmpDirectory) <> "-" <> randomFolderNameEnd)
 lunaProjectsPath  = do
     runnerCfg <- get @RunnerConfig
     home      <- liftIO getHomeDirectory
