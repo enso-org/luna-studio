@@ -1,0 +1,185 @@
+@luna-visualization-width: 300;
+
+.luna-visualization-container-hover () {
+    .background(0.2);
+    .outlineStroke;
+}
+
+/////////////////////////////
+//       short value       //
+/////////////////////////////
+
+.luna-node__short-value-positioner {
+    pointer-events: none;
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+}
+
+.luna-node__short-value {
+    .color(4);
+    font-size:          10rem;
+    line-height:        16rem;
+    margin-bottom:      16rem;
+    margin-top:        -5rem;
+    max-height:         45rem;
+    text-align:         center;
+    width:              200rem;
+
+    display:           -webkit-box; //---------------
+    -webkit-line-clamp: 3;          // 3-line text
+    -webkit-box-orient: vertical;   // with ellipsis
+    overflow-y:         hidden;     //---------------
+}
+
+/////////////////////////////
+//      visualization      //
+/////////////////////////////
+
+.luna-visualization {
+    position: relative;
+
+    .luna-node-translate {
+        position: absolute;
+        top:      32rem;
+    }
+}
+
+.luna-visualization-container {
+    position:      relative;
+    width:         @luna-visualization-width * 1px;
+    background:    transparent;
+    border-radius: @luna-border-radius * 1px;
+    overflow:      hidden;
+}
+
+.luna-visualization-cover {
+    position: absolute;
+    height:   100%;
+    width:    100%;
+}
+
+.luna-visualization--node-selected {
+    z-index: @luna-zindex-visualization-hover;
+    .luna-visualization-container {
+        .luna-visualization-container-hover;
+    }
+    .luna-dropdown-menu {
+        opacity: 1;
+    }
+}
+
+/////////////////////////////
+//       active mode       //
+/////////////////////////////
+
+.luna-graph--has-visualization-active {
+
+    .luna-visualization--active {
+        z-index: @luna-zindex-visualization-active;
+        .luna-visualization-cover {
+            display: none;
+        }
+        .luna-visualization-container {
+            .outlineStroke;
+            .background(0.4);
+        }
+    }
+
+}
+
+.luna-visualization:not(.luna-visualization--active) {
+
+    &:hover {
+        .luna-visualization-container {
+            .luna-visualization-container-hover;
+        }
+    }
+}
+
+/////////////////////////////
+//     fullscreen mode     //
+/////////////////////////////
+
+.luna-studio-window--has-visualization-fullscreen {
+    position: relative;
+    z-index: @luna-zindex-visualization-fullscreen;
+    .luna-studio-window__center {
+        position: relative;
+        z-index: @luna-zindex-visualization-fullscreen;
+        width:  100%;
+        height: 100%;
+    }
+    .luna-visualization--fullscreen {
+        transform: inherit !important;
+    }
+}
+
+.luna-visualization--fullscreen {
+    position: absolute;
+    width:    100%;
+    height:   100%;
+    z-index:  @luna-zindex-visualization-fullscreen;
+    .luna-node-translate {
+        transform:       translate(0,0) !important;
+        top:             0 !important;
+        width:           100%;
+        height:          100%;
+        display:         flex;
+        justify-content: center;
+        align-content:   center;
+    }
+    .luna-visualization-container {
+        width:         100%;
+        border-radius: 0;
+    }
+    .luna-visualization-iframe {
+        width:    100%;
+        height:   100%;
+        position: absolute;
+    }
+}
+
+/////////////////////////////
+//      dropdown menu      //
+/////////////////////////////
+
+.luna-dropdown {
+    @w:          24px;
+    cursor:      pointer;
+    color:       @luna-text-color;
+    position:    absolute;
+    line-height: 24px;
+    z-index:     1;
+    top:         0;
+    left:       -@w;
+    width:       @w;
+    text-align:  center;
+    &:hover {
+        .luna-dropdown__menu {
+            opacity: 1;
+            display: flex;
+        }
+    }
+}
+
+.luna-dropdown__menu {
+    opacity:        0;
+    display:        none;
+    margin-bottom:  4px;
+    list-style:     none;
+    width:          200px;
+    text-align:     right;
+    align-items:    flex-end;
+    flex-direction: column;
+    white-space:    nowrap;
+    position:       absolute;
+    right:          0;
+    li {
+        cursor:  pointer;
+        padding: 0 8px;
+        &:hover {
+            color: lighten(@luna-text-color, 20%);
+        }
+    }
+}

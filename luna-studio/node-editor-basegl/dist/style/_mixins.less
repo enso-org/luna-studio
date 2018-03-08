@@ -1,0 +1,68 @@
+@import '_variables';
+
+/////////////////////////////
+//          colors         //
+/////////////////////////////
+
+@step: 4.5%;
+@acceleration: 1.8;
+
+.graphBackground() {
+    background: @luna-graph-background-color;
+}
+
+.shade(@t; @j) {
+    @{t}: lighten(@luna-graph-background-color, @j * @step);
+}
+
+.textShade(@t; @j) {
+    @{t}: fade(@luna-syntax-text-color, @j * @step);
+}
+
+.background(@n, @i:1, @j:1) when (@i =< @n) {
+    .print() when (@n = @i) { .shade(background, @j) }
+    .background(@n, (@i + 1), (@j * @acceleration));
+    .print;
+}
+.background(@n) when (@n < 1) {
+    background: lighten(@luna-graph-background-color, @step * @n);
+}
+
+.color(@n, @i:1, @j:1) when (@i =< @n) {
+    .print() when (@n = @i) { .textShade(color, @j) }
+    .color(@n, (@i + 1), (@j * @acceleration));
+    .print;
+}
+.fill(@n, @i:1, @j:1) when (@i =< @n) {
+    .print() when (@n = @i) { .shade(fill, @j) }
+    .fill(@n, (@i + 1), (@j * @acceleration));
+    .print;
+}
+.stroke(@n, @i:1, @j:1) when (@i =< @n) {
+    .print() when (@n = @i) { .shade(stroke, @j) }
+    .stroke(@n, (@i + 1), (@j * @acceleration));
+    .print;
+}
+
+/////////////////////////////
+//          mixins         //
+/////////////////////////////
+
+.centerContent() {
+    display:         flex;
+    justify-content: center;
+    align-items:     center;
+}
+
+.fillSpace() {
+    height: 100%;
+    width:  100%;
+}
+
+.roundCorners() {
+    border-radius: 1000px;
+}
+
+.outlineStroke() {
+    box-shadow: 0 0 0 2px @luna-graph-background-color;
+}

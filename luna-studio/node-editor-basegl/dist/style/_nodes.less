@@ -1,0 +1,435 @@
+@import '_variables';
+
+
+@portFocusColor: #ccc;
+
+/////////////////////////////
+//          nodes          //
+/////////////////////////////
+
+.luna-node {
+    position: absolute;
+    width:    0;
+    height:   0;
+    &.luna-show-ctrl-icon {
+        .luna-ctrl-icon {
+            opacity: 0.8;
+            &:hover {
+                opacity: 1;
+            }
+        }
+        .luna-node__expression {
+            display: flex;
+        }
+    }
+    &.luna-node--has-arg-constructor {
+        .luna-port--i--constructor {
+            display: block !important;
+        }
+    }
+
+    * {
+      box-sizing: content-box;
+    }
+
+}
+
+/////////////////////////////
+//        node text        //
+/////////////////////////////
+
+.luna-node__text {
+    font-size:      calc(@ui ~'*' @luna-font-size);
+    line-height:    calc(@ui ~'*' @luna-line-height);
+    align-items:    center;
+    bottom:         32rem !important;
+    color:          @luna-text-color;
+    cursor:         default;
+    display:        flex;
+    flex-direction: column;
+    left:           calc(@ui ~'*' -20px);
+    margin-bottom:  calc(@ui ~'*' -36px);
+    min-width:      calc(@ui ~'*'  40px);
+    padding-bottom: calc(@ui ~'*'  36px);
+    position:       absolute;
+    white-space:    nowrap;
+    width:          0;
+}
+
+.luna-node__name {
+    color:          @luna-text-color;
+    font-weight:    300;
+    width:          calc(@ui ~'*' 40px); //40px;
+    position:       relative;
+    display:        flex;
+    align-items:    center;
+    flex-direction: column;
+    height:         calc(@ui ~'*' @luna-superline-height * 1px);
+    line-height:    calc(@ui ~'*' @luna-superline-height * 1px);
+    &::selection {
+        background: none;
+    }
+
+    .luna-searcher__results {
+        display: none;
+    }
+
+    .luna-ctrl-icon {
+        .graphBackground;
+        fill:           @luna-syntax-text-color;
+        border-radius:  0 1000px 1000px 0;
+        opacity:        0;
+        position:       absolute;
+        width:          calc(@ui ~'*' 24px);
+        height:         calc(@ui ~'*' @luna-grid-size * 1px);
+        transform:      translate(0, calc(@ui ~'*' -2px));
+        left:           auto;
+        pointer-events: all;
+    }
+}
+
+.luna-node__name--positioner {
+    .graphBackground;
+    .roundCorners;
+    line-height: calc(@ui ~'*' 14px);
+    padding:     0
+                 calc(@ui ~'*' 7px)
+                 calc(@ui ~'*' 2px)
+                 calc(@ui ~'*' 6px);
+    margin-top:  calc(@ui ~'*' 3px);
+}
+
+.luna-node__expression {
+    @l: @luna-grid-size * 1px;
+    @a: @luna-superline-height * 1px;
+    @ph: (@a - @l)/2;
+    @pv: @a/3;
+    .roundCorners;
+    .outlineStroke;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    padding:       calc(@ui ~'*' @ph)
+                   calc(@ui ~'*' @pv);
+    .background(0.5);
+    min-width:     calc(@ui ~'*' @a - 2 * @pv);
+}
+
+/////////////////////////////
+//          icons          //
+/////////////////////////////
+
+.luna-icon--off { opacity: 0.3 }
+
+.luna-node__icons {
+    display: none;
+}
+
+.luna-icon--show {
+    x:     -5px;
+    y:     -100px;
+    width:  10px;
+    height: 10px;
+}
+
+/////////////////////////////
+//        node port        //
+/////////////////////////////
+
+svg.luna-node__ports {
+    position: absolute;
+    top:     -@luna-node-radius * 1px;
+    left:    -@luna-node-radius * 1px;
+    overflow: inherit;
+    width:    @luna-node-radius * 2px;
+    height:   @luna-node-radius * 2px;
+}
+
+.luna-port__shape {
+    stroke-linecap: round;
+}
+
+.luna-port {
+    stroke-width: 0;
+    &.luna-port--highlighted {
+        .luna-port__shape {
+            fill: @portFocusColor !important;
+        }
+    }
+}
+
+.luna-port--alias {
+    .luna-port__shape {
+        fill: none;
+    }
+    .luna-port__select {
+        r: 18;
+    }
+    &.luna-port--highlighted {
+        .luna-port__shape {
+            fill:   none !important;
+            stroke: @portFocusColor !important;
+        }
+    }
+}
+
+.luna-node--collapsed.luna-node--no-self.luna-node--has-alias {
+    .luna-port--alias {
+        .luna-port__select {
+            r: 9 !important;
+        }
+    }
+}
+
+.luna-port__select {
+    opacity: 0;
+}
+
+.luna-port--invisible {
+    circle {
+        r: 0 !important;
+    }
+}
+
+.luna-port--i--constructor {
+    display: none;
+    .luna-port__shape {
+        .fill(3);
+        stroke:       @luna-graph-background-color;
+        stroke-width: @luna-connection-width * 1px;
+    }
+}
+
+.luna-node--collapsed .luna-port--i--constructor circle { cy: (@luna-node-radius - @luna-connection-width/2) * 1px !important }
+
+.luna-node--expanded.luna-node--has-arg-constructor.luna-node--arg-constructor-adjustment {
+    .luna-node__controls {
+        border-bottom-left-radius: 0 !important;
+    }
+    
+}
+
+.luna-node--collapsed .luna-node__short-value-positioner {
+    position: relative;
+    top: (2*@luna-node-radius - 2*@luna-expanded-node-padding - @luna-grid-size) * -1rem;
+}
+
+// types
+
+.luna-port__type {
+    font-size:   10px;
+    line-height: @luna-grid-size * 1px;
+    display:     none;
+    fill:        @luna-text-color;
+    text-anchor: end;
+    &.luna-hover {
+        display: block;
+    }
+    &.luna-port--highlighted {
+        display: block;
+    }
+}
+
+.luna-port--o,
+.luna-port--o--single {
+    .luna-port__type {
+        text-anchor: start;
+    }
+}
+
+.luna-node.luna-hover .luna-port__type { display: inherit }
+.luna-port:hover .luna-port__type { fill: @luna-text-color }
+
+/////////////////////////////
+//      node expanded      //
+/////////////////////////////
+
+.luna-node__body {
+    width:    @luna-node-radius * 2rem;
+    height:   @luna-node-radius * 2rem;
+    position: relative;
+    top:     -@luna-node-radius * 1rem;
+    left:    -@luna-node-radius * 1rem;
+    * {
+        font-size: 10rem;
+    }
+}
+
+.luna-node--expanded {
+    z-index: 10000;
+    .luna-port {
+        position: relative;
+    }
+    .luna-port--self circle {
+        cx: @luna-expanded-node-width * -0.5px;
+    }
+    .luna-port--i--constructor circle {
+        cx:           @luna-expanded-node-width * -0.5px;
+        stroke-width: 0;
+    }
+    .luna-port--o {
+        .luna-port__type {
+            text-anchor: start;
+        }
+    }
+    .luna-node__body {
+        height: auto;
+        width:  @luna-expanded-node-width *    1rem;
+        left:   @luna-expanded-node-width * -0.5rem;
+        top:   (@luna-grid-size/2 + @luna-expanded-node-padding) * -1rem;
+    }
+    &.luna-node--no-self {
+        .luna-node__label--self {
+            opacity: 0;
+        }
+    }
+}
+
+/////////////////////////////
+//          monad          //
+/////////////////////////////
+
+.luna-plane--monads {
+    opacity: .15;
+}
+
+.luna-monad {
+    stroke-width:    28px;
+    fill:            none;
+    stroke-linejoin: round;
+}
+
+/////////////////////////////
+//         controls        //
+/////////////////////////////
+
+.luna-node__controls {
+    .background(1);
+    padding:        @luna-expanded-node-padding * 1rem;
+    overflow:       hidden;
+    border-radius:  @luna-border-radius-expanded-node * 1rem;
+    display:        flex;
+    flex-direction: column;
+    .outlineStroke;
+}
+
+.luna-node__control {
+    width:   100%;
+    padding:     @luna-node-control-padding     * 1rem;
+    line-height: @luna-node-control-line-height * 1rem;
+    box-sizing:  border-box;
+}
+
+.luna-node__label {
+    width: 50rem;
+    float: left;
+}
+
+.luna-node--no-alias {
+    .luna-node__control--alias {
+        .luna-node__label {
+            display: none !important;
+        }
+        .luna-node__ctrl {
+            width: 100% !important;
+        }
+    }
+}
+
+.luna-node__ctrl {
+    float:      right;
+    text-align: center;
+    width:      90rem;
+    align-self: center;
+}
+
+.luna-ctrl--text,
+.luna-ctrl--slider,
+.luna-ctrl--set {
+    .background(2);
+    border-radius: 100rem;
+    box-sizing:    border-box;
+    .color(5);
+    cursor:        pointer;
+    text-align:    center;
+    width:         100%;
+}
+
+.luna-ctrl--text {
+    text-overflow: ellipsis;
+    padding:       0 5rem;
+    display:       block;
+    &:focus {
+        color: #fff;
+    }
+}
+
+.luna-ctrl--set {
+    display: block;
+    &:hover {
+        color: #fff;
+        .background(3);
+    }
+}
+
+.luna-ctrl--slider--int {
+    display:         flex;
+    justify-content: center;
+}
+
+.luna-ctrl--slider--real {
+    display:         flex;
+    justify-content: center;
+
+
+}
+
+.luna-ctrl--slider__right {
+    text-align:    left;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    width:         46%;
+}
+
+.luna-ctrl--slider__left {
+    text-align: right;
+    width:      54%;
+    &::after {
+        content: ".";
+        opacity: .3;
+    }
+}
+
+.luna-ctrl--bool--True,
+.luna-ctrl--bool--False {
+    .roundCorners;
+    float:    right;
+    cursor:   pointer;
+    height:   @luna-node-control-line-height * 1rem;
+    width:    26rem;
+    position: relative;
+    display:  flex;
+    &::after {
+        top:      @luna-node-control-padding * 1rem;
+        position: relative;
+        display:  block;
+        content:  " ";
+        width:   (@luna-node-control-line-height - 2*@luna-node-control-padding) * 1rem;
+        height:  (@luna-node-control-line-height - 2*@luna-node-control-padding) * 1rem;
+        .background(1);
+        .roundCorners;
+    }
+}
+
+.luna-ctrl--bool--True {
+    .background(7);
+    &::after {
+        left: 16rem; // TODO: make it relative
+    }
+}
+
+.luna-ctrl--bool--False {
+    .background(3);
+    &::after {
+        left: @luna-node-control-padding * 1rem;
+    }
+}
