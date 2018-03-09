@@ -9,14 +9,14 @@ import           Data.Aeson                      (ToJSON)
 import           Data.Convert                    (Convertible (convert))
 import           NodeEditor.React.Model.Searcher (Searcher)
 import qualified NodeEditor.React.Model.Searcher as Searcher
+import           NodeEditor.View.Diff            (DiffT, diffApply)
 import           LunaStudio.Data.NodeSearcher    (Match)
 import qualified LunaStudio.Data.NodeSearcher    as Match
 
 
 
-searcherView :: MonadIO m => Maybe Searcher -> Maybe Searcher -> m ()
-searcherView new old =
-    when (new /= old) $ setSearcher $ convert new
+searcherView :: MonadIO m => DiffT (Maybe Searcher) m ()
+searcherView = diffApply $ setSearcher . convert
 
 data HighlightView = HighlightView
     { start :: Int
@@ -42,9 +42,7 @@ instance ToJSON EntryView
 instance ToJSON SearcherView
 
 instance Convertible (Int, Int) HighlightView where
-    convert (start, end) = HighlightView
-        {- start -} start
-        {- end   -} end
+    convert = uncurry HighlightView
 
 instance Convertible Match EntryView where
     convert m = EntryView
@@ -74,7 +72,7 @@ entries' = \case
     Searcher.PortName _ m -> convert m
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setSearcher($1)"
-    setSearcher' :: JSVal -> IO ()
+    setSearcher__ :: JSVal -> IO ()
 
 setSearcher :: MonadIO m => Maybe SearcherView -> m ()
-setSearcher = liftIO . setSearcher' <=< toJSONVal
+setSearcher = liftIO . setSearcher__ <=< toJSONVal

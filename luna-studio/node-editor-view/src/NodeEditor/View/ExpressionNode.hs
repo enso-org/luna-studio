@@ -8,12 +8,12 @@ import qualified Data.HashMap.Strict                        as HashMap
 import           LunaStudio.Data.Position                   (toTuple)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, ExpressionNodesMap)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
+import           NodeEditor.View.Diff                       (DiffT, diffApply)
 import           NodeEditor.View.Port                       (PortView(PortView))
 
-expressionNodesView :: MonadIO m => ExpressionNodesMap -> ExpressionNodesMap -> m ()
-expressionNodesView new old =
-    when (new /= old) $
-        setNodes $ map convert $ HashMap.elems new
+
+expressionNodesView :: MonadIO m => DiffT ExpressionNodesMap m ()
+expressionNodesView = diffApply $ setNodes . map convert . HashMap.elems
 
 data ExpressionNodeView = ExpressionNodeView
         { key        :: String
@@ -39,7 +39,7 @@ instance Convertible ExpressionNode ExpressionNodeView where
         {- selected   -} (n ^. ExpressionNode.isSelected)
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setNodes($1)"
-    setNodes' :: JSVal -> IO ()
+    setNodes__ :: JSVal -> IO ()
 
 setNodes :: MonadIO m => [ExpressionNodeView] -> m ()
-setNodes = liftIO . setNodes' <=< toJSONVal
+setNodes = liftIO . setNodes__ <=< toJSONVal

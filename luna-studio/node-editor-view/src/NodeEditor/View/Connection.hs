@@ -8,21 +8,19 @@ import qualified Data.HashMap.Strict               as HashMap
 import qualified LunaStudio.Data.PortRef           as PortRef
 import           NodeEditor.React.Model.Connection (Connection, ConnectionsMap)
 import qualified NodeEditor.React.Model.Connection as Connection
+import           NodeEditor.View.Diff              (DiffT, diffApply)
 
 
-connectionsView :: MonadIO m => ConnectionsMap -> ConnectionsMap -> m ()
-connectionsView new old =
-    when (new /= old) $
-        setConnections $ map convert $ HashMap.elems new
-
+connectionsView :: MonadIO m => DiffT ConnectionsMap m ()
+connectionsView = diffApply $ setConnections . map convert . HashMap.elems
 
 data ConnectionView = ConnectionView
-        { key :: String
-        , srcNode :: String
-        , srcPort :: String
-        , dstNode :: String
-        , dstPort :: String
-        } deriving (Generic, Show)
+    { key :: String
+    , srcNode :: String
+    , srcPort :: String
+    , dstNode :: String
+    , dstPort :: String
+    } deriving (Generic, Show)
 
 instance ToJSON ConnectionView
 instance Convertible Connection ConnectionView where
@@ -34,7 +32,7 @@ instance Convertible Connection ConnectionView where
         {- dstPort    -} (c ^. Connection.dst . PortRef.dstNodeId  . to show)
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setConnections($1)"
-    setConnections' :: JSVal -> IO ()
+    setConnections__ :: JSVal -> IO ()
 
 setConnections :: MonadIO m => [ConnectionView] -> m ()
-setConnections = liftIO . setConnections' <=< toJSONVal
+setConnections = liftIO . setConnections__ <=< toJSONVal
