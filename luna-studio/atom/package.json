@@ -40,6 +40,6 @@
         "unzipper": "0.8.11",
         "uuid": "3.1.x",
         "vm2": "3.5.x",
-        "node_editor_basegl": "file:../node-editor-basegl"
+        "node_editor_basegl": "file:../basegl-ui"
     }
 }
