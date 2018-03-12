@@ -9,11 +9,11 @@ import           NodeEditor.React.Model.Breadcrumbs  (Breadcrumbs)
 import           NodeEditor.View.Diff                (DiffT, diffApply)
 
 
-breadcrumbsView :: MonadIO m => DiffT Breadcrumbs m ()
-breadcrumbsView = diffApply setBreadcrumbs
-
 foreign import javascript safe "atomCallback.getNodeEditorView().setBreadcrumbs($1)"
     setBreadcrumbs__ :: JSVal -> IO ()
 
 setBreadcrumbs :: MonadIO m => Breadcrumbs -> m ()
 setBreadcrumbs = liftIO . setBreadcrumbs__ <=< toJSONVal
+
+breadcrumbsView :: MonadIO m => DiffT Breadcrumbs m ()
+breadcrumbsView = diffApply setBreadcrumbs

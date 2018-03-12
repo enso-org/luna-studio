@@ -5,7 +5,8 @@ module NodeEditor.View.Searcher where
 
 import           Common.Data.JSON                (toJSONVal)
 import           Common.Prelude
-import           Data.Aeson                      (ToJSON)
+import qualified Control.Lens.Aeson              as Lens
+import           Data.Aeson                      (ToJSON (toEncoding, toJSON))
 import           Data.Convert                    (Convertible (convert))
 import           NodeEditor.React.Model.Searcher (Searcher)
 import qualified NodeEditor.React.Model.Searcher as Searcher
@@ -15,31 +16,40 @@ import qualified LunaStudio.Data.NodeSearcher    as Match
 
 
 
-searcherView :: MonadIO m => DiffT (Maybe Searcher) m ()
-searcherView = diffApply $ setSearcher . convert
-
 data HighlightView = HighlightView
-    { start :: Int
-    , end   :: Int
+    { _start :: Int
+    , _end   :: Int
     } deriving (Generic, Show)
 
 data EntryView = EntryView
-    { name       :: String
-    , doc        :: String
-    , className  :: String
-    , highlights :: [HighlightView]
+    { _name       :: String
+    , _doc        :: String
+    , _className  :: String
+    , _highlights :: [HighlightView]
     } deriving (Generic, Show)
 
 data SearcherView = SearcherView
-    { key      :: Maybe String
-    , selected :: Int
-    , entries  :: [EntryView]
-    , input    :: String
+    { _key      :: Maybe String
+    , _selected :: Int
+    , _entries  :: [EntryView]
+    , _input    :: String
     } deriving (Generic, Show)
 
-instance ToJSON HighlightView
-instance ToJSON EntryView
-instance ToJSON SearcherView
+makeLenses ''HighlightView
+makeLenses ''EntryView
+makeLenses ''SearcherView
+
+instance ToJSON HighlightView where
+    toEncoding = Lens.toEncoding
+    toJSON     = Lens.toJSON
+
+instance ToJSON EntryView     where
+    toEncoding = Lens.toEncoding
+    toJSON     = Lens.toJSON
+
+instance ToJSON SearcherView  where
+    toEncoding = Lens.toEncoding
+    toJSON     = Lens.toJSON
 
 instance Convertible (Int, Int) HighlightView where
     convert = uncurry HighlightView
@@ -55,7 +65,7 @@ instance Convertible Searcher SearcherView where
     convert s = SearcherView
         {- key      -} (s ^. Searcher.mode . to nodeKey')
         {- selected -} (s ^. Searcher.selected)
-        {- entries  -} (s ^. Searcher.mode . to entries')
+        {- entries  -} (s ^. Searcher.hints . to convert)
         {- input    -} "test"
 
 nodeKey' :: Searcher.Mode -> Maybe String
@@ -64,15 +74,11 @@ nodeKey' = \case
     Searcher.NodeName nl _ -> Just $ show nl
     _                      -> Nothing
 
-entries' :: Searcher.Mode -> [EntryView]
-entries' = \case
-    Searcher.Command    m -> convert m
-    Searcher.Node   _ _ m -> convert m
-    Searcher.NodeName _ m -> convert m
-    Searcher.PortName _ m -> convert m
-
 foreign import javascript safe "atomCallback.getNodeEditorView().setSearcher($1)"
     setSearcher__ :: JSVal -> IO ()
 
 setSearcher :: MonadIO m => Maybe SearcherView -> m ()
 setSearcher = liftIO . setSearcher__ <=< toJSONVal
+
+searcherView :: MonadIO m => DiffT (Maybe Searcher) m ()
+searcherView = diffApply $ setSearcher . convert

@@ -2,7 +2,8 @@ module NodeEditor.View.SidebarNode where
 
 import           Common.Data.JSON                        (toJSONVal)
 import           Common.Prelude
-import           Data.Aeson                              (ToJSON)
+import qualified Control.Lens.Aeson                      as Lens
+import           Data.Aeson                              (ToJSON (toEncoding, toJSON))
 import           Data.Convert                            (Convertible (convert))
 import           NodeEditor.React.Model.Node.SidebarNode (InputNode, OutputNode)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
@@ -10,20 +11,18 @@ import           NodeEditor.View.Diff                    (DiffT, diffApply)
 import           NodeEditor.View.Port                    (PortView)
 
 
-inputNodeView :: MonadIO m => DiffT (Maybe InputNode) m ()
-inputNodeView = diffApply $ setInputNode . convert
-
-outputNodeView :: MonadIO m => DiffT (Maybe OutputNode) m ()
-outputNodeView = diffApply $ setOutputNode . convert
-
-
 data SidebarNodeView = SidebarNodeView
-    { key      :: String
-    , inPorts  :: [PortView]
-    , outPorts :: [PortView]
+    { _key      :: String
+    , _inPorts  :: [PortView]
+    , _outPorts :: [PortView]
     } deriving (Generic, Show)
 
-instance ToJSON SidebarNodeView
+makeLenses ''SidebarNodeView
+
+instance ToJSON SidebarNodeView where
+    toEncoding = Lens.toEncoding
+    toJSON     = Lens.toJSON
+
 instance Convertible InputNode SidebarNodeView where
     convert n = SidebarNodeView
         {- key      -} (n ^. SidebarNode.nodeLoc . to show)
@@ -47,3 +46,9 @@ setInputNode = liftIO . setInputNode__ <=< toJSONVal
 
 setOutputNode :: MonadIO m => Maybe SidebarNodeView -> m ()
 setOutputNode = liftIO . setOutputNode__ <=< toJSONVal
+
+inputNodeView :: MonadIO m => DiffT (Maybe InputNode) m ()
+inputNodeView = diffApply $ setInputNode . convert
+
+outputNodeView :: MonadIO m => DiffT (Maybe OutputNode) m ()
+outputNodeView = diffApply $ setOutputNode . convert
