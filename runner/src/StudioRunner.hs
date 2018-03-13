@@ -40,8 +40,6 @@ import           System.IO.Error               (isDoesNotExistError)
 import           System.IO.Temp                (createTempDirectory)
 import qualified Shelly.Lifted                 as Shelly
 import           System.Host
-import           System.Random                 (randomRs, newStdGen)
-import           System.IO.Unsafe              (unsafePerformIO)
 
 default (T.Text)
 
