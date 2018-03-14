@@ -192,10 +192,10 @@ userStudioAtomHome = do
     baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= (\p -> (fmap (p </>) version))
     return $ baseDir </> (runnerCfg ^. studioHome)
 lunaTmpPath       = do
-    runnerCfg <- get @RunnerConfig
-    tmp       <- liftIO getTemporaryDirectory
-    rndmTmp   <- liftIO $ createTempDirectory tmp $ encodeString (runnerCfg ^. mainTmpDirectory)
-    return $ decodeString rndmTmp
+    runnerCfg  <- get @RunnerConfig
+    systemTmp  <- liftIO getTemporaryDirectory
+    lunaTmpDir <- liftIO $ createTempDirectory systemTmp $ encodeString (runnerCfg ^. mainTmpDirectory)
+    return $ decodeString lunaTmpDir
 lunaProjectsPath  = do
     runnerCfg <- get @RunnerConfig
     home      <- liftIO getHomeDirectory
