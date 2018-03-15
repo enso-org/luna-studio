@@ -12,7 +12,6 @@ import qualified NodeEditor.React.Model.App         as App
 import Common.Data.JSON                   (toJSONVal)
 import Data.Aeson                         (ToJSON (toEncoding, toJSON))
 import Data.Convert                       (Convertible (convert))
-import NodeEditor.React.Model.Breadcrumbs (Breadcrumbs)
 import NodeEditor.React.Model.App         (App)
 import NodeEditor.View.Diff               (DiffT, diffApply)
 
@@ -20,7 +19,7 @@ import NodeEditor.View.Diff               (DiffT, diffApply)
 data BreadcrumbsView = BreadcrumbsView
     { _moduleName :: Maybe String
     , _items      :: [String]
-    } deriving (Generic, Show)
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''BreadcrumbsView
 
@@ -37,8 +36,8 @@ instance Convertible App BreadcrumbsView where
 foreign import javascript safe "atomCallback.getNodeEditorView().setBreadcrumbs($1)"
     setBreadcrumbs__ :: JSVal -> IO ()
 
-setBreadcrumbs :: MonadIO m => Breadcrumbs -> m ()
+setBreadcrumbs :: MonadIO m => BreadcrumbsView -> m ()
 setBreadcrumbs = liftIO . setBreadcrumbs__ <=< toJSONVal
 
-breadcrumbsView :: MonadIO m => DiffT Breadcrumbs m ()
+breadcrumbsView :: MonadIO m => DiffT BreadcrumbsView m ()
 breadcrumbsView = diffApply setBreadcrumbs

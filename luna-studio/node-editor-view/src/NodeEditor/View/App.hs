@@ -9,5 +9,5 @@ import           NodeEditor.View.NodeEditor  (nodeEditorView)
 
 appView :: MonadIO m => App -> App -> m ()
 appView = runDiffT $ do
-    diff breadcrumbsView breadcrumbs
+    diff breadcrumbsView $ to convert
     diff nodeEditorView  nodeEditor
