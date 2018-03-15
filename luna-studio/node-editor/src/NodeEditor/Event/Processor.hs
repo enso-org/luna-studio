@@ -3,7 +3,7 @@ module NodeEditor.Event.Processor where
 import           Control.Concurrent.MVar
 import           Control.Exception                      (SomeException, handle)
 import           Data.Monoid                            (Last (..))
-import           GHCJS.Prim                             (JSException)
+import           GHCJS.Prim                             (JSException (JSException))
 
 import           Common.Action.Command                  (Command, execCommand)
 import qualified Common.Analytics                       as Analytics
@@ -94,8 +94,9 @@ handleAnyException :: SomeException -> IO ()
 handleAnyException = error . show
 
 handleExcept :: State -> Event -> JSException -> IO State
-handleExcept oldState event except = do
-    error $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
+handleExcept oldState event except@(JSException jsval _) = do
+    consoleLog' jsval
+    error $ show except <> "\n\nwhile processing: " <> show event
     return oldState
 
 

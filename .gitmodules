@@ -1,0 +1,3 @@
+[submodule "luna-studio/basegl-ui"]
+	path = luna-studio/basegl-ui
+	url = git@github.com:luna/basegl-ui.git

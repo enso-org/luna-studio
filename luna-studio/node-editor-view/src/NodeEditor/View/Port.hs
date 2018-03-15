@@ -1,8 +1,8 @@
 module NodeEditor.View.Port where
 
-import           Common.Data.JSON            (toJSONVal)
 import           Common.Prelude
-import           Data.Aeson                  (ToJSON)
+import qualified Control.Lens.Aeson          as Lens
+import           Data.Aeson                  (ToJSON (toEncoding, toJSON))
 import           Data.Convert                (Convertible (convert))
 import           NodeEditor.React.Model.Port (InPort, OutPort)
 import qualified NodeEditor.React.Model.Port as Port
@@ -10,10 +10,15 @@ import qualified NodeEditor.React.Model.Port as Port
 
 
 data PortView = PortView
-        { key :: String
+        { _key :: String
         } deriving (Generic, Show)
 
-instance ToJSON PortView
+makeLenses ''PortView
+
+instance ToJSON PortView where
+    toEncoding = Lens.toEncoding
+    toJSON     = Lens.toJSON
+
 instance Convertible InPort PortView where
     convert c = PortView
         {- key        -} (c ^. Port.portId . to show)

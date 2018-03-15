@@ -1,15 +1,18 @@
 module NodeEditor.View.NodeEditor where
 
 import           Common.Prelude
-import           NodeEditor.React.Model.NodeEditor          (NodeEditor, connections, expressionNodes, inputNode, outputNode)
-import           NodeEditor.View.Connection                 (connectionsView)
-import           NodeEditor.View.ExpressionNode             (expressionNodesView)
-import           NodeEditor.View.SidebarNode                (inputNodeView, outputNodeView)
+import           NodeEditor.React.Model.NodeEditor (NodeEditor, connections, expressionNodes, inputNode, searcher, outputNode)
+import           NodeEditor.View.Connection        (connectionsView)
+import           NodeEditor.View.ExpressionNode    (expressionNodesView)
+import           NodeEditor.View.Searcher          (searcherView)
+import           NodeEditor.View.SidebarNode       (inputNodeView, outputNodeView)
+import           NodeEditor.View.Diff              (DiffT, diff)
 
 
-nodeEditorView :: MonadIO m => NodeEditor -> NodeEditor -> m ()
-nodeEditorView new old = do
-    expressionNodesView (new ^. expressionNodes) (old ^. expressionNodes)
-    connectionsView (new ^. connections) (old ^. connections)
-    inputNodeView (new ^. inputNode) (old ^. inputNode)
-    outputNodeView (new ^. outputNode) (old ^. outputNode)
+nodeEditorView :: MonadIO m => DiffT NodeEditor m ()
+nodeEditorView = do
+    diff expressionNodesView expressionNodes
+    diff inputNodeView       inputNode
+    diff outputNodeView      outputNode
+    diff searcherView        searcher
+    diff connectionsView     connections

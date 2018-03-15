@@ -3,7 +3,7 @@ module TextEditor.Event.Processor where
 import           Control.Concurrent.MVar
 import           Control.Exception                   (handle)
 import           Data.Monoid                         (Last (..))
-import           GHCJS.Prim                          (JSException)
+import           GHCJS.Prim                          (JSException (JSException))
 
 import           Common.Action.Command               (Command, execCommand)
 import qualified Common.Analytics                    as Analytics
@@ -54,8 +54,9 @@ connectEventSources conn loop = do
     sequence_ $ mkSource <$> handlers
 
 handleExcept :: State -> Event -> JSException -> IO State
-handleExcept oldState event except = do
-    putStrLn $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
+handleExcept oldState event except@(JSException jsval _) = do
+    consoleLog' jsval
+    putStrLn $ show except <> "\n\nwhile processing: " <> show event
     return oldState
 
 

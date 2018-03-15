@@ -2,31 +2,34 @@ module NodeEditor.View.ExpressionNode where
 
 import           Common.Data.JSON                           (toJSONVal)
 import           Common.Prelude
-import           Data.Aeson                                 (ToJSON)
+import qualified Control.Lens.Aeson                         as Lens
+import           Data.Aeson                                 (ToJSON (toEncoding, toJSON))
 import           Data.Convert                               (Convertible (convert))
 import qualified Data.HashMap.Strict                        as HashMap
 import           LunaStudio.Data.Position                   (toTuple)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, ExpressionNodesMap)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
+import           NodeEditor.View.Diff                       (DiffT, diffApply)
 import           NodeEditor.View.Port                       (PortView(PortView))
 
-expressionNodesView :: MonadIO m => ExpressionNodesMap -> ExpressionNodesMap -> m ()
-expressionNodesView new old =
-    when (new /= old) $
-        setNodes $ map convert $ HashMap.elems new
 
 data ExpressionNodeView = ExpressionNodeView
-        { key        :: String
-        , name       :: String
-        , expression :: String
-        , inPorts    :: [PortView]
-        , outPorts   :: [PortView]
-        , position   :: (Double, Double)
-        , expanded   :: Bool
-        , selected   :: Bool
+        { _key        :: String
+        , _name       :: String
+        , _expression :: String
+        , _inPorts    :: [PortView]
+        , _outPorts   :: [PortView]
+        , _position   :: (Double, Double)
+        , _expanded   :: Bool
+        , _selected   :: Bool
         } deriving (Generic, Show)
 
-instance ToJSON ExpressionNodeView
+makeLenses ''ExpressionNodeView
+
+instance ToJSON ExpressionNodeView where
+    toEncoding = Lens.toEncoding
+    toJSON     = Lens.toJSON
+
 instance Convertible ExpressionNode ExpressionNodeView where
     convert n = ExpressionNodeView
         {- key        -} (n ^. ExpressionNode.nodeLoc . to show)
@@ -39,7 +42,10 @@ instance Convertible ExpressionNode ExpressionNodeView where
         {- selected   -} (n ^. ExpressionNode.isSelected)
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setNodes($1)"
-    setNodes' :: JSVal -> IO ()
+    setNodes__ :: JSVal -> IO ()
 
 setNodes :: MonadIO m => [ExpressionNodeView] -> m ()
-setNodes = liftIO . setNodes' <=< toJSONVal
+setNodes = liftIO . setNodes__ <=< toJSONVal
+
+expressionNodesView :: MonadIO m => DiffT ExpressionNodesMap m ()
+expressionNodesView = diffApply $ setNodes . map convert . HashMap.elems
