@@ -9,13 +9,13 @@ module Handlers where
 
 import           UndoState
 
-import           Control.Exception                      (Exception)
-import           Control.Exception.Safe                 (throwM)
-import           Data.Binary                            (Binary, decode)
-import           Data.ByteString.Lazy                   (ByteString, fromStrict)
-import qualified Data.List                              as List
-import           Data.Map.Strict                        (Map)
-import qualified Data.Map.Strict                        as Map
+import           Control.Exception                       (Exception)
+import           Control.Exception.Safe                  (throwM)
+import           Data.Binary                             (Binary, decode)
+import           Data.ByteString.Lazy                    (ByteString, fromStrict)
+import qualified Data.List                               as List
+import           Data.Map.Strict                         (Map)
+import qualified Data.Map.Strict                         as Map
 import           Data.Maybe
 import           Data.UUID                               as UUID (nil)
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
@@ -31,8 +31,6 @@ import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
-import           LunaStudio.API.Graph.Result             (Result)
-import qualified LunaStudio.API.Graph.Result             as Result
 import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
@@ -43,6 +41,8 @@ import           LunaStudio.API.Response                 (Response (..))
 import qualified LunaStudio.API.Response                 as Response
 import qualified LunaStudio.API.Topic                    as Topic
 import           LunaStudio.Data.Connection              as Connection
+import           LunaStudio.Data.Diff                    (Diff (Diff))
+import qualified LunaStudio.Data.Diff                    as Diff
 import qualified LunaStudio.Data.Graph                   as Graph
 import qualified LunaStudio.Data.Node                    as Node
 import           LunaStudio.Data.Port                    (OutPortIndex (Projection))
@@ -187,7 +187,7 @@ handleAddConnectionUndo (Response.Response _ _ req invStatus status) = case (inv
 
 getUndoAutolayout :: AutolayoutNodes.Request -> AutolayoutNodes.Inverse -> SetNodesMeta.Request
 getUndoAutolayout (AutolayoutNodes.Request location _ _) (AutolayoutNodes.Inverse positions) =
-    SetNodesMeta.Request location $ map (\(nl, meta) -> (convert nl, meta)) positions
+    SetNodesMeta.Request location . Map.fromList $ fmap (\(nl, meta) -> (convert nl, meta)) positions
 
 handleAutolayoutNodes :: AutolayoutNodes.Response -> Maybe (SetNodesMeta.Request, AutolayoutNodes.Request)
 handleAutolayoutNodes (Response.Response _ _ req invStatus status) = case (invStatus, status) of
@@ -211,9 +211,11 @@ handleMovePortUndo (Response.Response _ _ req _ status) = case status of
     _             -> Nothing
 
 
-getUndoPaste :: Paste.Request -> Result -> RemoveNodes.Request
-getUndoPaste request result = RemoveNodes.Request
-    (request ^. Paste.location) (result ^.. Result.graphUpdates . _Right . Graph.nodes . traverse . Node.nodeId . to convert)
+getUndoPaste :: Paste.Request -> Diff -> RemoveNodes.Request
+getUndoPaste request (Diff mods) = RemoveNodes.Request (request ^. Paste.location) addedNodesLocs where
+    toMaybeNodeLoc (Diff.AddNode m) = Just . convert $ m ^. Diff.newNode . Node.nodeId
+    toMaybeNodeLoc _                = Nothing
+    addedNodesLocs                  = catMaybes $ toMaybeNodeLoc <$> mods
 
 handlePasteUndo :: Paste.Response -> Maybe (RemoveNodes.Request, Paste.Request)
 handlePasteUndo (Response.Response _ _ req _ status) = case status of
@@ -233,7 +235,7 @@ handleRemoveConnectionUndo (Response.Response _ _ req invStatus status) = case (
 
 getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
 getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
-    AddSubgraph.Request location nodes conns
+    AddSubgraph.Request location (Map.elems nodes) (Map.elems conns)
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ _ req invStatus status) = case (invStatus, status) of
