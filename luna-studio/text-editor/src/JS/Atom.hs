@@ -17,9 +17,9 @@ import           Common.Prelude                hiding (toList)
 import           Control.Monad.Trans.Maybe     (MaybeT (MaybeT), runMaybeT)
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure            (PToJSVal (pToJSVal))
-import           LunaStudio.Data.Diff          (Diff)
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.Point         (Point)
+import           LunaStudio.Data.TextDiff      (TextDiff)
 import           TextEditor.Event.Internal     (InternalEvent, InternalEvent (..))
 import           TextEditor.Event.Text         (TextEvent (TextEvent))
 import qualified TextEditor.Event.Text         as TextEvent
@@ -57,8 +57,8 @@ foreign import javascript safe "globalRegistry.activeLocation"
 
 
 instance ToJSVal Point where toJSVal = toJSONVal
-instance ToJSVal Diff  where toJSVal = toJSONVal
-instance FromJSVal Diff where fromJSVal = fromJSONVal
+instance ToJSVal   TextDiff where toJSVal = toJSONVal
+instance FromJSVal TextDiff where fromJSVal = fromJSONVal
 
 instance FromJSVal GraphLocation where fromJSVal = fromJSONVal
 instance FromJSVal InternalEvent where fromJSVal = fromJSONVal

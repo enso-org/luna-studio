@@ -16,9 +16,9 @@ import qualified LunaStudio.API.Atom.SaveFile       as SaveFile
 import qualified LunaStudio.API.Atom.SetProject     as SetProject
 import qualified LunaStudio.API.Atom.Substitute     as Substitute
 import qualified LunaStudio.API.Control.Interpreter as Interpreter
-import           LunaStudio.Data.Diff               (Diff)
-import           LunaStudio.Data.GraphLocation      (GraphLocation(..))
+import           LunaStudio.Data.GraphLocation      (GraphLocation (..))
 import           LunaStudio.Data.Range              (Range)
+import           LunaStudio.Data.TextDiff           (TextDiff)
 
 -- Atom requests --
 
@@ -46,7 +46,7 @@ setProject rootPath uuid guiID = sendRequest $ Message uuid guiID $ SetProject.R
 moveProject :: FilePath -> FilePath -> UUID -> Maybe UUID -> IO ()
 moveProject oldPath newPath uuid guiID = sendRequest $ Message uuid guiID $ MoveProject.Request oldPath newPath
 
-substitute :: GraphLocation -> [Diff] -> UUID -> Maybe UUID -> IO ()
+substitute :: GraphLocation -> [TextDiff] -> UUID -> Maybe UUID -> IO ()
 substitute location diffs uuid guiID =
     sendRequest $ Message uuid guiID $ Substitute.Request location diffs
 
