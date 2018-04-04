@@ -267,7 +267,7 @@ setScreenTransform camera = modifyNodeEditor $ NE.layout . Scene.screenTransform
 
 getNodeSearcherData :: Command State (Map ImportName ModuleHints)
 getNodeSearcherData = getAvailableImports <$> use nodeSearcherData where
-    getAvailableImports nsd = Map.filterWithKey (\k _ -> Set.member k . Set.fromList $ nsd ^. NS.currentImports) $ nsd ^. NS.imports
+    getAvailableImports nsd = Map.filterWithKey (\k _ -> Set.member k $ nsd ^. NS.currentImports) $ nsd ^. NS.imports
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool

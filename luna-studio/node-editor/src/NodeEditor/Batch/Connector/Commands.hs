@@ -2,6 +2,7 @@ module NodeEditor.Batch.Connector.Commands where
 
 import           Common.Batch.Connector.Connection        (Message (Message), sendRequest, sendUpdate)
 import           Common.Prelude
+import           Data.Set                                 (Set)
 import qualified Data.Text                                as Text
 import           Data.UUID.Types                          (UUID)
 import qualified LunaStudio.API.Atom.OpenFile             as OpenFile
@@ -76,7 +77,7 @@ addConnection src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ 
     conv (Left a)  = Left a --TODO normalise
     conv (Right a) = Right $ a ^. NodeLoc.nodeId
 
-addImports :: [Text] -> Workspace -> UUID -> Maybe UUID -> IO ()
+addImports :: Set ImportName -> Workspace -> UUID -> Maybe UUID -> IO ()
 addImports imps workspace uuid guiID = sendRequest . Message uuid guiID . withLibrary workspace AddImports.Request $ imps
 
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Workspace -> UUID -> Maybe UUID -> IO ()
@@ -138,7 +139,7 @@ renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID 
 saveSettings :: LocationSettings -> Workspace -> UUID -> Maybe UUID -> IO ()
 saveSettings settings workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SaveSettings.Request settings
 
-searchNodes :: [ImportName] -> Workspace -> UUID -> Maybe UUID -> IO ()
+searchNodes :: Set ImportName -> Workspace -> UUID -> Maybe UUID -> IO ()
 searchNodes importNames workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SearchNodes.Request importNames
 
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()

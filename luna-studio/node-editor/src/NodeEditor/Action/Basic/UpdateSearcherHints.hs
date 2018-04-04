@@ -6,6 +6,7 @@ import           Common.Prelude
 import qualified Data.Aeson                           as Aeson
 import qualified Data.ByteString.Lazy.Char8           as BS
 import qualified Data.Map                             as Map
+import           Data.Set                             (Set)
 import qualified Data.Set                             as Set
 import           Data.Text                            (Text)
 import qualified Data.Text                            as Text
@@ -48,7 +49,7 @@ localAddSearcherHints ih = do
     Global.waitingForTc .= False
     modifySearcher $ waitingForTc .= False
 
-setCurrentImports :: [ImportName] -> Command State ()
+setCurrentImports :: Set ImportName -> Command State ()
 setCurrentImports importNames = do
     nodeSearcherData . currentImports .= importNames
     imps' <- (^. missingImports) <$> use nodeSearcherData
@@ -83,7 +84,7 @@ localUpdateSearcherHints' = unlessM inTopLevelBreadcrumb $ do
     let localFunctionsImportName = "Local"
         nsData :: NS.NodeSearcherData
         nsData = nsData' & imports %~ Map.insert localFunctionsImportName (ModuleHints ((,def) <$> localFunctions) def)
-                         & currentImports %~ (localFunctionsImportName :)
+                         & currentImports %~ Set.insert localFunctionsImportName
     modifySearcher $ do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode

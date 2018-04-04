@@ -2,6 +2,8 @@ module NodeEditor.Action.Batch  where
 
 import           Common.Action.Command               (Command)
 import           Common.Prelude
+import           Data.Set                            (Set)
+import qualified Data.Set                            as Set
 import           Data.UUID.Types                     (UUID)
 import           LunaStudio.Data.Connection          (Connection)
 import           LunaStudio.Data.GraphLocation       (GraphLocation)
@@ -65,10 +67,10 @@ addConnection src dst = do
     collaborativeModify [nl]
     withWorkspace $ BatchCmd.addConnection src dst
 
-addImport :: Text -> Command State ()
-addImport = addImports . return
+addImport :: ImportName -> Command State ()
+addImport = addImports . Set.singleton
 
-addImports :: [Text] -> Command State ()
+addImports :: Set ImportName -> Command State ()
 addImports = withWorkspace . BatchCmd.addImports
 
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Command State ()
@@ -126,7 +128,7 @@ paste = withWorkspace .: BatchCmd.paste
 saveSettings :: LocationSettings -> Command State ()
 saveSettings = withWorkspace . BatchCmd.saveSettings
 
-searchNodes :: [ImportName] -> Command State ()
+searchNodes :: Set ImportName -> Command State ()
 searchNodes = withWorkspace . BatchCmd.searchNodes
 
 setNodeExpression :: NodeLoc -> Text -> Command State ()
