@@ -30,7 +30,7 @@ data Section = Websocket   { host     :: String
 
 
 lunaRootEnv :: String
-lunaRootEnv = "LUNAROOT"
+lunaRootEnv = "LUNA_LIBS_PATH"
 
 
 load :: IO Config

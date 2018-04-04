@@ -39,15 +39,15 @@ packages:
     appType: BatchApp
   zmq:
     versions:
-      1.0.0:
+      1.1.0:
         windows.x64:
           path: http://packages.luna-lang.org/windows/zmq/zmq1.zip
           deps: []
         darwin.x64:
-          path: http://packages.luna-lang.org/darwin/zmq/zmq.zip
+          path: http://packages.luna-lang.org/darwin/libs/luna-studio-libs-1.1.tar.gz
           deps: []
         linux.x64:
-          path: http://packages.luna-lang.org/linux/zmq/lib.tar.gz
+          path: http://packages.luna-lang.org/linux/zmq/lib-1.1.tar.gz
           deps: []
     synopsis: zmq synopsis
     appType: Lib
@@ -65,20 +65,20 @@ packages:
         windows.x64:
           path: ./
           deps:
-          - zmq-1.0.0
+          - zmq-1.1.0
           - atom-1.18.0
           - winSW-1.0.0
         darwin.x64:
           path: ./
           deps:
-          - zmq-1.0.0
+          - zmq-1.1.0
           - supervisord-4.0.0
           - atom-1.18.0
           - kill-1.0.0
         linux.x64:
           path: ./
           deps:
-          - zmq-1.0.0
+          - zmq-1.1.0
           - supervisord-4.0.0
           - atom-1.18.0
           - kill-1.0.0

@@ -12,7 +12,9 @@ extra-deps:
 - error-util-0.0.1.1
 - ghc-mtl-1.2.1.0
 - ghc-session-0.1.2.0
+- libffi-0.1
 - path-0.6.1
+- safe-exceptions-0.1.6.0
 - shelly-1.6.8.4
 - serialport-0.4.7
 - uuid-1.3.13
@@ -34,7 +36,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: f7f144fe878399f4676d3f786bdcdc0fe08ae99e, git: 'git@github.com:luna/luna.git'}
+  location: {commit: 243fc6e9ed221eecac381f1ce37008d5ef85a25f, git: 'git@github.com:luna/luna.git'}
   subdirs: [core, passes, syntax/text/parser, syntax/text/lexer, stdlib, project]
 - extra-dep: true
   location: {commit: 61ff909efd466735cd4820f9ab2c564e324b5546, git: 'git@github.com:luna/container.git'}

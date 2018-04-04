@@ -25,6 +25,7 @@ import qualified LunaStudio.Data.Graph               as G
 import           LunaStudio.Data.GraphLocation       (GraphLocation (..))
 import           LunaStudio.Data.PortRef             (AnyPortRef (InPortRef'))
 import           LunaStudio.Data.Project             (ProjectId)
+import qualified Luna.Project                        as Project
 
 import           Empire.ASTOp                        (runASTOp)
 import qualified Empire.Commands.Graph               as Graph
@@ -50,7 +51,7 @@ touch name = appendFile name ""
 createDefaultProject :: Empire ()
 createDefaultProject = do
   logger Logger.info "Creating default project"
-  lunaroot <- liftIO $ getEnv "LUNAROOT"
+  lunaroot <- liftIO $ getEnv Project.lunaRootEnv
   let path = lunaroot </> "projects" </> defaultLibraryPath
   logger Logger.info $ "Creating file " <> path
   liftIO $ touch path

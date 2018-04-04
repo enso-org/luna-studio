@@ -41,7 +41,7 @@ data Section = Root       { path :: String
 
 
 lunaRootEnv :: String
-lunaRootEnv = "LUNAROOT"
+lunaRootEnv = "LUNA_LIBS_PATH"
 
 
 load :: IO Config

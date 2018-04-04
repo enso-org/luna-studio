@@ -1,5 +1,5 @@
 '.source.luna':
   'editor':
-    'commentStart': '#'
+    'commentStart': '## '
     'editor.tabLength': 4
     'editor.softWrap': true

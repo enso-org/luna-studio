@@ -33,6 +33,7 @@ import           Data.Future                          (minCapabilityNumber, upda
 import           Empire.Data.AST                      (SomeASTException)
 import           Empire.Data.Graph                    (ClsGraph, Graph, ast)
 import qualified Empire.Data.Graph                    as Graph
+import qualified Luna.Project                         as Project
 import           LunaStudio.API.AsyncUpdate           (AsyncUpdate (..))
 import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
 import qualified LunaStudio.API.Graph.SetNodesMeta    as SetNodesMeta
@@ -122,7 +123,7 @@ runBus formatted projectRoot = do
 
 prepareStdlib :: IO (Scope, IO ())
 prepareStdlib = do
-    lunaroot       <- canonicalizePath =<< getEnv "LUNAROOT"
+    lunaroot       <- canonicalizePath =<< getEnv Project.lunaRootEnv
     (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
     return (std, cleanup)
 

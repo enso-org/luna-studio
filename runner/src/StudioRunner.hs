@@ -37,6 +37,7 @@ import           System.Environment            (getExecutablePath, getArgs)
 import qualified System.Environment            as Environment
 import qualified System.IO                     as IO
 import           System.IO.Error               (isDoesNotExistError)
+import           System.IO.Temp                (createTempDirectory)
 import qualified Shelly.Lifted                 as Shelly
 import           System.Host
 
@@ -191,9 +192,10 @@ userStudioAtomHome = do
     baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= (\p -> (fmap (p </>) version))
     return $ baseDir </> (runnerCfg ^. studioHome)
 lunaTmpPath       = do
-    runnerCfg <- get @RunnerConfig
-    tmp       <- liftIO getTemporaryDirectory
-    return $ (decodeString tmp) </> (runnerCfg ^. mainTmpDirectory)
+    runnerCfg  <- get @RunnerConfig
+    systemTmp  <- liftIO getTemporaryDirectory
+    lunaTmpDir <- liftIO $ createTempDirectory systemTmp $ encodeString (runnerCfg ^. mainTmpDirectory)
+    return $ decodeString lunaTmpDir
 lunaProjectsPath  = do
     runnerCfg <- get @RunnerConfig
     home      <- liftIO getHomeDirectory

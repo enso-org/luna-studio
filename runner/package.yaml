@@ -23,6 +23,7 @@ dependencies:
     - split
     - shelly
     - system-filepath
+    - temporary
     - text
     - template-haskell
     - typed-process

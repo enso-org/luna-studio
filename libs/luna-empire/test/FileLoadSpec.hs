@@ -43,6 +43,7 @@ import qualified Empire.Data.Graph                     as Graph (breadcrumbHiera
 import qualified Empire.Data.Library                   as Library (body)
 import           Empire.Empire                         (CommunicationEnv (..), InterpreterEnv(..), Empire, modules)
 import qualified Language.Haskell.TH                   as TH
+import qualified Luna.Project                          as Project
 import qualified Luna.Syntax.Text.Parser.Parser        as Parser (ReparsingChange (..), ReparsingStatus (..))
 import           LunaStudio.API.AsyncUpdate            (AsyncUpdate(ResultUpdate))
 import qualified LunaStudio.API.Graph.NodeResultUpdate as NodeResult
@@ -2471,9 +2472,9 @@ spec = around withChannels $ parallel $ do
                         TH.litE $ TH.stringL $ dir </> filename)
                 liftIO $ do
                     lunaroot <- canonicalizePath $ takeDirectory thisFilePath </> "../../../env"
-                    oldLunaRoot <- fromMaybe "" <$> lookupEnv "LUNAROOT"
-                    flip finally (setEnv "LUNAROOT" oldLunaRoot) $ do
-                        setEnv "LUNAROOT" lunaroot
+                    oldLunaRoot <- fromMaybe "" <$> lookupEnv Project.lunaRootEnv
+                    flip finally (setEnv Project.lunaRootEnv oldLunaRoot) $ do
+                        setEnv Project.lunaRootEnv lunaroot
                         (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
                         putMVar imports $ unwrap std
                         runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True False

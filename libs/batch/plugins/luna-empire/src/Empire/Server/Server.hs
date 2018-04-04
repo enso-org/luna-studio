@@ -24,6 +24,7 @@ import           Empire.Empire                 (Empire, runEmpire)
 import           Empire.Env                    (Env)
 import qualified Empire.Env                    as Env
 import           Empire.Utils                  (currentISO8601Time)
+import qualified Luna.Project                  as Project
 import qualified LunaStudio.API.Graph.Request  as G
 import           LunaStudio.API.Request        (Request (..))
 import qualified LunaStudio.API.Response       as Response
@@ -83,7 +84,7 @@ defaultLibraryPath = "Main.luna"
 
 webGUIHack :: G.GraphRequest req => req -> IO req
 webGUIHack req = do
-    lunaroot <- liftIO $ getEnv "LUNAROOT"
+    lunaroot <- liftIO $ getEnv Project.lunaRootEnv
     let path = lunaroot </> "projects" </> defaultLibraryPath
         realLocation = req ^. G.location
         realFile     = realLocation ^. GraphLocation.filePath

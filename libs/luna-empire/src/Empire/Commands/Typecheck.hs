@@ -103,11 +103,14 @@ updateNodes loc@(GraphLocation _ br) = do
         for_ (catMaybes errors) $ \(nid, e) -> Publisher.notifyResultUpdate loc nid e 0
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
-updateMonads loc@(GraphLocation _ br) = return ()--zoom graph $ zoomBreadcrumb br $ do
-    {-newMonads <- runASTOp GraphBuilder.buildMonads-}
-    {-Publisher.notifyMonadsUpdate loc newMonads-}
+updateMonads loc@(GraphLocation _ br) = return ()
+    --zoom graph $ zoomBreadcrumb br $ do
+        {-newMonads <- runASTOp GraphBuilder.buildMonads-}
+        {-Publisher.notifyMonadsUpdate loc newMonads-}
 
-updateValues :: GraphLocation -> Interpreter.LocalScope -> Command Graph [Async ()]
+updateValues :: GraphLocation
+             -> Interpreter.LocalScope
+             -> Command Graph [Async ()]
 updateValues loc scope = do
     childrenMap <- use $ Graph.breadcrumbHierarchy . BH.children
     let allNodes = Map.assocs $ view BH.self <$> childrenMap
@@ -117,11 +120,19 @@ updateValues loc scope = do
         IR.matchExpr pointer $ \case
             IR.Unify{} -> Just . (nid,) <$> ASTRead.getVarNode pointer
             _          -> return Nothing
-    let send nid m = flip runReaderT env $ Publisher.notifyResultUpdate loc nid m 0
-        sendRep nid (ErrorRep e)     = send nid $ NodeError $ APIError.Error APIError.RuntimeError $ convert e
-        sendRep nid (SuccessRep s l) = send nid $ NodeValue (convert s) $ Value . convert <$> l
+    let send nid m = flip runReaderT env $
+            Publisher.notifyResultUpdate loc nid m 0
+        sendRep nid (ErrorRep e)     = send nid
+                                     $ NodeError
+                                     $ APIError.Error APIError.RuntimeError
+                                     $ convert e
+        sendRep nid (SuccessRep s l) = send nid
+                                     $ NodeValue (convert s)
+                                     $ Value . convert <$> l
         sendStreamRep nid a@(ErrorRep _)   = sendRep nid a
-        sendStreamRep nid (SuccessRep s l) = send nid $ NodeValue (convert s) $ StreamDataPoint . convert <$> l
+        sendStreamRep nid (SuccessRep s l) = send nid
+                                           $ NodeValue (convert s)
+                                           $ StreamDataPoint . convert <$> l
     asyncs <- forM allVars $ \(nid, ref) -> do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
         liftIO $ forM resVal $ \v -> do
@@ -143,26 +154,32 @@ newtype Scope = Scope CompiledModules
 makeWrapped ''Scope
 
 flattenScope :: Scope -> Imports
-flattenScope (Scope (CompiledModules mods prims)) = unionsImports $ prims : Map.elems mods
+flattenScope (Scope (CompiledModules mods prims)) =
+    unionsImports $ prims : Map.elems mods
 
 createStdlib :: String -> IO (IO (), Scope)
-createStdlib = fmap (id *** Scope) . Compilation.prepareStdlib . Map.singleton "Std"
+createStdlib =
+    fmap (id *** Scope) . Compilation.prepareStdlib . Map.singleton "Std"
 
 filePathToQualName :: MonadIO m => FilePath -> m QualName
 filePathToQualName path = liftIO $ do
     path' <- Path.parseAbsFile path
-    root  <- fromMaybe (error (path <> " is not in a project")) <$> Project.findProjectRootForFile path'
+    root  <- Project.projectRootForFile path'
+    let projName = Project.getProjectName root
     file  <- Path.stripProperPrefix (root Path.</> $(Path.mkRelDir "src")) path'
-    return $ Project.mkQualName file
+    return $ Project.mkQualName projName file
 
-recomputeCurrentScope :: MVar CompiledModules -> FilePath -> Command InterpreterEnv Imports
+recomputeCurrentScope :: MVar CompiledModules
+                      -> FilePath
+                      -> Command InterpreterEnv Imports
 recomputeCurrentScope imports file = do
     Lifted.modifyMVar imports $ \imps -> do
-        lunaroot    <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
-        currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
-        let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
-        qualName <- filePathToQualName file
-        (f, nimps) <- zoom graph $ do
+        importPaths     <- liftIO $ do
+            filePath        <- Path.parseAbsFile file
+            currentProjPath <- Project.projectRootForFile filePath
+            Project.projectImportPaths currentProjPath
+        qualName        <- filePathToQualName file
+        (f, nimps)      <- zoom graph $ do
             t <- runModuleTypecheck qualName (Map.fromList importPaths) imps
             case t of
                 Right (a, b) -> return (a, b)
@@ -170,7 +187,9 @@ recomputeCurrentScope imports file = do
         let nimpsF = nimps & Compilation.modules . at qualName ?~ f
         return (nimpsF, f)
 
-getCurrentScope :: MVar CompiledModules -> FilePath -> Command InterpreterEnv Imports
+getCurrentScope :: MVar CompiledModules
+                -> FilePath
+                -> Command InterpreterEnv Imports
 getCurrentScope imports file = do
     fs       <- liftIO $ readMVar imports
     qualName <- filePathToQualName file
@@ -186,27 +205,39 @@ stop = do
     liftIO $ mapM_ Async.uninterruptibleCancel threads
     liftIO cln
 
-run :: MVar CompiledModules -> GraphLocation -> Bool -> Bool -> Command InterpreterEnv ()
+run :: MVar CompiledModules
+    -> GraphLocation
+    -> Bool
+    -> Bool
+    -> Command InterpreterEnv ()
 run imports loc@(GraphLocation file br) interpret recompute = do
     case br of
         Breadcrumb [] -> do
             void $ mask_ $ recomputeCurrentScope imports file
         Breadcrumb (Definition uuid:rest) -> do
-            scope  <- mask_ $ (if recompute then recomputeCurrentScope else getCurrentScope) imports file
+            let scopeGetter = if recompute
+                              then recomputeCurrentScope
+                              else getCurrentScope
+            scope  <- mask_ $ scopeGetter imports file
             asyncs <- zoom graph $ do
                 importedModules <- getImportedModules
                 std             <- liftIO $ readMVar imports
                 let CompiledModules cmpMods cmpPrims = std
-                    visibleModules = CompiledModules (Map.restrictKeys cmpMods importedModules) cmpPrims
-                    moduleEnv      = unionImports (flattenScope $ Scope visibleModules) scope
+                    cmpImportedMods = Map.restrictKeys cmpMods importedModules
+                    visibleModules = CompiledModules cmpImportedMods cmpPrims
+                    flatVisibleScope = flattenScope $ Scope visibleModules
+                    moduleEnv      = unionImports flatVisibleScope scope
                 modName <- filePathToQualName file
-                funName <- preuse $ Graph.clsFuns . at uuid . _Just . Graph.funName
-                withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
-                    runTC modName (fromMaybe "unknown function" funName) moduleEnv
-                    updateNodes  loc
-                    {-updateMonads loc-}
-                    if interpret then do
-                        scope  <- runInterpreter file moduleEnv
-                        traverse (updateValues loc) scope
-                    else return Nothing
+                funName <- preuse $
+                    Graph.clsFuns . at uuid . _Just . Graph.funName
+                withRootedFunction uuid $ do
+                    runInternalBreadcrumb (Breadcrumb rest) $ do
+                        let functionName = fromMaybe "unknown function" funName
+                        runTC modName functionName moduleEnv
+                        updateNodes  loc
+                        {-updateMonads loc-}
+                        if interpret then do
+                            scope  <- runInterpreter file moduleEnv
+                            traverse (updateValues loc) scope
+                        else return Nothing
             listeners .= fromMaybe [] asyncs

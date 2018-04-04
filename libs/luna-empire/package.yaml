@@ -51,8 +51,8 @@ dependencies:
     - lifted-base
     - luna-core
     - luna-passes
-    - luna-syntax-text-parser
-    - luna-syntax-text-lexer
+    - luna-parser
+    - luna-lexer
     - luna-studio-common
     - luna-stdlib
     - luna-project

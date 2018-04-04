@@ -2,7 +2,7 @@
 module Empire.Commands.Graph where
 
 import           Control.Arrow                    ((&&&), (***))
-import           Control.Concurrent               (readMVar)
+import           Control.Concurrent               (readMVar, swapMVar)
 import qualified Control.Concurrent.MVar.Lifted   as Lifted
 import           Control.Monad                    (forM)
 import           Control.Monad.Catch              (handle, try)
@@ -1737,29 +1737,27 @@ qualNameToText = convert
 
 getImportPaths :: GraphLocation -> IO (Map.Map IR.Name FilePath)
 getImportPaths (GraphLocation file _) = do
-    lunaroot        <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
-    currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
-    let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
+    currentProjPath <- Project.projectRootForFile =<< Path.parseAbsFile file
+    importPaths     <- Project.projectImportPaths currentProjPath
     return $ Map.fromList importPaths
 
 getSearcherHints :: GraphLocation -> Empire ImportsHints
-getSearcherHints (GraphLocation file _) = do
-    currentProjPath <- liftIO $ Project.findProjectRootForFile =<< Path.parseAbsFile file
-    projectSources  <- liftIO $ case currentProjPath of
-        Nothing -> return []
-        Just p  -> Bimap.elems <$> Project.findProjectSources p
-    lunaroot        <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
-    lunaRootSources <- liftIO $ Project.findProjectSources =<< Path.parseAbsDir (lunaroot <> "/Std")
-    let stdModules   = map ((Text.append "Std.") . qualNameToText) $ Bimap.elems lunaRootSources
-    let importPaths = ("Std", lunaroot <> "/Std/") : ((Project.getProjectName &&& Path.toFilePath) <$> maybeToList currentProjPath)
-    importsMVar     <- view modules
+getSearcherHints loc = do
+    importPaths     <- liftIO $ getImportPaths loc
+    availableSource <- liftIO $ forM importPaths $ \path -> do
+        sources <- Project.findProjectSources =<< Path.parseAbsDir path
+        return $ Bimap.elems sources
+    importsMVar <- view modules
     cmpModules  <- liftIO $ readMVar importsMVar
-    std         <- liftIO $ Compilation.requestModules (Map.fromList importPaths) (map convert stdModules) cmpModules
-    proj        <- liftIO $ Compilation.requestModules (Map.fromList importPaths) projectSources cmpModules
-    stdImports  <- either (\e -> liftIO (print e) >> return def) (return . fst) std
-    projImports <- either (\e -> liftIO (print e) >> return def) (return . fst) std
-    let allImports = Map.union stdImports projImports
-    return $ Map.fromList $ map (\(a, b) -> (qualNameToText a, importsToHints b)) $ Map.toList allImports
+    res         <- liftIO $ Compilation.requestModules importPaths
+                                (concat availableSource) cmpModules
+    case res of
+        Left exc                    -> throwM $ ModuleCompilationException exc
+        Right (imps, newCmpModules) -> do
+            Lifted.swapMVar importsMVar newCmpModules
+            return $ Map.fromList
+                   $ map (\(a, b) -> (qualNameToText a, importsToHints b))
+                   $ Map.toList imps
 
 reloadInterpreter :: GraphLocation -> Empire ()
 reloadInterpreter = runInterpreter
