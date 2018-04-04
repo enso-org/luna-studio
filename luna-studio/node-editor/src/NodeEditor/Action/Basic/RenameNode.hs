@@ -11,9 +11,9 @@ import           NodeEditor.State.Global                    (State)
 
 renameNode :: NodeLoc -> Text -> Command State ()
 renameNode nl update =
-    whenM (localRenameNode nl update) $ Batch.renameNode nl update
+    whenM (localRenameNode nl $ Just update) $ Batch.renameNode nl update
 
-localRenameNode :: NodeLoc -> Text -> Command State Bool
+localRenameNode :: NodeLoc -> Maybe Text -> Command State Bool
 localRenameNode nl update = do
-    NodeEditor.modifyExpressionNode nl $ Node.name ?= update
+    NodeEditor.modifyExpressionNode nl $ Node.name .= update
     NodeEditor.inGraph nl

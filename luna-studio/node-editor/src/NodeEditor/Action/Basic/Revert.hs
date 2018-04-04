@@ -90,7 +90,7 @@ revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = pani
 
 revertRenameNode :: RenameNode.Request -> Response.Status RenameNode.Inverse -> Command State ()
 revertRenameNode (RenameNode.Request loc nid _) (Response.Ok (RenameNode.Inverse prevName)) =
-    inCurrentLocation loc $ \path -> void $ localRenameNode (convert (path, nid)) prevName
+    inCurrentLocation loc $ \path -> void $ localRenameNode (convert (path, nid)) $ Just prevName
 revertRenameNode (RenameNode.Request _loc _nid _) (Response.Error _msg) = panic
 
 revertRenamePort :: RenamePort.Request -> Response.Status RenamePort.Inverse -> Command State ()
