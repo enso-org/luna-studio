@@ -66,6 +66,7 @@ import           LunaStudio.Data.Range           (Range (..))
 import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
 import           LunaStudio.Data.NodeValue
 import           LunaStudio.Data.Vector2         (Vector2 (..))
+import           LunaStudio.Data.Visualization   (VisualizationValue (Value))
 import qualified LunaStudio.Data.LabeledTree     as LabeledTree
 import           System.Directory                (canonicalizePath, getCurrentDirectory)
 import           System.Environment              (lookupEnv, setEnv)
