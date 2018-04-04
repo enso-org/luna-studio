@@ -2,10 +2,69 @@ name:               batch-plugin-luna-empire
 version:            0.1.0.0
 author:             New Byte Order <contact@luna-lang.org>
 
+tests:
+    spec:
+        main: Spec.hs
+        source-dirs: test
+        ghc-options: -Wno-unused-do-bind -threaded -with-rtsopts=-N4
+        dependencies:
+            - luna-empire
+            - hspec
+            - monad-loops
+            - QuickCheck
+            - reflection
+            - raw-strings-qq
+            - template-haskell
+            - safe-exceptions
+
+
+
 default-extensions:
-  - LambdaCase
-  - NoImplicitPrelude
-  - TemplateHaskell
+    - AllowAmbiguousTypes
+    - ApplicativeDo
+    - Arrows
+    - BangPatterns
+    - BinaryLiterals
+    - ConstraintKinds
+    - DataKinds
+    - DefaultSignatures
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - DoAndIfThenElse
+    - DuplicateRecordFields
+    - EmptyDataDecls
+    - FlexibleContexts
+    - FlexibleInstances
+    - FunctionalDependencies
+    - GeneralizedNewtypeDeriving
+    - InstanceSigs
+    - LambdaCase
+    - LiberalTypeSynonyms
+    - MonadComprehensions
+    - MultiWayIf
+    - NamedWildCards
+    - NegativeLiterals
+    - NoImplicitPrelude
+    - NumDecimals
+    - OverloadedLabels
+    - OverloadedStrings
+    - PackageImports
+    - QuasiQuotes
+    - RankNTypes
+    - RecursiveDo
+    - RelaxedPolyRec
+    - ScopedTypeVariables
+    - StandaloneDeriving
+    - TemplateHaskell
+    - TupleSections
+    - TypeApplications
+    - TypeFamilies
+    - TypeFamilyDependencies
+    - TypeOperators
+    - ViewPatterns
 
 ghc-options: -Wall -O2 -threaded
 
@@ -13,32 +72,19 @@ dependencies:
   - base
   - batch-lib-luna-empire
   - binary
+  - containers
   - m-logger
+  - matrix
   - optparse-applicative
   - prologue
-  - prologue
+  - text
+  - unordered-containers
   - zmq-bus
   - zmq-bus-config
+  - luna-studio-common
 
 executables:
   luna-empire:
     source-dirs: src
     main:        Main.hs
     ghc-options: -Wall -O2 -threaded "-with-rtsopts=-N -T"
-
-  luna-empire-logger:
-    source-dirs: src
-    main:        LoggerMain.hs
-
-  luna-empire-invoker:
-    source-dirs: src
-    main:        Invoker.hs
-    dependencies:
-      - bytestring
-      - containers
-      - docopt
-      - luna-empire
-      - luna-studio-common
-      - m-logger
-      - text
-      - uuid
