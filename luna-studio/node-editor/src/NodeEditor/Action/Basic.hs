@@ -38,15 +38,22 @@ module NodeEditor.Action.Basic
     , localRemoveSelectedNodes
     , localRenameNode
     , localRenamePort
+    , localSetInputSidebar
     , localSetNodeExpression
     , localSetNodeMeta
     , localSetNodesMeta
+    , localSetOutputSidebar
     , localSetPortDefault
     , localUnmerge
+    , localUpdateCanEnterExpressionNode
     , localUpdateConnection
     , localUpdateExpressionNode
+    , localUpdateExpressionNodeInPorts
+    , localUpdateExpressionNodeOutPorts
     , localUpdateExpressionNodes
     , localUpdateInputNode
+    , localUpdateIsDefinition
+    , localUpdateNodeCode
     , localUpdateNodeTypecheck
     , localUpdateOrAddExpressionNode
     , localUpdateOrAddInputNode
@@ -99,20 +106,22 @@ module NodeEditor.Action.Basic
     , updateDocs
     , updateFilePath
     , updateGraph
-    , updateNodeZOrder
-    , updateScene
     , updateNodeValueAndVisualization
+    , updateNodeZOrder
     , updatePortMode
     , updatePortsModeForNode
+    , updateScene
+    , updateWithAPIGraph
     ) where
 
 import           NodeEditor.Action.Basic.AddConnection       (connect, localAddConnection, localAddConnections)
-import           NodeEditor.Action.Basic.AddNode             (createNode, localAddExpressionNode)
+import           NodeEditor.Action.Basic.AddNode             (createNode, localAddExpressionNode, localSetInputSidebar,
+                                                              localSetOutputSidebar)
 import           NodeEditor.Action.Basic.AddPort             (addPort, localAddPort)
 import           NodeEditor.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
 import           NodeEditor.Action.Basic.Atom                (setFile, unsetFile, updateFilePath)
 import           NodeEditor.Action.Basic.CollapseToFunction  (collapseToFunction)
-import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph)
+import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph, updateWithAPIGraph)
 import           NodeEditor.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           NodeEditor.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
 import           NodeEditor.Action.Basic.Merge               (localMerge, localUnmerge)
@@ -140,10 +149,12 @@ import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPor
 import           NodeEditor.Action.Basic.Undo                (redo, undo)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts), localUpdateExpressionNode,
-                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
-                                                              localUpdateOrAddOutputNode, localUpdateOutputNode)
+import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts),
+                                                              localUpdateCanEnterExpressionNode, localUpdateExpressionNode,
+                                                              localUpdateExpressionNodeInPorts, localUpdateExpressionNodeOutPorts,
+                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateIsDefinition,
+                                                              localUpdateNodeCode, localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode)
 import           NodeEditor.Action.Basic.UpdateNodeValue     (updateNodeValueAndVisualization)
 import           NodeEditor.Action.Basic.UpdateSearcherHints (localAddSearcherHints, localClearSearcherHints, localUpdateSearcherHints,
                                                               selectHint, setCurrentImports, updateDocs)

@@ -6,20 +6,20 @@ import           Common.Prelude
 import qualified Data.Map                                    as Map
 import           Data.Set                                    (Set)
 import qualified Data.Set                                    as Set
-import           JS.Visualizers                              (sendInternalData)
 import           LunaStudio.Data.Node                        (NodeTypecheckerUpdate, tcNodeId)
-import qualified LunaStudio.Data.Node                        as Empire
+import qualified LunaStudio.Data.Node                        as API
+import           LunaStudio.Data.NodeLoc                     (NodeLoc)
 import           NodeEditor.Action.Basic.AddNode             (localAddExpressionNode, localAddInputNode, localAddOutputNode)
 import           NodeEditor.Action.Basic.Scene               (updateScene)
 import           NodeEditor.Action.Basic.UpdateSearcherHints (localUpdateSearcherHintsPreservingSelection)
 import           NodeEditor.Action.State.Model               (calculatePortSelfMode)
 import qualified NodeEditor.Action.State.NodeEditor          as NodeEditor
 import           NodeEditor.React.Model.Node                 (ExpressionNode, InputNode, NodePath, OutputNode, inPortAt, nodeLoc)
-import           NodeEditor.React.Model.Node.ExpressionNode  (inPortsList, isSelected, nodeType, value, _Error)
+import           NodeEditor.React.Model.Node.ExpressionNode  (inPortsList, isSelected)
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
 import qualified NodeEditor.React.Model.Node.SidebarNode     as SidebarNode
 import           NodeEditor.React.Model.NodeEditor           (VisualizationBackup (MessageBackup))
-import           NodeEditor.React.Model.Port                 (isSelf, mode, portId)
+import           NodeEditor.React.Model.Port                 (InPort, InPortTree, OutPort, OutPortTree, isSelf, mode, portId)
 import qualified NodeEditor.React.Model.Searcher             as Searcher
 import           NodeEditor.React.Model.Visualization        (awaitingDataMsg, noVisMsg, visualizers)
 import           NodeEditor.State.Global                     (State)
@@ -60,6 +60,18 @@ localUpdateOrAddOutputNode node = unlessM (localUpdateOutputNode node) $ localAd
 localUpdateOrAddExpressionNode :: Set NodeUpdateModification -> ExpressionNode -> Command State ()
 localUpdateOrAddExpressionNode mods node = unlessM (localUpdateExpressionNode mods node) $ localAddExpressionNode node
 
+localUpdateExpressionNodeInPorts :: NodeLoc -> InPortTree InPort -> Command State ()
+localUpdateExpressionNodeInPorts nl ports = NodeEditor.modifyExpressionNode nl $ ExpressionNode.inPorts .= ports
+
+localUpdateExpressionNodeOutPorts :: NodeLoc -> OutPortTree OutPort -> Command State ()
+localUpdateExpressionNodeOutPorts nl ports = NodeEditor.modifyExpressionNode nl $ ExpressionNode.outPorts .= ports
+
+localUpdateIsDefinition :: NodeLoc -> Bool -> Command State ()
+localUpdateIsDefinition nl update = NodeEditor.modifyExpressionNode nl $ ExpressionNode.isDefinition .= update
+
+localUpdateNodeCode :: NodeLoc -> Text -> Command State ()
+localUpdateNodeCode nl update = NodeEditor.modifyExpressionNode nl $ ExpressionNode.code .= update
+
 localUpdateExpressionNode :: Set NodeUpdateModification -> ExpressionNode -> Command State Bool
 localUpdateExpressionNode mods node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
@@ -96,18 +108,21 @@ localUpdateExpressionNode mods node = NodeEditor.getExpressionNode (node ^. node
             NodeEditor.setVisualizationData (node ^. ExpressionNode.nodeLoc) (MessageBackup msg) True
         return True
 
+localUpdateCanEnterExpressionNode :: NodeLoc -> Bool -> Command State ()
+localUpdateCanEnterExpressionNode nl update = NodeEditor.modifyExpressionNode nl $ ExpressionNode.canEnter .= update
+
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
 localUpdateNodeTypecheck path update = do
     let nl = convert (path, update ^. tcNodeId)
     case update of
-        Empire.ExpressionUpdate _ inPorts outPorts -> do
+        API.ExpressionUpdate _ inPorts outPorts ->
             withJustM (NodeEditor.getExpressionNode nl) $ \node -> void . localUpdateExpressionNode def $
                 node & ExpressionNode.inPorts  .~ convert `fmap` inPorts
                      & ExpressionNode.outPorts .~ convert `fmap` outPorts
                      & ExpressionNode.value    .~ ExpressionNode.AwaitingData
-        Empire.OutputSidebarUpdate _ inPorts -> NodeEditor.modifyOutputNode nl $
+        API.OutputSidebarUpdate _ inPorts -> NodeEditor.modifyOutputNode nl $
             SidebarNode.outputSidebarPorts .= convert `fmap` inPorts
-        Empire.InputSidebarUpdate _ outPorts -> NodeEditor.modifyInputNode nl $
+        API.InputSidebarUpdate _ outPorts -> NodeEditor.modifyInputNode nl $
             SidebarNode.inputSidebarPorts .= convert `fmap2` outPorts
 
 updateSearcherClassName :: ExpressionNode -> Command State ()

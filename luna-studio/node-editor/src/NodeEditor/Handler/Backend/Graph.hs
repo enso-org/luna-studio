@@ -34,7 +34,6 @@ import qualified LunaStudio.API.Graph.RemoveNodes            as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort             as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode             as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort             as RenamePort
-import qualified LunaStudio.API.Graph.Result                 as Result
 import qualified LunaStudio.API.Graph.SearchNodes            as SearchNodes
 import qualified LunaStudio.API.Graph.SetCode                as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression      as SetNodeExpression
@@ -42,28 +41,31 @@ import qualified LunaStudio.API.Graph.SetNodesMeta           as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault         as SetPortDefault
 import qualified LunaStudio.API.Response                     as Response
 import           LunaStudio.Data.Breadcrumb                  (containsNode)
-import           LunaStudio.Data.Error                       (Error (Error), GraphError (BreadcrumbDoesNotExist, OtherGraphError),
-                                                              LunaError, errorType)
+import qualified LunaStudio.Data.Connection                  as API
+import           LunaStudio.Data.Diff                        (Diff (Diff), Modification (..))
+import qualified LunaStudio.Data.Diff                        as Diff
+import           LunaStudio.Data.Error                       (Error (Error), GraphError (BreadcrumbDoesNotExist), LunaError, errorType)
 import qualified LunaStudio.Data.Error                       as ErrorAPI
-import qualified LunaStudio.Data.Graph                       as Graph
 import           LunaStudio.Data.GraphLocation               (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation               as GraphLocation
-import           LunaStudio.Data.Node                        (nodeId)
+import qualified LunaStudio.Data.Node                        as API
 import           LunaStudio.Data.NodeLoc                     (NodePath, prependPath)
 import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
-import qualified LunaStudio.Data.NodeSearcher                as NS
 import           NodeEditor.Action.Basic                     (NodeUpdateModification (KeepNodeMeta, KeepPorts), centerGraph, exitBreadcrumb,
-                                                              localAddConnections, localAddSearcherHints, localMerge, localMoveProject,
-                                                              localRemoveConnections, localRemoveNodes, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
-                                                              localUpdateOrAddOutputNode, setCurrentImports, updateGraph,
-                                                              updateNodeValueAndVisualization, updateScene)
+                                                              localAddConnection, localAddSearcherHints, localMerge, localMoveProject,
+                                                              localRemoveConnection, localRemoveNode, localRenameNode, localSetInputSidebar,
+                                                              localSetNodeExpression, localSetNodeMeta, localSetOutputSidebar,
+                                                              localUpdateCanEnterExpressionNode, localUpdateExpressionNodeInPorts,
+                                                              localUpdateExpressionNodeOutPorts, localUpdateIsDefinition,
+                                                              localUpdateNodeCode, localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+                                                              setCurrentImports, updateNodeValueAndVisualization, updateScene,
+                                                              updateWithAPIGraph)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertRenamePort, revertSetNodeExpression,
                                                               revertSetNodesMeta, revertSetPortDefault)
 import           NodeEditor.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
-import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram)
+import           NodeEditor.Action.Batch                     (collaborativeModify)
 import           NodeEditor.Action.State.App                 (getWorkspace, modifyApp, setBreadcrumbs)
 import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
 import           NodeEditor.Action.State.NodeEditor          (modifyExpressionNode, setGraphStatus, setNodeProfilingData,
@@ -80,20 +82,34 @@ import           NodeEditor.State.Global                     (State)
 import qualified NodeEditor.State.Global                     as Global
 
 
-applyResult :: GraphLocation -> Set NodeUpdateModification -> Result.Result -> Command State ()
-applyResult gl mods res = inCurrentLocation gl $ \path -> unlessM (checkBreadcrumb res) $
-    case res ^. Result.graphUpdates of
-        Left err -> handleGraphError err
-        Right graphUpdates -> do
-            void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
-            void $ localRemoveConnections . map (prependPath path)  $ res ^. Result.removedConnections
-            mapM_ (localUpdateOrAddExpressionNode mods . convert . (path,)) $ graphUpdates ^. Graph.nodes
-            let inputSidebar  = graphUpdates ^. Graph.inputSidebar
-                outputSidebar = graphUpdates ^. Graph.outputSidebar
-            when (isJust inputSidebar)  $ forM_ inputSidebar  $ localUpdateOrAddInputNode  . convert . (path,)
-            when (isJust outputSidebar) $ forM_ outputSidebar $ localUpdateOrAddOutputNode . convert . (path,)
-            void $ localAddConnections . map (\(src', dst') -> (prependPath path src', prependPath path dst')) $ graphUpdates ^. Graph.connections
-            setGraphStatus GraphLoaded
+applyModification :: NodePath -> Set NodeUpdateModification -> Modification -> Command State ()
+applyModification p _  (AddConnection         m) = void . localAddConnection                $ API.prependPath p $ m ^. Diff.newConnection
+applyModification p nm (AddNode               m) =        localUpdateOrAddExpressionNode nm $ convert (p, m ^. Diff.newNode)
+applyModification p _  (RemoveConnection      m) = void . localRemoveConnection             $ prependPath p $ m ^. Diff.removeConnectionId
+applyModification p _  (RemoveNode            m) = void . localRemoveNode                   $ convert (p, m ^. Diff.removeNodeLoc . NodeLoc.nodeId)
+applyModification p _  (RenameNode            m) = void . localRenameNode                    (convert (p, m ^. Diff.renameNodeLoc . NodeLoc.nodeId)) $ m ^. Diff.newName
+applyModification _ _  (SetBreadcrumb         m) =        setBreadcrumbs                    $ m ^. Diff.newBreadcrumb
+applyModification _ _  (SetCamera             m) =        setScreenTransform                $ m ^. Diff.newCameraTransformation
+applyModification p _  (SetCanEnterNode       m) =        localUpdateCanEnterExpressionNode  (convert (p, m ^. Diff.setCanEnterNodeLoc . NodeLoc.nodeId)) $ m ^. Diff.newCanEnter
+applyModification _ _  (SetCode               _) = return ()
+applyModification _ _  (SetDefaultVisualizers m) =        Global.preferedVisualizers       .= m ^. Diff.newDefaultVisualizers
+applyModification p _  (SetExpression         m) = void . localSetNodeExpression             (convert (p, m ^. Diff.setExpressionNodeLoc . NodeLoc.nodeId)) $ m ^. Diff.newExpression
+applyModification p _  (SetGraph              m) =        updateWithAPIGraph p              $ m ^. Diff.newGraph
+applyModification _ _  (SetGraphError         m) =        handleGraphError                  $ m ^. Diff.graphError
+applyModification _ _  (SetImports            m) =        setCurrentImports                 $ m ^. Diff.newImports
+applyModification p _  (SetInPorts            m) =        localUpdateExpressionNodeInPorts   (convert (p, m ^. Diff.setInPortsNodeLoc . NodeLoc.nodeId)) $ convert <$> m ^. Diff.newInPortTree
+applyModification p _  (SetInputSidebar       m) =        localSetInputSidebar p            $ m ^. Diff.newInputSidebar
+applyModification p _  (SetIsDefinition       m) =        localUpdateIsDefinition            (convert (p, m ^. Diff.setIsDefinitionNodeLoc . NodeLoc.nodeId)) $ m ^. Diff.newIsDefinition
+applyModification _ _  (SetMonadPath          m) =        updateMonads                      $ m ^. Diff.newMonadPath
+applyModification p _  (SetNodeCode           m) =        localUpdateNodeCode                (convert (p, m ^. Diff.setNodeCodeNodeLoc . NodeLoc.nodeId)) $ m ^. Diff.newNodeCode
+applyModification p _  (SetNodeMeta           m) = void . localSetNodeMeta                   (convert (p, m ^. Diff.setNodeMetaNodeLoc . NodeLoc.nodeId)) $ m ^. Diff.newNodeMeta
+applyModification p _  (SetOutPorts           m) =        localUpdateExpressionNodeOutPorts  (convert (p, m ^. Diff.setOutPortsNodeLoc . NodeLoc.nodeId)) $ convert <$> m ^. Diff.newOutPortTree
+applyModification p _  (SetOutputSidebar      m) =        localSetOutputSidebar p           $ m ^. Diff.newOutputSidebar
+applyModification _ _  (SetProjectVisPath     m) =        updateVisualizers                 $ m ^. Diff.newProjectVisPath
+
+applyDiff :: GraphLocation -> Set NodeUpdateModification -> Diff -> Command State ()
+applyDiff gl nm d@(Diff reversedMods) = inCurrentLocation gl $ \path -> unlessM (checkBreadcrumb d) $
+    mapM_ (applyModification path nm) $ reverse reversedMods
 
 handleGraphError :: Error GraphError -> Command State ()
 handleGraphError e = case e ^. errorType of
@@ -102,17 +118,19 @@ handleGraphError e = case e ^. errorType of
         mayWorkspace <- getWorkspace
         let isOnTop = fromMaybe True (Workspace.isOnTopBreadcrumb <$> mayWorkspace)
         if isOnTop then fatal "Cannot get file from backend" else exitBreadcrumb
-    OtherGraphError        -> setGraphStatus (GraphError e)
+    _ -> setGraphStatus (GraphError e)
 
 handleLunaError :: Error LunaError -> Command State ()
 handleLunaError (Error (ErrorAPI.Graph tpe) content) = handleGraphError $ Error tpe content
 handleLunaError _                                    = fatal "Cannot get file from backend"
 
-checkBreadcrumb :: Result.Result -> Command State Bool
-checkBreadcrumb res = do
+checkBreadcrumb :: Diff -> Command State Bool
+checkBreadcrumb (Diff mods) = do
+    let removedNodeId (Diff.RemoveNode m) = Just $ m ^. Diff.removeNodeLoc . NodeLoc.nodeId
+        removedNodeId _                   = Nothing
+    let removedIds = catMaybes $ removedNodeId <$> mods
     bc <- maybe def (view (Workspace.currentLocation . GraphLocation.breadcrumb)) <$> getWorkspace
-    let nodeOnPathDeleted = any (containsNode bc) (res ^. Result.removedNodes)
-
+    let nodeOnPathDeleted = any (containsNode bc) removedIds
     when nodeOnPathDeleted $ exitBreadcrumb
     return nodeOnPathDeleted
 
@@ -123,27 +141,21 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         success result  = whenM (isCurrentLocation location') $ do
             putStrLn "GetProgram"
-            let location = result ^. GetProgram.newLocation
+            print result
+            let location = result ^. GetProgram.currentLocation
             unless (location' == location) $ do
                 modifyApp $ workspace . _Just . Workspace.currentLocation .= location
                 Atom.setActiveLocation location
-            setBreadcrumbs $ result ^. GetProgram.breadcrumb
-            setCurrentImports $ result ^. GetProgram.availableImports
-            case result ^. GetProgram.graph of
-                Left err    -> handleGraphError err
-                Right graph -> do
-                    let nodes       = convert . (NodeLoc.empty,) <$> graph ^. Graph.nodes
-                        input       = convert . (NodeLoc.empty,) <$> graph ^. Graph.inputSidebar
-                        output      = convert . (NodeLoc.empty,) <$> graph ^. Graph.outputSidebar
-                        connections = graph ^. Graph.connections
-                        monads      = graph ^. Graph.monads
-                    whenM (isOwnRequest requestId) $ do
-                        withJust (result ^. GetProgram.typeRepToVisMap) $ \visMap -> Global.preferedVisualizers .= visMap
-                        updateVisualizers $ result ^. GetProgram.projectVisualizersPath
-                    updateGraph nodes input output connections monads
-                    setGraphStatus GraphLoaded
-                    setScreenTransform $ result ^. GetProgram.camera
-                    updateScene
+            ownRequest <- isOwnRequest requestId
+            let worksForForeignRequest (Diff.SetProjectVisPath     _) = False
+                worksForForeignRequest (Diff.SetDefaultVisualizers _) = False
+                worksForForeignRequest _                              = True
+                diff = if ownRequest
+                    then result ^. GetProgram.diff
+                    else (result ^. GetProgram.diff) & Diff.reversedModifications %~ filter worksForForeignRequest
+            applyDiff location mempty diff
+            unless (any (has Diff._SetGraphError) $ diff ^. Diff.reversedModifications) $ setGraphStatus GraphLoaded
+            updateScene
         failure err _ = handleLunaError err
 
     AddConnectionResponse response -> handleResponse response success failure where
@@ -151,24 +163,21 @@ handle (Event.Batch ev) = Just $ case ev of
         request     = response ^. Response.request
         location    = request  ^. AddConnection.location
         failure _ _ = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success     = applyResult location (Set.singleton KeepNodeMeta)
+        success     = applyDiff location (Set.singleton KeepNodeMeta)
 
     AddImportsResponse response -> handleResponse response success doNothing2 where
-        request     = response ^. Response.request
-        newImports  = request  ^. AddImports.modules
-        location    = request  ^. AddImports.location
-        success res = do
-            Global.nodeSearcherData . NS.currentImports %= nub . (newImports <>)
-            applyResult location (Set.fromList [KeepPorts, KeepNodeMeta]) res
+        request    = response ^. Response.request
+        location   = request  ^. AddImports.location
+        success    = applyDiff location (Set.fromList [KeepPorts, KeepNodeMeta])
 
     AddNodeResponse response -> handleResponse response success failure where
-        requestId      = response ^. Response.requestId
-        request        = response ^. Response.request
-        location       = request  ^. AddNode.location
-        nl             = request  ^. AddNode.nodeLoc
-        failure _ _    = whenM (isOwnRequest requestId) $ revertAddNode request
-        success result = do
-            applyResult location (Set.singleton KeepNodeMeta) result
+        requestId    = response ^. Response.requestId
+        request      = response ^. Response.request
+        location     = request  ^. AddNode.location
+        nl           = request  ^. AddNode.nodeLoc
+        failure _ _  = whenM (isOwnRequest requestId) $ revertAddNode request
+        success diff = do
+            applyDiff location (Set.singleton KeepNodeMeta) diff
             whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where
@@ -176,30 +185,30 @@ handle (Event.Batch ev) = Just $ case ev of
         request     = response ^. Response.request
         location    = request  ^. AddPort.location
         failure _ _ = whenM (isOwnRequest requestId) $ revertAddPort request
-        success     = applyResult location (Set.singleton KeepNodeMeta)
+        success     = applyDiff location (Set.singleton KeepNodeMeta)
 
     AddSubgraphResponse response -> handleResponse response success failure where
-        requestId      = response ^. Response.requestId
-        request        = response ^. Response.request
-        location       = request  ^. AddSubgraph.location
-        failure _ _    = whenM (isOwnRequest requestId) $ revertAddSubgraph request
-        success result = do
-            applyResult location def result
-            inCurrentLocation location $ \path -> whenM (isOwnRequest requestId) $
-                case result ^. Result.graphUpdates of
-                    Right graphUpdates ->
-                        collaborativeModify $ map (convert . (path,) . view nodeId) $ graphUpdates ^. Graph.nodes
-                    Left _ -> return ()
+        requestId    = response ^. Response.requestId
+        request      = response ^. Response.request
+        location     = request  ^. AddSubgraph.location
+        failure _ _  = whenM (isOwnRequest requestId) $ revertAddSubgraph request
+        success diff = do
+            applyDiff location mempty diff
+            whenM (isOwnRequest requestId) $ inCurrentLocation location $ \p -> do
+                let addedNodeId (Diff.AddNode m) = Just $ convert (p, m ^. Diff.newNode . API.nodeId)
+                    addedNodeId m                = (convert . (p,) . view NodeLoc.nodeId) <$> Diff.getNodeModificationNodeLoc m
+                    addedNodesIds = catMaybes $ addedNodeId <$> diff ^. Diff.reversedModifications
+                unless (null addedNodesIds) $ collaborativeModify addedNodesIds
 
     AtomPasteResponse response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
         location  = request  ^. AtomPaste.location
-        success   = applyResult location def
+        success   = applyDiff location mempty
 
     AutolayoutNodesResponse response -> handleResponse response success doNothing2 where
         location     = response ^. Response.request . AutolayoutNodes.location
         shouldCenter = response ^. Response.request . AutolayoutNodes.centerGraph
-        success res  = applyResult location (Set.singleton KeepPorts) res >> when shouldCenter centerGraph
+        success diff = applyDiff location (Set.singleton KeepPorts) diff >> when shouldCenter centerGraph
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
@@ -220,7 +229,7 @@ handle (Event.Batch ev) = Just $ case ev of
     CollapseToFunctionResponse response -> handleResponse response success doNothing2 where
         request         = response ^. Response.request
         location        = request  ^. CollapseToFunction.location
-        success         = applyResult location (Set.singleton KeepNodeMeta)
+        success         = applyDiff location (Set.singleton KeepNodeMeta)
 
     CopyResponse response -> handleResponse response success doNothing2 where
         requestId      = response ^. Response.requestId
@@ -252,7 +261,7 @@ handle (Event.Batch ev) = Just $ case ev of
         request     = response ^. Response.request
         location    = request  ^. MovePort.location
         failure _ _ = whenM (isOwnRequest requestId) $ revertMovePort request
-        success     = applyResult location (Set.singleton KeepNodeMeta)
+        success     = applyDiff location (Set.singleton KeepNodeMeta)
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location
@@ -268,7 +277,7 @@ handle (Event.Batch ev) = Just $ case ev of
     PasteResponse response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
         location  = request  ^. Paste.location
-        success   = applyResult location def
+        success   = applyDiff location mempty
 
     ProjectMoved response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
@@ -281,70 +290,68 @@ handle (Event.Batch ev) = Just $ case ev of
         request           = response ^. Response.request
         location          = request  ^. RemoveConnection.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
-        success           = applyResult location (Set.singleton KeepNodeMeta)
+        success           = applyDiff location (Set.singleton KeepNodeMeta)
 
     RemoveNodesResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. RemoveNodes.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
-        success           = applyResult location (Set.singleton KeepNodeMeta)
+        success           = applyDiff location (Set.singleton KeepNodeMeta)
 
     RemovePortResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. RemovePort.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
-        success           = applyResult location (Set.singleton KeepNodeMeta)
+        success           = applyDiff location (Set.singleton KeepNodeMeta)
 
     RenameNodeResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. RenameNode.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
-        success           = applyResult location (Set.singleton KeepNodeMeta)
+        success           = applyDiff location (Set.singleton KeepNodeMeta)
 
     RenamePortResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. RenamePort.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertRenamePort request inverse
-        success           = applyResult location (Set.singleton KeepNodeMeta)
+        success           = applyDiff location (Set.singleton KeepNodeMeta)
 
     SearchNodesResponse response -> handleResponse response success doNothing2 where
         success = localAddSearcherHints . view SearchNodes.searcherHints
 
     SetCodeResponse response -> handleResponse response success doNothing2 where
-        request         = response ^. Response.request
-        location        = request  ^. SetCode.location
-        success         = applyResult location def
+        request  = response ^. Response.request
+        location = request  ^. SetCode.location
+        success  = applyDiff location mempty
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. SetNodeExpression.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
-        success           = applyResult location (Set.singleton KeepNodeMeta)
+        success           = applyDiff location (Set.singleton KeepNodeMeta)
 
     SetNodesMetaResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. SetNodesMeta.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
-        success           = whenM (not <$> isOwnRequest requestId) . applyResult location (Set.singleton KeepPorts)
+        success           = whenM (not <$> isOwnRequest requestId) . applyDiff location (Set.singleton KeepPorts)
 
     SetPortDefaultResponse response -> handleResponse response success failure where
         requestId         = response ^. Response.requestId
         request           = response ^. Response.request
         location          = request  ^. SetPortDefault.location
         failure _ inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success           = applyResult location (Set.fromList [KeepPorts, KeepNodeMeta])
+        success           = applyDiff location (Set.fromList [KeepPorts, KeepNodeMeta])
 
     SubstituteResponse response -> handleResponse response success doNothing2 where
-        location    = response ^. Response.request . Substitute.location
-        success res = do
-            applyResult location def (res ^. Substitute.defResult)
-            withJust (res ^. Substitute.importChange) setCurrentImports
+        location = response ^. Response.request . Substitute.location
+        success  = applyDiff location mempty
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing2
 

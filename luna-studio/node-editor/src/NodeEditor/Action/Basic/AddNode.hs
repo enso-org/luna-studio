@@ -12,6 +12,7 @@ import           Common.Action.Command                (Command)
 import           Data.Text                            (Text)
 import           LunaStudio.Data.Geometry             (snap)
 import           LunaStudio.Data.LabeledTree          (LabeledTree (LabeledTree))
+import qualified LunaStudio.Data.Node                 as API
 import           LunaStudio.Data.NodeMeta             (NodeMeta (NodeMeta))
 import           LunaStudio.Data.Port                 (InPortIndex (Arg), Port (Port), PortState (NotConnected))
 import           LunaStudio.Data.Position             (Position)
@@ -19,12 +20,13 @@ import           LunaStudio.Data.TypeRep              (TypeRep (TStar))
 import           NodeEditor.Action.Basic.FocusNode    (focusNode)
 import           NodeEditor.Action.Basic.SelectNode   (selectNode)
 import           NodeEditor.Action.State.Model        (calculatePortSelfMode)
-import           NodeEditor.Action.State.NodeEditor   (addInputNode, addOutputNode, getSelectedNodes, setVisualizationData,
-                                                       updateNodeVisualizers)
+import           NodeEditor.Action.State.NodeEditor   (addInputNode, addOutputNode, getSelectedNodes, modifyNodeEditor,
+                                                       setVisualizationData, updateNodeVisualizers)
 import           NodeEditor.Action.UUID               (getUUID)
 import           NodeEditor.React.Model.Node          (ExpressionNode, InputNode, NodeLoc (NodeLoc), NodePath, OutputNode, inPortAt,
                                                        inPortsList, nodeLoc)
 import           NodeEditor.React.Model.NodeEditor    (VisualizationBackup (MessageBackup))
+import qualified NodeEditor.React.Model.NodeEditor    as NE
 import           NodeEditor.React.Model.Port          (isSelf, mode, portId)
 import           NodeEditor.React.Model.Visualization (awaitingDataMsg)
 import           NodeEditor.State.Global              (State)
@@ -60,6 +62,14 @@ localAddExpressionNode node = do
     setVisualizationData (node ^. nodeLoc) (MessageBackup awaitingDataMsg) True
     updateNodeVisualizers $ node ^. nodeLoc
     focusNode $ node ^. nodeLoc
+
+localSetInputSidebar :: NodePath -> Maybe API.InputSidebar -> Command State ()
+localSetInputSidebar _ Nothing  = modifyNodeEditor $ NE.inputNode .= def
+localSetInputSidebar p (Just n) = localAddInputNode $ convert (p,n)
+
+localSetOutputSidebar :: NodePath -> Maybe API.OutputSidebar -> Command State ()
+localSetOutputSidebar _ Nothing  = modifyNodeEditor $ NE.outputNode .= def
+localSetOutputSidebar p (Just n) = localAddOutputNode $ convert (p,n)
 
 localAddInputNode :: InputNode -> Command State ()
 localAddInputNode = addInputNode
