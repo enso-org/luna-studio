@@ -17,8 +17,7 @@ import           LunaStudio.Data.NodeSearcher         (EntryType (Function), Imp
 import qualified LunaStudio.Data.NodeSearcher         as NS
 import           LunaStudio.Data.TypeRep              (ConstructorRep (ConstructorRep))
 import           NodeEditor.Action.Batch              (searchNodes)
-import           NodeEditor.Action.State.NodeEditor   (getLocalFunctions, getNodeSearcherData, getSearcher, inTopLevelBreadcrumb,
-                                                       modifySearcher)
+import           NodeEditor.Action.State.NodeEditor   (getLocalFunctions, getSearcher, inTopLevelBreadcrumb, modifySearcher)
 import           NodeEditor.React.Model.Searcher      (NodeModeInfo, Searcher, allCommands, className, updateCommandsResult,
                                                        updateNodeResult, waitingForTc)
 import qualified NodeEditor.React.Model.Searcher      as Searcher
@@ -53,7 +52,7 @@ setCurrentImports :: Set ImportName -> Command State ()
 setCurrentImports importNames = do
     nodeSearcherData . currentImports .= importNames
     imps' <- (^. missingImports) <$> use nodeSearcherData
-    when (not $ null imps') $ do
+    unless (null imps') $ do
         Global.waitingForTc .= True
         modifySearcher $ waitingForTc .= True
         searchNodes imps'
@@ -61,7 +60,7 @@ setCurrentImports importNames = do
 updateDocs :: Command State ()
 updateDocs = withJustM getSearcher $ \s -> withJust (s ^. Searcher.docVis) $ \docVis -> do
     let doc = maybe def (view NS.doc) $ s ^. Searcher.selectedMatch
-    unless (Text.null doc) . liftIO $ do
+    unless (Text.null doc) . liftIO $
         sendVisualizationData (docVis ^. visualizationId) (ConstructorRep "Text" def) (Text.pack . BS.unpack $ Aeson.encode doc)
 
 localUpdateSearcherHintsPreservingSelection :: Command State ()
@@ -93,14 +92,14 @@ localUpdateSearcherHints' = unlessM inTopLevelBreadcrumb $ do
                 (Searcher.Node _ nmi _) -> do
                     let isFirstQuery         q = Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
                         strippedPrefix       q = Text.dropWhileEnd (== ' ') $ q ^. Searcher.prefix
-                        searchForMethodsOnly q = if Text.null $ strippedPrefix q then False else Text.last (strippedPrefix q) == '.'
+                        searchForMethodsOnly q = not (Text.null $ strippedPrefix q) && (Text.last (strippedPrefix q) == '.')
                         result = case mayQuery of
                             Nothing -> []
                             Just q  -> do
                                 let query'     = q ^. Searcher.query
                                     weights    = Just $ getWeights (isFirstQuery q) (searchForMethodsOnly q) nmi query'
                                     searchRes' = NS.search query' nsData weights
-                                    searchRes  = if query' == "_" then (Match (RawEntry query' def Function 1000000 . Just $ NS.ImportInfo localFunctionsImportName True) True 1000000 [(0, 1)]) : searchRes' else searchRes'
+                                    searchRes  = if query' == "_" then Match (RawEntry query' def Function 1000000 . Just $ NS.ImportInfo localFunctionsImportName True) True 1000000 [(0, 1)] : searchRes' else searchRes'
                                 if Text.strip (q ^. Searcher.prefix) == "def"
                                     then def
                                     else takeWhile (view NS.exactMatch) searchRes

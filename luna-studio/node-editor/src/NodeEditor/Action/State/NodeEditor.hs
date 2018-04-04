@@ -10,7 +10,6 @@ import qualified Control.Monad.State                         as M
 import qualified Data.HashMap.Strict                         as HashMap
 import qualified Data.Map.Lazy                               as Map
 import qualified Data.Set                                    as Set
-import qualified Data.Text                                   as Text
 import qualified JS.Visualizers                              as JS
 import qualified LunaStudio.Data.NodeSearcher                as NS
 import qualified LunaStudio.Data.PortRef                     as PortRef
@@ -59,9 +58,9 @@ import           NodeEditor.React.Model.Searcher             (Searcher)
 import           NodeEditor.React.Model.Visualization        (NodeVisualizations, VisualizationId, Visualizer (Visualizer),
                                                               VisualizerId (VisualizerId), VisualizerPath,
                                                               VisualizerProperties (VisualizerProperties),
-                                                              VisualizerType (InternalVisualizer, LunaVisualizer, ProjectVisualizer),
-                                                              errorVisId, placeholderVisId, visualizerId, visualizerId, visualizerRelPath,
-                                                              visualizerType, _InternalVisualizer)
+                                                              VisualizerType (LunaVisualizer, ProjectVisualizer), errorVisId,
+                                                              placeholderVisId, visualizerId, visualizerId, visualizerType,
+                                                              _InternalVisualizer)
 import           NodeEditor.State.Global                     (State, internalVisualizers, nodeSearcherData, preferedVisualizers,
                                                               visualizers)
 
@@ -404,24 +403,22 @@ setPlaceholderVisualization nl = getExpressionNode nl >>= \mayN -> do
             Just placeholderVis -> do
                 mayVis <- maybe (return def) getVisualizersForType $ n ^. ExpressionNode.nodeType
                 modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
-                    let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                        running     = Map.filter ((placeholderVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
-                        idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties placeholderVis def] else []
-                        visualizers = maybe def snd mayVis
-                    Map.insert nl (Visualization.NodeVisualizations running idle visualizers) visMap
+                    let prevVis      = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
+                        running      = Map.filter ((placeholderVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
+                        idle         = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties placeholderVis def] else []
+                        visualizers' = maybe def snd mayVis
+                    Map.insert nl (Visualization.NodeVisualizations running idle visualizers') visMap
     recoverVisualizations nl
 
 setErrorVisualization :: NodeLoc -> Command State [VisualizationId]
 setErrorVisualization nl = getExpressionNode nl >>= \mayN -> do
-    case mayN of
-        Nothing -> clearVisualizationsForNode nl
-        Just n  -> getErrorVisualizer >>= \case
-            Nothing       -> clearVisualizationsForNode nl
-            Just errorVis -> modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
-                let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                    running     = Map.filter ((errorVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
-                    idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties errorVis def] else []
-                Map.insert nl (Visualization.NodeVisualizations running idle def) visMap
+    if isNothing mayN then clearVisualizationsForNode nl else getErrorVisualizer >>= \case
+        Nothing       -> clearVisualizationsForNode nl
+        Just errorVis -> modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
+            let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
+                running     = Map.filter ((errorVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
+                idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties errorVis def] else []
+            Map.insert nl (Visualization.NodeVisualizations running idle def) visMap
     recoverVisualizations nl
 
 updateVisualizationsForNode :: NodeLoc -> Command State [VisualizationId]
@@ -461,12 +458,12 @@ setVisualizationData nl backup@(NE.ValueBackup val) overwrite = whenM ((overwrit
     visIds <- updateVisualizationsForNode nl
     withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl) $ \cRep ->
         liftIO . forM_ visIds $ \visId -> JS.sendVisualizationData visId cRep val
-setVisualizationData nl backup@(NE.StreamBackup values) overwrite@True = whenM (isNewData nl backup) $ do
+setVisualizationData nl backup@(NE.StreamBackup values) _overwrite@True = whenM (isNewData nl backup) $ do
     modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
     visIds <- updateVisualizationsForNode nl
     withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl) $ \cRep ->
         liftIO . forM_ visIds $ \visId -> JS.notifyStreamRestart visId cRep $ reverse values
-setVisualizationData nl backup@(NE.StreamBackup values) overwrite@False = do
+setVisualizationData nl (NE.StreamBackup values) _overwrite@False = do
     modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . ix nl . NE._StreamBackup %= (values <>)
     visIds <- maybe def (Map.keys . view Visualization.visualizations) <$> getNodeVisualizations nl
     liftIO . forM_ visIds $ forM_ values . JS.sendStreamDatapoint

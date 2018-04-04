@@ -19,7 +19,7 @@ import qualified LunaStudio.API.Graph.SetPortDefault       as SetPortDefault
 import qualified LunaStudio.API.Response                   as Response
 import           LunaStudio.Data.Connection                (Connection (Connection), dst, src)
 import           LunaStudio.Data.Node                      (nodeId)
-import           LunaStudio.Data.NodeLoc                   (NodeLoc, prependPath)
+import           LunaStudio.Data.NodeLoc                   (prependPath)
 import           LunaStudio.Data.PortRef                   (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
 import           NodeEditor.Action.Basic.AddConnection     (localAddConnection, localAddConnections)
 import           NodeEditor.Action.Basic.AddPort           (localAddPort)
@@ -110,5 +110,5 @@ revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = panic
 
 revertSetPortDefault :: SetPortDefault.Request -> Response.Status SetPortDefault.Inverse -> Command State ()
 revertSetPortDefault (SetPortDefault.Request loc portRef _) (Response.Ok (SetPortDefault.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ mapM (localSetPortDefault (prependPath path portRef)) prevCode
+    inCurrentLocation loc $ \path -> void $ mapM_ (localSetPortDefault (prependPath path portRef)) prevCode
 revertSetPortDefault (SetPortDefault.Request _loc _portRef _) (Response.Error _msg) = panic

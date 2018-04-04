@@ -5,8 +5,7 @@ module NodeEditor.Action.Visualization where
 import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Map                                   as Map
-import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendInternalData,
-                                                             sendVisualizationData)
+import           JS.Visualizers                             (notifyStreamRestart, registerVisualizerFrame, sendVisualizationData)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import           LunaStudio.Data.TypeRep                    (toConstructorRep)
 import           NodeEditor.Action.Basic                    (selectNode, setNodeMeta)
@@ -17,20 +16,18 @@ import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, 
                                                              modifyExpressionNode, modifyNodeEditor, modifySearcher, setVisualizationData,
                                                              updateDefaultVisualizer, updatePreferedVisualizer)
 import           NodeEditor.Action.UUID                     (getUUID)
-import           NodeEditor.React.Model.Node.ExpressionNode (hasData, nodeLoc, returnsError, visualizationsEnabled)
-import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (ErrorBackup, MessageBackup, StreamBackup, ValueBackup),
+import           NodeEditor.React.Model.Node.ExpressionNode (nodeLoc, visualizationsEnabled)
+import           NodeEditor.React.Model.NodeEditor          (VisualizationBackup (MessageBackup, StreamBackup, ValueBackup),
                                                              nodeVisualizations)
 import qualified NodeEditor.React.Model.Searcher            as Searcher
-import           NodeEditor.React.Model.Visualization       (IdleVisualization (IdleVisualization),
-                                                             RunningVisualization (RunningVisualization), VisualizationId,
+import           NodeEditor.React.Model.Visualization       (RunningVisualization (RunningVisualization), VisualizationId,
                                                              VisualizationMode (Focused, FullScreen, Preview),
-                                                             VisualizationParent (Node, Searcher), VisualizationStatus (Outdated, Ready),
-                                                             Visualizer (Visualizer), VisualizerId, VisualizerName,
+                                                             VisualizationParent (Node, Searcher), VisualizationStatus (Outdated),
+                                                             Visualizer (Visualizer), VisualizerId,
                                                              VisualizerProperties (VisualizerProperties), awaitingDataMsg,
                                                              idleVisualizations, idleVisualizerProperties, noVisMsg, runningVisualizer,
                                                              selectedVisualizerId, stopVisualizations, visualizationId, visualizationMode,
-                                                             visualizationStatus, visualizations, visualizerName, visualizerProperties,
-                                                             visualizers)
+                                                             visualizationStatus, visualizations, visualizerProperties, visualizers)
 import qualified NodeEditor.React.Model.Visualization       as Vis
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
                                                              DocVisualizationActive (DocVisualizationActive),
@@ -76,7 +73,7 @@ instance Action (Command State) DocVisualizationActive where
 
 focusVisualization :: VisualizationParent -> VisualizationId -> Command State ()
 focusVisualization (Node nl) visId = begin $ VisualizationActive nl visId Focused False
-focusVisualization Searcher  visId = begin $ DocVisualizationActive Focused False
+focusVisualization Searcher  _     = begin $ DocVisualizationActive Focused False
 
 exitVisualizationMode :: VisualizationActive -> Command State ()
 exitVisualizationMode = end
@@ -128,11 +125,11 @@ handleZoomVisualization = do
             if mayMode == Just FullScreen
                 then continue exitVisualizationMode
                 else enterVisualizationMode FullScreen
-        handleZoomDocVis = do
-            mayDocMode <- view docVisualizationActiveSelectedMode `fmap2` checkAction docVisualizationActiveAction
-            if mayDocMode == Just FullScreen
-                then continue exitDocVisualizationMode
-                else enterVisualizationMode FullScreen
+        -- handleZoomDocVis = do
+        --     mayDocMode <- view docVisualizationActiveSelectedMode `fmap2` checkAction docVisualizationActiveAction
+        --     if mayDocMode == Just FullScreen
+        --         then continue exitDocVisualizationMode
+        --         else enterVisualizationMode FullScreen
     if searcherActive then return () else handleZoomVis
 
 exitPreviewMode :: VisualizationActive -> Command State ()
@@ -146,10 +143,10 @@ exitDocPreviewMode action = when (Preview == action ^. docVisualizationActiveSel
 enterVisualizationMode :: VisualizationMode -> Command State ()
 enterVisualizationMode visMode = do
     searcherActive <- checkIfActionPerfoming searcherAction
-    let enterDocVisMode = do
-            fromDocVis <- maybe False (\action -> action ^. docVisualizationActiveSelectedMode == Focused || action ^. docVisualizationActiveTriggeredByVis) <$> checkAction docVisualizationActiveAction
-            begin $ DocVisualizationActive visMode fromDocVis
-        enterVisMode = do
+    -- let enterDocVisMode = do
+    --         fromDocVis <- maybe False (\action -> action ^. docVisualizationActiveSelectedMode == Focused || action ^. docVisualizationActiveTriggeredByVis) <$> checkAction docVisualizationActiveAction
+    --         begin $ DocVisualizationActive visMode fromDocVis
+    let enterVisMode = do
             visLoc <- getSelectedNodes >>= \case
                 [n] -> let nl = n ^. nodeLoc in
                     fmap (nl,) . maybe def (listToMaybe . Map.keys . view visualizations) <$> getNodeVisualizations nl
@@ -175,7 +172,6 @@ startReadyVisualizations :: NodeLoc -> Command State ()
 startReadyVisualizations nl = do
     mayVisBackup <- getVisualizationBackup nl
     mayNodeVis   <- getNodeVisualizations  nl
-    ent          <- getExpressionNodeType  nl
     let activateWith newNodeVis vis =
             if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
                 uuid <- getUUID
