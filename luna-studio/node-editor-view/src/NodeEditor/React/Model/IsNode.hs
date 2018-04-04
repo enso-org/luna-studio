@@ -9,7 +9,7 @@ import           Common.Prelude
 import           Control.Arrow               ((&&&))
 import           Data.HashMap.Strict         (HashMap)
 import qualified Data.HashMap.Strict         as HashMap
-import           LunaStudio.Data.Node        (NodeId)
+import           LunaStudio.Data.NodeId      (NodeId)
 import           LunaStudio.Data.NodeLoc     as X (HasNodeLoc (..), nodeLoc)
 import qualified LunaStudio.Data.NodeLoc     as NodeLoc
 import           LunaStudio.Data.PortRef     (AnyPortRef (..), InPortRef (..))

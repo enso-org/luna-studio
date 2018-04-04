@@ -14,8 +14,8 @@ import           Common.Prelude
 import           Data.Convert                  (Convertible (convert))
 import           Data.HashMap.Strict           (HashMap)
 import qualified LunaStudio.Data.LabeledTree   as LabeledTree
-import           LunaStudio.Data.Node          (NodeId)
 import qualified LunaStudio.Data.Node          as Empire
+import           LunaStudio.Data.NodeId        (NodeId)
 import           LunaStudio.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath)
 import           NodeEditor.React.Model.IsNode as X
 import           NodeEditor.React.Model.Port   (AnyPortId (InPortId', OutPortId'), InPort, InPortTree, OutPort, OutPortIndex (Projection),

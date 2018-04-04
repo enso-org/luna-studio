@@ -6,7 +6,7 @@ import           Common.Action.Command          (Command)
 import           Common.Prelude
 import qualified JS.Mount                       as Mount
 import qualified JS.Scene                       as Scene
-import           LunaStudio.Data.Node           (NodeId)
+import           LunaStudio.Data.NodeId         (NodeId)
 import           LunaStudio.Data.Position       (Position)
 import           LunaStudio.Data.ScreenPosition (fromDoubles)
 import           NodeEditor.Action.State.Scene  (translateToWorkspace)
