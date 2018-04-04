@@ -77,7 +77,7 @@ import qualified NodeEditor.Event.Event                      as Event
 import           NodeEditor.Handler.Backend.Common           (doNothing, doNothing2, handleResponse)
 import           NodeEditor.React.Model.App                  (workspace)
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as Node
-import           NodeEditor.React.Model.NodeEditor           (GraphStatus (GraphError, GraphLoaded))
+import           NodeEditor.React.Model.NodeEditor           (GraphStatus (GraphError))
 import           NodeEditor.State.Global                     (State)
 import qualified NodeEditor.State.Global                     as Global
 
@@ -154,7 +154,6 @@ handle (Event.Batch ev) = Just $ case ev of
                     then result ^. GetProgram.diff
                     else (result ^. GetProgram.diff) & Diff.reversedModifications %~ filter worksForForeignRequest
             applyDiff location mempty diff
-            unless (any (has Diff._SetGraphError) $ diff ^. Diff.reversedModifications) $ setGraphStatus GraphLoaded
             updateScene
         failure err _ = handleLunaError err
 

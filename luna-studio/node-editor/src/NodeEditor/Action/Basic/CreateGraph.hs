@@ -17,10 +17,11 @@ import           NodeEditor.Action.Basic.RemoveNode    (localRemoveNodes)
 import           NodeEditor.Action.Basic.UpdateNode    (localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
                                                         localUpdateOrAddOutputNode)
 import           NodeEditor.Action.State.NodeEditor    (addInputNode, addOutputNode, getExpressionNodes, modifyNodeEditor, resetGraph,
-                                                        updateMonads)
+                                                        setGraphStatus, updateMonads)
 import           NodeEditor.React.Model.Node           (ExpressionNode, InputNode, OutputNode, nodeLoc)
 import qualified NodeEditor.React.Model.NodeEditor     as NE
 import           NodeEditor.State.Global               (State)
+
 
 
 createGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [Connection] -> [MonadPath] -> Command State ()
@@ -34,12 +35,13 @@ createGraph nodes input output connections monads = do
     updateNodeZOrder
 
 updateWithAPIGraph :: NodePath -> Graph -> Command State ()
-updateWithAPIGraph p g = updateGraph nodes input output conns monads where
+updateWithAPIGraph p g = updateGraph nodes input output conns monads >> setGraphStatus NE.GraphLoaded where
     nodes  = convert . (p,) <$> Map.elems (g ^. API.nodes)
     input  = convert . (p,) <$> g ^. API.inputSidebar
     output = convert . (p,) <$> g ^. API.outputSidebar
     conns  = Connection.prependPath p <$> Map.elems (g ^. API.connections)
     monads = g ^. API.monads
+
 
 updateGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [Connection] -> [MonadPath] -> Command State ()
 updateGraph nodes input output connections monads = do
