@@ -13,7 +13,7 @@ import           Data.Function                     (on)
 import           Data.List                         (sortBy)
 import           Empire.Prelude
 
-import           LunaStudio.Data.Node              (NodeId)
+import           LunaStudio.Data.NodeId            (NodeId)
 import           LunaStudio.Data.NodeMeta          (NodeMeta)
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..))
 import           Empire.Data.Layers                (Meta, SpanOffset, SpanLength)

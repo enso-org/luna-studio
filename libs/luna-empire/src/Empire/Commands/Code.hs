@@ -39,7 +39,7 @@ import qualified Luna.Syntax.Text.Lexer             as Lexer
 import           Luna.Syntax.Text.Analysis.SpanTree as SpanTree
 
 import           LunaStudio.Data.Breadcrumb         (Breadcrumb(..), BreadcrumbItem(..))
-import           LunaStudio.Data.Node               (NodeId)
+import           LunaStudio.Data.NodeId             (NodeId)
 import qualified LunaStudio.Data.NodeCache          as NodeCache
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 

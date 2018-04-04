@@ -37,7 +37,7 @@ import qualified LunaStudio.Data.Breadcrumb      as Breadcrumb
 import qualified LunaStudio.Data.Graph           as API
 import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
 import           LunaStudio.Data.MonadPath       (MonadPath (MonadPath))
-import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.NodeId          (NodeId)
 import qualified LunaStudio.Data.Node            as API
 import qualified LunaStudio.Data.NodeMeta        as NodeMeta
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))

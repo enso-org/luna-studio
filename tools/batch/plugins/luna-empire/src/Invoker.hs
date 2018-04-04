@@ -25,7 +25,7 @@ import qualified LunaStudio.API.Topic                  as Topic
 import qualified LunaStudio.Data.Breadcrumb            as Breadcrumb
 import           LunaStudio.Data.GraphLocation         (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation         as GraphLocation
-import           LunaStudio.Data.Node                  (NodeId)
+import           LunaStudio.Data.NodeId                (NodeId)
 import           LunaStudio.Data.NodeLoc               (NodeLoc (..))
 import qualified LunaStudio.Data.NodeMeta              as NodeMeta
 import           LunaStudio.Data.Port                  (InPortId, InPortIndex (..), OutPortId)

@@ -33,7 +33,7 @@ import qualified Empire.Data.Library               as Library
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (..))
 import           LunaStudio.Data.Library         (LibraryId)
 import           LunaStudio.Data.NodeLoc         (NodeLoc(..))
-import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.NodeId          (NodeId)
 import           LunaStudio.Data.NodeCache       (portMappingMap)
 import           LunaStudio.Data.PortRef         (OutPortRef(..))
 import           LunaStudio.Data.Project         (ProjectId)

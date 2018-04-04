@@ -17,7 +17,6 @@ import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Empire.Data.AST                   (NodeRef, SomeASTException)
 import           Empire.Data.Layers                (attachEmpireLayers)
-import           LunaStudio.Data.Node              (NodeId)
 
 import           Control.Monad.Raise                    (MonadException(..))
 import qualified Control.Monad.State.Dependent          as DepState
@@ -28,7 +27,7 @@ import qualified Luna.IR                                as IR
 import qualified OCI.Pass.Class                         as Pass
 import qualified OCI.Pass.Manager                       as Pass (RefState)
 import qualified OCI.Pass.Manager                       as PassManager (PassManager, State)
-import           LunaStudio.Data.Node                   (NodeId)
+import           LunaStudio.Data.NodeId                 (NodeId)
 import           LunaStudio.Data.NodeCache
 import           LunaStudio.Data.NodeMeta               (NodeMeta)
 import           Luna.Syntax.Text.Parser.Errors         (Invalids)

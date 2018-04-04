@@ -2,17 +2,17 @@
 
 module Empire.Data.AST where
 
-import           Empire.Prelude       hiding (cast)
+import           Empire.Prelude         hiding (cast)
 
-import           Data.Text            (Text)
-import qualified Data.Text            as Text
-import           Data.Typeable        (cast)
+import           Data.Text              (Text)
+import qualified Data.Text              as Text
+import           Data.Typeable          (cast)
 
-import           Luna.IR              (IR, IRBuilder, SomeExpr, SomeExprLink, evalIRBuilder', evalPassManager', runRegs, snapshot)
-import           LunaStudio.Data.Node (NodeId)
-import           LunaStudio.Data.Port (AnyPortId, OutPortId)
+import           Luna.IR                (IR, IRBuilder, SomeExpr, SomeExprLink, evalIRBuilder', evalPassManager', runRegs, snapshot)
+import           LunaStudio.Data.NodeId (NodeId)
+import           LunaStudio.Data.Port   (AnyPortId, OutPortId)
 
-import           System.Log           (DropLogger, Logger, dropLogs)
+import           System.Log             (DropLogger, Logger, dropLogs)
 
 
 type NodeRef       = SomeExpr

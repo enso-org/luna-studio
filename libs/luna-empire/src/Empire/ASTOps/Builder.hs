@@ -13,7 +13,7 @@ import qualified Data.Text                          as Text
 import           Empire.Prelude                     hiding (List)
 import qualified Safe
 
-import           LunaStudio.Data.Node               (NodeId)
+import           LunaStudio.Data.NodeId             (NodeId)
 import           LunaStudio.Data.PortRef            (OutPortRef (..))
 import           LunaStudio.Data.NodeLoc            (NodeLoc (..))
 import qualified LunaStudio.Data.Port               as Port

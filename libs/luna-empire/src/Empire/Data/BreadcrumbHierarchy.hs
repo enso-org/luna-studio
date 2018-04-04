@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs                #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Empire.Data.BreadcrumbHierarchy where
@@ -6,9 +6,9 @@ module Empire.Data.BreadcrumbHierarchy where
 import           Prologue                   hiding (children)
 
 import           LunaStudio.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
-import           LunaStudio.Data.Node       (NodeId)
+import           LunaStudio.Data.NodeId     (NodeId)
 
-import           Empire.Data.AST            (NodeRef, astExceptionToException, astExceptionFromException)
+import           Empire.Data.AST            (NodeRef, astExceptionFromException, astExceptionToException)
 
 import           Data.Map                   (Map)
 import qualified Data.Map                   as Map

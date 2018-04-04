@@ -20,7 +20,7 @@ import qualified Safe
 import           Empire.Prelude
 
 import           Data.Text.Position                 (Delta)
-import           LunaStudio.Data.Node               (NodeId)
+import           LunaStudio.Data.NodeId             (NodeId)
 import qualified LunaStudio.Data.Port               as Port
 import           Empire.ASTOp                       (GraphOp, ASTOp, match)
 import qualified Empire.ASTOps.Deconstruct          as ASTDeconstruct

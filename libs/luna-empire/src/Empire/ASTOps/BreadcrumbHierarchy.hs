@@ -24,7 +24,7 @@ import           Empire.Data.AST                 (NodeRef, EdgeRef)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               as Graph (nodeCache, breadcrumbHierarchy)
 import           Empire.Data.Layers              (Marker)
-import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.NodeId          (NodeId)
 import           LunaStudio.Data.NodeCache       (NodeCache, nodeIdMap, nodeMetaMap)
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
 import           LunaStudio.Data.PortRef         (OutPortRef (..))
