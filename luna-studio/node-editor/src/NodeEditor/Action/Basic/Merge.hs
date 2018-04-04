@@ -23,7 +23,7 @@ localMerge :: NodePath -> Map BreadcrumbItem Graph -> Command State ()
 localMerge parentPath graphs = do
     subgraphs <- forM (Map.toList graphs) $ \(k, graph) -> do
         let path =  NodeLoc.replaceLast k parentPath
-            expressionNodesMap = toNodesMap $ (convert . (path, ) <$> graph ^. GraphAPI.nodes)
+            expressionNodesMap = toNodesMap (convert . (path, ) <$> Map.elems (graph ^. GraphAPI.nodes))
             mayInputNode       = convert . (path, ) <$> graph ^. GraphAPI.inputSidebar
             mayOutputNode      = convert . (path, ) <$> graph ^. GraphAPI.outputSidebar
             monads             = graph ^. GraphAPI.monads
