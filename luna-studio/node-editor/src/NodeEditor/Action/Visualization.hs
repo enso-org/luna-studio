@@ -162,7 +162,7 @@ toggleVisualizations :: VisualizationParent -> Command State ()
 toggleVisualizations (Node nl) = do
     modifyExpressionNode nl $ visualizationsEnabled %= not
     mayNodeMeta <- getNodeMeta nl
-    withJust mayNodeMeta $ setNodeMeta . (nl,)
+    withJust mayNodeMeta $ setNodeMeta nl
     stopVisualizationsForNode nl
     showVis <- maybe False (view visualizationsEnabled) <$> getExpressionNode nl
     when showVis $ startReadyVisualizations nl

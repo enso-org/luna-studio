@@ -2,6 +2,7 @@ module NodeEditor.Action.Basic.Revert where
 
 import           Common.Action.Command                     (Command)
 import           Common.Prelude
+import qualified Data.Map                                  as Map
 import qualified LunaStudio.API.Graph.AddConnection        as AddConnection
 import qualified LunaStudio.API.Graph.AddNode              as AddNode
 import qualified LunaStudio.API.Graph.AddPort              as AddPort
@@ -104,9 +105,7 @@ revertSetNodeExpression (SetNodeExpression.Request _loc _nid _) (Response.Error 
 
 revertSetNodesMeta :: SetNodesMeta.Request -> Response.Status SetNodesMeta.Inverse -> Command State ()
 revertSetNodesMeta (SetNodesMeta.Request loc _) (Response.Ok (SetNodesMeta.Inverse prevMeta)) =
-    inCurrentLocation loc $ \path -> do
-        let conv       (nid, meta) = (convert (path, nid) :: NodeLoc, meta)
-        void . localSetNodesMeta $ map conv prevMeta
+    inCurrentLocation loc $ \path -> void . localSetNodesMeta $ Map.mapKeys (convert . (path,)) prevMeta
 revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = panic
 
 revertSetPortDefault :: SetPortDefault.Request -> Response.Status SetPortDefault.Inverse -> Command State ()

@@ -2,6 +2,8 @@ module NodeEditor.Batch.Connector.Commands where
 
 import           Common.Batch.Connector.Connection        (Message (Message), sendRequest, sendUpdate)
 import           Common.Prelude
+import           Data.Map                                 (Map)
+import qualified Data.Map                                 as Map
 import           Data.Set                                 (Set)
 import qualified Data.Text                                as Text
 import           Data.UUID.Types                          (UUID)
@@ -147,15 +149,15 @@ setNodeExpression nodeLoc expression workspace uuid guiID =
     sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodeExpression.Request nodeId expression where
         (workspace', nodeId) = normalise_ workspace nodeLoc
 
-setNodesMeta :: [(NodeLoc, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
-setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodesMeta.Request (map (_1 %~ convert) updates') where
-    (workspace', nls) = normalise' workspace $ map fst updates
-    updates'          = zip nls $ map snd updates
+setNodesMeta :: Map NodeLoc NodeMeta -> Workspace -> UUID -> Maybe UUID -> IO ()
+setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodesMeta.Request (Map.mapKeys convert updates') where
+    (workspace', nls) = normalise' workspace $ Map.keys updates
+    updates'          = Map.fromList $ zip nls $ Map.elems updates
 
-sendNodesMetaUpdate :: [(NodeLoc, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
-sendNodesMetaUpdate updates workspace _ _ = sendUpdate $ withLibrary workspace' SetNodesMeta.Update (map (_1 %~ convert) updates') where
-    (workspace', nls) = normalise' workspace $ map fst updates
-    updates'          = zip nls $ map snd updates
+sendNodesMetaUpdate :: Map NodeLoc NodeMeta -> Workspace -> UUID -> Maybe UUID -> IO ()
+sendNodesMetaUpdate updates workspace _ _ = sendUpdate $ withLibrary workspace' SetNodesMeta.Update (Map.mapKeys convert updates') where
+    (workspace', nls) = normalise' workspace $ Map.keys updates
+    updates'          = Map.fromList $ zip nls $ Map.elems updates
 
 setPortDefault :: InPortRef -> PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
 setPortDefault portRef portDef workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetPortDefault.Request portRef' (Just portDef) where

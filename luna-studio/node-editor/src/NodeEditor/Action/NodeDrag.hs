@@ -41,7 +41,7 @@ instance Action (Command State) NodeDrag where
     continue     = continueActionWithKey nodeDragAction
     update       = updateActionWithKey   nodeDragAction
     end nodeDrag = do
-            metaUpdate <- map (view nodeLoc &&& view position) <$> getSelectedNodes
+            metaUpdate <- Map.fromList . fmap (view nodeLoc &&& view position) <$> getSelectedNodes
             moveNodes metaUpdate
             clearSnappedConnection nodeDrag
             removeActionFromState nodeDragAction
@@ -57,7 +57,7 @@ startNodeDrag coord nl snapped = do
         if snapped then do
             let snappedNodes = Map.map snap nodesPos
             begin $ NodeDrag coord nl snappedNodes Nothing
-            void . localMoveNodes $ Map.toList snappedNodes
+            void $ localMoveNodes snappedNodes
         else begin $ NodeDrag coord nl nodesPos Nothing
 
 nodesDrag :: MouseEvent -> Bool -> NodeDrag -> Command State ()
@@ -71,7 +71,7 @@ nodesDrag evt snapped nodeDrag = do
                      Just pos -> snap (move delta pos) ^. vector - pos ^. vector
                      Nothing  -> delta
                  else delta
-    void $ localMoveNodes . Map.toList $ Map.map (move shift') nodesStartPos
+    void . localMoveNodes $ Map.map (move shift') nodesStartPos
     snapConnectionsForNodes coord $ Map.keys nodesStartPos
 
 clearSnappedConnection :: NodeDrag -> Command State ()
@@ -120,7 +120,7 @@ handleNodeDragMouseUp evt nodeDrag = do
     if startPos == coord then
         selectNodes [nl]
     else do
-        metaUpdate <- map (view nodeLoc &&& view position) <$> getSelectedNodes
+        metaUpdate <- Map.fromList . fmap (view nodeLoc &&& view position) <$> getSelectedNodes
         moveNodes metaUpdate
         withJust (nodeDrag ^. nodeDragSnappedConnId) $ \connId -> do
             mayConn <- getConnection connId

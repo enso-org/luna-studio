@@ -369,8 +369,8 @@ updateDefaultVisualizer nl vis sendAsRequest = withJustM (getExpressionNode nl) 
     when (n ^. ExpressionNode.defaultVisualizer /= vis) $ do
         modifyExpressionNode nl $ ExpressionNode.defaultVisualizer .= vis
         withJustM (getNodeMeta nl) $ \nm -> if sendAsRequest
-            then Batch.setNodesMeta [(nl, nm)]
-            else Batch.sendNodesMetaUpdate [(nl, nm)]
+            then Batch.setNodesMeta        $ Map.fromList [(nl, nm)]
+            else Batch.sendNodesMetaUpdate $ Map.fromList [(nl, nm)]
 
 recoverVisualizations :: NodeLoc -> Command State [VisualizationId]
 recoverVisualizations nl = getNodeVisualizations nl >>= \case

@@ -2,6 +2,8 @@ module NodeEditor.Action.Batch  where
 
 import           Common.Action.Command               (Command)
 import           Common.Prelude
+import           Data.Map                            (Map)
+import qualified Data.Map                            as Map
 import           Data.Set                            (Set)
 import qualified Data.Set                            as Set
 import           Data.UUID.Types                     (UUID)
@@ -134,13 +136,11 @@ searchNodes = withWorkspace . BatchCmd.searchNodes
 setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 
-setNodesMeta :: [(NodeLoc, NodeMeta)] -> Command State ()
-setNodesMeta []      = return ()
-setNodesMeta updates = withWorkspace $ BatchCmd.setNodesMeta updates
+setNodesMeta :: Map NodeLoc NodeMeta -> Command State ()
+setNodesMeta updates = unless (Map.null updates) . withWorkspace $ BatchCmd.setNodesMeta updates
 
-sendNodesMetaUpdate :: [(NodeLoc, NodeMeta)] -> Command State ()
-sendNodesMetaUpdate []      = return ()
-sendNodesMetaUpdate updates = withWorkspace $ BatchCmd.sendNodesMetaUpdate updates
+sendNodesMetaUpdate :: Map NodeLoc NodeMeta -> Command State ()
+sendNodesMetaUpdate updates = unless (Map.null updates) . withWorkspace $ BatchCmd.sendNodesMetaUpdate updates
 
 setPortDefault :: InPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do
