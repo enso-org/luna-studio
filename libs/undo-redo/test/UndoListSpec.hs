@@ -10,8 +10,8 @@ import           Control.Monad.State           (evalStateT, forever)
 import           Data.Binary                   (Binary, encode)
 import qualified Data.List                     as List
 import qualified Data.UUID.V4                  as UUID
-import           Test.Hspec                    (Selector, Spec, around, describe, expectationFailure,
-                                                it, shouldBe, shouldThrow, shouldSatisfy)
+import           Test.Hspec                    (Selector, Spec, around, describe, expectationFailure, it, shouldBe, shouldSatisfy,
+                                                shouldThrow)
 
 import qualified ZMQ.Bus.Bus                   as Bus
 import qualified ZMQ.Bus.Config                as Config
@@ -28,8 +28,8 @@ import           Prologue
 
 import           LunaStudio.API.Graph.AddNode  (Request (..))
 import qualified LunaStudio.API.Graph.AddNode  as AddNode
-import qualified LunaStudio.API.Graph.Result   as Result
 import qualified LunaStudio.API.Topic          as Topic
+import           LunaStudio.Data.Diff          (Diff)
 import qualified LunaStudio.Data.Error         as Error
 import qualified LunaStudio.Data.Graph         as Graph
 import           LunaStudio.Data.LabeledTree
@@ -61,8 +61,8 @@ generateNode = do
     nodeId <- UUID.nextRandom
     return $ Node.ExpressionNode nodeId "3" False (Just "3") "3" (LabeledTree def (Port [] "whole" TStar NotConnected)) (LabeledTree def (Port [] "" TStar NotConnected)) def False
 
-emptyResult :: Result.Result
-emptyResult = def
+emptyResult :: Diff
+emptyResult = mempty
 
 spec :: Spec
 spec = describe "Undo-Redo for single user" $ do
