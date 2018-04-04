@@ -1,9 +1,3 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
-
 module Empire.Server.Graph where
 
 import qualified Compress
@@ -25,6 +19,7 @@ import qualified Data.HashMap.Strict                     as HashMap
 import qualified Data.IntMap                             as IntMap
 import           Data.List                               (break, find, partition, sortBy)
 import           Data.List.Split                         (splitOneOf)
+import           Data.Map                                (Map)
 import qualified Data.Map                                as Map
 import           Data.Maybe                              (isJust, isNothing, listToMaybe, maybeToList)
 import qualified Data.Set                                as Set
@@ -72,7 +67,6 @@ import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
 import qualified LunaStudio.API.Graph.Request            as G
-import qualified LunaStudio.API.Graph.Result             as Result
 import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings
 import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes
 import qualified LunaStudio.API.Graph.SetCode            as SetCode
@@ -86,12 +80,15 @@ import qualified LunaStudio.API.Topic                    as Topic
 import           LunaStudio.Data.Breadcrumb              (Breadcrumb (..))
 import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
 import qualified LunaStudio.Data.CameraTransformation    as Camera
+import           LunaStudio.Data.Code                    (Code (Code))
 import           LunaStudio.Data.Connection              as Connection
-import           LunaStudio.Data.Diff                    (Diff (..))
+import           LunaStudio.Data.Diff                    (Diff, diff, toDiff)
+import qualified LunaStudio.Data.Diff                    as Diff
 import           LunaStudio.Data.Graph                   (Graph (..))
 import qualified LunaStudio.Data.Graph                   as GraphAPI
 import           LunaStudio.Data.GraphLocation           (GraphLocation (..))
 import qualified LunaStudio.Data.GraphLocation           as GraphLocation
+import           LunaStudio.Data.GUIState                (GUIState (GUIState))
 import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
 import           LunaStudio.Data.Node                    (ExpressionNode (..), NodeId)
 import qualified LunaStudio.Data.Node                    as Node
@@ -114,9 +111,9 @@ import qualified LunaStudio.Data.Project                 as Project
 import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
 import           LunaStudio.Data.Visualization           (VisualizationValue (..))
 import           Path                                    (fromAbsFile, fromRelFile, parseAbsFile)
-import qualified Path                                    as Path
+import qualified Path
 import           Prologue                                hiding (Item, when)
-import qualified Safe                                    as Safe
+import qualified Safe
 import           System.Environment                      (getEnv)
 import           System.FilePath                         (dropFileName, replaceFileName, (</>))
 import qualified System.Log.MLogger                      as Logger
@@ -126,6 +123,7 @@ import qualified ZMQ.Bus.Data.Message                    as Message
 import qualified ZMQ.Bus.EndPoint                        as EP
 import           ZMQ.Bus.Trans                           (BusT (..))
 import qualified ZMQ.Bus.Trans                           as BusT
+
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -138,23 +136,21 @@ logProjectPathNotFound = Project.logProjectSettingsError "Could not find project
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-getAllNodes :: GraphLocation -> Empire [Node.Node]
+getAllNodes :: GraphLocation -> Empire (Map NodeId Node.Node)
 getAllNodes location = do
     graph <- Graph.getGraph location
-    return $ map Node.ExpressionNode' (graph ^. GraphAPI.nodes)
-          <> map Node.InputSidebar'   (maybeToList $ graph ^. GraphAPI.inputSidebar)
-          <> map Node.OutputSidebar'  (maybeToList $ graph ^. GraphAPI.outputSidebar)
+    return $ fmap Node.ExpressionNode' (Map.mapKeys convert $ graph ^. GraphAPI.nodes)
+          <> fmap Node.InputSidebar'   (Map.fromList . fmap (view Node.inputNodeId  &&& id) . maybeToList $ graph ^. GraphAPI.inputSidebar)
+          <> fmap Node.OutputSidebar'  (Map.fromList . fmap (view Node.outputNodeId &&& id) . maybeToList $ graph ^. GraphAPI.outputSidebar)
 
-getNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.Node]
-getNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSet) <$> getAllNodes location where
-    nidsSet = Set.fromList nids
+getNodesByIds :: GraphLocation -> [NodeId] -> Empire (Map NodeId Node.Node)
+getNodesByIds location nids = flip Map.restrictKeys (Set.fromList nids) <$> getAllNodes location
 
-getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.ExpressionNode]
-getExpressionNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSet) <$> Graph.getNodes location where
-    nidsSet = Set.fromList nids
+getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire (Map NodeId ExpressionNode)
+getExpressionNodesByIds location nids = flip Map.restrictKeys (Set.fromList nids) . Map.mapKeys convert <$> Graph.getNodes location
 
 getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
-getNodeById location nid = fmap listToMaybe $ getNodesByIds location [nid]
+getNodeById location nid = Map.lookup nid <$> getAllNodes location
 
 getSrcPortByNodeId :: NodeId -> OutPortRef
 getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
@@ -210,8 +206,8 @@ handleGetProgram = modifyGraph defInverse action replyResult where
         (graph, crumb, availableImports, typeRepToVisMap, camera, location, mayVisPath) <- handle
             (\(e :: SomeASTException) -> return (Left . Graph.prepareGraphError $ toException e, Breadcrumb [], def, mempty, def, location', def))
             $ do
-                let filePath = location' ^. GraphLocation.filePath
-                    closestBc loc bc = getClosestBcLocation (GraphLocation.GraphLocation filePath def) bc
+                let filePath      = location' ^. GraphLocation.filePath
+                    closestBc loc = getClosestBcLocation (GraphLocation.GraphLocation filePath def)
                 mayProjectPathAndRelModulePath <- liftIO $ getProjectPathAndRelativeModulePath filePath
                 mayModuleSettings              <- liftIO $ maybe (return def) (uncurry Project.getModuleSettings) mayProjectPathAndRelModulePath
                 location <- if not retrieveLocation then return location'
@@ -220,19 +216,18 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 crumb            <- Graph.decodeLocation location
                 availableImports <- Graph.getAvailableImports location
                 let mayVisPath    = ((</> "visualizers") . dropFileName . fst) <$> mayProjectPathAndRelModulePath
-                    defaultCamera = maybe def (flip Camera.getCameraForRectangle def) . Position.minimumRectangle . map (view Node.position) $ graph ^. GraphAPI.nodes
+                    defaultCamera = maybe def (`Camera.getCameraForRectangle` def) . Position.minimumRectangle . fmap (view Node.position) . Map.elems $ graph ^. GraphAPI.nodes
                     (typeRepToVisMap, camera) = case mayModuleSettings of
                         Nothing -> (mempty, defaultCamera)
-                        Just ms -> let visMap' = if moduleChanged then Just $ ms ^. Project.typeRepToVisMap else Nothing
-                                       visMap  = fmap2 Project.fromOldAPI $ visMap'
+                        Just ms -> let visMap  = Project.fromOldAPI <$> ms ^. Project.typeRepToVisMap
                                        bc      = Breadcrumb.toNames crumb
                                        bs      = Map.lookup bc $ ms ^. Project.breadcrumbsSettings
                                        cam     = maybe defaultCamera (view Project.breadcrumbCameraSettings) bs
                             in (visMap, cam)
                 return (Right graph, crumb, availableImports, typeRepToVisMap, camera, location, mayVisPath)
-        code <- Graph.getCode location
+        code <- Code <$> Graph.getCode location
         withJust mayPrevSettings $ \(gl, locSettings) -> saveSettings gl locSettings location
-        return $ GetProgram.Result graph code crumb availableImports typeRepToVisMap camera location mayVisPath
+        return . GetProgram.Result location $ toDiff $ GUIState crumb availableImports typeRepToVisMap camera mayVisPath code graph
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph inverse action replyResult where
@@ -252,7 +247,7 @@ handleAddImports = modifyGraph defInverse action replyResult where
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
-    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
+    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $
         Graph.addNodeWithConnection location nl expression nodeMeta connectTo
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
@@ -306,7 +301,7 @@ handleMovePort = modifyGraph defInverse action replyResult where
 
 handlePaste :: Request Paste.Request -> StateT Env BusT ()
 handlePaste = modifyGraph defInverse action replyResult where
-    action (Paste.Request location position string) = withDefaultResult location $ do
+    action (Paste.Request location position string) = withDefaultResult location $
         Graph.paste location position string
 
 data ConnectionDoesNotExistException = ConnectionDoesNotExistException InPortRef
@@ -341,10 +336,10 @@ handleRemoveNodes = modifyGraph inverse action replyResult where
         let nodeIds = convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
         Graph allNodes allConnections _ _ monads <- Graph.getGraph location
         let idSet = Set.fromList nodeIds
-            nodes = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
-            conns = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
-                                                         || Set.member (conn ^. _2 . PortRef.dstNodeId) idSet )
-        return $ RemoveNodes.Inverse nodes $ map (uncurry Connection) conns
+            nodes = flip Map.filter allNodes       $ \node -> Set.member (node ^. Node.nodeId)                        idSet
+            conns = flip Map.filter allConnections $ \conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) idSet
+                                                           || Set.member (conn ^. Connection.dst . PortRef.dstNodeId) idSet
+        return $ RemoveNodes.Inverse nodes conns
     action (RemoveNodes.Request location nodeLocs) = withDefaultResult location $
         Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
@@ -361,7 +356,7 @@ handleRemovePort = modifyGraph inverse action replyResult where
         connections <- Graph.withGraph location $ runASTOp buildConnections
         oldName     <- Graph.getPortName location portRef
         let conns = flip filter connections $ (== portRef) . fst
-        return $ RemovePort.Inverse oldName $ map (uncurry Connection) conns
+        return $ RemovePort.Inverse oldName $ fmap (uncurry Connection) conns
     action (RemovePort.Request location portRef) = withDefaultResult location $ do
         maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
         when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
@@ -388,7 +383,7 @@ handleSaveSettings = modifyGraphOk defInverse action where
     action (SaveSettings.Request gl settings) = saveSettings gl settings gl
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
-handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request location importsList)) = do
+handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request location missingImps)) = do
     request          <- liftIO $ webGUIHack request'
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
@@ -397,7 +392,9 @@ handleSearchNodes origReq@(Request uuid guiID request'@(SearchNodes.Request loca
     toBusChan        <- use Env.toBusChan
     let invStatus = Response.Ok ()
     liftIO $ void $ forkIO $ void $ liftIO $ do
-        result <- try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ SearchNodes.Result <$> Graph.getImports location importsList
+        result <- try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ do
+            Graph.addImports location missingImps
+            SearchNodes.Result <$> Graph.getSearcherHints location
         case result of
             Left  (exc :: SomeException) -> do
                 err <- liftIO $ Graph.prepareLunaError exc
@@ -426,19 +423,16 @@ handleSetNodeExpression = modifyGraph inverse action replyResult where
     action (SetNodeExpression.Request location nodeId expression) = withDefaultResultTC location $
         Graph.setNodeExpression location nodeId expression
 
-inverseSetNodesMeta :: GraphLocation -> [(NodeId, NodeMeta)] -> Empire SetNodesMeta.Inverse
+inverseSetNodesMeta :: GraphLocation -> Map NodeId NodeMeta -> Empire SetNodesMeta.Inverse
 inverseSetNodesMeta location updates = do
-    allNodes <- Graph.withGraph' location (runASTOp buildNodes) (view GraphAPI.nodes <$> runASTOp buildClassGraph)
-    let idSet = Set.fromList $ map fst updates
-        prevMeta = catMaybes $ flip map allNodes $ \node ->
-            if Set.member (node ^. Node.nodeId) idSet then
-                 Just (node ^. Node.nodeId, node ^. Node.nodeMeta)
-            else Nothing
+    allNodes <- Graph.withGraph' location (runASTOp buildNodes) (Map.elems . view GraphAPI.nodes <$> runASTOp buildClassGraph)
+    let prevMeta = Map.fromList . catMaybes . flip fmap allNodes $ \node ->
+            justIf (Map.member (node ^. Node.nodeId) updates) (node ^. Node.nodeId, node ^. Node.nodeMeta)
     return $ SetNodesMeta.Inverse prevMeta
 
-actionSetNodesMeta :: GraphLocation -> [(NodeId, NodeMeta)] -> Empire Result.Result
+actionSetNodesMeta :: GraphLocation -> Map NodeId NodeMeta -> Empire Diff
 actionSetNodesMeta location updates = withDefaultResult location $
-    for_ updates $ uncurry $ Graph.setNodeMeta location
+    for_ (Map.toList updates) $ uncurry $ Graph.setNodeMeta location
 
 handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
 handleSetNodesMeta = modifyGraph inverse action replyResult where
@@ -454,8 +448,7 @@ handleSetNodesMetaUpdate (SetNodesMeta.Update location updates) = do
         Left  (exc :: SomeASTException) -> do
             err <- liftIO $ prettyException exc
             logger Logger.error err
-        Right (result, newEmpireEnv) -> do
-            Env.empireEnv .= newEmpireEnv
+        Right (result, newEmpireEnv)    -> Env.empireEnv .= newEmpireEnv
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
 handleSetPortDefault = modifyGraph inverse action replyResult where
@@ -486,14 +479,11 @@ handleSubstitute = modifyGraph defInverse action replyResult where
     action req@(Substitute.Request location diffs) = do
         let file = location ^. GraphLocation.filePath
         prevImports <- Graph.getAvailableImports location
-        res         <- withDefaultResult location $ Graph.substituteCodeFromPoints file diffs
+        graphDiff   <- withDefaultResult location $ Graph.substituteCodeFromPoints file diffs
         newImports  <- Graph.getAvailableImports location
-        let importChange = if Set.fromList prevImports == Set.fromList newImports then Nothing else Just newImports
-        if isJust importChange then do
-            Graph.typecheckWithRecompute location
-        else do
-            Graph.typecheck location
-        return $ Substitute.Result res importChange
+        let impDiff = diff prevImports newImports
+        if mempty == impDiff then Graph.typecheck location else Graph.typecheckWithRecompute location
+        return $ impDiff <> graphDiff
 
 
 handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
@@ -504,7 +494,9 @@ handleGetBuffer = modifyGraph defInverse action replyResult where
 
 handleInterpreterControl :: Request Interpreter.Request -> StateT Env BusT ()
 handleInterpreterControl = modifyGraph defInverse action replyResult where
-    action request = Graph.setInterpreterState request
+    action (Interpreter.Start  gl) = Graph.startInterpreter  gl
+    action (Interpreter.Pause  gl) = Graph.pauseInterpreter  gl
+    action (Interpreter.Reload gl) = Graph.reloadInterpreter gl
 
 stdlibFunctions :: [String]
 stdlibFunctions = ["mockFunction"]

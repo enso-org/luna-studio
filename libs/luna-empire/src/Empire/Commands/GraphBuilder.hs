@@ -1,10 +1,3 @@
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
-{-# LANGUAGE TypeApplications    #-}
-
-
 module Empire.Commands.GraphBuilder where
 
 import           Control.Monad.State             hiding (when)
@@ -34,6 +27,7 @@ import qualified Luna.IR.Term.Literal            as Lit
 import           Luna.IR.Term.Uni
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem, Named (..))
 import qualified LunaStudio.Data.Breadcrumb      as Breadcrumb
+import qualified LunaStudio.Data.Connection      as API
 import qualified LunaStudio.Data.Graph           as API
 import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
 import           LunaStudio.Data.MonadPath       (MonadPath (MonadPath))
@@ -76,14 +70,14 @@ buildGraph = do
     connections <- buildConnections
     nodes       <- buildNodes
     (inE, outE) <- buildEdgeNodes
-    API.Graph nodes connections (Just inE) (Just outE) <$> buildMonads
+    API.Graph (API.toNodesMap nodes) (API.toConnectionsMap $ uncurry API.Connection <$> connections) (Just inE) (Just outE) <$> buildMonads
 
 buildClassGraph :: ClassOp m => m API.Graph
 buildClassGraph = do
     funs <- use Graph.clsFuns
 
     nodes' <- mapM (\(uuid, funGraph) -> buildClassNode uuid (funGraph ^. Graph.funName)) $ Map.assocs funs
-    pure $ API.Graph nodes' [] Nothing Nothing []
+    pure $ API.Graph (API.toNodesMap nodes') mempty mempty mempty mempty
 
 
 buildClassNode :: ClassOp m => NodeId -> String -> m API.ExpressionNode

@@ -1,93 +1,5 @@
-{-# LANGUAGE DeriveAnyClass        #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiWayIf            #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE ViewPatterns          #-}
-
-module Empire.Commands.Graph
-    ( addImports
-    , addNode
-    , addNodeCondTC
-    , addNodeWithConnection
-    , addPort
-    , addPortWithConnections
-    , addSubgraph
-    , autolayout
-    , autolayoutNodes
-    , autolayoutTopLevel
-    , removeNodes
-    , movePort
-    , removePort
-    , renamePort
-    , getPortName
-    , setNodeExpression
-    , setNodeMeta
-    , setNodePosition
-    , connect
-    , connectPersistent
-    , connectCondTC
-    , connectNoTC
-    , decodeLocation
-    , disconnect
-    , getAvailableImports
-    , getNodeMeta
-    , getNodeMetas
-    , getBuffer
-    , getCode
-    , getGraph
-    , getGraphNoTC
-    , getNodes
-    , getConnections
-    , setPortDefault
-    , getPortDefault
-    , renameNode
-    , dumpGraphViz
-    , openFile
-    , typecheck
-    , substituteCode
-    , substituteCodeFromPoints
-    , loadCode
-    , markerCodeSpan
-    , readCodeSpan
-    , getNodeIdForMarker
-    , updateCodeSpan
-    , withTC
-    , withGraph
-    , withGraph'
-    , withUnit
-    , runTC
-    , typecheckWithRecompute
-    , getName
-    , MarkerNodeMeta(..)
-    , FileMetadata(..)
-    , dumpMetadata
-    , addMetadataToCode
-    , readMetadata
-    , prepareCopy
-    , paste
-    , copyText
-    , pasteText
-    , collapseToFunction
-    , moveToOrigin
-    , getImports
-    , getAvailableImports
-    , setInterpreterState
-    , stripMetadata
-    , prepareGraphError
-    , prepareLunaError
-    , reloadCode
-    , resendCode
-    , prepareNodeCache
-    , prepareLunaError
-    , importsToHints
-    , filterPrimMethods
-    ) where
+module Empire.Commands.Graph where
 
 import           Control.Arrow                    ((&&&), (***))
 import           Control.Concurrent               (readMVar)
@@ -105,6 +17,7 @@ import           Data.Foldable                    (toList)
 import           Data.List                        ((++), elemIndex, find, group, partition, sortBy, sortOn, nub, head)
 import qualified Data.List                        as List
 import qualified Data.List.Split                  as Split
+import           Data.Map                         (Map)
 import qualified Data.Map                         as Map
 import           Data.Maybe                       (fromMaybe, maybeToList)
 import qualified Data.Set                         as Set
@@ -162,12 +75,10 @@ import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan)
 import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
 import           Luna.Syntax.Text.Parser.Marker   (MarkedExprMap (..))
 import qualified Luna.Syntax.Text.Parser.Marker   as Luna
-import qualified LunaStudio.API.Control.Interpreter as Interpreter
 import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem, Named)
 import qualified LunaStudio.Data.Breadcrumb       as Breadcrumb
 import           LunaStudio.Data.Constants        (gapBetweenNodes)
-import           LunaStudio.Data.Connection       (Connection (..))
-import           LunaStudio.Data.Diff             (Diff (..))
+import           LunaStudio.Data.Connection       (Connection (..), ConnectionId)
 import qualified LunaStudio.Data.Error            as ErrorAPI
 import qualified LunaStudio.Data.Graph            as APIGraph
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
@@ -189,6 +100,7 @@ import           LunaStudio.Data.Position         (Position)
 import qualified LunaStudio.Data.Position         as Position
 import           LunaStudio.Data.Range            (Range(..))
 import qualified LunaStudio.Data.Range            as Range
+import           LunaStudio.Data.TextDiff         (TextDiff (..))
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrow, replace)
 import           OCI.IR.Name.Qualified            (QualName)
 import qualified Path
@@ -197,12 +109,12 @@ import           System.Directory                 (canonicalizePath)
 import           System.Environment               (getEnv)
 import           GHC.Stack                        (renderStack, whoCreated)
 
-addImports :: GraphLocation -> [Text] -> Empire ()
+addImports :: GraphLocation -> Set Text -> Empire ()
 addImports loc@(GraphLocation file _) modulesToImport = do
     newCode <- withUnit (GraphLocation file def) $ do
         existingImports <- runASTOp getImportsInFile
         let imports = nativeModuleName : "Std.Base" : existingImports
-        let neededImports = filter (`notElem` imports) modulesToImport
+        let neededImports = filter (`notElem` imports) $ Set.toList modulesToImport
         code <- use Graph.code
         let newImports = map (\i -> Text.concat ["import ", i, "\n"]) neededImports
         return $ Text.concat $ newImports ++ [code]
@@ -963,11 +875,11 @@ getGraph = getGraphCondTC True
 getGraphNoTC :: GraphLocation -> Empire APIGraph.Graph
 getGraphNoTC = getGraphCondTC False
 
-getNodes :: GraphLocation -> Empire [ExpressionNode]
+getNodes :: GraphLocation -> Empire (Map NodeLoc ExpressionNode)
 getNodes loc = withTC' loc True (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildGraph))
                                 (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildClassGraph))
 
-getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]
+getConnections :: GraphLocation -> Empire (Map ConnectionId Connection)
 getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
@@ -1058,27 +970,27 @@ openFile path = do
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withTC' loc False (return ()) (return ())
 
-breakDiffs :: [Diff] -> [Diff]
+breakDiffs :: [TextDiff] -> [TextDiff]
 breakDiffs diffs = go [] diffs
     where
         go acc [] = reverse acc
-        go acc (d@(Diff range code cursor):list) =
+        go acc (d@(TextDiff range code cursor):list) =
             case Text.span isSpace code of
                 (prefix, suffix)
                     | Text.null prefix -> go (d:acc) list
                     | otherwise        -> let rangeEnd   = fromJust (fmap snd range)
                                               newRange   = Just (rangeEnd, rangeEnd)
-                                              whitespace = Diff range prefix cursor
-                                              onlyCode   = Diff newRange suffix cursor
+                                              whitespace = TextDiff range prefix cursor
+                                              onlyCode   = TextDiff newRange suffix cursor
                                           in go (onlyCode:whitespace:acc) list
 
-substituteCodeFromPoints :: FilePath -> [Diff] -> Empire ()
+substituteCodeFromPoints :: FilePath -> [TextDiff] -> Empire ()
 substituteCodeFromPoints path (breakDiffs -> diffs) = do
     let loc = GraphLocation path (Breadcrumb [])
     changes <- withUnit loc $ do
         oldCode   <- use Graph.code
         let noMarkers    = Code.removeMarkers oldCode
-            deltas       = map (\(Diff range code cursor) -> case range of
+            deltas       = map (\(TextDiff range code cursor) -> case range of
                 Just (start, end) -> (Code.pointToDelta start noMarkers, Code.pointToDelta end noMarkers, code)
                 _                 -> (0, fromIntegral (Text.length noMarkers), code))
                         diffs
@@ -1405,9 +1317,14 @@ markerCodeSpan loc index = withGraph loc $ runASTOp $ do
     readRange ref
 
 data MarkerNodeMeta = MarkerNodeMeta { marker :: Word64, meta :: NodeMeta }
-    deriving (Eq, Show, Generic, FromJSON, ToJSON)
+    deriving (Eq, Generic, Show)
 newtype FileMetadata = FileMetadata { metas :: [MarkerNodeMeta] }
-    deriving (Show, Generic, FromJSON, ToJSON)
+    deriving (Generic, Show)
+
+instance FromJSON MarkerNodeMeta
+instance ToJSON   MarkerNodeMeta
+instance FromJSON FileMetadata
+instance ToJSON   FileMetadata
 
 dumpMetadata :: FilePath -> Empire [MarkerNodeMeta]
 dumpMetadata file = do
@@ -1556,7 +1473,7 @@ collapseToFunction :: GraphLocation -> [NodeId] -> Empire ()
 collapseToFunction loc@(GraphLocation file _) nids = do
     nodes <- getNodes (GraphLocation file def)
     when (null nids) $ throwM ImpossibleToCollapse
-    let names   = Set.fromList $ mapMaybe (view Node.name) nodes
+    let names   = Set.fromList . mapMaybe (view Node.name) $ Map.elems nodes
         newName = generateNewFunctionName names "func"
     (defCode, useVarName, outputPosition) <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids
@@ -1778,12 +1695,11 @@ getImportsInFile = do
                                     Term.Absolute n -> return $ convert n
         IR.ClsASG{} -> return [] -- why does it put ClsASG and not Unit when file does not parse???
 
-getAvailableImports :: GraphLocation -> Empire [ImportName]
+getAvailableImports :: GraphLocation -> Empire (Set ImportName)
 getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Breadcrumb [])) $ do
-    explicitImports <- runASTOp getImportsInFile
+    explicitImports <- Set.fromList <$> runASTOp getImportsInFile
     let implicitImports = Set.fromList [nativeModuleName, "Std.Base"]
-        resultSet       = Set.fromList explicitImports `Set.union` implicitImports
-    return $ Set.toList resultSet
+    return $ explicitImports `Set.union` implicitImports
 
 classToHints :: IR.Class -> ClassHints
 classToHints (IR.Class constructors methods) = ClassHints cons' meth'
@@ -1819,9 +1735,6 @@ filterPrimMethods (Module.Imports classes funs) = Module.Imports classes properF
 qualNameToText :: QualName -> Text
 qualNameToText = convert
 
-getImports :: GraphLocation -> [Text] -> Empire ImportsHints
-getImports loc _ = getSearcherHints loc
-
 getImportPaths :: GraphLocation -> IO (Map.Map IR.Name FilePath)
 getImportPaths (GraphLocation file _) = do
     lunaroot        <- liftIO $ canonicalizePath =<< getEnv "LUNAROOT"
@@ -1848,17 +1761,20 @@ getSearcherHints (GraphLocation file _) = do
     let allImports = Map.union stdImports projImports
     return $ Map.fromList $ map (\(a, b) -> (qualNameToText a, importsToHints b)) $ Map.toList allImports
 
-setInterpreterState :: Interpreter.Request -> Empire ()
-setInterpreterState (Interpreter.Start loc) = do
+reloadInterpreter :: GraphLocation -> Empire ()
+reloadInterpreter = runInterpreter
+
+startInterpreter :: GraphLocation -> Empire ()
+startInterpreter loc = do
     activeInterpreter .= True
     Publisher.notifyInterpreterUpdate "Interpreter running"
     runInterpreter loc
-setInterpreterState (Interpreter.Pause loc) = do
+
+pauseInterpreter :: GraphLocation -> Empire ()
+pauseInterpreter loc = do
     activeInterpreter .= False
     Publisher.notifyInterpreterUpdate "Interpreter stopped"
     withTC' loc False (return ()) (return ())
-setInterpreterState (Interpreter.Reload loc) = do
-    runInterpreter loc
 
 -- internal
 

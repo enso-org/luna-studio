@@ -14,6 +14,7 @@ import           LunaStudio.Data.GraphLocation              (GraphLocation (..))
 import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (NodeId, NodeTypecheckerUpdate)
 import           LunaStudio.Data.NodeValue                  (NodeValue)
+import           LunaStudio.Data.TextDiff                   (TextDiff (..))
 
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
 import qualified LunaStudio.API.Control.Interpreter         as Interpreter
@@ -37,7 +38,7 @@ notifyResultUpdate loc nid v t =
 
 notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Text -> Maybe Point -> m ()
 notifyCodeUpdate path code cursor =
-    sendUpdate $ CodeUpdate $ Substitute.Update path [Diff Nothing code cursor]
+    sendUpdate $ CodeUpdate $ Substitute.Update path [TextDiff Nothing code cursor]
 
 notifyInterpreterUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => Text -> m ()
 notifyInterpreterUpdate msg =

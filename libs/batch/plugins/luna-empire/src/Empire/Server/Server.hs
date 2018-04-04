@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE Rank2Types          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Empire.Server.Server where
 
 import qualified Compress
@@ -28,11 +25,11 @@ import           Empire.Env                    (Env)
 import qualified Empire.Env                    as Env
 import           Empire.Utils                  (currentISO8601Time)
 import qualified LunaStudio.API.Graph.Request  as G
-import qualified LunaStudio.API.Graph.Result   as Result
 import           LunaStudio.API.Request        (Request (..))
 import qualified LunaStudio.API.Response       as Response
 import           LunaStudio.API.Topic          (MessageTopic)
 import qualified LunaStudio.API.Topic          as Topic
+import           LunaStudio.Data.Diff          (Diff, diff)
 import           LunaStudio.Data.Error         (Error, LunaError, errorContent)
 import           LunaStudio.Data.Graph         (Graph (..))
 import qualified LunaStudio.Data.Graph         as GraphAPI
@@ -128,41 +125,18 @@ modifyGraphOk inverse action = modifyGraph inverse action (\req@(Request uuid gu
 defInverse :: a -> Empire ()
 defInverse = const $ return ()
 
-constructResult :: GraphAPI.Graph -> GraphAPI.Graph -> Result.Result
-constructResult oldGraph newGraph = Result.Result removedNodeIds removedConnIds (Right updatedInGraph) where
-    updatedInGraph = GraphAPI.Graph updatedNodes updatedConns updatedInputSidebar updatedOutputSidebar []
-    oldNodesMap    = Map.fromList . map (view Node.nodeId &&& id) $ oldGraph ^. GraphAPI.nodes
-    newNodeIdsSet  = Set.fromList . map (view Node.nodeId) $ newGraph ^. GraphAPI.nodes
-    removedNodeIds = filter (flip Set.notMember newNodeIdsSet) $ Map.keys oldNodesMap
-    updatedNodes   = filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodesMap) $ newGraph ^. GraphAPI.nodes
-    oldConnsMap    = Map.fromList . map (snd &&& id) $ oldGraph ^. GraphAPI.connections
-    newConnIdsSet  = Set.fromList . map snd $ newGraph ^. GraphAPI.connections
-    removedConnIds = filter (flip Set.notMember newConnIdsSet) $ Map.keys oldConnsMap
-    updatedConns   = filter (\c@(_, dst) -> Just c /= Map.lookup dst oldConnsMap) $ newGraph ^. GraphAPI.connections
-    updatedInputSidebar = if oldGraph ^. GraphAPI.inputSidebar /= newGraph ^. GraphAPI.inputSidebar
-        then newGraph ^. GraphAPI.inputSidebar else Nothing
-    updatedOutputSidebar = if oldGraph ^. GraphAPI.outputSidebar /= newGraph ^. GraphAPI.outputSidebar
-        then newGraph ^. GraphAPI.outputSidebar else Nothing
-
 catchAllExceptions :: Empire a -> Empire (Either SomeException a)
 catchAllExceptions act = try act
 
-withDefaultResult' :: (GraphLocation -> Empire Graph) -> GraphLocation -> Empire a -> Empire Result.Result
+withDefaultResult' :: (GraphLocation -> Empire Graph) -> GraphLocation -> Empire a -> Empire Diff
 withDefaultResult' getFinalGraph location action = do
-    oldGraph <- catchAllExceptions $ Graph.getGraphNoTC location
+    oldGraph <- (& _Left %~ Graph.prepareGraphError) <$> catchAllExceptions (Graph.getGraphNoTC location)
     void action
-    newGraph <- catchAllExceptions $ getFinalGraph location
-    return $ case (oldGraph, newGraph) of
-        (Left _, Right g)    -> Result.Result def def (Right g)
-        (Left _, Left exc)   -> def & Result.graphUpdates .~ Left (Graph.prepareGraphError exc)
-        (Right g, Left exc)  -> Result.Result (g ^.. GraphAPI.nodes . traverse . Node.nodeId)
-                                              (g ^.. GraphAPI.connections . traverse . _2)
-                                              (Left (Graph.prepareGraphError exc))
-        (Right og, Right ng) -> constructResult og ng
+    newGraph <- (& _Left %~ Graph.prepareGraphError) <$> catchAllExceptions (getFinalGraph location)
+    return $ diff oldGraph newGraph
 
-
-withDefaultResult :: GraphLocation -> Empire a -> Empire Result.Result
+withDefaultResult :: GraphLocation -> Empire a -> Empire Diff
 withDefaultResult = withDefaultResult' Graph.getGraphNoTC
 
-withDefaultResultTC :: GraphLocation -> Empire a -> Empire Result.Result
+withDefaultResultTC :: GraphLocation -> Empire a -> Empire Diff
 withDefaultResultTC = withDefaultResult' Graph.getGraph

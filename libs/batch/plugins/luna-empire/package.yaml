@@ -4,52 +4,96 @@ author:             New Byte Order <contact@luna-lang.org>
 maintainer:         New Byte Order <contact@luna-lang.org>
 
 dependencies:
-  - async
-  - base
-  - binary
-  - bytestring
-  - containers
-  - directory
-  - either
-  - ekg
-  - errors
-  - exceptions
-  - filemanip
-  - filepath
-  - groom
-  - luna-core
-  - luna-empire
-  - luna-project
-  - luna-studio-common
-  - m-logger
-  - mtl
-  - optparse-applicative
-  - path
-  - pretty-show
-  - prologue
-  - safe
-  - safe-exceptions
-  - shelly
-  - split
-  - stm
-  - temporary
-  - text
-  - time
-  - transformers
-  - unordered-containers
-  - uuid
-  - uuid-types
-  - zeromq4-haskell >= 0.4
-  - zmq-bus
-  - zmq-bus-config
-  - zlib
+    - async
+    - base
+    - binary
+    - bytestring
+    - containers
+    - directory
+    - either
+    - ekg
+    - errors
+    - exceptions
+    - filemanip
+    - filepath
+    - groom
+    - luna-core
+    - luna-empire
+    - luna-project
+    - luna-studio-common
+    - m-logger
+    - mtl
+    - optparse-applicative
+    - path
+    - pretty-show
+    - prologue
+    - safe
+    - safe-exceptions
+    - shelly
+    - split
+    - stm
+    - temporary
+    - text
+    - time
+    - transformers
+    - unordered-containers
+    - uuid
+    - uuid-types
+    - zeromq4-haskell >= 0.4
+    - zmq-bus
+    - zmq-bus-config
+    - zlib
 
 default-extensions:
-  - NoImplicitPrelude
-  - TemplateHaskell
+    - AllowAmbiguousTypes
+    - ApplicativeDo
+    - Arrows
+    - BangPatterns
+    - BinaryLiterals
+    - ConstraintKinds
+    - DataKinds
+    - DefaultSignatures
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - DoAndIfThenElse
+    - DuplicateRecordFields
+    - EmptyDataDecls
+    - FlexibleContexts
+    - FlexibleInstances
+    - FunctionalDependencies
+    - GeneralizedNewtypeDeriving
+    - InstanceSigs
+    - LambdaCase
+    - LiberalTypeSynonyms
+    - MonadComprehensions
+    - MultiWayIf
+    - NamedWildCards
+    - NegativeLiterals
+    - NoImplicitPrelude
+    - NumDecimals
+    - OverloadedLabels
+    - OverloadedStrings
+    - PackageImports
+    - QuasiQuotes
+    - RankNTypes
+    - RecursiveDo
+    - RelaxedPolyRec
+    - ScopedTypeVariables
+    - StandaloneDeriving
+    - TemplateHaskell
+    - TupleSections
+    - TypeApplications
+    - TypeFamilies
+    - TypeFamilyDependencies
+    - TypeOperators
+    - ViewPatterns
+
 
 library:
     source-dirs: src
     ghc-options: -Wall -O2 -threaded
     other-modules:
-      - Paths_batch_lib_luna_empire
+        - Paths_batch_lib_luna_empire
