@@ -11,12 +11,13 @@ import           Prologue                      hiding (Text)
 
 type ShortValue = Text
 
-data NodeValue = NodeValue       ShortValue (Maybe VisualizationValue)
-               | NodeError       (Error Error.NodeError)
-               deriving (Eq, Generic, Show)
-
+data NodeValue
+    = NodeValue       ShortValue (Maybe VisualizationValue)
+    | NodeError       (Error Error.NodeError)
+    deriving (Eq, Generic, Show)
 
 makePrisms ''NodeValue
+
 instance Binary   NodeValue
 instance NFData   NodeValue
 instance ToJSON   NodeValue

@@ -7,12 +7,14 @@ import           LunaStudio.Data.Visualizer (VisualizerName, VisualizerPath)
 import           Prologue
 
 
-data NodeMeta = NodeMeta { _position           :: Position
-                         , _displayResult      :: Bool
-                         , _selectedVisualizer :: Maybe (VisualizerName, VisualizerPath)
-                         } deriving (Eq, Generic, Ord, Show)
+data NodeMeta = NodeMeta
+    { _position           :: Position
+    , _displayResult      :: Bool
+    , _selectedVisualizer :: Maybe (VisualizerName, VisualizerPath)
+    } deriving (Eq, Generic, Ord, Show)
 
 makeLenses ''NodeMeta
+
 instance Binary   NodeMeta
 instance NFData   NodeMeta
 instance FromJSON NodeMeta

@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 module LunaStudio.Data.Position
     ( module LunaStudio.Data.Position
     , vector
@@ -18,7 +17,7 @@ import           Prologue
 
 -- === Definition === --
 
-newtype Position = Position { fromPosition :: Vector2 Double } deriving (Eq, Show, Generic, Default, NFData, Num, Ord)
+newtype Position = Position { fromPosition :: Vector2 Double } deriving (Eq, Generic, Num, Ord, Show)
 makeWrapped ''Position
 
 
@@ -30,6 +29,8 @@ instance Dim1     Position
 instance Dim2     Position
 instance IsVector Position
 instance Binary   Position
+instance Default  Position
+instance NFData   Position
 instance FromJSON Position
 instance ToJSON   Position
 

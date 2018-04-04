@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 module LunaStudio.API.Atom.OpenFile where
 
 import           Data.Aeson.Types        (ToJSON)
@@ -10,10 +8,10 @@ import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
 
-data Request = Request { _filePath :: FilePath
-                       } deriving (Eq, Generic, Show)
+data Request = Request { _filePath :: FilePath } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
+
 instance Binary Request
 instance NFData Request
 instance ToJSON Request

@@ -1,19 +1,22 @@
 module LunaStudio.Data.Graph where
 
-import           Data.Aeson.Types          (FromJSON, ToJSON)
-import           Data.Binary               (Binary)
-import           LunaStudio.Data.MonadPath (MonadPath)
-import           LunaStudio.Data.Node      (ExpressionNode, InputSidebar, OutputSidebar)
-import           LunaStudio.Data.PortRef   (InPortRef, OutPortRef)
+import           Data.Aeson.Types           (FromJSON, ToJSON)
+import           Data.Binary                (Binary)
+import           Data.Map                   (Map)
+import           LunaStudio.Data.Connection (Connection, ConnectionId)
+import           LunaStudio.Data.MonadPath  (MonadPath)
+import           LunaStudio.Data.Node       (ExpressionNode, InputSidebar, OutputSidebar)
+import           LunaStudio.Data.NodeLoc    (NodeLoc)
 import           Prologue
 
 
-data Graph = Graph { _nodes         :: [ExpressionNode]
-                   , _connections   :: [(OutPortRef, InPortRef)]
-                   , _inputSidebar  :: Maybe InputSidebar
-                   , _outputSidebar :: Maybe OutputSidebar
-                   , _monads        :: [MonadPath]
-                   } deriving (Eq, Generic, Show)
+data Graph = Graph
+    { _nodes         :: Map NodeLoc ExpressionNode
+    , _connections   :: Map ConnectionId Connection
+    , _inputSidebar  :: Maybe InputSidebar
+    , _outputSidebar :: Maybe OutputSidebar
+    , _monads        :: [MonadPath]
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Graph
 

@@ -10,10 +10,10 @@ import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           Prologue
 
 
-data Request = Request { _location :: GraphLocation
-                       } deriving (Eq, Generic, Show)
+data Request = Request { _location :: GraphLocation } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
+
 instance Binary Request
 instance NFData Request
 instance ToJSON Request

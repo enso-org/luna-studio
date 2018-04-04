@@ -18,7 +18,7 @@ debugPutStrLn = unsafeLiftIO . putStrLn
 unsafeLiftIO :: Monad m => IO a -> m a
 unsafeLiftIO action = do
     let r = unsafePerformIO action
-    r `seq` return r
+    r `seq` pure r
 
 timeIt' :: Monad m => String -> m a -> m a
 timeIt' name action = do
@@ -33,4 +33,4 @@ timeIt' name action = do
         putStrLn $ "<< " <> name
                  <> " CPU " <> show ((cpuEnd - cpuStart) `div` 1000000000) <> "ms"
                  <> " Wall " <> show (diffUTCTime end start)
-    return r
+    pure r

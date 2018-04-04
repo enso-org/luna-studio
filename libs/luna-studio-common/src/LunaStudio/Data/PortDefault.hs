@@ -7,19 +7,21 @@ import           Data.Text        (Text, pack)
 import           Prologue         hiding (Text)
 
 
+data PortValue
+    = IntValue  Integer
+    | RealValue Double
+    | BoolValue Bool
+    | TextValue String
+    deriving (Eq, Generic, Show)
 
-data PortValue = IntValue  Integer
-               | RealValue Double
-               | BoolValue Bool
-               | TextValue String
-               deriving (Eq, Generic, Show)
-
-data PortDefault = Expression String
-                 | Constant   PortValue
-                 deriving (Eq, Generic, Show)
+data PortDefault
+    = Expression String
+    | Constant   PortValue
+    deriving (Eq, Generic, Show)
 
 makePrisms ''PortValue
 makePrisms ''PortDefault
+
 instance Binary PortValue
 instance NFData PortValue
 instance FromJSON PortValue

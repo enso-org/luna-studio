@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 module LunaStudio.API.Atom.GetBuffer where
 
 import           Data.Aeson.Types        (ToJSON)
@@ -10,21 +8,18 @@ import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
 
-data Request = Request { _filePath :: FilePath
-                       } deriving (Eq, Generic, Show)
-
-data Result  = Result { _code             :: Text
-                      } deriving (Eq, Generic, Show)
+data Request = Request { _filePath :: FilePath } deriving (Eq, Generic, Show)
+data Result  = Result  { _code     :: Text     } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
+
 instance Binary Request
 instance NFData Request
 instance ToJSON Request
 instance Binary Result
 instance NFData Result
 instance ToJSON Result
-
 
 
 type Response = Response.Response Request () Result

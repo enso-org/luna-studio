@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 module LunaStudio.API.Atom.IsSaved where
 
 import           Data.Aeson.Types        (ToJSON)
@@ -12,14 +10,12 @@ import           Prologue
 
 data Saved = True | False deriving (Eq, Generic, Show)
 
-data Request = Request { _filePath :: FilePath
-                       } deriving (Eq, Generic, Show)
-
-data Result  = Result { _status :: Saved
-                      } deriving (Eq, Generic, Show)
+data Request = Request { _filePath :: FilePath } deriving (Eq, Generic, Show)
+data Result  = Result  { _status   :: Saved    } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
+
 instance Binary Saved
 instance NFData Saved
 instance ToJSON Saved

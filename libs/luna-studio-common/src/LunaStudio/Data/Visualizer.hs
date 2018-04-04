@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
 module LunaStudio.Data.Visualizer where
 
 import qualified Data.Aeson                 as Aeson
@@ -17,45 +15,49 @@ import           Prologue                   hiding (Text, TypeRep)
 type VisualizerName = Text
 type VisualizerPath = Text
 
-data VisualizerEntry = VisualizerEntry { name :: Maybe VisualizerName
-                                       , path :: VisualizerPath
-                                       } deriving (Eq, Generic, Show)
+data VisualizerEntry = VisualizerEntry
+    { name :: Maybe VisualizerName
+    , path :: VisualizerPath
+    } deriving (Eq, Generic, Show)
 
 type VisualizerMatcher = TypeRep -> IO [VisualizerEntry]
 
-data VisualizerType = InternalVisualizer
-                    | LunaVisualizer
-                    | ProjectVisualizer
-                    deriving (Eq, Generic, Show)
+data VisualizerType
+    = InternalVisualizer
+    | LunaVisualizer
+    | ProjectVisualizer
+    deriving (Eq, Generic, Show)
 
 makePrisms ''VisualizerType
 
 
-data VisualizerId = VisualizerId { _visualizerName :: VisualizerName
-                                 , _visualizerType :: VisualizerType
-                                 } deriving (Eq, Generic, Show)
+data VisualizerId = VisualizerId
+    { _visualizerName :: VisualizerName
+    , _visualizerType :: VisualizerType
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''VisualizerId
 
 instance Ord VisualizerId where
-    visId1 `compare` visId2 = if typeOrd /= EQ then typeOrd else  visName1 `compare` visName2 where
-        compareTypes t1 t2 = if t1 == t2 then EQ
-                        else if t1 == ProjectVisualizer then LT
-                        else if t2 == ProjectVisualizer then GT
-                        else if t1 == LunaVisualizer    then LT
-                        else GT
+    visId1 `compare` visId2 = if typeOrd /= EQ then typeOrd else visName1 `compare` visName2 where
+        compareTypes t1 t2
+            | t1 == t2 = EQ
+            | t1 == ProjectVisualizer = LT
+            | t2 == ProjectVisualizer = GT
+            | t1 == LunaVisualizer = LT
+            | otherwise = GT
         typeOrd  = compareTypes (visId1 ^. visualizerType) (visId2 ^. visualizerType)
         visName1 = Text.unpack (visId1 ^. visualizerName)
         visName2 = Text.unpack (visId2 ^. visualizerName)
 
 
 
-data Visualizer = Visualizer { _visualizerId      :: VisualizerId
-                             , _visualizerRelPath :: VisualizerPath
-                             } deriving (Eq, Generic, Ord, Show)
+data Visualizer = Visualizer
+    { _visualizerId      :: VisualizerId
+    , _visualizerRelPath :: VisualizerPath
+    } deriving (Eq, Generic, Ord, Show)
 
 makeLenses ''Visualizer
-
 
 instance Binary   Visualizer
 instance Binary   VisualizerId
@@ -81,15 +83,15 @@ placeholderVisId = VisualizerId "internal: placeholder" InternalVisualizer
 
 transformJSVisualizerMatcher :: MonadIO m => (String -> m String) -> TypeRep -> m [VisualizerEntry]
 transformJSVisualizerMatcher f r = case toConstructorRep r of
-    Nothing -> return def
-    Just r' -> fromMaybe def . Aeson.decode . BS.pack <$> f (BS.unpack $ Aeson.encode r')
+    Nothing -> pure def
+    Just r' -> fromJust def . Aeson.decode . BS.pack <$> f (BS.unpack $ Aeson.encode r')
 
 convertEntry :: VisualizerId -> VisualizerEntry -> (VisualizerId, VisualizerPath)
 convertEntry k (VisualizerEntry Nothing  p) = (k, p)
 convertEntry k (VisualizerEntry (Just n) p) = (k & visualizerName %~ Text.concat . (:[": ", n]), p)
 
 fromJSVisualizersMap :: Map String (String -> IO String) -> Map VisualizerName VisualizerMatcher
-fromJSVisualizersMap = Map.fromList . map convertToEntry . Map.toList where
+fromJSVisualizersMap = Map.fromList . fmap convertToEntry . Map.toList where
     convertToEntry (k, v) = (convert k, transformJSVisualizerMatcher v)
 
 applyType :: MonadIO m => TypeRep -> Map VisualizerId VisualizerMatcher -> m (Map VisualizerId VisualizerPath)
@@ -97,8 +99,8 @@ applyType tpe = fmap (Map.fromList . concat) . liftIO . mapM applyToEntry . Map.
     applyToEntry (k, f) = fmap2 (convertEntry k) $ f tpe
 
 fromJSInternalVisualizersMap :: Map String String -> Map VisualizerId VisualizerPath
-fromJSInternalVisualizersMap = Map.fromList . concat . fmap convertJSON . Map.toList where
-    convertJSON (k, v) = convertEntry (VisualizerId (convert k) InternalVisualizer) <$> (fromMaybe [] . Aeson.decode $ BS.pack v)
+fromJSInternalVisualizersMap = Map.fromList . concatMap convertJSON . Map.toList where
+    convertJSON (k, v) = convertEntry (VisualizerId (convert k) InternalVisualizer) <$> (fromJust [] . Aeson.decode $ BS.pack v)
 
 getMdVisualizer :: MonadIO m => Map VisualizerId VisualizerMatcher -> m (Maybe Visualizer)
 getMdVisualizer visMap = fmap (Visualizer mdVisId) . Map.lookup mdVisId <$> applyType (TCons "Text" def) visMap

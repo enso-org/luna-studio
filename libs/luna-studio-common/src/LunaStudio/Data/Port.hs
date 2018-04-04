@@ -1,8 +1,3 @@
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE TypeFamilies      #-}
-
 module LunaStudio.Data.Port
     ( module LunaStudio.Data.Port
     , module X
@@ -22,7 +17,7 @@ type InPortId    = [InPortIndex]
 makeLenses ''InPorts
 
 data    OutPortIndex  = Projection Int deriving (Eq, Generic, Ord, Read, Show)
-newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
+newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, Show, Traversable)
 type    OutPortId     = [OutPortIndex]
 makeWrapped ''OutPorts
 
@@ -42,6 +37,7 @@ instance NFData   OutPortIndex
 instance ToJSON   OutPortIndex
 instance FromJSON OutPortIndex
 instance Binary   s => Binary   (OutPorts s)
+instance NFData   s => NFData   (OutPorts s)
 instance ToJSON   s => ToJSON   (OutPorts s)
 instance FromJSON s => FromJSON (OutPorts s)
 
@@ -54,17 +50,30 @@ instance Ixed (InPorts s) where
     ix Self    = self . _Just
     ix (Arg i) = args . ix i
 
+instance FunctorWithIndex InPortIndex InPorts where
+    imap f (InPorts s h as) = InPorts (f Self <$> s) (f Head <$> h) (imap (f . Arg) as)
+
+instance Mempty (InPorts a) where
+    mempty = InPorts mempty mempty mempty
+
 type instance Index   (OutPorts s) = OutPortIndex
 type instance IxValue (OutPorts s) = s
 instance Ixed (OutPorts s) where
     ix (Projection i) = wrapped . ix i
 
+instance FunctorWithIndex OutPortIndex OutPorts where
+    imap f = OutPorts . imap (f . Projection) . unwrap
 
-data AnyPortId = InPortId'  { inPortId'  :: InPortId  }
-               | OutPortId' { outPortId' :: OutPortId }
-               deriving (Generic, Show, Eq, Ord)
+instance Mempty (OutPorts a) where
+    mempty = OutPorts mempty
+
+data AnyPortId
+    = InPortId'  { inPortId'  :: InPortId  }
+    | OutPortId' { outPortId' :: OutPortId }
+    deriving (Generic, Show, Eq, Ord)
 
 makePrisms ''AnyPortId
+
 instance Binary AnyPortId
 instance NFData AnyPortId
 instance FromJSON AnyPortId
@@ -74,6 +83,7 @@ instance ToJSON   AnyPortId
 data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Eq, Generic, Show)
 
 makePrisms ''PortState
+
 instance Binary PortState
 instance NFData PortState
 instance FromJSON PortState
@@ -81,11 +91,11 @@ instance ToJSON PortState
 
 
 data Port i = Port
-        { _portId     :: i
-        , _name       :: Text
-        , _valueType  :: TypeRep
-        , _state      :: PortState
-        } deriving (Eq, Generic, Show)
+    { _portId     :: i
+    , _name       :: Text
+    , _valueType  :: TypeRep
+    , _state      :: PortState
+    } deriving (Eq, Generic, Show)
 
 type InPort  = Port InPortId
 type OutPort = Port OutPortId

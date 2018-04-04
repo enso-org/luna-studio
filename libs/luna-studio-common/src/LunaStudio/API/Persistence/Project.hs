@@ -9,11 +9,13 @@ import           Prologue
 
 type ProjectId = Int
 
-data Project = Project { _name     :: String
-                       , _libs     :: IntMap Library
-                       } deriving (Eq, Generic, Show)
+data Project = Project
+    { _name     :: String
+    , _libs     :: IntMap Library
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Project
+
 instance Binary   Project
 instance NFData   Project
 instance FromJSON Project

@@ -8,13 +8,12 @@ import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
 
-data RedoRequest = RedoRequest deriving (Eq, Generic, Show)
-
-data Request = Request { _request :: RedoRequest
-                       } deriving (Eq, Generic, Show)
+data RedoRequest = RedoRequest                         deriving (Eq, Generic, Show)
+data Request     = Request { _request :: RedoRequest } deriving (Eq, Generic, Show)
 
 makeLenses ''RedoRequest
 makeLenses ''Request
+
 instance Binary RedoRequest
 instance NFData RedoRequest
 instance ToJSON RedoRequest

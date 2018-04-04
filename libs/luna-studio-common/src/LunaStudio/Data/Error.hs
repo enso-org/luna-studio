@@ -5,22 +5,26 @@ import           Data.Aeson.Types (FromJSON, ToJSON)
 import           Data.Binary      (Binary)
 import           Prologue
 
-data NodeError  = CompileError CompileErrorDetails | RuntimeError deriving (Eq, Generic, Show)
+
+data NodeError  = CompileError CompileErrorDetails | RuntimeError       deriving (Eq, Generic, Show)
 data GraphError = BreadcrumbDoesNotExist | ParseError | OtherGraphError deriving (Eq, Generic, Show)
-data LunaError  = Graph GraphError | OtherLunaError deriving (Eq, Generic, Show)
+data LunaError  = Graph GraphError | OtherLunaError                     deriving (Eq, Generic, Show)
 
-data CompileErrorDetails = CompileErrorDetails { _arisingFrom :: [SourceLocation]
-                                               , _requiredBy  :: [SourceLocation]
-                                               } deriving (Eq, Generic, Show)
+data CompileErrorDetails = CompileErrorDetails
+    { _arisingFrom :: [SourceLocation]
+    , _requiredBy  :: [SourceLocation]
+    } deriving (Eq, Generic, Show)
 
-data SourceLocation = SourceLocation { _mod   :: Text
-                                     , _klass :: Maybe Text
-                                     , _fun   :: Text
-                                     } deriving (Eq, Show, Generic)
+data SourceLocation = SourceLocation
+    { _mod   :: Text
+    , _klass :: Maybe Text
+    , _fun   :: Text
+    } deriving (Eq, Show, Generic)
 
-data Error a = Error { _errorType    :: a
-                     , _errorContent :: Text
-                     } deriving (Eq, Generic, Show)
+data Error a = Error
+    { _errorType    :: a
+    , _errorContent :: Text
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''CompileErrorDetails
 makeLenses ''Error

@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 module LunaStudio.API.Library.CreateLibrary where
 
 import           Data.Aeson.Types        (ToJSON)
@@ -13,22 +10,26 @@ import           LunaStudio.Data.Project (ProjectId)
 import           Prologue
 
 
-data Request = Request { _projectId   :: ProjectId
-                       , _libraryName :: Maybe String
-                       , _path        :: String
-                       } deriving (Eq, Generic, Show)
+data Request = Request
+    { _projectId   :: ProjectId
+    , _libraryName :: Maybe String
+    , _path        :: String
+    } deriving (Eq, Generic, Show)
 
-data Result = Result   { _libraryId :: LibraryId
-                       , _library   :: Library
-                       } deriving (Eq, Generic, Show)
+data Result = Result
+    { _libraryId :: LibraryId
+    , _library   :: Library
+    } deriving (Eq, Generic, Show)
 
-data Update = Update   { _libraryId' :: LibraryId
-                       , _library'   :: Library
-                       } deriving (Eq, Generic, Show)
+data Update = Update
+    { _libraryId' :: LibraryId
+    , _library'   :: Library
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
 makeLenses ''Update
+
 instance Binary Request
 instance NFData Request
 instance ToJSON Request
@@ -38,6 +39,7 @@ instance ToJSON Result
 instance Binary Update
 instance NFData Update
 instance ToJSON Update
+
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result

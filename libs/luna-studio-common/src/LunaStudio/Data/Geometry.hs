@@ -3,7 +3,7 @@ module LunaStudio.Data.Geometry where
 import           LunaStudio.Data.Constants (gridSize)
 import           LunaStudio.Data.Position  (Position, distanceSquared, fromDoubles, move, vector, x, y)
 import           LunaStudio.Data.Vector2   (dotV, scalarProduct)
-import           Prologue                  hiding (p)
+import           Prologue
 
 type Radius = Double
 
@@ -18,7 +18,7 @@ epsilon = 0.005
 
 -- | From Graphics.Gloss.Geometry.Line
 -- | Given an infinite line which intersects `P1` and `P1`,
---      return the point on that line that is closest to `P3`
+--      pure the point on that line that is closest to `P3`
 {-# INLINE closestPointOnLine #-}
 closestPointOnLine :: (Position, Position) -> Position -> Position
 closestPointOnLine line@(p1, p2) p3 = move shift p1 where
@@ -56,16 +56,17 @@ closestPointOnLineParam (p1, p2) p3 = (v3 - v1) `dotV` (v2 - v1) / (v2 - v1) `do
     v3 = p3 ^. vector
 
 doesSegmentsIntersects :: (Position, Position) -> (Position, Position) -> Bool
-doesSegmentsIntersects seg1@(beg1, end1) seg2@(beg2, end2) = if beg1 == end1 || beg2 == end2 then False else
+doesSegmentsIntersects seg1@(beg1, end1) seg2@(beg2, end2) = not (beg1 == end1 || beg2 == end2) && (
     case intersectLineLine seg1 seg2 of
         Nothing -> isBeg1OnSeg2 || isBeg2OnSeg1 where
             isBeg1OnSeg2 = distanceSquared beg1 beg2 + distanceSquared beg1 end2 == distanceSquared beg2 end2
             isBeg2OnSeg1 = distanceSquared beg2 beg1 + distanceSquared beg2 end1 == distanceSquared beg1 end1
         Just p  -> isPointInRectangle p (leftTop1, rightBottom1) && isPointInRectangle p (leftTop2, rightBottom2) where
-                leftTop1     = fromDoubles (min (beg1 ^. x) (end1 ^. x)) (min (beg1 ^. y) (end1 ^. y))
-                rightBottom1 = fromDoubles (max (beg1 ^. x) (end1 ^. x)) (max (beg1 ^. y) (end1 ^. y))
-                leftTop2     = fromDoubles (min (beg2 ^. x) (end2 ^. x)) (min (beg2 ^. y) (end2 ^. y))
-                rightBottom2 = fromDoubles (max (beg2 ^. x) (end2 ^. x)) (max (beg2 ^. y) (end2 ^. y))
+            leftTop1     = fromDoubles (min (beg1 ^. x) (end1 ^. x)) (min (beg1 ^. y) (end1 ^. y))
+            rightBottom1 = fromDoubles (max (beg1 ^. x) (end1 ^. x)) (max (beg1 ^. y) (end1 ^. y))
+            leftTop2     = fromDoubles (min (beg2 ^. x) (end2 ^. x)) (min (beg2 ^. y) (end2 ^. y))
+            rightBottom2 = fromDoubles (max (beg2 ^. x) (end2 ^. x)) (max (beg2 ^. y) (end2 ^. y))
+    )
 
 -- Line-Line intersection from Graphics.Gloss.Geometry.Line
 -- | Given four points specifying two lines, get the point where the two lines

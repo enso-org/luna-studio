@@ -7,11 +7,13 @@ import           LunaStudio.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
 import           Prologue
 
 
-data GraphLocation = GraphLocation { _filePath   :: FilePath
-                                   , _breadcrumb :: Breadcrumb BreadcrumbItem
-                                   } deriving (Eq, Generic, Show)
+data GraphLocation = GraphLocation
+    { _filePath   :: FilePath
+    , _breadcrumb :: Breadcrumb BreadcrumbItem
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''GraphLocation
+
 instance Binary   GraphLocation
 instance NFData   GraphLocation
 instance FromJSON GraphLocation where parseJSON = Lens.parse

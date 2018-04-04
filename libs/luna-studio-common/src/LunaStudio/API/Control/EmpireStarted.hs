@@ -9,6 +9,7 @@ import           Prologue
 data Status = Status deriving (Eq, Generic, Show)
 
 makeLenses ''Status
+
 instance Binary Status
 instance NFData Status
 instance ToJSON Status

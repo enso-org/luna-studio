@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 module LunaStudio.Data.Size
     ( module LunaStudio.Data.Size
     , vector
@@ -15,7 +14,7 @@ import           Prologue
 
 -- === Definition === --
 
-newtype Size = Size (Vector2 Double) deriving (Eq, Show, Generic, Default)
+newtype Size = Size (Vector2 Double) deriving (Eq, Generic, Show)
 makeWrapped ''Size
 
 
@@ -30,9 +29,10 @@ width = x
 type instance VectorOf Size = Vector2 Double
 
 instance IsVector Size
-instance Dim1 Size
-instance Dim2 Size
-instance ToJSON Size
+instance Dim1     Size
+instance Dim2     Size
+instance Default  Size
+instance ToJSON   Size
 
 type instance Item Size = Double
 instance Convertible Size [Double] where convert = toList . view vector

@@ -10,8 +10,7 @@ import           Prologue
 
 data UndoRequest = UndoRequest deriving (Eq, Generic, Show)
 
-data Request = Request { _request :: UndoRequest
-                       } deriving (Eq, Generic, Show)
+data Request = Request { _request :: UndoRequest } deriving (Eq, Generic, Show)
 
 makeLenses ''UndoRequest
 makeLenses ''Request
@@ -21,6 +20,7 @@ instance ToJSON UndoRequest
 instance Binary Request
 instance NFData Request
 instance ToJSON Request
+
 
 type Response = Response.Response Request () ()
 instance Response.ResponseResult Request () ()

@@ -8,11 +8,13 @@ import           LunaStudio.Data.MonadPath     (MonadPath)
 import           Prologue
 
 
-data Update = Update { _location :: GraphLocation
-                     , _monads   :: [MonadPath]
-                     } deriving (Eq, Generic, Show)
+data Update = Update
+    { _location :: GraphLocation
+    , _monads   :: [MonadPath]
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Update
+
 instance Binary Update
 instance NFData Update
 instance ToJSON Update

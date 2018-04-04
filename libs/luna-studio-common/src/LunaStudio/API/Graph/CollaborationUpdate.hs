@@ -11,19 +11,22 @@ import           Prologue
 
 type ClientId = UUID
 
-data Event = Modify      [NodeLoc]
-           | Touch       [NodeLoc]
-           | CancelTouch [NodeLoc]
-           | Refresh
-           deriving (Eq, Generic, Show)
+data Event
+    = Modify      [NodeLoc]
+    | Touch       [NodeLoc]
+    | CancelTouch [NodeLoc]
+    | Refresh
+    deriving (Eq, Generic, Show)
 
-data Update = Update { _location  :: GraphLocation
-                     , _clientId  :: ClientId
-                     , _event     :: Event
-                     } deriving (Eq, Generic, Show)
+data Update = Update
+    { _location  :: GraphLocation
+    , _clientId  :: ClientId
+    , _event     :: Event
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Update
 makeLenses ''Event
+
 instance Binary Update
 instance NFData Update
 instance ToJSON Update

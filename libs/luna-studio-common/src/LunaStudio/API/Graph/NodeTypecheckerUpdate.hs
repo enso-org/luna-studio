@@ -8,11 +8,13 @@ import           LunaStudio.Data.Node          (NodeTypecheckerUpdate)
 import           Prologue
 
 
-data Update = Update { _location  :: GraphLocation
-                     , _node      :: NodeTypecheckerUpdate
-                     } deriving (Eq, Generic, Show)
+data Update = Update
+    { _location  :: GraphLocation
+    , _node      :: NodeTypecheckerUpdate
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Update
+
 instance Binary Update
 instance NFData Update
 instance ToJSON Update

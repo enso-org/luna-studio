@@ -5,7 +5,6 @@ import           Prologue
 
 type Topic = String
 
-
 class MessageTopic a where
   topic :: a -> Topic
 

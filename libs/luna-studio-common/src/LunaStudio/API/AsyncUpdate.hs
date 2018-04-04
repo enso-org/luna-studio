@@ -8,9 +8,10 @@ import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import           Prologue
 
 
-data AsyncUpdate = MonadsUpdate      MonadsUpdate.Update
-                 | TypecheckerUpdate NodeTCUpdate.Update
-                 | ResultUpdate        NodeResult.Update
-                 | CodeUpdate          Substitute.Update
-                 | InterpreterUpdate  Interpreter.Update
-                 deriving (Eq, Show)
+data AsyncUpdate
+    = MonadsUpdate      MonadsUpdate.Update
+    | TypecheckerUpdate NodeTCUpdate.Update
+    | ResultUpdate        NodeResult.Update
+    | CodeUpdate          Substitute.Update
+    | InterpreterUpdate  Interpreter.Update
+    deriving (Eq, Show)

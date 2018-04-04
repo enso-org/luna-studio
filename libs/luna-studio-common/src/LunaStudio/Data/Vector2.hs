@@ -1,7 +1,3 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TypeFamilies      #-}
 module LunaStudio.Data.Vector2 where
 
 import           Data.Aeson.Types    (FromJSON, ToJSON)
@@ -47,7 +43,7 @@ class Dim2 a => Dim3 a where
 
 -- === Definition === --
 
-data Vector2 a = Vector2 { _vector2_x, _vector2_y :: a } deriving (Eq, Show, Functor, Generic, Ord)
+data Vector2 a = Vector2 { _vector2_x, _vector2_y :: a } deriving (Eq, Functor, Generic, Ord, Show)
 makeLenses ''Vector2
 
 

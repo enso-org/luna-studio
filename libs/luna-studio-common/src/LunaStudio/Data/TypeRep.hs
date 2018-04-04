@@ -8,13 +8,14 @@ import           Data.Text        (Text)
 import           Prologue         hiding (Text, TypeRep, intercalate)
 
 
-data TypeRep = TCons String  [TypeRep]
-             | TVar  String
-             | TLam  TypeRep TypeRep
-             | TStar
-             | TBlank
-             | TAcc  String TypeRep
-             deriving (Eq, Generic, Show)
+data TypeRep
+    = TCons String  [TypeRep]
+    | TVar  String
+    | TLam  TypeRep TypeRep
+    | TStar
+    | TBlank
+    | TAcc  String TypeRep
+    deriving (Eq, Generic, Show)
 
 instance NFData TypeRep
 instance Binary TypeRep
@@ -45,9 +46,10 @@ instance Convertible TypeRep Text where
     convert = convert . toString ; {-# INLINE convert #-}
 
 
-data ConstructorRep = ConstructorRep { constructor :: Text
-                                     , fields      :: [ConstructorRep]
-                                     } deriving (Eq, Generic, Show)
+data ConstructorRep = ConstructorRep
+    { constructor :: Text
+    , fields      :: [ConstructorRep]
+    } deriving (Eq, Generic, Show)
 
 instance NFData ConstructorRep
 instance ToJSON ConstructorRep

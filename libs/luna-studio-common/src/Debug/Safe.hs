@@ -25,7 +25,7 @@ withLevel action = do
     liftIO $ IORef.writeIORef levelRef $ level + 1
     r <- action level
     liftIO $ IORef.writeIORef levelRef level
-    return r
+    pure r
 #endif
 
 {-# INLINE timeIt #-}
@@ -42,7 +42,7 @@ timeIt name action = withLevel $ \l -> do
     putStrLn $ spaces <> "<< " <> name
             <> " CPU " <> show ((cpuEnd - cpuStart) `div` 1000000000) <> "ms"
             <> " Wall " <> show (diffUTCTime end start)
-    return r
+    pure r
 #else
 timeIt _ = id
 #endif

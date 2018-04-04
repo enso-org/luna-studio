@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module LunaStudio.Data.NodeSearcher
     ( module LunaStudio.Data.NodeSearcher
     , RawEntry (..)
@@ -38,16 +37,19 @@ import           Prologue         hiding (Item)
 type Name = Text
 type Doc  = Text
 
-data ClassHints = ClassHints { _constructors :: [(Name, Doc)]
-                             , _methods      :: [(Name, Doc)]
-                             } deriving (Eq, Generic, Show)
+data ClassHints = ClassHints
+    { _constructors :: [(Name, Doc)]
+    , _methods      :: [(Name, Doc)]
+    } deriving (Eq, Generic, Show)
 
-data ModuleHints = ModuleHints { _functions    :: [(Name, Doc)]
-                               , _classes      :: Map Text ClassHints
-                               } deriving (Eq, Generic, Show)
+data ModuleHints = ModuleHints
+    { _functions    :: [(Name, Doc)]
+    , _classes      :: Map Text ClassHints
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''ClassHints
 makeLenses ''ModuleHints
+
 instance Binary ModuleHints
 instance NFData ModuleHints
 instance ToJSON ModuleHints
@@ -57,32 +59,36 @@ instance ToJSON ClassHints
 
 type ImportsHints = Map ImportName ModuleHints
 
-data NodeSearcherData = NodeSearcherData { _imports        :: Map ImportName ModuleHints
-                                         , _currentImports :: [ImportName]
-                                         } deriving (Eq, Generic, Show)
+data NodeSearcherData = NodeSearcherData
+    { _imports        :: Map ImportName ModuleHints
+    , _currentImports :: Set ImportName
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''NodeSearcherData
+
 instance Binary  NodeSearcherData
 instance NFData  NodeSearcherData
 instance Default NodeSearcherData where def = NodeSearcherData def def
 
-missingImports :: Getter NodeSearcherData [ImportName]
+missingImports :: Getter NodeSearcherData (Set ImportName)
 missingImports = to missingImports' where
-    missingImports' (NodeSearcherData imps currentImps) = filter (`Set.notMember` (Map.keysSet imps)) currentImps
+    missingImports' (NodeSearcherData imps currentImps) = let neededImports = Map.keysSet imps
+        in Set.filter (`Set.notMember` neededImports) currentImps
 
 
-data TypePreferation = TypePreferation { _localFunctionsWeight         :: Double
-                                       , _globalFunctionsWeight        :: Double
-                                       , _specialWeightForClassMethods :: (Set ClassName, Double)
-                                       , _methodsWeight                :: Double
-                                       , _constructorsWeight           :: Double
-                                       } deriving Show
+data TypePreferation = TypePreferation
+    { _localFunctionsWeight         :: Double
+    , _globalFunctionsWeight        :: Double
+    , _specialWeightForClassMethods :: (Set ClassName, Double)
+    , _methodsWeight                :: Double
+    , _constructorsWeight           :: Double
+    } deriving Show
 
 makeLenses ''TypePreferation
 instance Default TypePreferation where def = TypePreferation 1 1 (def, 1) 1 1
 
 searchCommands :: Query -> [Text] -> [Match]
-searchCommands q = fuzzySearch q . map (\c -> RawEntry c def Command 1 def)
+searchCommands q = fuzzySearch q . fmap (\c -> RawEntry c def Command 1 def)
 
 search :: Query -> NodeSearcherData -> Maybe TypePreferation -> [Match]
 search q nsData tp = fuzzySearch q $ toEntries nsData (fromJust def tp)
@@ -97,15 +103,15 @@ toEntries (NodeSearcherData ih currImps) tPref = concat . Map.elems $ Map.mapWit
     classToEntries :: ImportName -> ClassName -> ClassHints -> [RawEntry]
     classToEntries impName cName c = methodsToEntries impName cName (c ^. methods) <> constructorsToEntries impName cName (c ^. constructors)
     methodsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
-    methodsToEntries impName cName = map (uncurry $ methodToEntry impName cName)
+    methodsToEntries impName cName = fmap (uncurry $ methodToEntry impName cName)
     methodToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
     methodToEntry impName cName m d = let et = Method cName in RawEntry m d et (getWeight impName cName et) $ Just $ ImportInfo impName $ isImported impName
     constructorsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
-    constructorsToEntries impName cName = map (uncurry $ constructorToEntry impName cName)
+    constructorsToEntries impName cName = fmap (uncurry $ constructorToEntry impName cName)
     constructorToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
     constructorToEntry impName cName c d = let et = Constructor cName in RawEntry c d et (getWeight impName cName et) $ Just $ ImportInfo impName $ isImported impName
     functionsToEntries :: ImportName -> [(Name, Doc)] -> [RawEntry]
-    functionsToEntries impName = map (uncurry $ functionToEntry impName)
+    functionsToEntries impName = fmap (uncurry $ functionToEntry impName)
     functionToEntry :: ImportName -> Name -> Doc -> RawEntry
     functionToEntry impName f d = RawEntry f d Function (getWeight impName def Function) $ Just $ ImportInfo impName $ isImported impName
     isImported :: ImportName -> Bool

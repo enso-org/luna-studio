@@ -1,41 +1,27 @@
 module LunaStudio.API.Graph.GetProgram where
 
-import           Data.Aeson.Types                     (ToJSON)
-import           Data.Binary                          (Binary (..))
-import           Data.Hashable                        (Hashable)
-import           Data.HashMap.Strict                  (HashMap)
-import qualified Data.HashMap.Strict                  as HashMap
-import qualified LunaStudio.API.Graph.Request         as G
-import qualified LunaStudio.API.Graph.SaveSettings    as SaveSettings
-import qualified LunaStudio.API.Request               as R
-import qualified LunaStudio.API.Response              as Response
-import qualified LunaStudio.API.Topic                 as T
-import           LunaStudio.Data.Breadcrumb           (Breadcrumb, BreadcrumbItem, Named)
-import           LunaStudio.Data.CameraTransformation (CameraTransformation)
-import           LunaStudio.Data.Error                (Error, GraphError)
-import           LunaStudio.Data.Graph                (Graph)
-import           LunaStudio.Data.GraphLocation        (GraphLocation)
-import           LunaStudio.Data.NodeSearcher         (ImportName)
-import           LunaStudio.Data.Project              (LocationSettings)
-import           LunaStudio.Data.TypeRep              (TypeRep)
-import           LunaStudio.Data.Visualizer           (Visualizer)
-import           Prologue                             hiding (TypeRep)
+import           Data.Aeson.Types              (ToJSON)
+import           Data.Binary                   (Binary)
+import qualified LunaStudio.API.Graph.Request  as G
+import qualified LunaStudio.API.Request        as R
+import qualified LunaStudio.API.Response       as Response
+import qualified LunaStudio.API.Topic          as T
+import           LunaStudio.Data.Diff          (Diff)
+import           LunaStudio.Data.GraphLocation (GraphLocation)
+import           LunaStudio.Data.Project       (LocationSettings)
+import           Prologue
 
 
-data Request = Request { _location             :: GraphLocation
-                       , _prevLocationSettings :: Maybe (GraphLocation, LocationSettings)
-                       , _retrieveLocation     :: Bool
-                       } deriving (Eq, Generic, Show)
+data Request = Request
+    { _location             :: GraphLocation
+    , _prevLocationSettings :: Maybe (GraphLocation, LocationSettings)
+    , _retrieveLocation     :: Bool
+    } deriving (Eq, Generic, Show)
 
-data Result  = Result  { _graph                  :: Either (Error GraphError) Graph
-                       , _code                   :: Text
-                       , _breadcrumb             :: Breadcrumb (Named BreadcrumbItem)
-                       , _availableImports       :: [ImportName]
-                       , _typeRepToVisMap        :: Maybe (HashMap TypeRep Visualizer)
-                       , _camera                 :: CameraTransformation
-                       , _newLocation            :: GraphLocation
-                       , _projectVisualizersPath :: Maybe FilePath
-                       } deriving (Eq, Generic, Show)
+data Result = Result
+    { _currentLocation :: GraphLocation
+    , _diff            :: Diff
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
