@@ -6,6 +6,7 @@ import qualified Data.HashMap.Strict                        as HashMap
 import           Data.Map.Lazy                              (Map)
 import qualified Data.Map.Lazy                              as Map
 import           LunaStudio.Data.Breadcrumb                 (BreadcrumbItem)
+import qualified LunaStudio.Data.Connection                 as Connection
 import           LunaStudio.Data.Graph                      (Graph)
 import qualified LunaStudio.Data.Graph                      as GraphAPI
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
@@ -30,7 +31,7 @@ localMerge parentPath graphs = do
     let parentLoc = NodeLoc.fromPath parentPath
     modifyExpressionNode parentLoc $ mode .= Expanded (Function $ Map.fromList subgraphs)
     forM_ (Map.elems graphs) $ \graph -> do
-        let connections        = map ((_1 %~ NodeLoc.prependPath parentPath) . (_2 %~ NodeLoc.prependPath parentPath)) $ graph ^. GraphAPI.connections
+        let connections = map ((Connection.src %~ NodeLoc.prependPath parentPath) . (Connection.dst %~ NodeLoc.prependPath parentPath)) $ Map.elems $ graph ^. GraphAPI.connections
         void $ localAddConnections connections
 
 localUnmerge :: ExpressionNode -> Command State ()

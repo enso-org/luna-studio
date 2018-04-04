@@ -16,4 +16,4 @@ updateConnection conn prevConnId = do
 localUpdateConnection :: Connection -> ConnectionId -> Command State Bool
 localUpdateConnection conn prevConnId = do
     when (conn ^. connectionId /= prevConnId) $ void $ localRemoveConnection prevConnId
-    localAddConnection (conn ^. src) (conn ^. dst)
+    localAddConnection $ convert conn

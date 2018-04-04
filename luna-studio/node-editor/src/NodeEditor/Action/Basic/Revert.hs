@@ -16,7 +16,7 @@ import qualified LunaStudio.API.Graph.SetNodeExpression    as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta         as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault       as SetPortDefault
 import qualified LunaStudio.API.Response                   as Response
-import           LunaStudio.Data.Connection                (dst, src)
+import           LunaStudio.Data.Connection                (Connection (Connection), dst, src)
 import           LunaStudio.Data.Node                      (nodeId)
 import           LunaStudio.Data.NodeLoc                   (NodeLoc, prependPath)
 import           LunaStudio.Data.PortRef                   (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
@@ -69,22 +69,22 @@ revertMovePort (MovePort.Request loc oldPortRef newPos) =
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
 revertRemoveConnection (RemoveConnection.Request loc dst') (Response.Ok (RemoveConnection.Inverse src')) =
-    inCurrentLocation loc $ \path -> void $ localAddConnection (prependPath path src') (prependPath path dst')
+    inCurrentLocation loc $ \path -> void . localAddConnection $ Connection (prependPath path src') (prependPath path dst')
 revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = panic
 
 --TODO[LJK]: Force LunaStudio.Data.Connection to be instance of wrapped to make functions like this cleaner
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
     inCurrentLocation loc $ \path -> do
-        let nodes' = map (convert . (path,)) nodes
-        void $ localAddSubgraph nodes' $ map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns
+        let nodes' = map (convert . (path,)) $ Map.elems nodes
+        void . localAddSubgraph nodes' $ (\conn -> Connection (prependPath path $ conn ^. src) (prependPath path $ conn ^. dst)) <$> Map.elems conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()
 revertRemovePort (RemovePort.Request loc portRef) (Response.Ok (RemovePort.Inverse prevName conns)) =
     inCurrentLocation loc $ \path -> do
         void $ localAddPort (prependPath path portRef) Nothing (Just prevName)
-        void $ localAddConnections (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
+        void $ localAddConnections (map (\conn -> Connection (prependPath path $ conn ^. src) (prependPath path $ conn ^. dst)) conns)
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = panic
 
 revertRenameNode :: RenameNode.Request -> Response.Status RenameNode.Inverse -> Command State ()

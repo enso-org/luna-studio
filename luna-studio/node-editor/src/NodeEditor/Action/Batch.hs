@@ -3,6 +3,7 @@ module NodeEditor.Action.Batch  where
 import           Common.Action.Command               (Command)
 import           Common.Prelude
 import           Data.UUID.Types                     (UUID)
+import           LunaStudio.Data.Connection          (Connection)
 import           LunaStudio.Data.GraphLocation       (GraphLocation)
 import           LunaStudio.Data.NodeMeta            (NodeMeta)
 import           LunaStudio.Data.NodeSearcher        (ImportName)
@@ -76,9 +77,9 @@ addNode nl expr nm connectTo = withWorkspace $ BatchCmd.addNode nl expr nm conne
 addPort :: OutPortRef -> Maybe InPortRef -> Maybe Text -> Command State ()
 addPort = withWorkspace .:. BatchCmd.addPort
 
-addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
+addSubgraph :: [ExpressionNode] -> [Connection] -> Command State ()
 addSubgraph [] []       = return ()
-addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) (convert <$> conns)
+addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) conns
 
 autolayoutNodes :: [NodeLoc] -> Bool -> Command State ()
 autolayoutNodes []  _            = return ()

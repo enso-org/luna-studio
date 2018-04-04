@@ -3,8 +3,10 @@ module NodeEditor.Action.Basic.CreateGraph where
 import           Common.Action.Command                 (Command)
 import           Common.Prelude
 import qualified Data.Set                              as Set
+import           LunaStudio.Data.Connection            (Connection)
+import qualified LunaStudio.Data.Connection            as Connection
 import           LunaStudio.Data.MonadPath             (MonadPath)
-import           LunaStudio.Data.PortRef               (InPortRef, OutPortRef)
+import           LunaStudio.Data.NodeLoc               (NodePath)
 import           NodeEditor.Action.Basic.AddConnection (localAddConnections)
 import           NodeEditor.Action.Basic.AddNode       (localAddExpressionNodes)
 import           NodeEditor.Action.Basic.FocusNode     (updateNodeZOrder)
@@ -18,7 +20,7 @@ import qualified NodeEditor.React.Model.NodeEditor     as NE
 import           NodeEditor.State.Global               (State)
 
 
-createGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [(OutPortRef, InPortRef)] -> [MonadPath] -> Command State ()
+createGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [Connection] -> [MonadPath] -> Command State ()
 createGraph nodes input output connections monads = do
     resetGraph
     localAddExpressionNodes nodes
@@ -28,7 +30,7 @@ createGraph nodes input output connections monads = do
     updateMonads monads
     updateNodeZOrder
 
-updateGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [(OutPortRef, InPortRef)] -> [MonadPath] -> Command State ()
+updateGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [Connection] -> [MonadPath] -> Command State ()
 updateGraph nodes input output connections monads = do
     let nlsSet = Set.fromList $ map (view nodeLoc) nodes
     nlsToRemove <- filter (not . flip Set.member nlsSet) . map (view nodeLoc) <$> getExpressionNodes

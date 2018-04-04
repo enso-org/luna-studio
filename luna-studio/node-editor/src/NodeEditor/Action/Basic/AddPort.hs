@@ -2,6 +2,7 @@ module NodeEditor.Action.Basic.AddPort where
 
 import           Common.Action.Command                   (Command)
 import           Common.Prelude
+import           LunaStudio.Data.Connection              (Connection (Connection))
 import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
 import           LunaStudio.Data.Port                    (Port (Port))
 import           LunaStudio.Data.PortRef                 (InPortRef, OutPortRef (OutPortRef), srcPortId)
@@ -34,10 +35,10 @@ localAddPort portRef@(OutPortRef nid pid@[Projection pos]) mayConnDst mayName = 
                 void . localUpdateInputNode $ node & inputSidebarPorts .~ newPorts
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. Connection.src of
-                    (OutPortRef srcNid ((Projection i):p)) ->
+                    (OutPortRef srcNid (Projection i : p)) ->
                         when (srcNid == nid && i >= pos) $
-                            void $ localAddConnection (conn ^. Connection.src & srcPortId .~ (Projection (i+1):p)) (conn ^. Connection.dst)
+                            void . localAddConnection $ Connection (conn ^. Connection.src & srcPortId .~ (Projection (i+1):p)) (conn ^. Connection.dst)
                     _ -> return ()
-                withJust mayConnDst $ \connDst -> void $ localAddConnection portRef connDst
+                withJust mayConnDst $ void . localAddConnection . Connection portRef
                 return True
 localAddPort _ _ _ = $notImplemented

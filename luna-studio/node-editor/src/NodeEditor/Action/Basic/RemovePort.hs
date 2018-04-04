@@ -2,6 +2,7 @@ module NodeEditor.Action.Basic.RemovePort where
 
 import           Common.Action.Command                    (Command)
 import           Common.Prelude
+import           LunaStudio.Data.Connection               (Connection (Connection))
 import           LunaStudio.Data.PortRef                  (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection    (localAddConnection)
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnection)
@@ -20,7 +21,7 @@ removePort portRef = whenM (localRemovePort portRef) $ Batch.removePort portRef
 localRemovePort :: OutPortRef -> Command State Bool
 localRemovePort (OutPortRef nid pid@(Projection pos : _)) = do
     mayNode <- getInputNode nid
-    flip (maybe (return False)) mayNode $ \node -> do
+    flip (maybe (return False)) mayNode $ \node ->
         if not (isInputSidebar node) || not (hasPort pid node) || (not (node ^. inputIsDef) && countProjectionPorts node <= 1)
             then return False
             else do
@@ -34,9 +35,9 @@ localRemovePort (OutPortRef nid pid@(Projection pos : _)) = do
                         when (srcNid == nid) $
                             if i == pos
                                 then void . localRemoveConnection $ conn ^. connectionId
-                            else if (i >= pos)
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1) : p) (conn ^. dst)
-                                else return ()
+                            else when (i >= pos) $
+                                void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection (i-1) : p) (conn ^. dst)
+
                     _ -> return ()
                 return True
 localRemovePort _ = $notImplemented

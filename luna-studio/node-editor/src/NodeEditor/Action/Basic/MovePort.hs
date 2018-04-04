@@ -2,6 +2,7 @@ module NodeEditor.Action.Basic.MovePort where
 
 import           Common.Action.Command                   (Command)
 import           Common.Prelude
+import           LunaStudio.Data.Connection              (Connection (Connection))
 import           LunaStudio.Data.LabeledTree             (value)
 import           LunaStudio.Data.PortRef                 (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
@@ -18,10 +19,10 @@ movePort :: OutPortRef -> Int -> Command State ()
 movePort portRef newPos = withJustM (localMovePort portRef newPos) $ const $ Batch.movePort portRef newPos
 
 localMovePort :: OutPortRef -> Int -> Command State (Maybe OutPortRef)
-localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos = do
+localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos =
     if pos == newPos then return Nothing else do
         mayNode <- getInputNode nid
-        flip (maybe (return Nothing)) mayNode $ \node -> do
+        flip (maybe (return Nothing)) mayNode $ \node ->
             if     not (isInputSidebar node)
                 || not (hasPort pid node)
                 || newPos >= countProjectionPorts node
@@ -34,19 +35,17 @@ localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos = do
                     (c, node2:d) = splitAt (upper - lower - 1) b
                     newPorts' = a <> [node2] <> c <> [node1] <> d
                     setNum i = value . portId .~ [Projection i]
-                    newPorts = map (uncurry setNum) $ zip [0..] newPorts'
+                    newPorts = zipWith setNum [0 ..] newPorts'
                 void . localUpdateInputNode $ node & inputSidebarPorts .~ newPorts
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
-                    OutPortRef srcNid (Projection i : p) -> do
-                        when (srcNid == nid) $
-                            if i == pos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection newPos : p) (conn ^. dst)
-                            else if i > pos && i <= newPos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1) : p) (conn ^. dst)
-                            else if i < pos && i >= newPos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i+1) : p) (conn ^. dst)
-                                else return ()
+                    OutPortRef srcNid (Projection i : p) -> when (srcNid == nid) $
+                        if i == pos
+                            then void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection newPos : p) (conn ^. dst)
+                        else if i > pos && i <= newPos
+                            then void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection (i-1) : p) (conn ^. dst)
+                        else when (i < pos && i >= newPos) $
+                            void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection (i+1) : p) (conn ^. dst)
                     _ -> return ()
                 return . Just $ OutPortRef nid (Projection newPos : p')
 localMovePort _ _ = $notImplemented
