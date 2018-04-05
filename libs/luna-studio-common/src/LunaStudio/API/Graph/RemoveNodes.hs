@@ -7,7 +7,7 @@ import qualified LunaStudio.API.Graph.Request  as G
 import qualified LunaStudio.API.Request        as R
 import qualified LunaStudio.API.Response       as Response
 import qualified LunaStudio.API.Topic          as T
-import           LunaStudio.Data.Connection    (Connection, ConnectionId)
+import           LunaStudio.Data.Connection    (Connection)
 import           LunaStudio.Data.Diff          (Diff)
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.Node          (ExpressionNode)
@@ -21,8 +21,8 @@ data Request = Request
     } deriving (Eq, Generic, Show)
 
 data Inverse = Inverse
-    { _nodes       :: Map NodeLoc      ExpressionNode
-    , _connections :: Map ConnectionId Connection
+    { _nodes       :: [ExpressionNode]
+    , _connections :: [Connection]
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Request

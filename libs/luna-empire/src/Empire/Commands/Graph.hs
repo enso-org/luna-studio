@@ -875,11 +875,11 @@ getGraph = getGraphCondTC True
 getGraphNoTC :: GraphLocation -> Empire APIGraph.Graph
 getGraphNoTC = getGraphCondTC False
 
-getNodes :: GraphLocation -> Empire (Map NodeLoc ExpressionNode)
+getNodes :: GraphLocation -> Empire [ExpressionNode]
 getNodes loc = withTC' loc True (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildGraph))
                                 (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildClassGraph))
 
-getConnections :: GraphLocation -> Empire (Map ConnectionId Connection)
+getConnections :: GraphLocation -> Empire [Connection]
 getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
@@ -1473,7 +1473,7 @@ collapseToFunction :: GraphLocation -> [NodeId] -> Empire ()
 collapseToFunction loc@(GraphLocation file _) nids = do
     nodes <- getNodes (GraphLocation file def)
     when (null nids) $ throwM ImpossibleToCollapse
-    let names   = Set.fromList . mapMaybe (view Node.name) $ Map.elems nodes
+    let names   = Set.fromList $ mapMaybe (view Node.name) nodes
         newName = generateNewFunctionName names "func"
     (defCode, useVarName, outputPosition) <- withGraph loc $ runASTOp $ do
         let ids = Set.fromList nids

@@ -123,5 +123,5 @@ findSuccessorPosition node nodes = fromDoubles xPos yPos where
     findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' + gapBetweenNodes else y'
 
 
-toNodesMap :: [ExpressionNode] -> Map NodeLoc ExpressionNode
-toNodesMap = Map.fromList . fmap (convert . view nodeId &&& id)
+toExpressionNodesMap :: [ExpressionNode] -> Map NodeLoc ExpressionNode
+toExpressionNodesMap = Map.fromList . fmap (convert . view nodeId &&& id)

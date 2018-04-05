@@ -58,7 +58,7 @@ runEmp env act = runEmpire env def $ do
     _ <- createLibrary (Just "/TestFile") "/TestFile"
     let toLoc = GraphLocation "/TestFile"
     Graph.loadCode (toLoc (Breadcrumb [])) "def main:\n    None"
-    [node] <- Map.elems <$> Graph.getNodes (toLoc (Breadcrumb []))
+    [node] <- Graph.getNodes (toLoc (Breadcrumb []))
     give (toLoc $ Breadcrumb [Definition (node ^. Node.nodeId)]) act
 
 evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO a
@@ -75,7 +75,7 @@ runEmp' env st newGraph act = runEmpire env st $ do
 
 graphIDs :: GraphLocation -> Empire [NodeId]
 graphIDs loc = do
-    nodes <- Map.elems <$> Graph.getNodes loc
+    nodes <- Graph.getNodes loc
     let ids = fmap (^. nodeId) nodes
     return ids
 

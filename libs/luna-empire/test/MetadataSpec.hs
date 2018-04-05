@@ -310,7 +310,7 @@ spec = around withChannels $ parallel $ do
         «8»m + n
     «2»c = 4.0
     «3»bar = foo 8.0 c|]
-                nodes <- Map.elems <$> Graph.getNodes loc
+                nodes <- Graph.getNodes loc
                 code  <- Graph.withUnit loc $ use Graph.code
                 return (nodes, Text.unpack code)
             code `shouldStartWith` [r|«2»def bar:
@@ -344,7 +344,7 @@ spec = around withChannels $ parallel $ do
     «2»c = 4.0
 
     «3»bar = foo 8.0 c|]
-                nodes <- Map.elems <$> Graph.getNodes loc
+                nodes <- Graph.getNodes loc
                 code  <- Graph.withUnit loc $ use Graph.code
                 return (nodes, Text.unpack code)
             code `shouldStartWith` [r|«2»def bar:
@@ -372,11 +372,11 @@ spec = around withChannels $ parallel $ do
 def bar:
     "bar"|]
                 nodes <- Graph.getNodes loc
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 let Just foo = find (\n -> n ^. Node.name == Just "foo") nodes
                     Just bar = find (\n -> n ^. Node.name == Just "bar") nodes
                 Graph.removeNodes loc [foo ^. Node.nodeId, bar ^. Node.nodeId]
-                nodes <- Map.elems <$> Graph.getNodes loc
+                nodes <- Graph.getNodes loc
                 code  <- Graph.withUnit loc $ use Graph.code
                 return (nodes, Text.unpack code)
             map (view Node.name) nodes `shouldMatchList` [Just "main"]
@@ -405,7 +405,7 @@ def bar:
 
 def bar:
     "bar"|]
-                nodes <- Map.elems <$> Graph.getNodes loc
+                nodes <- Graph.getNodes loc
                 code  <- Graph.withUnit loc $ use Graph.code
                 return (nodes, Text.unpack code)
             map (view Node.name) nodes `shouldMatchList` [Just "foo", Just "bar", Just "main"]

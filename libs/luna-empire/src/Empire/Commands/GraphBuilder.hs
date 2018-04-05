@@ -70,14 +70,14 @@ buildGraph = do
     connections <- buildConnections
     nodes       <- buildNodes
     (inE, outE) <- buildEdgeNodes
-    API.Graph (API.toNodesMap nodes) (API.toConnectionsMap $ uncurry API.Connection <$> connections) (Just inE) (Just outE) <$> buildMonads
+    API.Graph nodes (uncurry API.Connection <$> connections) (Just inE) (Just outE) <$> buildMonads
 
 buildClassGraph :: ClassOp m => m API.Graph
 buildClassGraph = do
     funs <- use Graph.clsFuns
 
     nodes' <- mapM (\(uuid, funGraph) -> buildClassNode uuid (funGraph ^. Graph.funName)) $ Map.assocs funs
-    pure $ API.Graph (API.toNodesMap nodes') mempty mempty mempty mempty
+    pure $ API.Graph nodes' mempty mempty mempty mempty
 
 
 buildClassNode :: ClassOp m => NodeId -> String -> m API.ExpressionNode

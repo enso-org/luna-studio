@@ -77,8 +77,8 @@ revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
     inCurrentLocation loc $ \path -> do
-        let nodes' = map (convert . (path,)) $ Map.elems nodes
-        void . localAddSubgraph nodes' $ (\conn -> Connection (prependPath path $ conn ^. src) (prependPath path $ conn ^. dst)) <$> Map.elems conns
+        let nodes' = map (convert . (path,)) nodes
+        void . localAddSubgraph nodes' $ (\conn -> Connection (prependPath path $ conn ^. src) (prependPath path $ conn ^. dst)) <$> conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()

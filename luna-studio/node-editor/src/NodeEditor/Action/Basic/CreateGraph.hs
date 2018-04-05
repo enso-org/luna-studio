@@ -36,10 +36,10 @@ createGraph nodes input output connections monads = do
 
 updateWithAPIGraph :: NodePath -> Graph -> Command State ()
 updateWithAPIGraph p g = updateGraph nodes input output conns monads >> setGraphStatus NE.GraphLoaded where
-    nodes  = convert . (p,) <$> Map.elems (g ^. API.nodes)
+    nodes  = convert . (p,) <$> g ^. API.nodes
     input  = convert . (p,) <$> g ^. API.inputSidebar
     output = convert . (p,) <$> g ^. API.outputSidebar
-    conns  = Connection.prependPath p <$> Map.elems (g ^. API.connections)
+    conns  = Connection.prependPath p <$> g ^. API.connections
     monads = g ^. API.monads
 
 

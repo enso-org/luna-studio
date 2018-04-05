@@ -235,7 +235,7 @@ handleRemoveConnectionUndo (Response.Response _ _ req invStatus status) = case (
 
 getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
 getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
-    AddSubgraph.Request location (Map.elems nodes) (Map.elems conns)
+    AddSubgraph.Request location nodes conns
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ _ req invStatus status) = case (invStatus, status) of

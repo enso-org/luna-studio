@@ -10,14 +10,14 @@ import           Data.Set                             (Set)
 import           LunaStudio.Data.Breadcrumb           (Breadcrumb, BreadcrumbItem, Named)
 import           LunaStudio.Data.CameraTransformation (CameraTransformation)
 import           LunaStudio.Data.Code                 (Code)
-import           LunaStudio.Data.Connection           (Connection, ConnectionId, connectionId)
+import           LunaStudio.Data.Connection           (Connection, ConnectionId, connectionId, toConnectionsMap)
 import           LunaStudio.Data.Error                (Error, GraphError)
 import           LunaStudio.Data.Graph                (Graph)
 import qualified LunaStudio.Data.Graph                as Graph
 import           LunaStudio.Data.GUIState             (GUIState)
 import qualified LunaStudio.Data.GUIState             as GUIState
 import           LunaStudio.Data.MonadPath            (MonadPath)
-import           LunaStudio.Data.Node                 (ExpressionNode, InputSidebar, OutputSidebar)
+import           LunaStudio.Data.Node                 (ExpressionNode, InputSidebar, OutputSidebar, toExpressionNodesMap)
 import qualified LunaStudio.Data.Node                 as Node
 import           LunaStudio.Data.NodeLoc              (HasNodeLoc (nodeLoc), NodeLoc)
 import           LunaStudio.Data.NodeMeta             (NodeMeta)
@@ -282,8 +282,8 @@ patches mods v = foldl (flip patch) v mods
 
 class Patchable a => ServesDiff a where
     diff  :: a -> a -> Diff
-    apply :: a -> Diff -> a
-    apply v (Diff mods) = flip patches v $ reverse mods
+    apply :: Diff -> (a -> a)
+    apply (Diff mods) v = flip patches v $ reverse mods
 
 
 -----------------------------------------------------
@@ -309,6 +309,9 @@ instance Patchable (Map NodeLoc ExpressionNode) where
     patch (RemoveNode      m) nodes = Map.delete (m ^. removeNodeLoc) nodes
     patch m                   nodes = maybe nodes (\nl -> Map.update (Just . patch m) nl nodes) $ getNodeModificationNodeLoc m
 
+instance Patchable [ExpressionNode] where
+    patch m = Map.elems . patch m . toExpressionNodesMap
+
 instance ServesDiff ExpressionNode where
     diff n1 n2 = Diff mods where
         nl   = convert $ n2 ^. Node.nodeId
@@ -328,17 +331,27 @@ instance ServesDiff (Map NodeLoc ExpressionNode) where
         nodeWhenMissingIn2 n = Diff . pure . toModification . ModificationRemoveNode $ convert $ n ^. Node.nodeId
         nodeWhenMissingIn1 n = Diff . pure . toModification $ ModificationAddNode n
 
+instance ServesDiff [ExpressionNode] where
+    diff  n1 n2 = diff (toExpressionNodesMap n1) (toExpressionNodesMap n2)
+    apply d     = Map.elems . apply d . toExpressionNodesMap
 
 instance Patchable (Map ConnectionId Connection) where
     patch (AddConnection    m) = let c = m ^. newConnection in Map.insert (c ^. connectionId) c
     patch (RemoveConnection m) = Map.delete (m ^. removeConnectionId)
     patch _                    = id
 
+instance Patchable [Connection] where
+    patch m = Map.elems . patch m . toConnectionsMap
+
 instance ServesDiff (Map ConnectionId Connection) where
     diff cs1 cs2 = foldl (<>) mempty . Map.elems $ mergeMaps connWhenMissingIn2 connWhenMissingIn1 connWhenMatched cs1 cs2 where
         connWhenMissingIn2 c  = Diff . pure . toModification . ModificationRemoveConnection $ c ^. connectionId
         connWhenMissingIn1 c  = Diff . pure . toModification $ ModificationAddConnection c
         connWhenMatched c1 c2 = if c1 == c2 then mempty else Diff . pure . toModification $ ModificationAddConnection c2
+
+instance ServesDiff [Connection] where
+    diff c1 c2 = diff (toConnectionsMap c1) (toConnectionsMap c2)
+    apply d    = Map.elems . apply d . toConnectionsMap
 
 instance Patchable Graph where
     patch mod@(AddConnection    _) g = g & Graph.connections            %~ patch mod

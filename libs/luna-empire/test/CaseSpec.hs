@@ -22,7 +22,7 @@ import           Empire.Data.Graph               (breadcrumbHierarchy)
 import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy)
 import qualified Empire.Data.Library             as Library (body)
 import           Empire.Empire                   (InterpreterEnv (..))
-import           LunaStudio.Data.Connection      (Connection (Connection), toConnectionsMap)
+import           LunaStudio.Data.Connection      (Connection (Connection))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
 import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
@@ -78,7 +78,7 @@ spec = around withChannels $ parallel $ do
                 (outputEdge ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [
                       Port.Port [] "output" TStar Port.Connected
                     ]
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (OutPortRef (NodeLoc def $ inputEdge  ^. Node.nodeId) [Port.Projection 0])
                                  (InPortRef  (NodeLoc def $ outputEdge ^. Node.nodeId) [])
                     ]

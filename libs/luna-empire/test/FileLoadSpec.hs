@@ -48,7 +48,7 @@ import qualified Luna.Syntax.Text.Parser.Parser        as Parser (ReparsingChang
 import           LunaStudio.API.AsyncUpdate            (AsyncUpdate(ResultUpdate))
 import qualified LunaStudio.API.Graph.NodeResultUpdate as NodeResult
 import           LunaStudio.Data.Breadcrumb            (Breadcrumb (..), BreadcrumbItem (Definition))
-import           LunaStudio.Data.Connection            (Connection (..), toConnectionsMap)
+import           LunaStudio.Data.Connection            (Connection (..))
 import qualified LunaStudio.Data.Connection            as Connection
 import qualified LunaStudio.Data.Graph                 as Graph
 import           LunaStudio.Data.GraphLocation         (GraphLocation (..))
@@ -135,7 +135,7 @@ specifyCodeChange initialCode expectedCode act env = do
         Library.createLibrary Nothing "/TestPath"
         let loc = GraphLocation "/TestPath" $ Breadcrumb []
         Graph.loadCode loc $ normalize initialCode
-        [main] <- filter (\n -> n ^. Node.name == Just "main") . Map.elems <$> Graph.getNodes loc
+        [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
         let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
         (nodeIds, toplevel) <- Graph.withGraph loc' $ do
             markers  <- fmap fromIntegral . Map.keys <$> use Graph.codeMarkers
@@ -214,7 +214,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
                 return graph
@@ -235,7 +235,7 @@ spec = around withChannels $ parallel $ do
                 c ^. Node.code `shouldBe` "3"
                 c ^. Node.canEnter `shouldBe` False
                 i ^? _Just . Node.isDef `shouldBe` Just True
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (outPortRef (pi ^. Node.nodeId)  []) (inPortRef (anon ^. Node.nodeId) [Port.Arg 0])
                     , Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef (bar  ^. Node.nodeId) [Port.Head])
                     ]
@@ -244,18 +244,18 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainFile
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.substituteCode "TestPath" [(71, 71, "3")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
-                    cNodes = filter (\node -> node ^. Node.name == Just "c") $ Map.elems nodes
+                    cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length cNodes `shouldBe` 1
                 let [cNode] = cNodes
                     Just bar = find (\node -> node ^. Node.name == Just "bar") nodes
                     Just foo = find (\node -> node ^. Node.name == Just "foo") nodes
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (outPortRef (cNode ^. Node.nodeId) []) (inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     , Connection (outPortRef (foo   ^. Node.nodeId) []) (inPortRef (bar  ^. Node.nodeId) [Port.Head])
                     ]
@@ -264,21 +264,21 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainFile
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.substituteCode "TestPath" [(71, 71, "3")]
                 Graph.substituteCode "TestPath" [(71, 71, "3")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
-                    cNodes = filter (\node -> node ^. Node.name == Just "c") $ Map.elems nodes
+                    cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length nodes `shouldBe` 4
                 length cNodes `shouldBe` 1
                 let [cNode] = cNodes
                     Just bar = find (\node -> node ^. Node.name == Just "bar") nodes
                     Just foo = find (\node -> node ^. Node.name == Just "foo") nodes
                 cNode ^. Node.code `shouldBe` "334"
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (outPortRef (cNode ^. Node.nodeId) []) (inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     , Connection (outPortRef (foo   ^. Node.nodeId) []) (inPortRef (bar  ^. Node.nodeId) [Port.Head])
                     ]
@@ -287,14 +287,14 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainFile
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.substituteCode "TestPath" [(71, 71, "3")]
                 Graph.substituteCode "TestPath" [(91, 91, "1")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
-                    cNodes = filter (\node -> node ^. Node.name == Just "c") $ Map.elems nodes
+                    cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length nodes `shouldBe` 4
                 length cNodes `shouldBe` 1
                 let [cNode] = cNodes
@@ -302,7 +302,7 @@ spec = around withChannels $ parallel $ do
                     Just foo = find (\node -> node ^. Node.name == Just "foo") nodes
                 cNode ^. Node.code `shouldBe` "34"
                 bar ^. Node.code `shouldBe` "foo 18 c"
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (outPortRef (cNode ^. Node.nodeId) []) (inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     , Connection (outPortRef (foo   ^. Node.nodeId) []) (inPortRef (bar  ^. Node.nodeId) [Port.Head])
                     ]
@@ -311,7 +311,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.substituteCode "TestPath" [(92, 92, "    d = 10\n")]
                 Graph.getGraph loc'
@@ -322,7 +322,7 @@ spec = around withChannels $ parallel $ do
                 let Just c = find (\node -> node ^. Node.name == Just "c") nodes
                     Just bar = find (\node -> node ^. Node.name == Just "bar") nodes
                     Just foo = find (\node -> node ^. Node.name == Just "foo") nodes
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (outPortRef (c   ^. Node.nodeId) []) (inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     , Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef (bar ^. Node.nodeId) [Port.Head])
                     ]
@@ -331,7 +331,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.substituteCode "TestPath" [(25, 29, ")")]
                 Graph.substituteCode "TestPath" [(25, 26, "5")]
@@ -345,7 +345,7 @@ spec = around withChannels $ parallel $ do
                 pi ^. Node.code `shouldBe` "5"
                 c ^. Node.code `shouldBe` "4"
                 bar ^. Node.code `shouldBe` "foo 8 c"
-                connections `shouldBe` toConnectionsMap [
+                connections `shouldMatchList` [
                       Connection (outPortRef (c   ^. Node.nodeId) []) (inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     , Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef (bar  ^. Node.nodeId) [Port.Head])
                     ]
@@ -359,7 +359,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Just foo <- Graph.withGraph loc' $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.withGraph (loc' |> foo) $ runASTOp $ GraphBuilder.buildGraph
@@ -376,22 +376,22 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Just foo <- Graph.withGraph loc' $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.getGraph $ loc' |> foo
             withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
                 nodes `shouldBe` mempty
-                connections `shouldSatisfy` (not . Map.null)
+                connections `shouldSatisfy` (not . null)
         it "autolayouts nodes on file load" $ \env -> do
             nodes <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.autolayout loc'
-                Map.elems . view Graph.nodes <$> Graph.getGraph loc'
+                view Graph.nodes <$> Graph.getGraph loc'
             let positions = map (view (Node.nodeMeta . NodeMeta.position)) nodes
                 uniquePositions = Set.size $ Set.fromList positions
             uniquePositions `shouldBe` length nodes
@@ -400,7 +400,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc testLuna
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
                 previousGraph <- Graph.getGraph (loc' |> foo)
@@ -419,7 +419,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
                 Graph.setNodeMeta loc' foo (NodeMeta (Position.Position (Vector2 15.3 99.2)) True Nothing)
@@ -432,7 +432,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc testLuna'
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = loc |>= main ^. Node.nodeId
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
                 before@(Graph.Graph _ _ (Just input) _ _) <- Graph.getGraph $ loc' |> foo
@@ -446,7 +446,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc testLuna
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = loc |>= main ^. Node.nodeId
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
                 before@(Graph.Graph _ _ (Just input) _ _) <- Graph.getGraph $ loc' |> foo
@@ -477,7 +477,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 forM [0..0] $ Graph.markerCodeSpan loc'
             withResult res $ \spans -> do
@@ -494,7 +494,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 forM [0..1] $ Graph.markerCodeSpan loc'
             withResult res $ \spans -> do
@@ -507,7 +507,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 forM [0..3] $ Graph.markerCodeSpan loc'
             withResult res $ \spans -> do
@@ -522,7 +522,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$>  Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.withGraph loc' $ do
                     runASTOp $ do
@@ -541,7 +541,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc mainCondensed
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.withGraph loc' $ runASTOp $ forM [0..3] Graph.getNodeIdForMarker
             withResult res $ \ids -> do
@@ -563,11 +563,11 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.autolayout loc'
                 Just foo <- Graph.withGraph loc' $ runASTOp $ Graph.getNodeIdForMarker 1
-                Map.elems . view Graph.nodes <$> Graph.getGraph (loc' |> foo)
+                view Graph.nodes <$> Graph.getGraph (loc' |> foo)
             let positions = map (view (Node.nodeMeta . NodeMeta.position)) nodes
                 uniquePositions = Set.size $ Set.fromList positions
             uniquePositions `shouldBe` length nodes
@@ -575,7 +575,7 @@ spec = around withChannels $ parallel $ do
         it "adds one node to code" $ \env -> do
             u1 <- mkUUID
             code <- evalEmp env $ do
-                [main] <- Map.elems <$> Graph.getNodes (GraphLocation "/TestFile" (Breadcrumb []))
+                [main] <- Graph.getNodes (GraphLocation "/TestFile" (Breadcrumb []))
                 let loc' = GraphLocation "/TestFile" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.addNode top u1 "4" (atXPos (-20.0))
                 Graph.getCode top
@@ -1666,7 +1666,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc initialCode
-                [foo] <- Map.elems <$> Graph.getNodes loc
+                [foo] <- Graph.getNodes loc
                 let loc' = loc |>= foo ^. Node.nodeId
                 (input, _) <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.removePort loc' (outPortRef input [Port.Projection 0])
@@ -1690,7 +1690,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc initialCode
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = loc |>= main ^. Node.nodeId
                 nodes <- Graph.getNodes loc'
                 let Just foo = find (\node -> node ^. Node.name == Just "foo") nodes
@@ -2251,13 +2251,13 @@ spec = around withChannels $ parallel $ do
                     k = -1
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                [k] <- Map.elems <$> Graph.getNodes loc
+                [k] <- Graph.getNodes loc
                 let portsBefore = k ^. Node.inPorts
                     valueBefore = portsBefore ^? LabeledTree.value . Port.state . Port._WithDefault
                 liftIO $ valueBefore `shouldBe` (Just $ PortDefault.Constant (PortDefault.IntValue (-1)))
                 Just k <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.setPortDefault loc (inPortRef k []) (Just $ PortDefault.Constant (PortDefault.IntValue (-1)))
-                [k] <- Map.elems <$> Graph.getNodes loc
+                [k] <- Graph.getNodes loc
                 let portsAfter = k ^. Node.inPorts
                 liftIO $ portsBefore `shouldBe` portsAfter
         it "reads port name" $ let
@@ -2291,7 +2291,7 @@ spec = around withChannels $ parallel $ do
                     d = 1000
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                [Connection outRef inRef] <- Map.elems <$> Graph.getConnections loc
+                [Connection outRef inRef] <- Graph.getConnections loc
                 Graph.disconnect loc inRef
                 Just c <- find (\n -> n ^. Node.name == Just "c") <$> Graph.getNodes loc
                 Graph.renameNode loc (c ^. Node.nodeId) "d"
@@ -2459,9 +2459,9 @@ spec = around withChannels $ parallel $ do
                 let loc = GraphLocation "/TestPath" $ Breadcrumb []
                 let normalize = Text.pack . normalizeQQ . Text.unpack
                 Graph.loadCode loc $ normalize initialCode
-                [main] <- filter (\n -> n ^. Node.name == Just "main") . Map.elems <$> Graph.getNodes loc
+                [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
                 let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
-                [fib] <- filter (\n -> n ^. Node.name == Just "fib") . Map.elems <$> Graph.getNodes loc
+                [fib] <- filter (\n -> n ^. Node.name == Just "fib") <$> Graph.getNodes loc
                 let loc'' = GraphLocation "/TestPath" $ Breadcrumb [Definition (fib ^. Node.nodeId)]
                 (loc',) <$> Library.withLibrary "/TestPath" (use Library.body)
             withResult res $ \(loc, g) -> do
@@ -2491,8 +2491,8 @@ spec = around withChannels $ parallel $ do
                     4
             |]
             in specifyCodeChange initialCode initialCode $ \loc -> do
-                [node] <- Map.elems <$> Graph.getNodes loc
-                selfConn <- Map.filter (\c -> c ^. Connection.src . PortRef.srcNodeId == c ^. Connection.dst . PortRef.dstNodeId) <$> Graph.getConnections loc
+                [node] <- Graph.getNodes loc
+                selfConn <- filter (\c -> c ^. Connection.src . PortRef.srcNodeId == c ^. Connection.dst . PortRef.dstNodeId) <$> Graph.getConnections loc
                 liftIO $ selfConn `shouldBe` mempty
         it "moves lines in a file" $ let
             initialCode = [r|

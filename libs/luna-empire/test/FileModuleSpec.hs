@@ -93,7 +93,7 @@ specifyCodeChange initialCode expectedCode act env = do
         Library.createLibrary Nothing "/TestPath"
         let loc = GraphLocation "/TestPath" $ Breadcrumb []
         Graph.loadCode loc $ normalize initialCode
-        main <- filter (\n -> n ^. Node.name == Just "main") . Map.elems <$> Graph.getNodes loc
+        main <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
         case main of
             [mainFun] -> do
                 let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (mainFun ^. Node.nodeId)]
@@ -215,9 +215,9 @@ spec = around withChannels $ parallel $ do
                 Graph.loadCode loc multiFunCode
                 nodes <- Graph.getNodes loc
                 return nodes
-            Map.size nodes `shouldBe` 3
+            length nodes `shouldBe` 3
             -- nodes are layouted in a left-to-right manner
-            let uniquePositions = Set.toList $ Set.fromList $ map (view (Node.nodeMeta . NodeMeta.position . Position.x)) $ Map.elems nodes
+            let uniquePositions = Set.toList $ Set.fromList $ map (view (Node.nodeMeta . NodeMeta.position . Position.x)) nodes
             length uniquePositions `shouldBe` 3
         it "adds function at top-level with arguments" $ \env -> do
             u1 <- mkUUID
@@ -512,7 +512,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 nodes <- Graph.getNodes loc'
                 let Just foo = find (\n -> n ^. Node.name == Just "foo") nodes
@@ -537,7 +537,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
-                [main] <- Map.elems <$> Graph.getNodes loc
+                [main] <- Graph.getNodes loc
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 nodes <- Graph.getNodes loc'
                 let Just foo = find (\n -> n ^. Node.name == Just "foo") nodes
@@ -559,7 +559,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc multiFunCode
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 Graph.withUnit loc $ runASTOp $ forM funIds $ Code.functionBlockStart
             sort offsets `shouldBe` [0, 30, 64]
         it "shows proper function offsets with imports" $ \env -> do
@@ -567,7 +567,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc codeWithImport
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 Graph.withUnit loc $ runASTOp $ forM funIds $ Code.functionBlockStart
             sort offsets `shouldBe` [12, 34, 60]
         it "adds node in a function with at least two nodes" $
@@ -765,7 +765,7 @@ spec = around withChannels $ parallel $ do
                 let Just foo = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "foo") nodes
                 u1 <- mkUUID
                 Graph.addNode (loc |>= foo) u1 "5" (atXPos (-10))
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 starts <- Graph.withUnit loc $ runASTOp $ forM funIds $ Code.functionBlockStart
                 code <- Graph.getCode loc
                 return (starts, Text.unpack code)
@@ -793,7 +793,7 @@ spec = around withChannels $ parallel $ do
                 let Just foo = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "foo") nodes
                 u1 <- mkUUID
                 Graph.addNode (loc |>= foo) u1 "5" (atXPos (-10))
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
@@ -808,7 +808,7 @@ spec = around withChannels $ parallel $ do
                 let Just foo = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "foo") nodes
                 u1 <- mkUUID
                 Graph.addNode loc u1 "def aaa" (atXPos $ 1.5 * gapBetweenNodes)
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
@@ -822,7 +822,7 @@ spec = around withChannels $ parallel $ do
                 nodes <- Graph.getNodes loc
                 let Just bar = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "bar") nodes
                 Graph.removeNodes loc [bar]
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
@@ -837,7 +837,7 @@ spec = around withChannels $ parallel $ do
                 nodes <- Graph.getNodes loc
                 let Just bar = find (\n -> n ^. Node.name == Just "bar") nodes
                 Graph.renameNode loc (bar ^. Node.nodeId) "qwerty"
-                funIds <- (map (view Node.nodeId)) . Map.elems <$> Graph.getNodes loc
+                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs

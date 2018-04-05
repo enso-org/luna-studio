@@ -136,21 +136,23 @@ logProjectPathNotFound = Project.logProjectSettingsError "Could not find project
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-getAllNodes :: GraphLocation -> Empire (Map NodeId Node.Node)
+getAllNodes :: GraphLocation -> Empire [Node.Node]
 getAllNodes location = do
     graph <- Graph.getGraph location
-    return $ fmap Node.ExpressionNode' (Map.mapKeys convert $ graph ^. GraphAPI.nodes)
-          <> fmap Node.InputSidebar'   (Map.fromList . fmap (view Node.inputNodeId  &&& id) . maybeToList $ graph ^. GraphAPI.inputSidebar)
-          <> fmap Node.OutputSidebar'  (Map.fromList . fmap (view Node.outputNodeId &&& id) . maybeToList $ graph ^. GraphAPI.outputSidebar)
+    return $ fmap Node.ExpressionNode' (graph ^. GraphAPI.nodes)
+          <> fmap Node.InputSidebar'   (maybeToList $ graph ^. GraphAPI.inputSidebar)
+          <> fmap Node.OutputSidebar'  (maybeToList $ graph ^. GraphAPI.outputSidebar)
 
-getNodesByIds :: GraphLocation -> [NodeId] -> Empire (Map NodeId Node.Node)
-getNodesByIds location nids = flip Map.restrictKeys (Set.fromList nids) <$> getAllNodes location
+getNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.Node]
+getNodesByIds location nids = filter (flip Set.member requestedIDs . view Node.nodeId) <$> getAllNodes location where
+    requestedIDs = Set.fromList nids
 
-getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire (Map NodeId ExpressionNode)
-getExpressionNodesByIds location nids = flip Map.restrictKeys (Set.fromList nids) . Map.mapKeys convert <$> Graph.getNodes location
+getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire [ExpressionNode]
+getExpressionNodesByIds location nids = filter (flip Set.member requestedIDs . view Node.nodeId) <$> Graph.getNodes location where
+    requestedIDs = Set.fromList nids
 
 getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
-getNodeById location nid = Map.lookup nid <$> getAllNodes location
+getNodeById location nid = find (\n -> n ^. Node.nodeId == nid) <$> getAllNodes location
 
 getSrcPortByNodeId :: NodeId -> OutPortRef
 getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
@@ -216,7 +218,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 crumb            <- Graph.decodeLocation location
                 availableImports <- Graph.getAvailableImports location
                 let mayVisPath    = ((</> "visualizers") . dropFileName . fst) <$> mayProjectPathAndRelModulePath
-                    defaultCamera = maybe def (`Camera.getCameraForRectangle` def) . Position.minimumRectangle . fmap (view Node.position) . Map.elems $ graph ^. GraphAPI.nodes
+                    defaultCamera = maybe def (`Camera.getCameraForRectangle` def) . Position.minimumRectangle . fmap (view Node.position) $ graph ^. GraphAPI.nodes
                     (typeRepToVisMap, camera) = case mayModuleSettings of
                         Nothing -> (mempty, defaultCamera)
                         Just ms -> let visMap  = Project.fromOldAPI <$> ms ^. Project.typeRepToVisMap
@@ -336,9 +338,9 @@ handleRemoveNodes = modifyGraph inverse action replyResult where
         let nodeIds = convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
         Graph allNodes allConnections _ _ monads <- Graph.getGraph location
         let idSet = Set.fromList nodeIds
-            nodes = flip Map.filter allNodes       $ \node -> Set.member (node ^. Node.nodeId)                        idSet
-            conns = flip Map.filter allConnections $ \conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) idSet
-                                                           || Set.member (conn ^. Connection.dst . PortRef.dstNodeId) idSet
+            nodes = flip filter allNodes       $ \node -> Set.member (node ^. Node.nodeId)                        idSet
+            conns = flip filter allConnections $ \conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) idSet
+                                                       || Set.member (conn ^. Connection.dst . PortRef.dstNodeId) idSet
         return $ RemoveNodes.Inverse nodes conns
     action (RemoveNodes.Request location nodeLocs) = withDefaultResult location $
         Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
@@ -425,7 +427,7 @@ handleSetNodeExpression = modifyGraph inverse action replyResult where
 
 inverseSetNodesMeta :: GraphLocation -> Map NodeId NodeMeta -> Empire SetNodesMeta.Inverse
 inverseSetNodesMeta location updates = do
-    allNodes <- Graph.withGraph' location (runASTOp buildNodes) (Map.elems . view GraphAPI.nodes <$> runASTOp buildClassGraph)
+    allNodes <- Graph.withGraph' location (runASTOp buildNodes) (view GraphAPI.nodes <$> runASTOp buildClassGraph)
     let prevMeta = Map.fromList . catMaybes . flip fmap allNodes $ \node ->
             justIf (Map.member (node ^. Node.nodeId) updates) (node ^. Node.nodeId, node ^. Node.nodeMeta)
     return $ SetNodesMeta.Inverse prevMeta
