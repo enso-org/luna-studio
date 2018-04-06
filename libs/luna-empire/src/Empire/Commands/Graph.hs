@@ -114,7 +114,7 @@ addImports loc@(GraphLocation file _) modulesToImport = do
     newCode <- withUnit (GraphLocation file def) $ do
         existingImports <- runASTOp getImportsInFile
         let imports = nativeModuleName : "Std.Base" : existingImports
-        let neededImports = filter (`notElem` imports) $ Set.toList modulesToImport
+        let neededImports = filter (`notElem` imports) $ toList modulesToImport
         code <- use Graph.code
         let newImports = map (\i -> Text.concat ["import ", i, "\n"]) neededImports
         return $ Text.concat $ newImports ++ [code]
@@ -1697,9 +1697,9 @@ getImportsInFile = do
 
 getAvailableImports :: GraphLocation -> Empire (Set ImportName)
 getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Breadcrumb [])) $ do
-    explicitImports <- Set.fromList <$> runASTOp getImportsInFile
-    let implicitImports = Set.fromList [nativeModuleName, "Std.Base"]
-    return $ explicitImports `Set.union` implicitImports
+    explicitImports <- fromList <$> runASTOp getImportsInFile
+    let implicitImports = fromList [nativeModuleName, "Std.Base"]
+    pure $ explicitImports <> implicitImports
 
 classToHints :: IR.Class -> ClassHints
 classToHints (IR.Class constructors methods) = ClassHints cons' meth'

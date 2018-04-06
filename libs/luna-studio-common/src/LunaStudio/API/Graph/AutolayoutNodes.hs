@@ -14,9 +14,9 @@ import           Prologue
 
 
 data Request = Request
-    { _location    :: GraphLocation
-    , _nodeLocs    :: [NodeLoc]
-    , _centerGraph :: Bool
+    { _location          :: GraphLocation
+    , _nodeLocs          :: [NodeLoc]
+    , _shouldCenterGraph :: Bool
     } deriving (Eq, Generic, Show)
 
 data Inverse = Inverse { _prevPositions :: [(NodeLoc, NodeMeta)] } deriving (Eq, Generic, Show)

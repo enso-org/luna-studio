@@ -1,7 +1,7 @@
 module LunaStudio.Data.Vector2 where
 
-import           Data.Aeson.Types    (FromJSON, ToJSON)
-import           Data.Binary         (Binary)
+import           Data.Aeson.Types (FromJSON, ToJSON)
+import           Data.Binary      (Binary)
 import           Prologue
 
 --TODO[react]: Consider change Vector2 -> V2: https://hackage.haskell.org/package/linear-1.20.5/docs/Linear-V2.html
@@ -43,7 +43,7 @@ class Dim2 a => Dim3 a where
 
 -- === Definition === --
 
-data Vector2 a = Vector2 { _vector2_x, _vector2_y :: a } deriving (Eq, Functor, Generic, Ord, Show)
+data Vector2 a = Vector2 { __x, __y :: a } deriving (Eq, Functor, Generic, Ord, Show)
 makeLenses ''Vector2
 
 

@@ -110,5 +110,5 @@ revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = panic
 
 revertSetPortDefault :: SetPortDefault.Request -> Response.Status SetPortDefault.Inverse -> Command State ()
 revertSetPortDefault (SetPortDefault.Request loc portRef _) (Response.Ok (SetPortDefault.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ mapM_ (localSetPortDefault (prependPath path portRef)) prevCode
+    inCurrentLocation loc $ \path -> mapM_ (localSetPortDefault (prependPath path portRef)) prevCode
 revertSetPortDefault (SetPortDefault.Request _loc _portRef _) (Response.Error _msg) = panic

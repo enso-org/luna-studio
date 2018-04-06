@@ -59,14 +59,14 @@ paste location spans content uuid guiID = sendRequest $ Message uuid guiID $ Pas
 interpreterPause :: UUID -> Maybe UUID -> IO ()
 interpreterPause uuid guiID = do
     loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest $ Message uuid guiID $ Interpreter.Pause loc
+    sendRequest $ Message uuid guiID $ Interpreter.Request loc Interpreter.Pause
 
 interpreterStart :: UUID -> Maybe UUID -> IO ()
 interpreterStart uuid guiID = do
     loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest $ Message uuid guiID $ Interpreter.Start loc
+    sendRequest $ Message uuid guiID $ Interpreter.Request loc Interpreter.Start
 
 interpreterReload :: UUID -> Maybe UUID -> IO ()
 interpreterReload uuid guiID = do
     loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest $ Message uuid guiID $ Interpreter.Reload loc
+    sendRequest $ Message uuid guiID $ Interpreter.Request loc Interpreter.Reload

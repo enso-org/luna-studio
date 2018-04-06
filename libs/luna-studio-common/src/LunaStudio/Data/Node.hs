@@ -124,4 +124,4 @@ findSuccessorPosition node nodes = fromDoubles xPos yPos where
 
 
 toExpressionNodesMap :: [ExpressionNode] -> Map NodeLoc ExpressionNode
-toExpressionNodesMap = Map.fromList . fmap (convert . view nodeId &&& id)
+toExpressionNodesMap = fromList . fmap (convert . view nodeId &&& id)

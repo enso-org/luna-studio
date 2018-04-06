@@ -36,7 +36,7 @@ connectionId :: Lens' Connection ConnectionId
 connectionId = dst
 
 toConnectionsMap :: [Connection] -> Map ConnectionId Connection
-toConnectionsMap = Map.fromList . fmap (view connectionId &&& id)
+toConnectionsMap = fromList . fmap (view connectionId &&& id)
 
 prependPath :: NodePath -> Connection -> Connection
 prependPath p c = c & src %~ NL.prependPath p

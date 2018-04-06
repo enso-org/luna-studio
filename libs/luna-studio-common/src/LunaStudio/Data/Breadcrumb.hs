@@ -49,7 +49,7 @@ containsNode :: Breadcrumb BreadcrumbItem -> NodeId -> Bool
 containsNode b nid = any ((nid ==) . view nodeId) $ b ^. items
 
 toNames :: Breadcrumb (Named BreadcrumbItem) -> Breadcrumb Text
-toNames = Breadcrumb . fmap (view name) . view items
+toNames = Breadcrumb . toListOf (items . traversed . name)
 
 instance FromJSON a => FromJSONKey (Breadcrumb a)
 instance {-# OVERLAPPABLE #-} FromJSON a => FromJSON (Breadcrumb a) where parseJSON = Lens.parse

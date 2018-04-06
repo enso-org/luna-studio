@@ -124,17 +124,17 @@ modifyGraphOk :: forall req inv res . (Show req, Bin.Binary req, G.GraphRequest 
 modifyGraphOk inverse action = modifyGraph inverse action (\req@(Request uuid guiID request) inv _ -> replyOk req inv)
 
 defInverse :: a -> Empire ()
-defInverse = const $ return ()
+defInverse = const $ pure ()
 
 catchAllExceptions :: Empire a -> Empire (Either SomeException a)
 catchAllExceptions act = try act
 
 withDefaultResult' :: (GraphLocation -> Empire Graph) -> GraphLocation -> Empire a -> Empire Diff
 withDefaultResult' getFinalGraph location action = do
-    oldGraph <- (& _Left %~ Graph.prepareGraphError) <$> catchAllExceptions (Graph.getGraphNoTC location)
+    oldGraph <- (_Left %~ Graph.prepareGraphError) <$> catchAllExceptions (Graph.getGraphNoTC location)
     void action
-    newGraph <- (& _Left %~ Graph.prepareGraphError) <$> catchAllExceptions (getFinalGraph location)
-    return $ diff oldGraph newGraph
+    newGraph <- (_Left %~ Graph.prepareGraphError) <$> catchAllExceptions (getFinalGraph location)
+    pure $ diff oldGraph newGraph
 
 withDefaultResult :: GraphLocation -> Empire a -> Empire Diff
 withDefaultResult = withDefaultResult' Graph.getGraphNoTC

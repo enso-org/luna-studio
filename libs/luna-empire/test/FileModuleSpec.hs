@@ -194,7 +194,7 @@ spec = around withChannels $ parallel $ do
                         print bar
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                Graph.addImports loc $ Set.fromList ["Foo", "Bar", "Baz.Quux"]
+                Graph.addImports loc $ fromList ["Foo", "Bar", "Baz.Quux"]
     describe "multi-module files" $ do
         it "adds a function to empty file" $
             let initialCode = ""
@@ -217,7 +217,7 @@ spec = around withChannels $ parallel $ do
                 return nodes
             length nodes `shouldBe` 3
             -- nodes are layouted in a left-to-right manner
-            let uniquePositions = Set.toList $ Set.fromList $ map (view (Node.nodeMeta . NodeMeta.position . Position.x)) nodes
+            let uniquePositions = Set.toList $ fromList $ map (view (Node.nodeMeta . NodeMeta.position . Position.x)) nodes
             length uniquePositions `shouldBe` 3
         it "adds function at top-level with arguments" $ \env -> do
             u1 <- mkUUID
@@ -905,7 +905,7 @@ spec = around withChannels $ parallel $ do
                     |]
             in specifyCodeChange initialCode initialCode $ \loc -> do
                 imports <- Graph.getAvailableImports loc
-                liftIO $ imports `shouldBe` Set.fromList ["Std.Base", "Std.Geo", "Native"]
+                liftIO $ imports `shouldBe` fromList ["Std.Base", "Std.Geo", "Native"]
         it "shows implicit imports as always imported" $
             let initialCode = [r|
                     def main:
@@ -913,7 +913,7 @@ spec = around withChannels $ parallel $ do
                     |]
             in specifyCodeChange initialCode initialCode $ \loc -> do
                 imports <- Graph.getAvailableImports loc
-                liftIO $ imports `shouldBe` Set.fromList ["Std.Base", "Native"]
+                liftIO $ imports `shouldBe` fromList ["Std.Base", "Native"]
         it "changes port name on a top-level def" $
             let initialCode = [r|
                     def foo a b:

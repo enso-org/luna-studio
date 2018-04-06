@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -ddump-splices -ddump-to-file #-}
 module LunaStudio.Data.Diff where
 
 import           Data.Aeson.Types                     (ToJSON)
@@ -48,29 +47,29 @@ mergeMaps whenMissingInSecond whenMissingInFirst whenMatched = recursiveMerge me
 -----------------------------------------------------
 -- TODO: generate with TH (makeDiffs ''GUIState) vvv
 
-data ModificationAddConnection         = ModificationAddConnection         { _newConnection           :: Connection                                                                 } deriving (Eq, Generic, Show, Typeable)
-data ModificationAddNode               = ModificationAddNode               { _newNode                 :: ExpressionNode                                                             } deriving (Eq, Generic, Show, Typeable)
-data ModificationRemoveConnection      = ModificationRemoveConnection      { _removeConnectionId      :: ConnectionId                                                               } deriving (Eq, Generic, Show, Typeable)
-data ModificationRemoveNode            = ModificationRemoveNode            { _removeNodeLoc           :: NodeLoc                                                                    } deriving (Eq, Generic, Show, Typeable)
-data ModificationRenameNode            = ModificationRenameNode            { _renameNodeLoc           :: NodeLoc                          , _newName         :: Maybe Text          } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetBreadcrumb         = ModificationSetBreadcrumb         { _newBreadcrumb           :: Breadcrumb (Named BreadcrumbItem)                                          } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetCamera             = ModificationSetCamera             { _newCameraTransformation :: CameraTransformation                                                       } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetCanEnterNode       = ModificationSetCanEnterNode       { _setCanEnterNodeLoc      :: NodeLoc                          , _newCanEnter     :: Bool                } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetCode               = ModificationSetCode               { _newCode                 :: Code                                                                       } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetDefaultVisualizers = ModificationSetDefaultVisualizers { _newDefaultVisualizers   :: HashMap TypeRep Visualizer                                                 } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetExpression         = ModificationSetExpression         { _setExpressionNodeLoc    :: NodeLoc                          , _newExpression   :: Text                } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetGraph              = ModificationSetGraph              { _newGraph                :: Graph                                                                      } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetGraphError         = ModificationSetGraphError         { _graphError              :: Error GraphError                                                           } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetImports            = ModificationSetImports            { _newImports              :: Set ImportName                                                             } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetInPorts            = ModificationSetInPorts            { _setInPortsNodeLoc       :: NodeLoc                          , _newInPortTree   :: InPortTree InPort   } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetInputSidebar       = ModificationSetInputSidebar       { _newInputSidebar         :: Maybe InputSidebar                                                         } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetIsDefinition       = ModificationSetIsDefinition       { _setIsDefinitionNodeLoc  :: NodeLoc                          , _newIsDefinition :: Bool                } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetMonadPath          = ModificationSetMonadPath          { _newMonadPath            :: [MonadPath]                                                                } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetNodeCode           = ModificationSetNodeCode           { _setNodeCodeNodeLoc      :: NodeLoc                          , _newNodeCode     :: Text                } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetNodeMeta           = ModificationSetNodeMeta           { _setNodeMetaNodeLoc      :: NodeLoc                          , _newNodeMeta     :: NodeMeta            } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetOutPorts           = ModificationSetOutPorts           { _setOutPortsNodeLoc      :: NodeLoc                          , _newOutPortTree  :: OutPortTree OutPort } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetOutputSidebar      = ModificationSetOutputSidebar      { _newOutputSidebar        :: Maybe OutputSidebar                                                        } deriving (Eq, Generic, Show, Typeable)
-data ModificationSetProjectVisPath     = ModificationSetProjectVisPath     { _newProjectVisPath       :: Maybe FilePath                                                             } deriving (Eq, Generic, Show, Typeable)
+data ModificationAddConnection         = ModificationAddConnection         { _newConnection           :: Connection                                                                 } deriving (Eq, Generic, Show)
+data ModificationAddNode               = ModificationAddNode               { _newNode                 :: ExpressionNode                                                             } deriving (Eq, Generic, Show)
+data ModificationRemoveConnection      = ModificationRemoveConnection      { _removeConnectionId      :: ConnectionId                                                               } deriving (Eq, Generic, Show)
+data ModificationRemoveNode            = ModificationRemoveNode            { _removeNodeLoc           :: NodeLoc                                                                    } deriving (Eq, Generic, Show)
+data ModificationRenameNode            = ModificationRenameNode            { _renameNodeLoc           :: NodeLoc                          , _newName         :: Maybe Text          } deriving (Eq, Generic, Show)
+data ModificationSetBreadcrumb         = ModificationSetBreadcrumb         { _newBreadcrumb           :: Breadcrumb (Named BreadcrumbItem)                                          } deriving (Eq, Generic, Show)
+data ModificationSetCamera             = ModificationSetCamera             { _newCameraTransformation :: CameraTransformation                                                       } deriving (Eq, Generic, Show)
+data ModificationSetCanEnterNode       = ModificationSetCanEnterNode       { _setCanEnterNodeLoc      :: NodeLoc                          , _newCanEnter     :: Bool                } deriving (Eq, Generic, Show)
+data ModificationSetCode               = ModificationSetCode               { _newCode                 :: Code                                                                       } deriving (Eq, Generic, Show)
+data ModificationSetDefaultVisualizers = ModificationSetDefaultVisualizers { _newDefaultVisualizers   :: HashMap TypeRep Visualizer                                                 } deriving (Eq, Generic, Show)
+data ModificationSetExpression         = ModificationSetExpression         { _setExpressionNodeLoc    :: NodeLoc                          , _newExpression   :: Text                } deriving (Eq, Generic, Show)
+data ModificationSetGraph              = ModificationSetGraph              { _newGraph                :: Graph                                                                      } deriving (Eq, Generic, Show)
+data ModificationSetGraphError         = ModificationSetGraphError         { _graphError              :: Error GraphError                                                           } deriving (Eq, Generic, Show)
+data ModificationSetImports            = ModificationSetImports            { _newImports              :: Set ImportName                                                             } deriving (Eq, Generic, Show)
+data ModificationSetInPorts            = ModificationSetInPorts            { _setInPortsNodeLoc       :: NodeLoc                          , _newInPortTree   :: InPortTree InPort   } deriving (Eq, Generic, Show)
+data ModificationSetInputSidebar       = ModificationSetInputSidebar       { _newInputSidebar         :: Maybe InputSidebar                                                         } deriving (Eq, Generic, Show)
+data ModificationSetIsDefinition       = ModificationSetIsDefinition       { _setIsDefinitionNodeLoc  :: NodeLoc                          , _newIsDefinition :: Bool                } deriving (Eq, Generic, Show)
+data ModificationSetMonadPath          = ModificationSetMonadPath          { _newMonadPath            :: [MonadPath]                                                                } deriving (Eq, Generic, Show)
+data ModificationSetNodeCode           = ModificationSetNodeCode           { _setNodeCodeNodeLoc      :: NodeLoc                          , _newNodeCode     :: Text                } deriving (Eq, Generic, Show)
+data ModificationSetNodeMeta           = ModificationSetNodeMeta           { _setNodeMetaNodeLoc      :: NodeLoc                          , _newNodeMeta     :: NodeMeta            } deriving (Eq, Generic, Show)
+data ModificationSetOutPorts           = ModificationSetOutPorts           { _setOutPortsNodeLoc      :: NodeLoc                          , _newOutPortTree  :: OutPortTree OutPort } deriving (Eq, Generic, Show)
+data ModificationSetOutputSidebar      = ModificationSetOutputSidebar      { _newOutputSidebar        :: Maybe OutputSidebar                                                        } deriving (Eq, Generic, Show)
+data ModificationSetProjectVisPath     = ModificationSetProjectVisPath     { _newProjectVisPath       :: Maybe FilePath                                                             } deriving (Eq, Generic, Show)
 
 makeLenses ''ModificationAddConnection
 makeLenses ''ModificationAddNode
@@ -272,24 +271,20 @@ instance NFData    Diff
 instance ToJSON    Diff
 instance Mempty    Diff where mempty = Diff mempty
 instance Semigroup Diff where
-    (<>) d1 d2 = d1 & reversedModifications %~ (d2 ^. reversedModifications <>)
+    (Diff reversed1) <> (Diff reversed2) = Diff $ reversed2 <> reversed1
 
-class Patchable a where
-    patch :: Modification -> (a -> a)
-
-patches :: Patchable a => [Modification] -> (a -> a)
-patches mods v = foldl (flip patch) v mods
-
-class Patchable a => ServesDiff a where
-    diff  :: a -> a -> Diff
-    apply :: Diff -> (a -> a)
+class Diffable a where
+    patch   :: Modification -> (a -> a)
+    diff    :: a -> a -> Diff
+    patches :: [Modification] -> (a -> a)
+    patches mods v = foldl' (flip patch) v mods
+    apply   :: Diff -> (a -> a)
     apply (Diff mods) v = flip patches v $ reverse mods
-
 
 -----------------------------------------------------
 -- TODO: generate with TH (makeDiffs ''GUIState) vvv
 
-instance Patchable ExpressionNode where
+instance Diffable ExpressionNode where
     patch (RenameNode      m) n = n & Node.name         .~ m ^. newName
     patch (SetCanEnterNode m) n = n & Node.canEnter     .~ m ^. newCanEnter
     patch (SetExpression   m) n = n & Node.expression   .~ m ^. newExpression
@@ -299,20 +294,6 @@ instance Patchable ExpressionNode where
     patch (SetNodeMeta     m) n = n & Node.nodeMeta     .~ m ^. newNodeMeta
     patch (SetOutPorts     m) n = n & Node.outPorts     .~ m ^. newOutPortTree
     patch _                   n = n
-
--- TH ^^^
------------------------------------------------------
-
-
-instance Patchable (Map NodeLoc ExpressionNode) where
-    patch (AddNode         m) nodes = Map.insert (convert $ m ^. newNode . Node.nodeId) (m ^. newNode) nodes
-    patch (RemoveNode      m) nodes = Map.delete (m ^. removeNodeLoc) nodes
-    patch m                   nodes = maybe nodes (\nl -> Map.update (Just . patch m) nl nodes) $ getNodeModificationNodeLoc m
-
-instance Patchable [ExpressionNode] where
-    patch m = Map.elems . patch m . toExpressionNodesMap
-
-instance ServesDiff ExpressionNode where
     diff n1 n2 = Diff mods where
         nl   = convert $ n2 ^. Node.nodeId
         mods = catMaybes
@@ -326,34 +307,34 @@ instance ServesDiff ExpressionNode where
             , justIf (n1 ^. Node.canEnter     /= n2 ^. Node.canEnter)     $ toModification . ModificationSetCanEnterNode nl $ n2 ^. Node.canEnter
             ]
 
-instance ServesDiff (Map NodeLoc ExpressionNode) where
-    diff m1 m2 = foldl (<>) mempty . Map.elems $ mergeMaps nodeWhenMissingIn2 nodeWhenMissingIn1 diff m1 m2 where
+instance Diffable (Map NodeLoc ExpressionNode) where
+    patch (AddNode         m) nodes = Map.insert (convert $ m ^. newNode . Node.nodeId) (m ^. newNode) nodes
+    patch (RemoveNode      m) nodes = Map.delete (m ^. removeNodeLoc) nodes
+    patch m                   nodes = maybe nodes (\nl -> Map.update (Just . patch m) nl nodes) $ getNodeModificationNodeLoc m
+    diff m1 m2 = foldl' (<>) mempty . Map.elems $ mergeMaps nodeWhenMissingIn2 nodeWhenMissingIn1 diff m1 m2 where
         nodeWhenMissingIn2 n = Diff . pure . toModification . ModificationRemoveNode $ convert $ n ^. Node.nodeId
         nodeWhenMissingIn1 n = Diff . pure . toModification $ ModificationAddNode n
 
-instance ServesDiff [ExpressionNode] where
+instance Diffable [ExpressionNode] where
+    patch m     = Map.elems . patch m . toExpressionNodesMap
     diff  n1 n2 = diff (toExpressionNodesMap n1) (toExpressionNodesMap n2)
     apply d     = Map.elems . apply d . toExpressionNodesMap
 
-instance Patchable (Map ConnectionId Connection) where
+instance Diffable (Map ConnectionId Connection) where
     patch (AddConnection    m) = let c = m ^. newConnection in Map.insert (c ^. connectionId) c
     patch (RemoveConnection m) = Map.delete (m ^. removeConnectionId)
     patch _                    = id
-
-instance Patchable [Connection] where
-    patch m = Map.elems . patch m . toConnectionsMap
-
-instance ServesDiff (Map ConnectionId Connection) where
-    diff cs1 cs2 = foldl (<>) mempty . Map.elems $ mergeMaps connWhenMissingIn2 connWhenMissingIn1 connWhenMatched cs1 cs2 where
+    diff cs1 cs2 = foldl' (<>) mempty . Map.elems $ mergeMaps connWhenMissingIn2 connWhenMissingIn1 connWhenMatched cs1 cs2 where
         connWhenMissingIn2 c  = Diff . pure . toModification . ModificationRemoveConnection $ c ^. connectionId
         connWhenMissingIn1 c  = Diff . pure . toModification $ ModificationAddConnection c
         connWhenMatched c1 c2 = if c1 == c2 then mempty else Diff . pure . toModification $ ModificationAddConnection c2
 
-instance ServesDiff [Connection] where
+instance Diffable [Connection] where
+    patch m    = Map.elems . patch m . toConnectionsMap
     diff c1 c2 = diff (toConnectionsMap c1) (toConnectionsMap c2)
     apply d    = Map.elems . apply d . toConnectionsMap
 
-instance Patchable Graph where
+instance Diffable Graph where
     patch mod@(AddConnection    _) g = g & Graph.connections            %~ patch mod
     patch mod@(AddNode          _) g = g & Graph.nodes                  %~ patch mod
     patch mod@(RemoveConnection _) g = g & Graph.connections            %~ patch mod
@@ -370,8 +351,6 @@ instance Patchable Graph where
     patch mod@(SetOutPorts      _) g = g & Graph.nodes                  %~ patch mod
     patch     (SetOutputSidebar m) g = g & Graph.outputSidebar          .~ m ^. newOutputSidebar
     patch     _                    g = g
-
-instance ServesDiff Graph where
     diff g1 g2 = nodesDiff <> inSidebarDiff <> outSidebarDiff <> connsDiff <> monadsDiff where
         nodesDiff     = diff (g1 ^. Graph.nodes) (g2 ^. Graph.nodes)
         connsDiff     = diff (g1 ^. Graph.connections) (g2 ^. Graph.connections)
@@ -385,74 +364,60 @@ instance ServesDiff Graph where
             then pure . toModification . ModificationSetMonadPath $ g2 ^. Graph.monads
             else mempty
 
-instance Patchable (Either (Error GraphError) Graph) where
+instance Diffable (Either (Error GraphError) Graph) where
     patch (SetGraphError m) _         = Left  $ m ^. graphError
     patch (SetGraph      m) _         = Right $ m ^. newGraph
     patch _                 (Left  e) = Left e
     patch mod               (Right g) = Right $ patch mod g
-
-instance ServesDiff (Either (Error GraphError) Graph) where
     diff _          (Left  e)  = Diff . pure . toModification $ ModificationSetGraphError e
     diff (Left _)   (Right g)  = Diff . pure . toModification $ ModificationSetGraph      g
     diff (Right g1) (Right g2) = diff g1 g2
 
-instance Patchable (Set ImportName) where
+instance Diffable (Set ImportName) where
     patch (SetImports m) = const $ m ^. newImports
     patch _              = id
-
-instance ServesDiff (Set ImportName) where
     diff imps1 imps2 = if imps1 == imps2
         then mempty
         else Diff . pure . toModification $ ModificationSetImports imps2
 
 
-instance Patchable (Breadcrumb (Named BreadcrumbItem)) where
+instance Diffable (Breadcrumb (Named BreadcrumbItem)) where
     patch (SetBreadcrumb m) = const $ m ^. newBreadcrumb
     patch _                 = id
-
-instance ServesDiff (Breadcrumb (Named BreadcrumbItem)) where
     diff bc1 bc2 = if bc1 == bc2
         then mempty
         else Diff . pure . toModification $ ModificationSetBreadcrumb bc2
 
-instance Patchable (HashMap TypeRep Visualizer) where
+instance Diffable (HashMap TypeRep Visualizer) where
     patch (SetDefaultVisualizers m) = const $ m ^. newDefaultVisualizers
     patch _                         = id
-
-instance ServesDiff (HashMap TypeRep Visualizer) where
     diff defVis1 defVis2 = if defVis1 == defVis2
         then mempty
         else Diff . pure . toModification $ ModificationSetDefaultVisualizers defVis2
 
-instance Patchable CameraTransformation where
+instance Diffable CameraTransformation where
     patch (SetCamera m) = const $ m ^. newCameraTransformation
     patch _             = id
-
-instance ServesDiff CameraTransformation where
     diff cam1 cam2 = if cam1 == cam2
         then mempty
         else Diff . pure . toModification $ ModificationSetCamera cam2
 
 
-instance Patchable (Maybe FilePath) where
+instance Diffable (Maybe FilePath) where
     patch (SetProjectVisPath m) = const $ m ^. newProjectVisPath
     patch _                     = id
-
-instance ServesDiff (Maybe FilePath) where
     diff p1 p2 = if p1 == p2
         then mempty
         else Diff . pure . toModification $ ModificationSetProjectVisPath p2
 
-instance Patchable Code where
+instance Diffable Code where
     patch (SetCode m) = const $ m ^. newCode
     patch _           = id
-
-instance ServesDiff Code where
     diff c1 c2 = if c1 == c2
         then mempty
         else Diff . pure . toModification $ ModificationSetCode c2
 
-instance Patchable GUIState where
+instance Diffable GUIState where
     patch mod@(AddConnection         _) s = s & GUIState.graph . _Right         %~ patch mod
     patch mod@(AddNode               _) s = s & GUIState.graph . _Right         %~ patch mod
     patch mod@(RemoveConnection      _) s = s & GUIState.graph . _Right         %~ patch mod
@@ -476,8 +441,6 @@ instance Patchable GUIState where
     patch mod@(SetOutPorts           _) s = s & GUIState.graph . _Right         %~ patch mod
     patch mod@(SetOutputSidebar      _) s = s & GUIState.graph . _Right         %~ patch mod
     patch     (SetProjectVisPath     m) s = s & GUIState.projectVisualizersPath .~ m ^. newProjectVisPath
-
-instance ServesDiff GUIState where
     diff s1 s2 = result where
         graphDiff = if s1 ^. GUIState.graph == s2 ^. GUIState.graph
             then mempty
@@ -492,6 +455,10 @@ instance ServesDiff GUIState where
               <> diff (s1 ^. GUIState.projectVisualizersPath) (s2 ^. GUIState.projectVisualizersPath)
               <> diff (s1 ^. GUIState.code)                   (s2 ^. GUIState.code)
               <> graphDiff
+
+-- TH ^^^
+-----------------------------------------------------
+
 
 toDiff :: GUIState -> Diff
 toDiff s = bcDiff <> impsDiff <> defVisDiff <> camDiff <> visPathDiff <> codeDiff <> graphDiff where

@@ -64,12 +64,14 @@ localAddExpressionNode node = do
     focusNode $ node ^. nodeLoc
 
 localSetInputSidebar :: NodePath -> Maybe API.InputSidebar -> Command State ()
-localSetInputSidebar _ Nothing  = modifyNodeEditor $ NE.inputNode .= def
-localSetInputSidebar p (Just n) = localAddInputNode $ convert (p,n)
+localSetInputSidebar p = \case
+    Nothing -> modifyNodeEditor $ NE.inputNode .= def
+    Just n  -> localAddInputNode $ convert (p,n)
 
 localSetOutputSidebar :: NodePath -> Maybe API.OutputSidebar -> Command State ()
-localSetOutputSidebar _ Nothing  = modifyNodeEditor $ NE.outputNode .= def
-localSetOutputSidebar p (Just n) = localAddOutputNode $ convert (p,n)
+localSetOutputSidebar p = \case
+    Nothing -> modifyNodeEditor $ NE.outputNode .= def
+    Just n  -> localAddOutputNode $ convert (p,n)
 
 localAddInputNode :: InputNode -> Command State ()
 localAddInputNode = addInputNode

@@ -52,7 +52,7 @@ import           Prologue                                hiding (throwM)
 type Handler = ByteString -> UndoPure ()
 
 handlersMap :: Map String Handler
-handlersMap = Map.fromList
+handlersMap = fromList
     [ makeHandler handleAddConnectionUndo
     , makeHandler handleAddNodeUndo
     , makeHandler handleAddPortUndo
@@ -187,7 +187,7 @@ handleAddConnectionUndo (Response.Response _ _ req invStatus status) = case (inv
 
 getUndoAutolayout :: AutolayoutNodes.Request -> AutolayoutNodes.Inverse -> SetNodesMeta.Request
 getUndoAutolayout (AutolayoutNodes.Request location _ _) (AutolayoutNodes.Inverse positions) =
-    SetNodesMeta.Request location . Map.fromList $ fmap (\(nl, meta) -> (convert nl, meta)) positions
+    SetNodesMeta.Request location . fromList $ fmap (\(nl, meta) -> (convert nl, meta)) positions
 
 handleAutolayoutNodes :: AutolayoutNodes.Response -> Maybe (SetNodesMeta.Request, AutolayoutNodes.Request)
 handleAutolayoutNodes (Response.Response _ _ req invStatus status) = case (invStatus, status) of

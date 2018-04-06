@@ -206,7 +206,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     AutolayoutNodesResponse response -> handleResponse response success doNothing2 where
         location     = response ^. Response.request . AutolayoutNodes.location
-        shouldCenter = response ^. Response.request . AutolayoutNodes.centerGraph
+        shouldCenter = response ^. Response.request . AutolayoutNodes.shouldCenterGraph
         success diff = applyDiff location (Set.singleton KeepPorts) diff >> when shouldCenter centerGraph
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do

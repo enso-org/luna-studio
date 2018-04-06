@@ -4,7 +4,7 @@ module NodeEditor.Action.State.Model.Connection where
 import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe                  (MaybeT (MaybeT), runMaybeT)
-import           LunaStudio.Data.Geometry                   (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
+import           LunaStudio.Data.Geometry                   (closestPointOnLine, closestPointOnLineParam, doSegmentsIntersect)
 import           LunaStudio.Data.PortRef                    (AnyPortRef, InPortRef, OutPortRef)
 import qualified LunaStudio.Data.PortRef                    as PortRef
 import           LunaStudio.Data.Position                   (Position, distanceSquared)
@@ -63,4 +63,4 @@ getIntersectingConnections node mousePos = do
 getConnectionsIntersectingSegment :: (Position, Position) -> Command State [ConnectionId]
 getConnectionsIntersectingSegment seg = flip fmap getPosConnections $
     map (view connectionId) . filter (
-        \conn -> doesSegmentsIntersects seg (conn ^. Model.srcPos, conn ^. Model.dstPos) )
+        \conn -> doSegmentsIntersect seg (conn ^. Model.srcPos, conn ^. Model.dstPos) )
