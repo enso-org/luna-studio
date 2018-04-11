@@ -25,10 +25,12 @@ instance (NFData a, NFData (f (LabeledTree f a))) => NFData (LabeledTree f a)
 
 type instance Index   (LabeledTree f a) = [Index (f (LabeledTree f a))]
 type instance IxValue (LabeledTree f a) = a
-instance (IxValue (f (LabeledTree f a)) ~ LabeledTree f a, Ixed (f (LabeledTree f a))) => Ixed (LabeledTree f a) where
-    ix []       = value
-    ix (a : as) = subtrees . ix a . ix as
+instance (IxValue (f (LabeledTree f a)) ~ LabeledTree f a, Ixed (f (LabeledTree f a)))
+    => Ixed (LabeledTree f a) where
+        ix []       = value
+        ix (a : as) = subtrees . ix a . ix as
 
 instance FunctorWithIndex i f => FunctorWithIndex [i] (LabeledTree f) where
     imap f = imapFrom [] where
-        imapFrom ind (LabeledTree s v) = LabeledTree (imap (\i -> imapFrom (ind <> [i])) s) (f ind v)
+        imapFrom ind (LabeledTree s v)
+            = LabeledTree (imap (\i -> imapFrom (ind <> [i])) s) (f ind v)

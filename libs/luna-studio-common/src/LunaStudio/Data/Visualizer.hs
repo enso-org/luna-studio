@@ -39,16 +39,20 @@ data VisualizerId = VisualizerId
 makeLenses ''VisualizerId
 
 instance Ord VisualizerId where
-    visId1 `compare` visId2 = if typeOrd /= EQ then typeOrd else visName1 `compare` visName2 where
-        compareTypes t1 t2
-            | t1 == t2 = EQ
-            | t1 == ProjectVisualizer = LT
-            | t2 == ProjectVisualizer = GT
-            | t1 == LunaVisualizer = LT
-            | otherwise = GT
-        typeOrd  = compareTypes (visId1 ^. visualizerType) (visId2 ^. visualizerType)
-        visName1 = Text.unpack (visId1 ^. visualizerName)
-        visName2 = Text.unpack (visId2 ^. visualizerName)
+    visId1 `compare` visId2 = if typeOrd /= EQ
+        then typeOrd
+        else visName1 `compare` visName2 where
+            compareTypes t1 t2
+                | t1 == t2 = EQ
+                | t1 == ProjectVisualizer = LT
+                | t2 == ProjectVisualizer = GT
+                | t1 == LunaVisualizer = LT
+                | otherwise = GT
+            typeOrd  = compareTypes
+                (visId1 ^. visualizerType)
+                (visId2 ^. visualizerType)
+            visName1 = Text.unpack (visId1 ^. visualizerName)
+            visName2 = Text.unpack (visId2 ^. visualizerName)
 
 
 
@@ -81,26 +85,36 @@ errorVisId       = VisualizerId "internal: error"       InternalVisualizer
 mdVisId          = VisualizerId "base: markdown"        LunaVisualizer
 placeholderVisId = VisualizerId "internal: placeholder" InternalVisualizer
 
-transformJSVisualizerMatcher :: MonadIO m => (String -> m String) -> TypeRep -> m [VisualizerEntry]
+transformJSVisualizerMatcher :: MonadIO m
+    => (String -> m String) -> TypeRep -> m [VisualizerEntry]
 transformJSVisualizerMatcher f r = case toConstructorRep r of
     Nothing -> pure def
-    Just r' -> fromJust def . Aeson.decode . BS.pack <$> f (BS.unpack $ Aeson.encode r')
+    Just r' -> fromJust def . Aeson.decode . BS.pack
+        <$> f (BS.unpack $ Aeson.encode r')
 
 convertEntry :: VisualizerId -> VisualizerEntry -> (VisualizerId, VisualizerPath)
 convertEntry k (VisualizerEntry Nothing  p) = (k, p)
-convertEntry k (VisualizerEntry (Just n) p) = (k & visualizerName %~ Text.concat . (:[": ", n]), p)
+convertEntry k (VisualizerEntry (Just n) p)
+    = (k & visualizerName %~ Text.concat . (:[": ", n]), p)
 
-fromJSVisualizersMap :: Map String (String -> IO String) -> Map VisualizerName VisualizerMatcher
-fromJSVisualizersMap = Map.fromList . fmap convertToEntry . Map.toList where
+fromJSVisualizersMap :: Map String (String -> IO String)
+    -> Map VisualizerName VisualizerMatcher
+fromJSVisualizersMap = fromList . fmap convertToEntry . toList where
     convertToEntry (k, v) = (convert k, transformJSVisualizerMatcher v)
 
-applyType :: MonadIO m => TypeRep -> Map VisualizerId VisualizerMatcher -> m (Map VisualizerId VisualizerPath)
-applyType tpe = fmap (Map.fromList . concat) . liftIO . mapM applyToEntry . Map.toList where
+applyType :: MonadIO m => TypeRep -> Map VisualizerId VisualizerMatcher
+    -> m (Map VisualizerId VisualizerPath)
+applyType tpe = fmap toMap . liftIO . mapM applyToEntry . toList where
+    toMap = fromList . concat
     applyToEntry (k, f) = fmap2 (convertEntry k) $ f tpe
 
 fromJSInternalVisualizersMap :: Map String String -> Map VisualizerId VisualizerPath
-fromJSInternalVisualizersMap = Map.fromList . concatMap convertJSON . Map.toList where
-    convertJSON (k, v) = convertEntry (VisualizerId (convert k) InternalVisualizer) <$> (fromJust [] . Aeson.decode $ BS.pack v)
+fromJSInternalVisualizersMap = fromList . concatMap convertJSON . toList where
+    convertJSON (k, v)
+        =   convertEntry (VisualizerId (convert k) InternalVisualizer)
+        <$> (fromJust [] . Aeson.decode $ BS.pack v)
 
-getMdVisualizer :: MonadIO m => Map VisualizerId VisualizerMatcher -> m (Maybe Visualizer)
-getMdVisualizer visMap = fmap (Visualizer mdVisId) . Map.lookup mdVisId <$> applyType (TCons "Text" def) visMap
+getMdVisualizer :: MonadIO m
+    => Map VisualizerId VisualizerMatcher -> m (Maybe Visualizer)
+getMdVisualizer visMap = fmap (Visualizer mdVisId) . Map.lookup mdVisId
+    <$> applyType (TCons "Text" def) visMap

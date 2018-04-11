@@ -28,48 +28,130 @@ import           Prologue                             hiding (TypeRep, mod)
 
 
 --TODO: Bump containers to >= 0.5.9 and use merge from Data.Map.Merge.Lazy
-mergeMaps :: forall a b c k . Ord k => (a -> c) -> (b -> c) -> (a -> b -> c) -> Map k a -> Map k b -> Map k c
-mergeMaps whenMissingInSecond whenMissingInFirst whenMatched = recursiveMerge mempty where
-    recursiveMerge :: Map k c -> Map k a -> Map k b -> Map k c
-    recursiveMerge acc m1 m2
-        | Map.null m1 && Map.null m2 = acc
-        | Map.null m1 = do
-            let ((k, v), newM2) = Map.deleteFindMin m2
-                newAcc          = Map.insert k (whenMissingInFirst v) acc
-            recursiveMerge newAcc m1 newM2
-        | otherwise = do
-            let ((k, v), newM1) = Map.deleteFindMin m1
-                resVal          = maybe (whenMissingInSecond v) (whenMatched v) $ Map.lookup k m2
-                newAcc          = Map.insert k resVal acc
-                newM2           = Map.delete k m2
-            recursiveMerge newAcc newM1 newM2
+mergeMaps :: forall a b c k . Ord k
+    => (a -> c) -> (b -> c) -> (a -> b -> c) -> Map k a -> Map k b -> Map k c
+mergeMaps whenMissingInSecond whenMissingInFirst whenMatched
+    = recursiveMerge mempty where
+        recursiveMerge :: Map k c -> Map k a -> Map k b -> Map k c
+        recursiveMerge acc m1 m2
+            | Map.null m1 && Map.null m2 = acc
+            | Map.null m1 = do
+                let ((k, v), newM2) = Map.deleteFindMin m2
+                    newAcc          = Map.insert k (whenMissingInFirst v) acc
+                recursiveMerge newAcc m1 newM2
+            | otherwise = do
+                let ((k, v), newM1) = Map.deleteFindMin m1
+                    resVal          = maybe
+                        (whenMissingInSecond v)
+                        (whenMatched v)
+                        $ Map.lookup k m2
+                    newAcc          = Map.insert k resVal acc
+                    newM2           = Map.delete k m2
+                recursiveMerge newAcc newM1 newM2
 
 -----------------------------------------------------
 -- TODO: generate with TH (makeDiffs ''GUIState) vvv
 
-data ModificationAddConnection         = ModificationAddConnection         { _newConnection           :: Connection                                                                 } deriving (Eq, Generic, Show)
-data ModificationAddNode               = ModificationAddNode               { _newNode                 :: ExpressionNode                                                             } deriving (Eq, Generic, Show)
-data ModificationRemoveConnection      = ModificationRemoveConnection      { _removeConnectionId      :: ConnectionId                                                               } deriving (Eq, Generic, Show)
-data ModificationRemoveNode            = ModificationRemoveNode            { _removeNodeLoc           :: NodeLoc                                                                    } deriving (Eq, Generic, Show)
-data ModificationRenameNode            = ModificationRenameNode            { _renameNodeLoc           :: NodeLoc                          , _newName         :: Maybe Text          } deriving (Eq, Generic, Show)
-data ModificationSetBreadcrumb         = ModificationSetBreadcrumb         { _newBreadcrumb           :: Breadcrumb (Named BreadcrumbItem)                                          } deriving (Eq, Generic, Show)
-data ModificationSetCamera             = ModificationSetCamera             { _newCameraTransformation :: CameraTransformation                                                       } deriving (Eq, Generic, Show)
-data ModificationSetCanEnterNode       = ModificationSetCanEnterNode       { _setCanEnterNodeLoc      :: NodeLoc                          , _newCanEnter     :: Bool                } deriving (Eq, Generic, Show)
-data ModificationSetCode               = ModificationSetCode               { _newCode                 :: Code                                                                       } deriving (Eq, Generic, Show)
-data ModificationSetDefaultVisualizers = ModificationSetDefaultVisualizers { _newDefaultVisualizers   :: HashMap TypeRep Visualizer                                                 } deriving (Eq, Generic, Show)
-data ModificationSetExpression         = ModificationSetExpression         { _setExpressionNodeLoc    :: NodeLoc                          , _newExpression   :: Text                } deriving (Eq, Generic, Show)
-data ModificationSetGraph              = ModificationSetGraph              { _newGraph                :: Graph                                                                      } deriving (Eq, Generic, Show)
-data ModificationSetGraphError         = ModificationSetGraphError         { _graphError              :: Error GraphError                                                           } deriving (Eq, Generic, Show)
-data ModificationSetImports            = ModificationSetImports            { _newImports              :: Set ImportName                                                             } deriving (Eq, Generic, Show)
-data ModificationSetInPorts            = ModificationSetInPorts            { _setInPortsNodeLoc       :: NodeLoc                          , _newInPortTree   :: InPortTree InPort   } deriving (Eq, Generic, Show)
-data ModificationSetInputSidebar       = ModificationSetInputSidebar       { _newInputSidebar         :: Maybe InputSidebar                                                         } deriving (Eq, Generic, Show)
-data ModificationSetIsDefinition       = ModificationSetIsDefinition       { _setIsDefinitionNodeLoc  :: NodeLoc                          , _newIsDefinition :: Bool                } deriving (Eq, Generic, Show)
-data ModificationSetMonadPath          = ModificationSetMonadPath          { _newMonadPath            :: [MonadPath]                                                                } deriving (Eq, Generic, Show)
-data ModificationSetNodeCode           = ModificationSetNodeCode           { _setNodeCodeNodeLoc      :: NodeLoc                          , _newNodeCode     :: Text                } deriving (Eq, Generic, Show)
-data ModificationSetNodeMeta           = ModificationSetNodeMeta           { _setNodeMetaNodeLoc      :: NodeLoc                          , _newNodeMeta     :: NodeMeta            } deriving (Eq, Generic, Show)
-data ModificationSetOutPorts           = ModificationSetOutPorts           { _setOutPortsNodeLoc      :: NodeLoc                          , _newOutPortTree  :: OutPortTree OutPort } deriving (Eq, Generic, Show)
-data ModificationSetOutputSidebar      = ModificationSetOutputSidebar      { _newOutputSidebar        :: Maybe OutputSidebar                                                        } deriving (Eq, Generic, Show)
-data ModificationSetProjectVisPath     = ModificationSetProjectVisPath     { _newProjectVisPath       :: Maybe FilePath                                                             } deriving (Eq, Generic, Show)
+
+data ModificationAddConnection = ModificationAddConnection
+    { _newConnection :: Connection
+    } deriving (Eq, Generic, Show)
+
+data ModificationAddNode = ModificationAddNode
+    { _newNode :: ExpressionNode
+    } deriving (Eq, Generic, Show)
+
+data ModificationRemoveConnection = ModificationRemoveConnection
+    { _removeConnectionId :: ConnectionId
+    } deriving (Eq, Generic, Show)
+
+data ModificationRemoveNode = ModificationRemoveNode
+    { _removeNodeLoc :: NodeLoc
+    } deriving (Eq, Generic, Show)
+
+data ModificationRenameNode = ModificationRenameNode
+    { _renameNodeLoc :: NodeLoc
+    , _newName         :: Maybe Text
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetBreadcrumb = ModificationSetBreadcrumb
+    { _newBreadcrumb :: Breadcrumb (Named BreadcrumbItem)
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetCamera = ModificationSetCamera
+    { _newCameraTransformation :: CameraTransformation
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetCanEnterNode = ModificationSetCanEnterNode
+    { _setCanEnterNodeLoc :: NodeLoc
+    , _newCanEnter     :: Bool
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetCode = ModificationSetCode
+    { _newCode :: Code
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetDefaultVisualizers = ModificationSetDefaultVisualizers
+    { _newDefaultVisualizers :: HashMap TypeRep Visualizer
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetExpression = ModificationSetExpression
+    { _setExpressionNodeLoc :: NodeLoc
+    , _newExpression   :: Text
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetGraph = ModificationSetGraph
+    { _newGraph :: Graph
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetGraphError = ModificationSetGraphError
+    { _graphError :: Error GraphError
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetImports = ModificationSetImports
+    { _newImports :: Set ImportName
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetInPorts = ModificationSetInPorts
+    { _setInPortsNodeLoc :: NodeLoc
+    , _newInPortTree   :: InPortTree InPort
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetInputSidebar = ModificationSetInputSidebar
+    { _newInputSidebar :: Maybe InputSidebar
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetIsDefinition = ModificationSetIsDefinition
+    { _setIsDefinitionNodeLoc :: NodeLoc
+    , _newIsDefinition :: Bool
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetMonadPath = ModificationSetMonadPath
+    { _newMonadPath :: [MonadPath]
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetNodeCode = ModificationSetNodeCode
+    { _setNodeCodeNodeLoc :: NodeLoc
+    , _newNodeCode     :: Text
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetNodeMeta = ModificationSetNodeMeta
+    { _setNodeMetaNodeLoc :: NodeLoc
+    , _newNodeMeta     :: NodeMeta
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetOutPorts = ModificationSetOutPorts
+    { _setOutPortsNodeLoc :: NodeLoc
+    , _newOutPortTree  :: OutPortTree OutPort
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetOutputSidebar = ModificationSetOutputSidebar
+    { _newOutputSidebar :: Maybe OutputSidebar
+    } deriving (Eq, Generic, Show)
+
+data ModificationSetProjectVisPath = ModificationSetProjectVisPath
+    { _newProjectVisPath :: Maybe FilePath
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''ModificationAddConnection
 makeLenses ''ModificationAddNode
@@ -204,45 +286,79 @@ instance ToJSON Modification
 
 class IsModification a where
     toModification :: a -> Modification
+    toDiff :: a -> Diff
+    toDiff = Diff . pure . toModification
 
 
 -----------------------------------------------------
 -- TODO: generate with TH (makeDiffs ''GUIState) vvv
 
-instance IsModification ModificationAddConnection         where toModification = AddConnection
-instance IsModification ModificationAddNode               where toModification = AddNode
-instance IsModification ModificationRemoveConnection      where toModification = RemoveConnection
-instance IsModification ModificationRemoveNode            where toModification = RemoveNode
-instance IsModification ModificationRenameNode            where toModification = RenameNode
-instance IsModification ModificationSetBreadcrumb         where toModification = SetBreadcrumb
-instance IsModification ModificationSetCamera             where toModification = SetCamera
-instance IsModification ModificationSetCanEnterNode       where toModification = SetCanEnterNode
-instance IsModification ModificationSetCode               where toModification = SetCode
-instance IsModification ModificationSetDefaultVisualizers where toModification = SetDefaultVisualizers
-instance IsModification ModificationSetExpression         where toModification = SetExpression
-instance IsModification ModificationSetGraph              where toModification = SetGraph
-instance IsModification ModificationSetGraphError         where toModification = SetGraphError
-instance IsModification ModificationSetImports            where toModification = SetImports
-instance IsModification ModificationSetInPorts            where toModification = SetInPorts
-instance IsModification ModificationSetInputSidebar       where toModification = SetInputSidebar
-instance IsModification ModificationSetIsDefinition       where toModification = SetIsDefinition
-instance IsModification ModificationSetMonadPath          where toModification = SetMonadPath
-instance IsModification ModificationSetNodeCode           where toModification = SetNodeCode
-instance IsModification ModificationSetNodeMeta           where toModification = SetNodeMeta
-instance IsModification ModificationSetOutPorts           where toModification = SetOutPorts
-instance IsModification ModificationSetOutputSidebar      where toModification = SetOutputSidebar
-instance IsModification ModificationSetProjectVisPath     where toModification = SetProjectVisPath
+instance IsModification ModificationAddConnection         where
+    toModification = AddConnection
+instance IsModification ModificationAddNode               where
+    toModification = AddNode
+instance IsModification ModificationRemoveConnection      where
+    toModification = RemoveConnection
+instance IsModification ModificationRemoveNode            where
+    toModification = RemoveNode
+instance IsModification ModificationRenameNode            where
+    toModification = RenameNode
+instance IsModification ModificationSetBreadcrumb         where
+    toModification = SetBreadcrumb
+instance IsModification ModificationSetCamera             where
+    toModification = SetCamera
+instance IsModification ModificationSetCanEnterNode       where
+    toModification = SetCanEnterNode
+instance IsModification ModificationSetCode               where
+    toModification = SetCode
+instance IsModification ModificationSetDefaultVisualizers where
+    toModification = SetDefaultVisualizers
+instance IsModification ModificationSetExpression         where
+    toModification = SetExpression
+instance IsModification ModificationSetGraph              where
+    toModification = SetGraph
+instance IsModification ModificationSetGraphError         where
+    toModification = SetGraphError
+instance IsModification ModificationSetImports            where
+    toModification = SetImports
+instance IsModification ModificationSetInPorts            where
+    toModification = SetInPorts
+instance IsModification ModificationSetInputSidebar       where
+    toModification = SetInputSidebar
+instance IsModification ModificationSetIsDefinition       where
+    toModification = SetIsDefinition
+instance IsModification ModificationSetMonadPath          where
+    toModification = SetMonadPath
+instance IsModification ModificationSetNodeCode           where
+    toModification = SetNodeCode
+instance IsModification ModificationSetNodeMeta           where
+    toModification = SetNodeMeta
+instance IsModification ModificationSetOutPorts           where
+    toModification = SetOutPorts
+instance IsModification ModificationSetOutputSidebar      where
+    toModification = SetOutputSidebar
+instance IsModification ModificationSetProjectVisPath     where
+    toModification = SetProjectVisPath
 
 
-instance HasNodeLoc ModificationRemoveNode      where nodeLoc = removeNodeLoc
-instance HasNodeLoc ModificationRenameNode      where nodeLoc = renameNodeLoc
-instance HasNodeLoc ModificationSetCanEnterNode where nodeLoc = setCanEnterNodeLoc
-instance HasNodeLoc ModificationSetExpression   where nodeLoc = setExpressionNodeLoc
-instance HasNodeLoc ModificationSetInPorts      where nodeLoc = setInPortsNodeLoc
-instance HasNodeLoc ModificationSetIsDefinition where nodeLoc = setIsDefinitionNodeLoc
-instance HasNodeLoc ModificationSetNodeCode     where nodeLoc = setNodeCodeNodeLoc
-instance HasNodeLoc ModificationSetNodeMeta     where nodeLoc = setNodeMetaNodeLoc
-instance HasNodeLoc ModificationSetOutPorts     where nodeLoc = setOutPortsNodeLoc
+instance HasNodeLoc ModificationRemoveNode      where
+    nodeLoc = removeNodeLoc
+instance HasNodeLoc ModificationRenameNode      where
+    nodeLoc = renameNodeLoc
+instance HasNodeLoc ModificationSetCanEnterNode where
+    nodeLoc = setCanEnterNodeLoc
+instance HasNodeLoc ModificationSetExpression   where
+    nodeLoc = setExpressionNodeLoc
+instance HasNodeLoc ModificationSetInPorts      where
+    nodeLoc = setInPortsNodeLoc
+instance HasNodeLoc ModificationSetIsDefinition where
+    nodeLoc = setIsDefinitionNodeLoc
+instance HasNodeLoc ModificationSetNodeCode     where
+    nodeLoc = setNodeCodeNodeLoc
+instance HasNodeLoc ModificationSetNodeMeta     where
+    nodeLoc = setNodeMetaNodeLoc
+instance HasNodeLoc ModificationSetOutPorts     where
+    nodeLoc = setOutPortsNodeLoc
 
 -- TODO: with Wojtek
 getNodeModificationNodeLoc :: Modification -> Maybe NodeLoc
@@ -262,7 +378,9 @@ getNodeModificationNodeLoc _                   = Nothing
 
 
 
-data Diff = Diff { _reversedModifications :: [Modification] } deriving (Eq, Generic, Show)
+data Diff = Diff
+    { _reversedModifications :: [Modification]
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Diff
 
@@ -335,21 +453,21 @@ instance Diffable [Connection] where
     apply d    = Map.elems . apply d . toConnectionsMap
 
 instance Diffable Graph where
-    patch mod@(AddConnection    _) g = g & Graph.connections            %~ patch mod
-    patch mod@(AddNode          _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(RemoveConnection _) g = g & Graph.connections            %~ patch mod
-    patch mod@(RemoveNode       _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(RenameNode       _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(SetCanEnterNode  _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(SetExpression    _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(SetInPorts       _) g = g & Graph.nodes                  %~ patch mod
-    patch     (SetInputSidebar  m) g = g & Graph.inputSidebar           .~ m ^. newInputSidebar
-    patch mod@(SetIsDefinition  _) g = g & Graph.nodes                  %~ patch mod
-    patch     (SetMonadPath     m) g = g & Graph.monads                 .~ m ^. newMonadPath
-    patch mod@(SetNodeCode      _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(SetNodeMeta      _) g = g & Graph.nodes                  %~ patch mod
-    patch mod@(SetOutPorts      _) g = g & Graph.nodes                  %~ patch mod
-    patch     (SetOutputSidebar m) g = g & Graph.outputSidebar          .~ m ^. newOutputSidebar
+    patch mod@(AddConnection    _) g = g & Graph.connections   %~ patch mod
+    patch mod@(AddNode          _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(RemoveConnection _) g = g & Graph.connections   %~ patch mod
+    patch mod@(RemoveNode       _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(RenameNode       _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(SetCanEnterNode  _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(SetExpression    _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(SetInPorts       _) g = g & Graph.nodes         %~ patch mod
+    patch     (SetInputSidebar  m) g = g & Graph.inputSidebar  .~ m ^. newInputSidebar
+    patch mod@(SetIsDefinition  _) g = g & Graph.nodes         %~ patch mod
+    patch     (SetMonadPath     m) g = g & Graph.monads        .~ m ^. newMonadPath
+    patch mod@(SetNodeCode      _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(SetNodeMeta      _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(SetOutPorts      _) g = g & Graph.nodes         %~ patch mod
+    patch     (SetOutputSidebar m) g = g & Graph.outputSidebar .~ m ^. newOutputSidebar
     patch     _                    g = g
     diff g1 g2 = nodesDiff <> inSidebarDiff <> outSidebarDiff <> connsDiff <> monadsDiff where
         nodesDiff     = diff (g1 ^. Graph.nodes) (g2 ^. Graph.nodes)
@@ -460,14 +578,21 @@ instance Diffable GUIState where
 -----------------------------------------------------
 
 
-toDiff :: GUIState -> Diff
-toDiff s = bcDiff <> impsDiff <> defVisDiff <> camDiff <> visPathDiff <> codeDiff <> graphDiff where
-    bcDiff      = Diff . pure . toModification . ModificationSetBreadcrumb         $ s ^. GUIState.breadcrumb
-    impsDiff    = Diff . pure . toModification . ModificationSetImports            $ s ^. GUIState.imports
-    defVisDiff  = Diff . pure . toModification . ModificationSetDefaultVisualizers $ s ^. GUIState.defaultVisualizers
-    camDiff     = Diff . pure . toModification . ModificationSetCamera             $ s ^. GUIState.camera
-    visPathDiff = Diff . pure . toModification . ModificationSetProjectVisPath     $ s ^. GUIState.projectVisualizersPath
-    codeDiff    = Diff . pure . toModification . ModificationSetCode               $ s ^. GUIState.code
-    graphDiff   = case s ^. GUIState.graph of
-        Left  e -> Diff . pure . toModification $ ModificationSetGraphError e
-        Right g -> Diff . pure . toModification $ ModificationSetGraph      g
+guiStateDiff :: GUIState -> Diff
+guiStateDiff s = mconcat [bcDiff, impsDiff, defVisDiff, camDiff, visPathDiff,
+    codeDiff, graphDiff] where
+        bcDiff      = toDiff . ModificationSetBreadcrumb
+                    $ s ^. GUIState.breadcrumb
+        impsDiff    = toDiff . ModificationSetImports
+                    $ s ^. GUIState.imports
+        defVisDiff  = toDiff . ModificationSetDefaultVisualizers
+                    $ s ^. GUIState.defaultVisualizers
+        camDiff     = toDiff . ModificationSetCamera
+                    $ s ^. GUIState.camera
+        visPathDiff = toDiff . ModificationSetProjectVisPath
+                    $ s ^. GUIState.projectVisualizersPath
+        codeDiff    = toDiff . ModificationSetCode
+                    $ s ^. GUIState.code
+        graphDiff   = case s ^. GUIState.graph of
+            Left  e -> toDiff $ ModificationSetGraphError e
+            Right g -> toDiff $ ModificationSetGraph      g

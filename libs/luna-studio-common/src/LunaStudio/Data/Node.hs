@@ -105,8 +105,20 @@ mkExprNode nid expr pos = ExpressionNode
     False
     def
     def
-    (Port.LabeledTree (Port.InPorts (Just $ Port.LabeledTree def $ Port.Port [Port.Self] (Text.pack "") TStar Port.NotConnected) def def) (Port.Port [] (Text.pack "") TStar Port.NotConnected))
-    (Port.LabeledTree def $ Port.Port []          (Text.pack "") TStar Port.NotConnected)
+    (Port.LabeledTree
+        (Port.InPorts
+            (Just $ Port.LabeledTree def $ Port.Port
+                [Port.Self]
+                (Text.pack "")
+                TStar
+                Port.NotConnected
+            )
+            def
+            def
+        )
+        (Port.Port [] (Text.pack "") TStar Port.NotConnected)
+    )
+    (Port.LabeledTree def $ Port.Port [] (Text.pack "") TStar Port.NotConnected)
     (NodeMeta.NodeMeta pos False def)
     False
 
@@ -114,13 +126,21 @@ findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findPredecessorPosition node nodes = fromDoubles xPos yPos where
     xPos = (node ^. position . x) - gapBetweenNodes
     yPos = findYPos $ node ^. position . y
-    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' - gapBetweenNodes else y'
+    inCandidatePosition y' n
+        = n ^. position . x == xPos && n ^. position . y == y'
+    findYPos y' = if any (inCandidatePosition y') nodes
+        then findYPos $ y' - gapBetweenNodes
+        else y'
 
 findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findSuccessorPosition node nodes = fromDoubles xPos yPos where
     xPos = (node ^. position . x) + gapBetweenNodes
     yPos = findYPos $ node ^. position . y
-    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' + gapBetweenNodes else y'
+    inCandidatePosition y' n
+        = n ^. position . x == xPos && n ^. position . y == y'
+    findYPos y' = if any (inCandidatePosition y') nodes
+        then findYPos $ y' + gapBetweenNodes
+        else y'
 
 
 toExpressionNodesMap :: [ExpressionNode] -> Map NodeLoc ExpressionNode

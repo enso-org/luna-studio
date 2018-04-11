@@ -16,7 +16,10 @@ import           Prologue
 
 -- === Definition === --
 
-newtype ScreenPosition = ScreenPosition { fromScreenPosition :: Vector2 Double } deriving (Eq, Generic, Num, Show)
+newtype ScreenPosition = ScreenPosition
+    { fromScreenPosition :: Vector2 Double
+    } deriving (Eq, Generic, Num, Show)
+
 makeWrapped ''ScreenPosition
 
 -- instance Num (ScreenPosition) where
@@ -32,8 +35,11 @@ instance IsVector  ScreenPosition
 instance Default   ScreenPosition
 instance NFData    ScreenPosition
 type instance Item ScreenPosition = Double
-instance Convertible ScreenPosition [Double] where convert = toList . view vector
-instance Convertible [Double] ScreenPosition where convert = ScreenPosition . fromList
+
+instance Convertible ScreenPosition [Double] where
+    convert = toList . view vector
+instance Convertible [Double] ScreenPosition where
+    convert = ScreenPosition . fromList
 
 
 -- === Functions === ---

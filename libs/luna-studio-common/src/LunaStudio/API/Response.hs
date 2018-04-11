@@ -5,13 +5,13 @@ import           Data.Binary            (Binary)
 import           Data.UUID.Types        (UUID)
 import           LunaStudio.API.Request (Request (..))
 import           LunaStudio.API.Topic   (MessageTopic)
-import qualified LunaStudio.Data.Error  as ErrorAPI
+import           LunaStudio.Data.Error  (Error, LunaError)
 import           Prologue
 
 
 data Status a 
     = Ok    { _resultData :: a }
-    | Error { _lunaError  :: ErrorAPI.Error ErrorAPI.LunaError }
+    | Error { _lunaError  :: Error LunaError }
     deriving (Eq, Generic, Show)
 
 makeLenses ''Status
@@ -32,14 +32,21 @@ data Response req inv res = Response
 type SimpleResponse req inv = Response req inv ()
 
 
-class (MessageTopic (Request req), MessageTopic (Response req inv res), Binary req, Binary inv, Binary res) => ResponseResult req inv res | req -> inv res where
+class ( MessageTopic (Request req)
+      , MessageTopic (Response req inv res)
+      , Binary req
+      , Binary inv
+      , Binary res
+      ) => ResponseResult req inv res | req -> inv res where
     result :: Request req -> inv -> res -> Response req inv res
-    result (Request uuid guiID req) inv payload = Response uuid guiID req (Ok inv) (Ok payload)
+    result (Request uuid guiID req) inv payload
+        = Response uuid guiID req (Ok inv) (Ok payload)
 
-    error :: Request req -> Status inv -> ErrorAPI.Error ErrorAPI.LunaError -> Response req inv res
+    error :: Request req -> Status inv -> Error LunaError -> Response req inv res
     error  (Request uuid guiID req) inv err = Response uuid guiID req inv (Error err)
 
-ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) => Request req -> inv -> Response req inv ()
+ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) 
+   => Request req -> inv -> Response req inv ()
 ok (Request uuid guiID req) inv = Response uuid guiID req (Ok inv) (Ok ())
 
 makeLenses ''Response

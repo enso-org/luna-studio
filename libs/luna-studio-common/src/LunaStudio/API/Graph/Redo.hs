@@ -8,8 +8,11 @@ import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
 
-data RedoRequest = RedoRequest                         deriving (Eq, Generic, Show)
-data Request     = Request { _request :: RedoRequest } deriving (Eq, Generic, Show)
+data RedoRequest = RedoRequest deriving (Eq, Generic, Show)
+
+data Request     = Request
+    { _request :: RedoRequest
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''RedoRequest
 makeLenses ''Request
@@ -27,5 +30,7 @@ instance Response.ResponseResult Request () ()
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.redo"
-instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response
+instance T.MessageTopic (R.Request Request) where
+    topic _ = topicPrefix <> T.request
+instance T.MessageTopic Response            where
+    topic _ = topicPrefix <> T.response

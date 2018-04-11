@@ -22,7 +22,9 @@ data Named a = Named
     , _breadcrumb :: a
     } deriving (Eq, Generic, Show)
 
-newtype Breadcrumb a = Breadcrumb { _items :: [a] } deriving (Eq, Generic, Ord, Show)
+newtype Breadcrumb a = Breadcrumb
+    { _items :: [a]
+    } deriving (Eq, Generic, Ord, Show)
 
 makeLenses ''BreadcrumbItem
 makeLenses ''Breadcrumb
@@ -52,8 +54,9 @@ toNames :: Breadcrumb (Named BreadcrumbItem) -> Breadcrumb Text
 toNames = Breadcrumb . toListOf (items . traversed . name)
 
 instance FromJSON a => FromJSONKey (Breadcrumb a)
-instance {-# OVERLAPPABLE #-} FromJSON a => FromJSON (Breadcrumb a) where parseJSON = Lens.parse
-instance FromJSON a => FromJSON (Named a)      where parseJSON = Lens.parse
+instance {-# OVERLAPPABLE #-} FromJSON a => FromJSON (Breadcrumb a) where
+    parseJSON = Lens.parse
+instance FromJSON a => FromJSON (Named a) where parseJSON = Lens.parse
 instance ToJSON a => ToJSONKey (Breadcrumb a)
 instance {-# OVERLAPPABLE #-} ToJSON a => ToJSON (Breadcrumb a) where
     toJSON     = Lens.toJSON
@@ -62,7 +65,8 @@ instance {-# OVERLAPPABLE #-} ToJSON a => ToJSON (Breadcrumb a) where
 instance ToJSON (Breadcrumb Text) where
     toJSON     = toJSON . intercalate "." . unwrap
 
-instance FromJSON (Breadcrumb Text) where parseJSON = fmap (Breadcrumb . Text.split (== '.')) . parseJSON
+instance FromJSON (Breadcrumb Text) where
+    parseJSON = fmap (Breadcrumb . Text.split (== '.')) . parseJSON
 
 instance ToJSON a => ToJSON (Named a) where
     toJSON     = Lens.toJSON

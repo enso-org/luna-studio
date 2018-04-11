@@ -50,10 +50,11 @@ closestPointOnLine line@(p1, p2) p3 = move shift p1 where
 --
 {-# INLINE closestPointOnLineParam #-}
 closestPointOnLineParam :: (Position, Position) -> Position -> Double
-closestPointOnLineParam (p1, p2) p3 = (v3 - v1) `dotV` (v2 - v1) / (v2 - v1) `dotV` (v2 - v1) where
-    v1 = p1 ^. vector
-    v2 = p2 ^. vector
-    v3 = p3 ^. vector
+closestPointOnLineParam (p1, p2) p3
+    = (v3 - v1) `dotV` (v2 - v1) / (v2 - v1) `dotV` (v2 - v1) where
+        v1 = p1 ^. vector
+        v2 = p2 ^. vector
+        v3 = p3 ^. vector
 
 doSegmentsIntersect :: (Position, Position) -> (Position, Position) -> Bool
 doSegmentsIntersect seg1@(beg1, end1) seg2@(beg2, end2) = not (beg1 == end1 || beg2 == end2) && doIntersect where
@@ -106,10 +107,12 @@ intersectLineLine (p1, p2) (p3, p4) = do
         Just $ fromDoubles (numx / den) (numy / den)
 
 isPointInCircle :: Position -> (Position, Double) -> Bool
-isPointInCircle p (circleCenter, radius) = distanceSquared p circleCenter <= radius ^ (2 :: Integer)
+isPointInCircle p (circleCenter, radius)
+    = distanceSquared p circleCenter <= radius ^ (2 :: Integer)
 
 isPointInRectangle :: Position -> (Position, Position) -> Bool
-isPointInRectangle pos (leftTop, rightBottom) = pos ^. x >= leftTop ^. x     - epsilon
-                                             && pos ^. x <= rightBottom ^. x + epsilon
-                                             && pos ^. y >= leftTop ^. y     - epsilon
-                                             && pos ^. y <= rightBottom ^. y + epsilon
+isPointInRectangle pos (leftTop, rightBottom)
+    =  pos ^. x >= leftTop     ^. x - epsilon
+    && pos ^. x <= rightBottom ^. x + epsilon
+    && pos ^. y >= leftTop     ^. y - epsilon
+    && pos ^. y <= rightBottom ^. y + epsilon

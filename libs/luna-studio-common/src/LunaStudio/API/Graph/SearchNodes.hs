@@ -17,7 +17,9 @@ data Request = Request
     , _missingImports :: Set ImportName
     } deriving (Eq, Generic, Show)
 
-data Result = Result { _searcherHints :: ImportsHints } deriving (Eq, Generic, Show)
+data Result = Result
+    { _searcherHints :: ImportsHints
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result
@@ -36,5 +38,7 @@ instance Response.ResponseResult Request () Result
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.nodesearch"
-instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response
+instance T.MessageTopic (R.Request Request) where
+    topic _ = topicPrefix <> T.request
+instance T.MessageTopic Response            where
+    topic _ = topicPrefix <> T.response

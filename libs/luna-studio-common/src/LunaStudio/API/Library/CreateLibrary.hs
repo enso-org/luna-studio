@@ -46,6 +46,9 @@ instance Response.ResponseResult Request () Result
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.library.create"
-instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response
-instance T.MessageTopic Update              where topic _ = topicPrefix <> T.update
+instance T.MessageTopic (R.Request Request) where
+    topic _ = topicPrefix <> T.request
+instance T.MessageTopic Response            where
+    topic _ = topicPrefix <> T.response
+instance T.MessageTopic Update              where
+    topic _ = topicPrefix <> T.update

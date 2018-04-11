@@ -72,8 +72,9 @@ instance Default NodeSearcherData where def = NodeSearcherData def def
 
 missingImports :: Getter NodeSearcherData (Set ImportName)
 missingImports = to missingImports' where
-    missingImports' (NodeSearcherData imps currentImps) = let neededImports = Map.keysSet imps
-        in Set.filter (`Set.notMember` neededImports) currentImps
+    missingImports' (NodeSearcherData imps currentImps) =
+        let neededImports = Map.keysSet imps
+            in Set.filter (`Set.notMember` neededImports) currentImps
 
 
 data TypePreferation = TypePreferation
@@ -95,32 +96,62 @@ search q nsData tp = fuzzySearch q $ toEntries nsData (fromJust def tp)
 
 
 toEntries :: NodeSearcherData -> TypePreferation -> [RawEntry]
-toEntries (NodeSearcherData ih currImps) tPref = concat . Map.elems $ Map.mapWithKey moduleHintsToEntries ih where
-    moduleHintsToEntries :: ImportName -> ModuleHints -> [RawEntry]
-    moduleHintsToEntries impName mh = classesToEntries impName (mh ^. classes) <> functionsToEntries impName (mh ^. functions)
-    classesToEntries :: ImportName -> Map Text ClassHints -> [RawEntry]
-    classesToEntries impName = concat . Map.elems . Map.mapWithKey (classToEntries impName)
-    classToEntries :: ImportName -> ClassName -> ClassHints -> [RawEntry]
-    classToEntries impName cName c = methodsToEntries impName cName (c ^. methods) <> constructorsToEntries impName cName (c ^. constructors)
-    methodsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
-    methodsToEntries impName cName = fmap (uncurry $ methodToEntry impName cName)
-    methodToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
-    methodToEntry impName cName m d = let et = Method cName in RawEntry m d et (getWeight impName cName et) $ Just $ ImportInfo impName $ isImported impName
-    constructorsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
-    constructorsToEntries impName cName = fmap (uncurry $ constructorToEntry impName cName)
-    constructorToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
-    constructorToEntry impName cName c d = let et = Constructor cName in RawEntry c d et (getWeight impName cName et) $ Just $ ImportInfo impName $ isImported impName
-    functionsToEntries :: ImportName -> [(Name, Doc)] -> [RawEntry]
-    functionsToEntries impName = fmap (uncurry $ functionToEntry impName)
-    functionToEntry :: ImportName -> Name -> Doc -> RawEntry
-    functionToEntry impName f d = RawEntry f d Function (getWeight impName def Function) $ Just $ ImportInfo impName $ isImported impName
-    isImported :: ImportName -> Bool
-    isImported impName = impName `elem` currImps
-    getWeight :: ImportName -> ClassName -> EntryType -> Double
-    getWeight moduleName cName et = case et of
-        Function      -> if moduleName == "Local" then tPref ^. localFunctionsWeight else tPref ^. globalFunctionsWeight
-        Method      _ -> if Set.member cName . fst $ tPref ^. specialWeightForClassMethods
-            then snd $ tPref ^. specialWeightForClassMethods
-            else tPref ^. methodsWeight
-        Constructor _ -> tPref ^. constructorsWeight
-        _             -> def
+toEntries (NodeSearcherData ih currImps) tPref
+    = concat . Map.elems $ Map.mapWithKey moduleHintsToEntries ih where
+        moduleHintsToEntries :: ImportName -> ModuleHints -> [RawEntry]
+        moduleHintsToEntries impName mh
+            =  classesToEntries impName (mh ^. classes)
+            <> functionsToEntries impName (mh ^. functions)
+        classesToEntries :: ImportName -> Map Text ClassHints -> [RawEntry]
+        classesToEntries impName
+            = concat . Map.elems . Map.mapWithKey (classToEntries impName)
+        classToEntries :: ImportName -> ClassName -> ClassHints -> [RawEntry]
+        classToEntries impName cName c
+            =  methodsToEntries impName cName (c ^. methods)
+            <> constructorsToEntries impName cName (c ^. constructors)
+        methodsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
+        methodsToEntries impName cName
+            = fmap (uncurry $ methodToEntry impName cName)
+        methodToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
+        methodToEntry impName cName m d
+            = let et = Method cName in
+                RawEntry
+                    m
+                    d
+                    et
+                    (getWeight impName cName et)
+                    $ Just $ ImportInfo impName $ isImported impName
+        constructorsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
+        constructorsToEntries impName cName
+            = fmap (uncurry $ constructorToEntry impName cName)
+        constructorToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
+        constructorToEntry impName cName c d
+            = let et = Constructor cName in
+                RawEntry
+                    c
+                    d
+                    et
+                    (getWeight impName cName et)
+                    $ Just $ ImportInfo impName $ isImported impName
+        functionsToEntries :: ImportName -> [(Name, Doc)] -> [RawEntry]
+        functionsToEntries impName = fmap (uncurry $ functionToEntry impName)
+        functionToEntry :: ImportName -> Name -> Doc -> RawEntry
+        functionToEntry impName f d
+            = RawEntry
+                f
+                d
+                Function
+                (getWeight impName def Function)
+                $ Just $ ImportInfo impName $ isImported impName
+        isImported :: ImportName -> Bool
+        isImported impName = impName `elem` currImps
+        getWeight :: ImportName -> ClassName -> EntryType -> Double
+        getWeight moduleName cName et = case et of
+            Function      -> if moduleName == "Local"
+                then tPref ^. localFunctionsWeight
+                else tPref ^. globalFunctionsWeight
+            Method      _ -> if Set.member cName . fst $ tPref ^. specialWeightForClassMethods
+                then snd $ tPref ^. specialWeightForClassMethods
+                else tPref ^. methodsWeight
+            Constructor _ -> tPref ^. constructorsWeight
+            _             -> def

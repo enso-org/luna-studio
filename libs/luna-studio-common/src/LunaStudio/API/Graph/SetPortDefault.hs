@@ -19,7 +19,9 @@ data Request = Request
     , _defaultValue :: Maybe PortDefault
     } deriving (Eq, Generic, Show)
 
-data Inverse = Inverse { _prevPortDefault :: Maybe PortDefault } deriving (Eq, Generic, Show)
+data Inverse = Inverse
+    { _prevPortDefault :: Maybe PortDefault
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Inverse
@@ -38,5 +40,7 @@ instance Response.ResponseResult Request Inverse Diff
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.node.defaultValue"
-instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response
+instance T.MessageTopic (R.Request Request) where
+    topic _ = topicPrefix <> T.request
+instance T.MessageTopic Response            where
+    topic _ = topicPrefix <> T.response

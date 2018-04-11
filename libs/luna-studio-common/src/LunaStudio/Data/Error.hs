@@ -6,9 +6,21 @@ import           Data.Binary      (Binary)
 import           Prologue
 
 
-data NodeError  = CompileError CompileErrorDetails | RuntimeError       deriving (Eq, Generic, Show)
-data GraphError = BreadcrumbDoesNotExist | ParseError | OtherGraphError deriving (Eq, Generic, Show)
-data LunaError  = Graph GraphError | OtherLunaError                     deriving (Eq, Generic, Show)
+data NodeError
+    = CompileError CompileErrorDetails
+    | RuntimeError
+    deriving (Eq, Generic, Show)
+
+data GraphError
+    = BreadcrumbDoesNotExist
+    | ParseError
+    | OtherGraphError
+    deriving (Eq, Generic, Show)
+
+data LunaError
+    = Graph GraphError
+    | OtherLunaError
+    deriving (Eq, Generic, Show)
 
 data CompileErrorDetails = CompileErrorDetails
     { _arisingFrom :: [SourceLocation]

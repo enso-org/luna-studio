@@ -45,8 +45,17 @@ instance Default CameraTransformation where
 
 getCameraForRectangle :: (Position, Position) -> Maybe Size -> CameraTransformation
 getCameraForRectangle (leftTop, rightBottom) mayScreenSize = do
-    let padding = Vector2 80 80
-        span    = Size (rightBottom ^. vector - leftTop ^. vector + scalarProduct padding 2)
-        shift   = scalarProduct (leftTop ^. vector - rightBottom ^. vector) 0.5 - leftTop ^. vector
-        factor  = maybe 1 (\screenSize -> min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)) mayScreenSize
-    CameraTransformation (multStd2 (invertedScaleMatrix factor) (invertedTranslationMatrix shift)) (multStd2 (translationMatrix shift) (scaleMatrix factor)) 2
+    let lTopV      = leftTop     ^. vector
+        rBotV      = rightBottom ^. vector
+        padding    = Vector2 80 80
+        span       = Size (rBotV - lTopV + scalarProduct padding 2)
+        shift      = scalarProduct (lTopV - rBotV) 0.5 - lTopV
+        toFactor s = min 1 $ min (s ^. x / span ^. x) (s ^. y / span ^. y)
+        factor     = maybe 1 toFactor mayScreenSize
+        sToL       = multStd2
+            (invertedScaleMatrix factor)
+            (invertedTranslationMatrix shift)
+        lToS       = multStd2
+            (translationMatrix shift)
+            (scaleMatrix factor)
+    CameraTransformation sToL lToS 2

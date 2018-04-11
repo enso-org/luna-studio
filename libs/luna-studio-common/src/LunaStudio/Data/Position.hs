@@ -17,7 +17,10 @@ import           Prologue
 
 -- === Definition === --
 
-newtype Position = Position { fromPosition :: Vector2 Double } deriving (Eq, Generic, Num, Ord, Show)
+newtype Position = Position
+    { fromPosition :: Vector2 Double
+    } deriving (Eq, Generic, Num, Ord, Show)
+
 makeWrapped ''Position
 
 
@@ -56,14 +59,20 @@ rescale pos factor = pos & vector %~ flip scalarProduct factor
 
 leftTopPoint :: [Position] -> Maybe Position
 leftTopPoint []        = Nothing
-leftTopPoint positions = Just $ Position (Vector2 (unsafeMinimum $ view x <$> positions) (unsafeMinimum $ view y <$> positions))
+leftTopPoint positions = Just . Position $ Vector2
+    (unsafeMinimum $ view x <$> positions)
+    (unsafeMinimum $ view y <$> positions)
 
 rightBottomPoint :: [Position] -> Maybe Position
 rightBottomPoint []        = Nothing
-rightBottomPoint positions = Just $ Position (Vector2 (unsafeMaximum $ view x <$> positions) (unsafeMaximum $ view y <$> positions))
+rightBottomPoint positions = Just . Position $ Vector2
+    (unsafeMaximum $ view x <$> positions)
+    (unsafeMaximum $ view y <$> positions)
 
 minimumRectangle :: [Position] -> Maybe (Position, Position)
-minimumRectangle positions = (,) <$> leftTopPoint positions <*> rightBottomPoint positions
+minimumRectangle positions = (,)
+    <$> leftTopPoint positions
+    <*> rightBottomPoint positions
 
 distance :: Position -> Position -> Double
 distance p0 p1 = magnitude (p0 ^. vector - p1 ^. vector)

@@ -1,6 +1,6 @@
 module Debug.Unsafe where
 
-import           Data.Time.Clock    (diffUTCTime, getCurrentTime)
+import           Data.Time.Clock  (diffUTCTime, getCurrentTime)
 import           Prologue
 import           System.CPUTime
 import           System.IO.Unsafe
@@ -30,7 +30,8 @@ timeIt' name action = do
     r `seq` unsafeLiftIO $ do
         cpuEnd <- getCPUTime
         end    <- getCurrentTime
-        putStrLn $ "<< " <> name
-                 <> " CPU " <> show ((cpuEnd - cpuStart) `div` 1000000000) <> "ms"
-                 <> " Wall " <> show (diffUTCTime end start)
+        let cpuVal = show ((cpuEnd - cpuStart) `div` 1000000000) <> "ms"
+        putStrLn $ "<< "    <> name
+                <> " CPU "  <> cpuVal
+                <> " Wall " <> show (diffUTCTime end start)
     pure r

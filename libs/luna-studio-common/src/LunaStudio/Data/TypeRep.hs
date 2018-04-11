@@ -34,9 +34,10 @@ instance ToString TypeRep where
             _      -> let reps = toString' True True <$> args
                           par  = parenCons && (not . null $ reps)
                       in parenIf par $ unwords (name : reps)
-        toString' _ parenLam (TLam arg out) = parenIf parenLam $ argRep <> " -> " <> outRep where
-            argRep = toString' False True  arg
-            outRep = toString' False False out
+        toString' _ parenLam (TLam arg out)
+            = parenIf parenLam $ argRep <> " -> " <> outRep where
+                argRep = toString' False True  arg
+                outRep = toString' False False out
         toString' _ _ (TVar n) = n
         toString' _ _ TStar = "*"
         toString' _ _ TBlank = ""
@@ -55,7 +56,8 @@ instance NFData ConstructorRep
 instance ToJSON ConstructorRep
 
 toConstructorRep :: TypeRep -> Maybe ConstructorRep
-toConstructorRep (TCons c f) = ConstructorRep (convert c) <$> mapM toConstructorRep f
+toConstructorRep (TCons c f)
+    = ConstructorRep (convert c) <$> mapM toConstructorRep f
 toConstructorRep _           = Nothing
 
 matchTypes :: TypeRep -> TypeRep -> Bool

@@ -14,7 +14,8 @@ type family VectorOf a
 
 class IsVector a where
     vector :: Lens' a (VectorOf a)
-    default vector :: (Wrapped a, Unwrapped a ~ VectorOf a) => Lens' a (VectorOf a)
+    default vector :: (Wrapped a, Unwrapped a ~ VectorOf a)
+        => Lens' a (VectorOf a)
     vector = wrapped'
 
 
@@ -22,17 +23,20 @@ class IsVector a where
 
 class Dim1 a where
     x :: Lens' a (Item a)
-    default x :: (IsVector a, Item (VectorOf a) ~ Item a, Dim1 (VectorOf a)) => Lens' a (Item a)
+    default x :: (IsVector a, Item (VectorOf a) ~ Item a, Dim1 (VectorOf a))
+        => Lens' a (Item a)
     x = vector . x
 
 class Dim1 a => Dim2 a where
     y :: Lens' a (Item a)
-    default y :: (IsVector a, Item (VectorOf a) ~ Item a, Dim2 (VectorOf a)) => Lens' a (Item a)
+    default y :: (IsVector a, Item (VectorOf a) ~ Item a, Dim2 (VectorOf a))
+        => Lens' a (Item a)
     y = vector . y
 
 class Dim2 a => Dim3 a where
     z :: Lens' a (Item a)
-    default z :: (IsVector a, Item (VectorOf a) ~ Item a, Dim3 (VectorOf a)) => Lens' a (Item a)
+    default z :: (IsVector a, Item (VectorOf a) ~ Item a, Dim3 (VectorOf a))
+        => Lens' a (Item a)
     z = vector . z
 
 
@@ -43,7 +47,10 @@ class Dim2 a => Dim3 a where
 
 -- === Definition === --
 
-data Vector2 a = Vector2 { __x, __y :: a } deriving (Eq, Functor, Generic, Ord, Show)
+data Vector2 a = Vector2
+    { __x, __y :: a
+    } deriving (Eq, Functor, Generic, Ord, Show)
+
 makeLenses ''Vector2
 
 
@@ -65,7 +72,8 @@ instance Num a => Num (Vector2 a) where
     (Vector2 x1 y1) * (Vector2 x2 y2) = Vector2 (x1 * x2) (y1 * y2)
     abs    (Vector2 x1 y1)            = Vector2 (abs    x1) (abs    y1)
     signum (Vector2 x1 y1)            = Vector2 (signum x1) (signum y1)
-    fromInteger i                     = let val = fromInteger i in Vector2 val val
+    fromInteger i
+        = let val = fromInteger i in Vector2 val val
 
 type instance Item (Vector2 a) = a
 instance Convertible (Vector2 a) [a] where convert vec = [vec ^. x, vec ^. y]
@@ -93,7 +101,8 @@ magnitude :: Floating a => Vector2 a -> a
 magnitude = sqrt . lengthSquared
 
 normalize :: Vector2 Double -> Vector2 Double
-normalize (Vector2 x' y') = Vector2 (x' / len) (y' / len) where len = sqrt $ x' * x' + y' * y'
+normalize (Vector2 x' y') = Vector2 (x' / len) (y' / len) where
+    len = sqrt $ x' * x' + y' * y'
 
 explode :: Vector2 Double -> Vector2 Double
 explode (Vector2 x' y') = Vector2 (fact * x') (fact * y') where

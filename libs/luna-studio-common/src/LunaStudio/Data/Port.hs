@@ -11,14 +11,25 @@ import           LunaStudio.Data.TypeRep     (TypeRep)
 import           Prologue                    hiding (TypeRep, head)
 
 
-data InPortIndex = Self | Head | Arg Int                                        deriving (Eq, Generic, Ord, Read, Show)
-data InPorts s   = InPorts { _self :: Maybe s, _head :: Maybe s, _args :: [s] } deriving (Eq, Foldable, Functor, Generic, Show, Traversable)
+data InPortIndex = Self | Head | Arg Int deriving (Eq, Generic, Ord, Read, Show)
+
+data InPorts s   = InPorts
+    { _self :: Maybe s
+    , _head :: Maybe s
+    , _args :: [s]
+    } deriving (Eq, Foldable, Functor, Generic, Show, Traversable)
+
 type InPortId    = [InPortIndex]
+
 makeLenses ''InPorts
 
-data    OutPortIndex  = Projection Int deriving (Eq, Generic, Ord, Read, Show)
-newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, Show, Traversable)
-type    OutPortId     = [OutPortIndex]
+data    OutPortIndex = Projection Int deriving (Eq, Generic, Ord, Read, Show)
+
+newtype OutPorts s   = OutPorts [s]
+    deriving (Default, Eq, Foldable, Functor, Generic, Show, Traversable)
+
+type    OutPortId    = [OutPortIndex]
+
 makeWrapped ''OutPorts
 
 type InPortTree  a = LabeledTree InPorts  a
@@ -51,7 +62,8 @@ instance Ixed (InPorts s) where
     ix (Arg i) = args . ix i
 
 instance FunctorWithIndex InPortIndex InPorts where
-    imap f (InPorts s h as) = InPorts (f Self <$> s) (f Head <$> h) (imap (f . Arg) as)
+    imap f (InPorts s h as)
+        = InPorts (f Self <$> s) (f Head <$> h) (imap (f . Arg) as)
 
 instance Mempty (InPorts a) where
     mempty = InPorts mempty mempty mempty
@@ -80,7 +92,11 @@ instance FromJSON AnyPortId
 instance ToJSON   AnyPortId
 
 
-data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Eq, Generic, Show)
+data PortState
+    = NotConnected
+    | Connected
+    | WithDefault PortDefault
+    deriving (Eq, Generic, Show)
 
 makePrisms ''PortState
 
