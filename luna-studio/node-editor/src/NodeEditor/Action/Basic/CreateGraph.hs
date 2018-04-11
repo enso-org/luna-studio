@@ -24,7 +24,8 @@ import           NodeEditor.State.Global               (State)
 
 
 
-createGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [Connection] -> [MonadPath] -> Command State ()
+createGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode
+    -> [Connection] -> [MonadPath] -> Command State ()
 createGraph nodes input output connections monads = do
     resetGraph
     localAddExpressionNodes nodes
@@ -35,18 +36,21 @@ createGraph nodes input output connections monads = do
     updateNodeZOrder
 
 updateWithAPIGraph :: NodePath -> Graph -> Command State ()
-updateWithAPIGraph p g = updateGraph nodes input output conns monads >> setGraphStatus NE.GraphLoaded where
-    nodes  = convert . (p,) <$> g ^. API.nodes
-    input  = convert . (p,) <$> g ^. API.inputSidebar
-    output = convert . (p,) <$> g ^. API.outputSidebar
-    conns  = Connection.prependPath p <$> g ^. API.connections
-    monads = g ^. API.monads
+updateWithAPIGraph p g = updateGraph nodes input output conns monads
+    >> setGraphStatus NE.GraphLoaded where
+        nodes  = convert . (p,) <$> g ^. API.nodes
+        input  = convert . (p,) <$> g ^. API.inputSidebar
+        output = convert . (p,) <$> g ^. API.outputSidebar
+        conns  = Connection.prependPath p <$> g ^. API.connections
+        monads = g ^. API.monads
 
 
-updateGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode -> [Connection] -> [MonadPath] -> Command State ()
+updateGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode
+    -> [Connection] -> [MonadPath] -> Command State ()
 updateGraph nodes input output connections monads = do
     let nlsSet = Set.fromList $ map (view nodeLoc) nodes
-    nlsToRemove <- filter (not . flip Set.member nlsSet) . map (view nodeLoc) <$> getExpressionNodes
+    nlsToRemove <- filter (not . flip Set.member nlsSet) . map (view nodeLoc)
+        <$> getExpressionNodes
     void $ localRemoveNodes nlsToRemove
     mapM_ (localUpdateOrAddExpressionNode def) nodes
 

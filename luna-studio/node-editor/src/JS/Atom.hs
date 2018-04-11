@@ -33,7 +33,8 @@ foreign import javascript safe "atomCallback.acceptEvent($1)"
 
 onEvent :: (Event -> IO ()) -> IO (IO ())
 onEvent callback = do
-    wrappedCallback <- syncCallback1 ContinueAsync $ mapM_ callback <=< parseEvent
+    wrappedCallback <- syncCallback1 ContinueAsync
+        $ mapM_ callback <=< parseEvent
     onEvent' wrappedCallback
     return $ unOnEvent' wrappedCallback >> releaseCallback wrappedCallback
 
@@ -41,9 +42,12 @@ parseEvent :: JSVal -> IO (Maybe Event)
 parseEvent jsval = do
     fromJSVal jsval >>= \case
         Just value -> do
-            case (Atom <$> fromJSON value) <> ((UI . SearcherEvent) <$> fromJSON value) <> (Shortcut <$> fromJSON value) of
-                Success r -> return $ Just r
-                _ -> error "Unparseable event" >> return Nothing
+            case (Atom <$> fromJSON value)
+                <> ((UI . SearcherEvent) <$> fromJSON value)
+                <> (Shortcut <$> fromJSON value
+                ) of
+                    Success r -> return $ Just r
+                    _ -> error "Unparseable event" >> return Nothing
         Nothing -> error "Unknown event" >> return Nothing
 
 setActiveLocation :: MonadIO m => GraphLocation -> m ()

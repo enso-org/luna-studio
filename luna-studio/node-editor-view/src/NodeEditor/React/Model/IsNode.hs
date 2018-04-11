@@ -36,8 +36,10 @@ instance LookupPort OutPortId OutPort where
     lookupPort node portId = node ^? outPortAt portId
 
 instance LookupPort AnyPortId AnyPort where
-    lookupPort node (InPortId'  portId) = InPortId' `fmap2` lookupPort node portId
-    lookupPort node (OutPortId' portId) = OutPortId' `fmap2` lookupPort node portId
+    lookupPort node (InPortId'  portId)
+        = InPortId' `fmap2` lookupPort node portId
+    lookupPort node (OutPortId' portId)
+        = OutPortId' `fmap2` lookupPort node portId
 
 class HasNodeLoc node => HasPorts node where
     inPortsList  :: node -> [InPort]
@@ -46,15 +48,18 @@ class HasNodeLoc node => HasPorts node where
     outPortAt            :: OutPortId -> Traversal' node OutPort
     portModeAt           :: AnyPortId -> Traversal' node Port.Mode
     portsList :: node -> [AnyPort]
-    portsList node = (convert <$> inPortsList node) <> (convert <$> outPortsList node)
-    countInPorts         :: node -> Int
+    portsList node
+        = (convert <$> inPortsList node) <> (convert <$> outPortsList node)
+    countInPorts :: node -> Int
     countInPorts = length . inPortsList
-    countOutPorts        :: node -> Int
+    countOutPorts :: node -> Int
     countOutPorts = length . outPortsList
-    countArgPorts        :: node -> Int
-    countArgPorts = length .  filter (Port.isArg . view Port.portId) . inPortsList
+    countArgPorts :: node -> Int
+    countArgPorts
+        = length . filter (Port.isArg . view Port.portId) . inPortsList
     countProjectionPorts :: node -> Int
-    countProjectionPorts = length .  filter (Port.isProjection . view Port.portId) . outPortsList
+    countProjectionPorts
+        = length . filter (Port.isProjection . view Port.portId) . outPortsList
     argumentConstructorRef :: node -> InPortRef
     argumentConstructorRef n = InPortRef (n ^. nodeLoc) [Arg $ countArgPorts n]
 

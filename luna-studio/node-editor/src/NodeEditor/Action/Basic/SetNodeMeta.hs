@@ -24,9 +24,14 @@ localMoveNode :: NodeLoc -> Position -> Command State Bool
 localMoveNode = fmap (not . null) . localMoveNodes .: Map.singleton
 
 toMetaUpdate :: Map NodeLoc Position -> Command State (Map NodeLoc NodeMeta)
-toMetaUpdate = fmap (Map.fromList . catMaybes) . mapM (uncurry toMeta) . Map.toList where
-    newMeta pos n = NodeMeta pos (n ^. visEnabled) (Project.toOldAPI <$> n ^. defaultVisualizer)
-    toMeta nl pos = fmap ((nl,) . newMeta pos) <$> NodeEditor.getExpressionNode nl
+toMetaUpdate
+    = fmap (Map.fromList . catMaybes) . mapM (uncurry toMeta) . Map.toList where
+        newMeta pos n = NodeMeta
+            pos
+            (n ^. visEnabled)
+            (Project.toOldAPI <$> n ^. defaultVisualizer)
+        toMeta nl pos = fmap ((nl,) . newMeta pos)
+            <$> NodeEditor.getExpressionNode nl
 
 
 moveNodes :: Map NodeLoc Position -> Command State ()
@@ -39,14 +44,16 @@ setNodeMeta :: NodeLoc -> NodeMeta -> Command State ()
 setNodeMeta = setNodesMeta .: Map.singleton
 
 setNodesMeta :: Map NodeLoc NodeMeta -> Command State ()
-setNodesMeta update' = filterM (uncurry localSetNodeMeta) (Map.toList update') >>= \update ->
-    unless (null update) . Batch.setNodesMeta $ Map.fromList update
+setNodesMeta update' = filterM (uncurry localSetNodeMeta) (Map.toList update')
+    >>= \update -> unless (null update)
+        . Batch.setNodesMeta $ Map.fromList update
 
 -- WARNING: Those functions does not affect defaultVisualizer because it is set
 --          in NodeMeta so we could inform backend about change for backup.
 --          GUIhas fresher data and we don't set visualizer via setNodeMeta.
 localSetNodesMeta :: Map NodeLoc NodeMeta -> Command State [NodeLoc]
-localSetNodesMeta = fmap2 (view _1) . filterM (uncurry localSetNodeMeta) . Map.toList
+localSetNodesMeta
+    = fmap2 (view _1) . filterM (uncurry localSetNodeMeta) . Map.toList
 
 localSetNodeMeta :: NodeLoc -> NodeMeta -> Command State Bool
 localSetNodeMeta nl nm = do

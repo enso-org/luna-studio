@@ -52,11 +52,13 @@ instance Action (Command State) Connect where
     update       = updateActionWithKey   connectAction
     end action   = do
         stopConnectingUnsafe action
-        when (action ^. connectIsArgumentConstructor) $ case action ^. connectSourcePort of
-            OutPortRef' outPortRef -> void $ localRemovePort outPortRef
-            _                      -> return ()
+        when (action ^. connectIsArgumentConstructor)
+            $ case action ^. connectSourcePort of
+                OutPortRef' outPortRef -> void $ localRemovePort outPortRef
+                _                      -> return ()
 
-handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
+handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd
+    -> Command State ()
 handleConnectionMouseDown evt connId modifiedEnd = do
     withJustM (getConnection connId) $ \connection -> do
         let portRef = case modifiedEnd of
@@ -65,39 +67,51 @@ handleConnectionMouseDown evt connId modifiedEnd = do
         mousePos <- mousePosition evt
         startConnecting mousePos portRef (Just connId) False Drag
 
-startConnecting :: ScreenPosition -> AnyPortRef -> Maybe ConnectionId -> Bool -> Mode -> Command State ()
-startConnecting screenMousePos anyPortRef mayModifiedConnId isArgumentConstructor connectMode' = unlessM inTopLevelBreadcrumb $ do
-    let nodeLoc = anyPortRef ^. PortRef.nodeLoc
-        portId  = anyPortRef ^. PortRef.portId
-    mousePos <- translateToWorkspace screenMousePos
-    maySuccess <- runMaybeT $ do
-        node <- MaybeT $ getNode nodeLoc
-        let shouldDoNodeDrag = case node of
-                Expression node' -> isNothing mayModifiedConnId
-                                 && Port.isSelf portId
-                                 && isCollapsed node'
-                _                -> False
-        if shouldDoNodeDrag
-        then lift $ when (connectMode' == Drag) $ startNodeDrag mousePos nodeLoc True
-        else do
-            halfConnectionModel <- MaybeT $ createHalfConnectionModel anyPortRef mousePos
-            let action = Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing isArgumentConstructor connectMode'
-            lift $ do
-                withJust mayModifiedConnId removeConnection
-                begin action
-                modifyNodeEditor $ do
-                    withJust mayModifiedConnId $ \connId ->
-                        NodeEditor.connections . at connId .= Nothing
-                    NodeEditor.halfConnections .= [halfConnectionModel]
-    when (isNothing maySuccess && isArgumentConstructor) $ case anyPortRef of
-        OutPortRef' outPortRef -> void $ localRemovePort outPortRef
-        _                      -> return ()
+startConnecting :: ScreenPosition -> AnyPortRef -> Maybe ConnectionId -> Bool
+    -> Mode -> Command State ()
+startConnecting screenMousePos anyPortRef mayModifiedConnId
+    isArgumentConstructor connectMode' = unlessM inTopLevelBreadcrumb $ do
+        let nodeLoc = anyPortRef ^. PortRef.nodeLoc
+            portId  = anyPortRef ^. PortRef.portId
+        mousePos <- translateToWorkspace screenMousePos
+        maySuccess <- runMaybeT $ do
+            node <- MaybeT $ getNode nodeLoc
+            let shouldDoNodeDrag = case node of
+                    Expression node' -> isNothing mayModifiedConnId
+                                     && Port.isSelf portId
+                                     && isCollapsed node'
+                    _                -> False
+            if shouldDoNodeDrag
+                then lift $ when (connectMode' == Drag)
+                    $ startNodeDrag mousePos nodeLoc True
+                else do
+                    halfConnectionModel <- MaybeT
+                        $ createHalfConnectionModel anyPortRef mousePos
+                    let action = Connect
+                            screenMousePos
+                            anyPortRef
+                            (isJust mayModifiedConnId)
+                            Nothing
+                            isArgumentConstructor
+                            connectMode'
+                    lift $ do
+                        withJust mayModifiedConnId removeConnection
+                        begin action
+                        modifyNodeEditor $ do
+                            withJust mayModifiedConnId $ \connId ->
+                                NodeEditor.connections . at connId .= Nothing
+                            NodeEditor.halfConnections .= [halfConnectionModel]
+        when (isNothing maySuccess && isArgumentConstructor) $ case anyPortRef of
+            OutPortRef' outPortRef -> void $ localRemovePort outPortRef
+            _                      -> return ()
 
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. connectSnappedPort) $ do
-    mousePos                  <- workspacePosition evt
-    mayHalfConnectionModel <- createHalfConnectionModel (action ^. connectSourcePort) mousePos
-    modifyNodeEditor $ NodeEditor.halfConnections .= maybeToList mayHalfConnectionModel
+    mousePos               <- workspacePosition evt
+    mayHalfConnectionModel <-
+        createHalfConnectionModel (action ^. connectSourcePort) mousePos
+    modifyNodeEditor
+        $ NodeEditor.halfConnections .= maybeToList mayHalfConnectionModel
     when (isNothing mayHalfConnectionModel) $ end action
 
 handlePortMouseUp :: AnyPortRef -> Connect -> Command State ()
@@ -106,15 +120,19 @@ handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
 
 snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
-    withJust (toValidConnection (action ^. connectSourcePort) portRef) $ \conn -> do
-        mayConnModel <- createHalfConnectionModel' (conn ^. ConnectionAPI.src) (conn ^. ConnectionAPI.dst)
-        withJust mayConnModel $ \connModel -> do
-            update $ action & connectSnappedPort ?~ portRef
-            modifyNodeEditor $ NodeEditor.halfConnections .= [connModel]
+    withJust (toValidConnection (action ^. connectSourcePort) portRef)
+        $ \conn -> do
+            mayConnModel <- createHalfConnectionModel'
+                (conn ^. ConnectionAPI.src)
+                (conn ^. ConnectionAPI.dst)
+            withJust mayConnModel $ \connModel -> do
+                update $ action & connectSnappedPort ?~ portRef
+                modifyNodeEditor $ NodeEditor.halfConnections .= [connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
-cancelSnapToPort portRef action = when (Just portRef == action ^. connectSnappedPort) $
-    update $ action & connectSnappedPort .~ Nothing
+cancelSnapToPort portRef action
+    = when (Just portRef == action ^. connectSnappedPort) $
+        update $ action & connectSnappedPort .~ Nothing
 
 handleMouseUp :: MouseEvent -> Connect -> Command State ()
 handleMouseUp evt action = when (action ^. connectMode == Drag) $ do
@@ -131,11 +149,14 @@ stopConnectingUnsafe _ = do
     updateAllPortsMode
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
-connectToPort dst action = do
-    withJust (toValidConnection dst $ action ^. connectSourcePort) $ \newConn -> do
-        case (action ^. connectIsArgumentConstructor, action ^. connectSourcePort) of
-            (True, OutPortRef' outPortRef) -> do
-                void . localAddConnection . ConnectionAPI.Connection outPortRef $ newConn ^. ConnectionAPI.dst
-                Batch.addPort outPortRef (Just $ newConn ^. ConnectionAPI.dst) def
-            _ -> connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
+connectToPort dst action = 
+    withJust (toValidConnection dst $ action ^. connectSourcePort) $ \newConn ->
+    case (action ^. connectIsArgumentConstructor, action ^. connectSourcePort) of
+        (True, OutPortRef' outPortRef) -> do
+            void . localAddConnection . ConnectionAPI.Connection outPortRef
+                $ newConn ^. ConnectionAPI.dst
+            Batch.addPort outPortRef (Just $ newConn ^. ConnectionAPI.dst) def
+        _ -> connect
+            (Left $ newConn ^. ConnectionAPI.src)
+            (Left $ newConn ^. ConnectionAPI.dst)
     stopConnectingUnsafe action

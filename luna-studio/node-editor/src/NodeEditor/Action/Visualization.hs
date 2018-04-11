@@ -45,35 +45,43 @@ instance Action (Command State) VisualizationActive where
             visId = action ^. visualizationActiveVisualizationId
         beginActionWithKey visualizationActiveAction action
         selectNode nl
-        modifyNodeEditor $ nodeVisualizations . ix nl . visualizations . ix visId . visualizationMode .=
-            action ^. visualizationActiveSelectedMode
+        modifyNodeEditor $ nodeVisualizations . ix nl . visualizations
+            . ix visId . visualizationMode
+                .= action ^. visualizationActiveSelectedMode
     continue     = continueActionWithKey visualizationActiveAction
     update       = updateActionWithKey   visualizationActiveAction
     end action   = do
         let nl    = action ^. visualizationActiveNodeLoc
             visId = action ^. visualizationActiveVisualizationId
-        modifyNodeEditor $ nodeVisualizations . ix nl . visualizations . ix visId . visualizationMode .= def
+        modifyNodeEditor $ nodeVisualizations . ix nl . visualizations
+            . ix visId . visualizationMode .= def
         removeActionFromState visualizationActiveAction
-        when (action ^. visualizationActiveTriggeredByVis) $ begin $ action & visualizationActiveSelectedMode   .~ Focused
-                                                                            & visualizationActiveTriggeredByVis .~ False
+        when (action ^. visualizationActiveTriggeredByVis) $ begin $ action
+            & visualizationActiveSelectedMode   .~ Focused
+            & visualizationActiveTriggeredByVis .~ False
 
 instance Action (Command State) DocVisualizationActive where
     begin action = do
         beginActionWithKey docVisualizationActiveAction action
-        modifySearcher $ Searcher.mode . Searcher._Node . _2 . Searcher.docVisInfo . _Just . visualizationMode .=
-            action ^. docVisualizationActiveSelectedMode
+        modifySearcher $ Searcher.mode . Searcher._Node . _2
+            . Searcher.docVisInfo . _Just . visualizationMode
+                .= action ^. docVisualizationActiveSelectedMode
     continue     = continueActionWithKey docVisualizationActiveAction
     update       = updateActionWithKey   docVisualizationActiveAction
     end action   = do
-        modifySearcher $ Searcher.mode . Searcher._Node . _2 . Searcher.docVisInfo . _Just . visualizationMode .= def
+        modifySearcher $ Searcher.mode . Searcher._Node . _2
+            . Searcher.docVisInfo . _Just . visualizationMode .= def
         removeActionFromState docVisualizationActiveAction
-        when (action ^. docVisualizationActiveTriggeredByVis) $ begin $ action & docVisualizationActiveSelectedMode   .~ Focused
-                                                                               & docVisualizationActiveTriggeredByVis .~ False
+        when (action ^. docVisualizationActiveTriggeredByVis) $ begin $ action
+            & docVisualizationActiveSelectedMode   .~ Focused
+            & docVisualizationActiveTriggeredByVis .~ False
 
 
 focusVisualization :: VisualizationParent -> VisualizationId -> Command State ()
-focusVisualization (Node nl) visId = begin $ VisualizationActive nl visId Focused False
-focusVisualization Searcher  _     = begin $ DocVisualizationActive Focused False
+focusVisualization (Node nl) visId
+    = begin $ VisualizationActive nl visId Focused False
+focusVisualization Searcher  _
+    = begin $ DocVisualizationActive Focused False
 
 exitVisualizationMode :: VisualizationActive -> Command State ()
 exitVisualizationMode = end
@@ -82,38 +90,74 @@ exitDocVisualizationMode :: DocVisualizationActive -> Command State ()
 exitDocVisualizationMode = end
 
 
-selectVisualizer :: VisualizationParent -> VisualizationId -> VisualizerId -> Command State ()
-selectVisualizer (Node nl) visId visualizerId = withJustM (getNodeVisualizations nl) $ \nodeVis ->
-    withJust ((,) <$> Map.lookup visId (nodeVis ^. visualizations) <*> Map.lookup visualizerId (nodeVis ^. visualizers)) $ \(prevVis, visPath) -> do
-        continue (end :: VisualizationActive -> Command State ())
-        let visualizer' = Visualizer visualizerId visPath
-        updateDefaultVisualizer nl (Just visualizer') True
-        when (prevVis ^. visualizerProperties . runningVisualizer /= visualizer') $ getVisualizationBackup nl >>= \case
-            Just (StreamBackup backup) -> do
-                uuid <- getUUID
-                modifyNodeEditor $ do
-                    nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                    nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
-                mayTpe <- getExpressionNodeType nl
-                withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
-                    updatePreferedVisualizer tpe visualizer'
-                    liftIO $ do
-                        registerVisualizerFrame uuid
-                        notifyStreamRestart     uuid cRep (reverse backup)
-            Just (ValueBackup backup) -> do
-                uuid <- getUUID
-                modifyNodeEditor $ do
-                    nodeVisualizations . ix nl . visualizations . at (prevVis ^. visualizationId) .= def
-                    nodeVisualizations . ix nl . visualizations . at uuid ?= (RunningVisualization uuid def $ VisualizerProperties visualizer' (Just $ visualizer' ^. Vis.visualizerId))
-                mayTpe <- getExpressionNodeType nl
-                withJust ((,) <$> mayTpe <*> maybe def toConstructorRep mayTpe) $ \(tpe, cRep) -> do
-                    updatePreferedVisualizer tpe visualizer'
-                    liftIO $ do
-                        registerVisualizerFrame uuid
-                        sendVisualizationData   uuid cRep backup
-            _ -> do
-                modifyNodeEditor $ nodeVisualizations . ix nl . visualizations . ix (prevVis ^. visualizationId) . visualizerProperties . selectedVisualizerId ?= visualizerId
-                withJustM (getExpressionNodeType nl) $ flip updatePreferedVisualizer visualizer'
+selectVisualizer :: VisualizationParent -> VisualizationId -> VisualizerId
+    -> Command State ()
+selectVisualizer (Node nl) visId visualizerId
+    = withJustM (getNodeVisualizations nl) $ \nodeVis ->
+        withJust ((,)
+            <$> Map.lookup visId (nodeVis ^. visualizations)
+            <*> Map.lookup visualizerId (nodeVis ^. visualizers)
+            ) $ \(prevVis, visPath) -> do
+                continue (end :: VisualizationActive -> Command State ())
+                let visualizer' = Visualizer visualizerId visPath
+                updateDefaultVisualizer nl (Just visualizer') True
+                unless (prevVis ^. visualizerProperties . runningVisualizer
+                    == visualizer') $ getVisualizationBackup nl >>= \case
+                        Just (StreamBackup backup) -> do
+                            uuid <- getUUID
+                            modifyNodeEditor $ do
+                                nodeVisualizations . ix nl . visualizations
+                                    . at (prevVis ^. visualizationId) .= def
+                                nodeVisualizations . ix nl . visualizations
+                                    . at uuid ?= (RunningVisualization
+                                        uuid
+                                        def
+                                        $ VisualizerProperties
+                                            visualizer'
+                                            (Just $ visualizer' ^. Vis.visualizerId)
+                                        )
+                            mayTpe <- getExpressionNodeType nl
+                            withJust ((,)
+                                <$> mayTpe
+                                <*> maybe def toConstructorRep mayTpe
+                                ) $ \(tpe, cRep) -> do
+                                    updatePreferedVisualizer tpe visualizer'
+                                    liftIO $ do
+                                        registerVisualizerFrame uuid
+                                        notifyStreamRestart
+                                            uuid cRep (reverse backup)
+                        Just (ValueBackup backup) -> do
+                            uuid <- getUUID
+                            modifyNodeEditor $ do
+                                nodeVisualizations . ix nl . visualizations
+                                    . at (prevVis ^. visualizationId) .= def
+                                nodeVisualizations . ix nl . visualizations
+                                    . at uuid ?= (RunningVisualization
+                                        uuid
+                                        def
+                                        $ VisualizerProperties
+                                            visualizer'
+                                            (Just $ visualizer' ^. Vis.visualizerId)
+                                        )
+                            mayTpe <- getExpressionNodeType nl
+                            withJust ((,)
+                                <$> mayTpe
+                                <*> maybe def toConstructorRep mayTpe
+                                ) $ \(tpe, cRep) -> do
+                                    updatePreferedVisualizer tpe visualizer'
+                                    liftIO $ do
+                                        registerVisualizerFrame uuid
+                                        sendVisualizationData   uuid cRep backup
+                        _ -> do
+                            modifyNodeEditor $ nodeVisualizations
+                                . ix nl
+                                . visualizations
+                                . ix (prevVis ^. visualizationId)
+                                . visualizerProperties
+                                . selectedVisualizerId
+                                ?= visualizerId
+                            withJustM (getExpressionNodeType nl)
+                                $ flip updatePreferedVisualizer visualizer'
 selectVisualizer Searcher _ _ = $notImplemented
 
 
@@ -121,24 +165,28 @@ handleZoomVisualization :: Command State ()
 handleZoomVisualization = do
     searcherActive <- checkIfActionPerfoming searcherAction
     let handleZoomVis = do
-            mayMode <- view visualizationActiveSelectedMode `fmap2` checkAction visualizationActiveAction
+            mayMode <- view visualizationActiveSelectedMode
+                `fmap2` checkAction visualizationActiveAction
             if mayMode == Just FullScreen
                 then continue exitVisualizationMode
                 else enterVisualizationMode FullScreen
         -- handleZoomDocVis = do
-        --     mayDocMode <- view docVisualizationActiveSelectedMode `fmap2` checkAction docVisualizationActiveAction
+        --     mayDocMode <- view docVisualizationActiveSelectedMode
+        --         `fmap2` checkAction docVisualizationActiveAction
         --     if mayDocMode == Just FullScreen
         --         then continue exitDocVisualizationMode
         --         else enterVisualizationMode FullScreen
     if searcherActive then return () else handleZoomVis
 
 exitPreviewMode :: VisualizationActive -> Command State ()
-exitPreviewMode action = when (Preview == action ^. visualizationActiveSelectedMode) $
-    exitVisualizationMode action
+exitPreviewMode action
+    = when (Preview == action ^. visualizationActiveSelectedMode) $
+        exitVisualizationMode action
 
 exitDocPreviewMode :: DocVisualizationActive -> Command State ()
-exitDocPreviewMode action = when (Preview == action ^. docVisualizationActiveSelectedMode) $
-    exitDocVisualizationMode action
+exitDocPreviewMode action
+    = when (Preview == action ^. docVisualizationActiveSelectedMode) $
+        exitDocVisualizationMode action
 
 enterVisualizationMode :: VisualizationMode -> Command State ()
 enterVisualizationMode visMode = do
@@ -149,10 +197,20 @@ enterVisualizationMode visMode = do
     let enterVisMode = do
             visLoc <- getSelectedNodes >>= \case
                 [n] -> let nl = n ^. nodeLoc in
-                    fmap (nl,) . maybe def (listToMaybe . Map.keys . view visualizations) <$> getNodeVisualizations nl
+                    fmap (nl,) . maybe
+                        def
+                        (listToMaybe . Map.keys . view visualizations)
+                        <$> getNodeVisualizations nl
                 _   -> return Nothing
-            fromVis <- maybe False (\action -> action ^. visualizationActiveSelectedMode == Focused || action ^. visualizationActiveTriggeredByVis) <$> checkAction visualizationActiveAction
-            withJust visLoc $ \(nl, visId) -> begin $ VisualizationActive nl visId visMode fromVis
+            fromVis <- maybe
+                False
+                (\action ->
+                    action ^. visualizationActiveSelectedMode == Focused
+                    || action ^. visualizationActiveTriggeredByVis
+                )
+                <$> checkAction visualizationActiveAction
+            withJust visLoc $ \(nl, visId) -> begin
+                $ VisualizationActive nl visId visMode fromVis
     if searcherActive then return () else enterVisMode
 
 toggleVisualizations :: VisualizationParent -> Command State ()
@@ -166,23 +224,34 @@ toggleVisualizations (Node nl) = do
 toggleVisualizations Searcher = $notImplemented
 
 stopVisualizationsForNode :: NodeLoc -> Command State ()
-stopVisualizationsForNode nl = modifyNodeEditor $ nodeVisualizations . ix nl %= stopVisualizations
+stopVisualizationsForNode nl
+    = modifyNodeEditor $ nodeVisualizations . ix nl %= stopVisualizations
 
 startReadyVisualizations :: NodeLoc -> Command State ()
 startReadyVisualizations nl = do
     mayVisBackup <- getVisualizationBackup nl
     mayNodeVis   <- getNodeVisualizations  nl
     let activateWith newNodeVis vis =
-            if vis ^. visualizationStatus == Outdated then return $ newNodeVis & idleVisualizations %~ (vis:) else do
-                uuid <- getUUID
-                liftIO $ registerVisualizerFrame uuid
-                return $ newNodeVis & visualizations %~ Map.insert uuid (RunningVisualization uuid def $ vis ^. idleVisualizerProperties)
+            if vis ^. visualizationStatus == Outdated
+                then return $ newNodeVis & idleVisualizations %~ (vis:)
+                else do
+                    uuid <- getUUID
+                    liftIO $ registerVisualizerFrame uuid
+                    return $ newNodeVis & visualizations
+                        %~ Map.insert uuid (RunningVisualization
+                            uuid
+                            def
+                            $ vis ^. idleVisualizerProperties)
         updateVis nodeVis (Just backup) = do
-            nVis <- foldlM activateWith (nodeVis & idleVisualizations .~ def) $ nodeVis ^. idleVisualizations
+            nVis <- foldlM activateWith (nodeVis & idleVisualizations .~ def)
+                $ nodeVis ^. idleVisualizations
             modifyNodeEditor $ nodeVisualizations . at nl ?= nVis
             setVisualizationData nl backup True
         updateVis nodeVis Nothing = do
-            noVisForType <- maybe (return False) (fmap isNothing . getVisualizersForType) =<< getExpressionNodeType nl
+            noVisForType <- maybe
+                (return False)
+                (fmap isNothing . getVisualizersForType)
+                =<< getExpressionNodeType nl
             let msg = if noVisForType then noVisMsg else awaitingDataMsg
             updateVis nodeVis $ Just $ MessageBackup msg
     withJust mayNodeVis $ flip updateVis mayVisBackup

@@ -23,38 +23,48 @@ import           LunaStudio.Data.TextDiff           (TextDiff)
 -- Atom requests --
 
 closeFile :: FilePath -> UUID -> Maybe UUID -> IO ()
-closeFile path uuid guiID = sendRequest $ Message uuid guiID $ CloseFile.Request path
+closeFile path uuid guiID = sendRequest $ Message uuid guiID
+    $ CloseFile.Request path
 
 fileChanged :: FilePath -> UUID -> Maybe UUID -> IO ()
-fileChanged path uuid guiID = sendRequest $ Message uuid guiID $ FileChanged.Request path
+fileChanged path uuid guiID = sendRequest $ Message uuid guiID
+    $ FileChanged.Request path
 
 getBuffer :: FilePath -> UUID -> Maybe UUID -> IO ()
-getBuffer path uuid guiID = sendRequest $ Message uuid guiID $ GetBuffer.Request path
+getBuffer path uuid guiID = sendRequest $ Message uuid guiID
+    $ GetBuffer.Request path
 
 isSaved :: FilePath -> UUID -> Maybe UUID -> IO ()
-isSaved path uuid guiID = sendRequest $ Message uuid guiID $ IsSaved.Request path
+isSaved path uuid guiID = sendRequest $ Message uuid guiID
+    $ IsSaved.Request path
 
 openFile :: FilePath -> UUID -> Maybe UUID -> IO ()
-openFile path uuid guiID = sendRequest $ Message uuid guiID $ OpenFile.Request path
+openFile path uuid guiID = sendRequest $ Message uuid guiID
+    $ OpenFile.Request path
 
 saveFile :: FilePath -> UUID -> Maybe UUID -> IO ()
-saveFile path uuid guiID = sendRequest $ Message uuid guiID $ SaveFile.Request path
+saveFile path uuid guiID = sendRequest $ Message uuid guiID
+    $ SaveFile.Request path
 
 setProject :: FilePath -> UUID -> Maybe UUID -> IO ()
-setProject rootPath uuid guiID = sendRequest $ Message uuid guiID $ SetProject.Request rootPath
+setProject rootPath uuid guiID = sendRequest $ Message uuid guiID
+    $ SetProject.Request rootPath
 
 moveProject :: FilePath -> FilePath -> UUID -> Maybe UUID -> IO ()
-moveProject oldPath newPath uuid guiID = sendRequest $ Message uuid guiID $ MoveProject.Request oldPath newPath
+moveProject oldPath newPath uuid guiID = sendRequest $ Message uuid guiID
+    $ MoveProject.Request oldPath newPath
 
 substitute :: GraphLocation -> [TextDiff] -> UUID -> Maybe UUID -> IO ()
 substitute location diffs uuid guiID =
     sendRequest $ Message uuid guiID $ Substitute.Request location diffs
 
 copy :: FilePath -> [Range] -> UUID -> Maybe UUID -> IO ()
-copy path spans uuid guiID = sendRequest $ Message uuid guiID $ Copy.Request path spans
+copy path spans uuid guiID = sendRequest $ Message uuid guiID
+    $ Copy.Request path spans
 
 paste :: GraphLocation -> [Range] -> [Text] -> UUID -> Maybe UUID -> IO ()
-paste location spans content uuid guiID = sendRequest $ Message uuid guiID $ Paste.Request location spans content
+paste location spans content uuid guiID = sendRequest $ Message uuid guiID
+    $ Paste.Request location spans content
 
 interpreterPause :: UUID -> Maybe UUID -> IO ()
 interpreterPause uuid guiID = do

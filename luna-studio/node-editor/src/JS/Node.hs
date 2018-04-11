@@ -18,10 +18,14 @@ import           NodeEditor.State.Global        (State)
 expandedNodeRectangle :: Scene -> NodeId -> Command State (Position, Position)
 expandedNodeRectangle scene nid = do
     let scenePos = scene ^. Scene.position
-    left        <- liftIO $ Scene.elementLeft   $ Mount.prefix $ fromString $ "node-body-" <> show nid
-    right       <- liftIO $ Scene.elementRight  $ Mount.prefix $ fromString $ "node-body-" <> show nid
-    top         <- liftIO $ Scene.elementTop    $ Mount.prefix $ fromString $ "node-body-" <> show nid
-    bottom      <- liftIO $ Scene.elementBottom $ Mount.prefix $ fromString $ "node-body-" <> show nid
+    left        <- liftIO $ Scene.elementLeft
+        $ Mount.prefix $ fromString $ "node-body-" <> show nid
+    right       <- liftIO $ Scene.elementRight
+        $ Mount.prefix $ fromString $ "node-body-" <> show nid
+    top         <- liftIO $ Scene.elementTop
+        $ Mount.prefix $ fromString $ "node-body-" <> show nid
+    bottom      <- liftIO $ Scene.elementBottom
+        $ Mount.prefix $ fromString $ "node-body-" <> show nid
     leftTop     <- translateToWorkspace $ fromDoubles left  top - scenePos
     rightBottom <- translateToWorkspace $ fromDoubles right bottom - scenePos
     return (leftTop, rightBottom)

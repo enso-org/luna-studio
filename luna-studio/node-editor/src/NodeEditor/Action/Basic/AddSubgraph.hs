@@ -18,18 +18,26 @@ import           NodeEditor.State.Global                    (State)
 addSubgraph :: [ExpressionNode] -> [Connection] -> Command State ()
 addSubgraph nodes conns = do
     (newNodes, newConns) <- localAddSubgraph nodes conns
-    unless (null newNodes && null newConns) $ Batch.addSubgraph newNodes newConns
+    unless (null newNodes && null newConns)
+        $ Batch.addSubgraph newNodes newConns
 
-localAddSubgraph :: [ExpressionNode] -> [Connection] -> Command State ([ExpressionNode], [Connection])
+localAddSubgraph :: [ExpressionNode] -> [Connection]
+    -> Command State ([ExpressionNode], [Connection])
 localAddSubgraph nodes conns = do
     (newLocs, newNodes) <- fmap unzip $ forM nodes $ \node -> do
         newId <- getUUID
         let newLoc = (node ^. nodeLoc) & NodeLoc.nodeId .~ newId
         return (newLoc, node & nodeLoc .~ newLoc)
     let idMapping = Map.fromList $ flip zip newLocs $ map (view nodeLoc) nodes
-        newConns  = flip fmap conns $
-            ( \(Connection src dst) -> maybe (Connection src dst) (\nl -> Connection (src & srcNodeLoc .~ nl) dst) $ Map.lookup (src ^. srcNodeLoc) idMapping ) .
-            ( \(Connection src dst) -> maybe (Connection src dst) (\nl -> Connection src (dst & dstNodeLoc .~ nl)) $ Map.lookup (dst ^. dstNodeLoc) idMapping )
+        setSrcNl (Connection src dst) = maybe
+            (Connection src dst)
+            (\nl -> Connection (src & srcNodeLoc .~ nl) dst)
+            $ Map.lookup (src ^. srcNodeLoc) idMapping
+        setDstNl (Connection src dst) = maybe
+            (Connection src dst)
+            (\nl -> Connection src (dst & dstNodeLoc .~ nl))
+            $ Map.lookup (dst ^. dstNodeLoc) idMapping
+        newConns  = (setSrcNl . setDstNl) <$> conns
     localUpdateSubgraph newNodes newConns
     selectNodes newLocs
     return (newNodes, newConns)

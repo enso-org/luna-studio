@@ -33,7 +33,12 @@ import           NodeEditor.React.Model.Port                (EitherPort, InPort,
 import qualified NodeEditor.React.Model.Port                as Port
 
 
-data Mode = Normal | Highlighted | Dimmed | Internal deriving (Eq, Show, Typeable, Generic)
+data Mode
+    = Normal
+    | Highlighted
+    | Dimmed
+    | Internal
+    deriving (Eq, Show, Typeable, Generic)
 
 
 data Connection = Connection
@@ -140,9 +145,11 @@ containsPortRef (InPortRef'  inPortRef)  conn = conn ^. dst == inPortRef
 containsPortRef (OutPortRef' outPortRef) conn = conn ^. src == outPortRef
 
 toValidEmpireConnection :: AnyPortRef -> AnyPortRef -> Maybe Empire.Connection
-toValidEmpireConnection (OutPortRef' src') (InPortRef' dst')     = Just $ Empire.Connection src' dst'
-toValidEmpireConnection dst'@(InPortRef' _) src'@(OutPortRef' _) = toValidEmpireConnection src' dst'
-toValidEmpireConnection _ _                                      = Nothing
+toValidEmpireConnection (OutPortRef' src') (InPortRef' dst')
+    = Just $ Empire.Connection src' dst'
+toValidEmpireConnection dst'@(InPortRef' _) src'@(OutPortRef' _)
+    = toValidEmpireConnection src' dst'
+toValidEmpireConnection _ _ = Nothing
 
 -- This function should be removed once we redesign connections to the same node
 toValidConnection :: AnyPortRef -> AnyPortRef -> Maybe Empire.Connection
@@ -154,10 +161,19 @@ canConnect :: AnyPortRef -> AnyPortRef -> Bool
 canConnect = isJust .: toValidConnection
 
 instance Convertible PosConnection HalfConnection where
-    convert = HalfConnection <$> OutPortRef' . view src <*> view dstPos <*> view sidebarConn <*> view mode
+    convert = HalfConnection <$> OutPortRef'
+        .   view src
+        <*> view dstPos
+        <*> view sidebarConn
+        <*> view mode
 
 toPosConnection :: OutPortRef -> InPortRef -> PosHalfConnection -> PosConnection
-toPosConnection src' dst' = PosConnection src' dst' <$> view srcPos <*> view dstPos <*> view sidebarConn <*> view mode <*> view color
+toPosConnection src' dst' = PosConnection src' dst'
+    <$> view srcPos
+    <*> view dstPos
+    <*> view sidebarConn
+    <*> view mode
+    <*> view color
 
 instance Convertible Connection Empire.Connection where
     convert = Empire.Connection <$> view src <*> view dst
@@ -166,146 +182,201 @@ argConstructorPosition :: ExpressionNode -> Position
 argConstructorPosition n = 
     if n ^. ExpressionNode.mode == ExpressionNode.Collapsed
         then n ^. position & y %~ (+ portRadius)
-        else expandedInputPosition (n ^. position) $ argumentConstructorNumber $ countVisibleInPorts n
+        else expandedInputPosition (n ^. position)
+            $ argumentConstructorNumber $ countVisibleInPorts n
 
 
-connectionPositions :: Node -> OutPort -> Node -> InPort -> Layout -> Maybe (Position, Position)
-connectionPositions srcNode' srcPort dstNode' dstPort layout = case (srcNode', dstNode') of
-    (Node.Input _, Node.Output _) -> do
-        srcConnPos <- inputSidebarPortPosition srcPort layout
-        dstConnPos <- outputSidebarPortPosition dstPort layout
-        return (srcConnPos, dstConnPos)
-    (Node.Input _, _) -> do
-        srcConnPos <- inputSidebarPortPosition srcPort layout
-        dstConnPos <- halfConnectionSrcPosition dstNode' (Left dstPort) srcConnPos layout
-        return (srcConnPos, dstConnPos)
-    (_, Node.Output _) -> do
-        dstConnPos <- outputSidebarPortPosition dstPort layout
-        srcConnPos <- halfConnectionSrcPosition srcNode' (Right srcPort) dstConnPos layout
-        return (srcConnPos, dstConnPos)
+connectionPositions :: Node -> OutPort -> Node -> InPort -> Layout
+    -> Maybe (Position, Position)
+connectionPositions srcNode' srcPort dstNode' dstPort layout
+    = case (srcNode', dstNode') of
+        (Node.Input _, Node.Output _) -> do
+            srcConnPos <- inputSidebarPortPosition srcPort layout
+            dstConnPos <- outputSidebarPortPosition dstPort layout
+            return (srcConnPos, dstConnPos)
+        (Node.Input _, _) -> do
+            srcConnPos <- inputSidebarPortPosition srcPort layout
+            dstConnPos <- halfConnectionSrcPosition
+                dstNode'
+                (Left dstPort)
+                srcConnPos
+                layout
+            return (srcConnPos, dstConnPos)
+        (_, Node.Output _) -> do
+            dstConnPos <- outputSidebarPortPosition dstPort layout
+            srcConnPos <- halfConnectionSrcPosition
+                srcNode'
+                (Right srcPort)
+                dstConnPos
+                layout
+            return (srcConnPos, dstConnPos)
 
-    (Expression srcNode, Expression dstNode) -> do
-        let srcPos'    = srcNode ^. position
-            dstPos'    = dstNode ^. position
+        (Expression srcNode, Expression dstNode) -> do
+            let srcPos'    = srcNode ^. position
+                dstPos'    = dstNode ^. position
 
-            isSrcExp   = not . isCollapsed $ srcNode
-            isDstExp   = not . isCollapsed $ dstNode
+                isSrcExp   = not . isCollapsed $ srcNode
+                isDstExp   = not . isCollapsed $ dstNode
 
-            srcPortNum = visibleOutPortNumber srcNode $ srcPort ^. portId
-            dstArgNum  = visibleArgPortNumber dstNode $ dstPort ^. portId
-            dstPortNum = visibleInPortNumber  dstNode $ dstPort ^. portId
+                srcPortNum = visibleOutPortNumber srcNode $ srcPort ^. portId
+                dstArgNum  = visibleArgPortNumber dstNode $ dstPort ^. portId
+                dstPortNum = visibleInPortNumber  dstNode $ dstPort ^. portId
 
-            srcArgs    = countVisibleArgPorts srcNode
-            srcPorts   = countVisibleOutPorts srcNode
-            dstPorts   = countVisibleInPorts  dstNode
-            dstArgs    = countVisibleArgPorts dstNode
+                srcArgs    = countVisibleArgPorts srcNode
+                srcPorts   = countVisibleOutPorts srcNode
+                dstPorts   = countVisibleInPorts  dstNode
+                dstArgs    = countVisibleArgPorts dstNode
 
-            srcConnPos = connectionSrc  srcPos'
-                                        dstPos'
-                                        isSrcExp
-                                        isDstExp
-                                        srcPortNum
-                                        srcPorts
-                                        (srcPorts + srcArgs == 1)
-                                        (if isDstExp then dstPortNum else dstArgNum)
-                                        (if isDstExp then dstPorts   else dstArgs  )
+                srcConnPos = connectionSrc
+                    srcPos'
+                    dstPos'
+                    isSrcExp
+                    isDstExp
+                    srcPortNum
+                    srcPorts
+                    (srcPorts + srcArgs == 1)
+                    (if isDstExp then dstPortNum else dstArgNum)
+                    (if isDstExp then dstPorts   else dstArgs)
 
-            dstConnPos = connectionDst  srcPos'
-                                        dstPos'
-                                        isSrcExp
-                                        isDstExp
-                                        (if isDstExp then dstPortNum else dstArgNum)
-                                        (if isDstExp then dstPorts   else dstArgs  )
-                                        (isSelf $ dstPort ^. portId)
-                                        (has (inPorts . LT.value . Port.state . Port._Connected) dstNode)
-                                        srcPortNum
-                                        srcPorts
-        return (srcConnPos, dstConnPos)
-    _ -> return def
+                dstConnPos = connectionDst
+                    srcPos'
+                    dstPos'
+                    isSrcExp
+                    isDstExp
+                    (if isDstExp then dstPortNum else dstArgNum)
+                    (if isDstExp then dstPorts   else dstArgs)
+                    (isSelf $ dstPort ^. portId)
+                    (has
+                        (inPorts . LT.value . Port.state . Port._Connected)
+                        dstNode
+                    )
+                    srcPortNum
+                    srcPorts
+            return (srcConnPos, dstConnPos)
+        _ -> return def
 
 toConnection :: OutPortRef -> InPortRef -> Node -> Node -> Connection
-toConnection srcRef dstRef srcNode dstNode = Connection srcRef dstRef sidebarConn' mode' where
-    sidebarConn' = has Node._Input srcNode || has Node._Output dstNode
-    mode'        = getConnectionMode dstRef dstNode
+toConnection srcRef dstRef srcNode dstNode
+    = Connection srcRef dstRef sidebarConn' mode' where
+        sidebarConn' = has Node._Input srcNode || has Node._Output dstNode
+        mode'        = getConnectionMode dstRef dstNode
 
 toHalfConnection :: AnyPortRef -> Node -> Position -> HalfConnection
-toHalfConnection portRef n pos = HalfConnection portRef pos sidebarConn' mode' where
-    sidebarConn'  = has Node._Input n || has Node._Output n
-    mode' = case portRef of
-        OutPortRef' {}    -> Normal
-        InPortRef' dstRef -> let isPortVisible = elem (dstRef ^. PortRef.dstPortId) . (Node.argumentConstructorRef n ^. PortRef.dstPortId :) . map (view portId) $ Node.inPortsList n in
-            if isPortVisible then Normal else Internal
+toHalfConnection portRef n pos
+    = HalfConnection portRef pos sidebarConn' mode' where
+        sidebarConn'  = has Node._Input n || has Node._Output n
+        mode' = case portRef of
+            OutPortRef' {}    -> Normal
+            InPortRef' dstRef -> let isPortVisible =
+                elem (dstRef ^. PortRef.dstPortId)
+                    . (Node.argumentConstructorRef n ^. PortRef.dstPortId :)
+                        $ (view portId) <$> Node.inPortsList n
+                in if isPortVisible then Normal else Internal
 
 getConnectionMode :: InPortRef -> Node -> Mode
-getConnectionMode dstRef dstNode = if isPortVisible then Normal else Internal where
-    isPortVisible = elem (dstRef ^. PortRef.dstPortId) . (Node.argumentConstructorRef dstNode ^. PortRef.dstPortId :) . map (view portId) $ Node.inPortsList dstNode
+getConnectionMode dstRef dstNode = if isPortVisible
+    then Normal
+    else Internal where
+        isPortVisible = elem
+            (dstRef ^. PortRef.dstPortId)
+                . (Node.argumentConstructorRef dstNode ^. PortRef.dstPortId :)
+                    $ (view portId) <$> Node.inPortsList dstNode
 
 
-halfConnectionSrcPosition :: Node -> EitherPort -> Position -> Layout -> Maybe Position
-halfConnectionSrcPosition (Node.Input  _  ) (Right port) _ layout = inputSidebarPortPosition  port layout
-halfConnectionSrcPosition (Node.Output _  ) (Left  port) _ layout = outputSidebarPortPosition port layout
+halfConnectionSrcPosition :: Node -> EitherPort -> Position -> Layout
+    -> Maybe Position
+halfConnectionSrcPosition (Node.Input  _  ) (Right port) _ layout
+    = inputSidebarPortPosition  port layout
+halfConnectionSrcPosition (Node.Output _  ) (Left  port) _ layout
+    = outputSidebarPortPosition port layout
 halfConnectionSrcPosition (Expression node) eport mousePos _ =
     Just $ case eport of
-        Right port -> connectionSrc pos
-                                    mousePos
-                                    isExp
-                                    False
-                                    (visibleOutPortNumber node $ port ^. portId)
-                                    allPorts
-                                    (countVisibleOutPorts node + countVisibleArgPorts node == 1)
-                                    1
-                                    1
-        Left  port -> connectionDst mousePos
-                                    pos
-                                    False
-                                    isExp
-                                    (if isExp then visibleInPortNumber node $ port ^. portId else visibleArgPortNumber node $ port ^. portId)
-                                    allPorts 
-                                    (isSelf $ port ^. portId)
-                                    (has (inPorts . LT.value . Port.state . Port._Connected) node)
-                                    1
-                                    1
+        Right port -> connectionSrc
+            pos
+            mousePos
+            isExp
+            False
+            (visibleOutPortNumber node $ port ^. portId)
+            allPorts
+            (countVisibleOutPorts node + countVisibleArgPorts node == 1)
+            1
+            1
+        Left port -> connectionDst
+            mousePos
+            pos
+            False
+            isExp
+            (if isExp
+                then visibleInPortNumber node $ port ^. portId
+                else visibleArgPortNumber node $ port ^. portId
+            )
+            allPorts 
+            (isSelf $ port ^. portId)
+            (has (inPorts . LT.value . Port.state . Port._Connected) node)
+            1
+            1
     where
         pos      = node ^. position
         isExp    = not . isCollapsed $ node
-        allPorts = if isLeft eport then if isExp then countVisibleInPorts node else countVisibleArgPorts node else countVisibleOutPorts node
+        allPorts = if isLeft eport
+            then if isExp
+                then countVisibleInPorts node
+                else countVisibleArgPorts node
+            else countVisibleOutPorts node
 
 halfConnectionSrcPosition _ _ _ _ = def
 
 
-connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsOnly -> Int -> Int -> Position
-connectionSrc srcNode dstNode srcExpanded _dstExpanded srcPortNum srcPorts isSingle dstPortNum dstPorts =
-    if srcExpanded 
-        then expandedOutputPosition srcNode srcPortNum
-        else if isSingle then moveToOutputRadius portRadius t  srcNode
-                         else moveToOutputRadius portRadius t' srcNode
-    where 
-        t  = toOutputAngle trueSrc trueDst 
-        t1 = portAngleStart True srcPortNum srcPorts portRadius
-        t2 = portAngleStop  True srcPortNum srcPorts portRadius
-        t' = limitAngle t1 t2 t
-        trueDst = if _dstExpanded then expandedInputPosition  dstNode dstPortNum else dstNode
-        trueSrc = if srcExpanded  then expandedOutputPosition srcNode srcPortNum else srcNode
+connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsOnly
+    -> Int -> Int -> Position
+connectionSrc srcNode dstNode srcExpanded _dstExpanded srcPortNum srcPorts
+    isSingle dstPortNum dstPorts =
+        if srcExpanded 
+            then expandedOutputPosition srcNode srcPortNum
+            else if isSingle then moveToOutputRadius portRadius t  srcNode
+                             else moveToOutputRadius portRadius t' srcNode
+        where 
+            t  = toOutputAngle trueSrc trueDst 
+            t1 = portAngleStart True srcPortNum srcPorts portRadius
+            t2 = portAngleStop  True srcPortNum srcPorts portRadius
+            t' = limitAngle t1 t2 t
+            trueDst = if _dstExpanded
+                then expandedInputPosition  dstNode dstPortNum
+                else dstNode
+            trueSrc = if srcExpanded
+                then expandedOutputPosition srcNode srcPortNum
+                else srcNode
 
-connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> IsAlias -> Int -> Int -> Position
-connectionDst srcNode dstNode srcExpanded dstExpanded dstPortNum dstPorts isSelf' isAlias srcPortNum srcPorts =
-    if dstExpanded || isSelf' 
-        then trueDst 
-        else if isAlias then moveToInputRadius portAliasRadius t  dstNode
-                        else moveToInputRadius portRadius      t' trueDst
-    where
-        t  = toInputAngle trueSrc trueDst 
-        t1 = portAngleStart True dstPortNum dstPorts portRadius
-        t2 = portAngleStop  True dstPortNum dstPorts portRadius
-        t'      = limitAngle t1 t2 t
-        trueDst = if dstExpanded then expandedInputPosition dstNode dstPortNum  else dstNode
-        trueSrc = if srcExpanded then expandedOutputPosition srcNode srcPortNum else srcNode
+connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf
+    -> IsAlias -> Int -> Int -> Position
+connectionDst srcNode dstNode srcExpanded dstExpanded dstPortNum dstPorts
+    isSelf' isAlias srcPortNum srcPorts =
+        if dstExpanded || isSelf' 
+            then trueDst 
+            else if isAlias then moveToInputRadius portAliasRadius t  dstNode
+                            else moveToInputRadius portRadius      t' trueDst
+        where
+            t  = toInputAngle trueSrc trueDst 
+            t1 = portAngleStart True dstPortNum dstPorts portRadius
+            t2 = portAngleStop  True dstPortNum dstPorts portRadius
+            t'      = limitAngle t1 t2 t
+            trueDst = if dstExpanded
+                then expandedInputPosition dstNode dstPortNum
+                else dstNode
+            trueSrc = if srcExpanded
+                then expandedOutputPosition srcNode srcPortNum
+                else srcNode
 
 -- Graph Calculations
 
 expandedPortPosition :: Bool -> Position -> Int -> Position
 expandedPortPosition input nodePosition portNumber =
-    move (Vector2 ((nodeExpandedWidth/2) * (if input then (-1) else 1)) (lineHeight * (fromIntegral portNumber))) nodePosition
+    move
+    (Vector2
+        ((nodeExpandedWidth/2) * (if input then (-1) else 1))
+        (lineHeight * (fromIntegral portNumber))
+    )
+    nodePosition
 
 expandedInputPosition, expandedOutputPosition :: Position -> Int -> Position
 expandedInputPosition  = expandedPortPosition True
@@ -362,9 +433,11 @@ toOutputAngle srcPosition dstPosition =
         dstY = dstPosition ^. y
 
 moveToOutputRadius :: Radius -> Angle -> Position -> Position
-moveToOutputRadius r t = move $ Vector2 (r * (cos $ t - pi/2)) (r * (sin $ t - pi/2))
+moveToOutputRadius r t = move
+    $ Vector2 (r * (cos $ t - pi/2)) (r * (sin $ t - pi/2))
 
 moveToInputRadius :: Radius -> Angle -> Position -> Position
-moveToInputRadius r t = move $ Vector2 (-r * (cos $ t - pi/2)) (r * (sin $ t - pi/2))
+moveToInputRadius r t = move
+    $ Vector2 (-r * (cos $ t - pi/2)) (r * (sin $ t - pi/2))
 
 

@@ -14,14 +14,18 @@ import           NodeEditor.React.Model.Node        (NodeLoc, nodeLoc)
 import           NodeEditor.State.Global            (State)
 
 
-connect :: Either OutPortRef NodeLoc -> Either InPortRef NodeLoc -> Command State ()
-connect src'@(Left srcPortRef) (Left dstPortRef) =
-    whenM (localAddConnection $ Connection srcPortRef dstPortRef) $ Batch.addConnection src' (Left $ InPortRef' dstPortRef)
-connect src' (Left dstPortRef) = Batch.addConnection src' (Left $ InPortRef' dstPortRef)
-connect src' (Right nid)       = Batch.addConnection src' (Right nid)
+connect :: Either OutPortRef NodeLoc -> Either InPortRef NodeLoc
+    -> Command State ()
+connect src'@(Left srcPortRef) (Left dstPortRef)
+    = whenM (localAddConnection $ Connection srcPortRef dstPortRef)
+        $ Batch.addConnection src' (Left $ InPortRef' dstPortRef)
+connect src' (Left dstPortRef)
+    = Batch.addConnection src' (Left $ InPortRef' dstPortRef)
+connect src' (Right nid) = Batch.addConnection src' (Right nid)
 
 localAddConnections :: [Connection] -> Command State [ConnectionId]
-localAddConnections = fmap2 (view Connection.connectionId) . filterM localAddConnection
+localAddConnections
+    = fmap2 (view Connection.connectionId) . filterM localAddConnection
 
 localAddConnection :: Connection -> Command State Bool
 localAddConnection c = do

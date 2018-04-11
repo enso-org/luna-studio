@@ -16,7 +16,8 @@ import           NodeEditor.State.Global                 (State)
 
 
 movePort :: OutPortRef -> Int -> Command State ()
-movePort portRef newPos = withJustM (localMovePort portRef newPos) $ const $ Batch.movePort portRef newPos
+movePort portRef newPos = withJustM (localMovePort portRef newPos) $ const
+    $ Batch.movePort portRef newPos
 
 localMovePort :: OutPortRef -> Int -> Command State (Maybe OutPortRef)
 localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos =
@@ -36,16 +37,23 @@ localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos =
                     newPorts' = a <> [node2] <> c <> [node1] <> d
                     setNum i = value . portId .~ [Projection i]
                     newPorts = zipWith setNum [0 ..] newPorts'
-                void . localUpdateInputNode $ node & inputSidebarPorts .~ newPorts
+                void . localUpdateInputNode
+                    $ node & inputSidebarPorts .~ newPorts
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
                     OutPortRef srcNid (Projection i : p) -> when (srcNid == nid) $
                         if i == pos
-                            then void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection newPos : p) (conn ^. dst)
+                            then void . localAddConnection $ Connection
+                                (conn ^. src & srcPortId .~ Projection newPos : p)
+                                (conn ^. dst)
                         else if i > pos && i <= newPos
-                            then void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection (i-1) : p) (conn ^. dst)
+                            then void . localAddConnection $ Connection
+                                (conn ^. src & srcPortId .~ Projection (i-1) : p)
+                                (conn ^. dst)
                         else when (i < pos && i >= newPos) $
-                            void . localAddConnection $ Connection (conn ^. src & srcPortId .~ Projection (i+1) : p) (conn ^. dst)
+                            void . localAddConnection $ Connection
+                                (conn ^. src & srcPortId .~ Projection (i+1) : p)
+                                (conn ^. dst)
                     _ -> return ()
                 return . Just $ OutPortRef nid (Projection newPos : p')
 localMovePort _ _ = $notImplemented

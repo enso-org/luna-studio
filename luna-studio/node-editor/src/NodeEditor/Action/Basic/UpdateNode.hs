@@ -30,7 +30,8 @@ data NodeUpdateModification = KeepPorts
                             deriving (Eq, Ord)
 
 
-localUpdateExpressionNodes :: Set NodeUpdateModification -> [ExpressionNode] -> Command State ()
+localUpdateExpressionNodes :: Set NodeUpdateModification -> [ExpressionNode]
+    -> Command State ()
 localUpdateExpressionNodes mods = mapM_ (localUpdateExpressionNode mods)
 
 localUpdateInputNode :: InputNode -> Command State Bool
@@ -43,83 +44,125 @@ localUpdateInputNode node = NodeEditor.getInputNode (node ^. nodeLoc) >>= \case
         return True
 
 localUpdateOrAddInputNode :: InputNode -> Command State ()
-localUpdateOrAddInputNode node = unlessM (localUpdateInputNode node) $ localAddInputNode node
+localUpdateOrAddInputNode node = unlessM (localUpdateInputNode node)
+    $ localAddInputNode node
 
 localUpdateOutputNode :: OutputNode -> Command State Bool
-localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \case
-    Nothing       -> return False
-    Just prevNode -> do
-        let sidebarMode = prevNode ^. SidebarNode.mode
-        NodeEditor.addOutputNode $ node & SidebarNode.mode .~ sidebarMode
-        updateScene
-        return True
+localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc)
+    >>= \case
+        Nothing       -> return False
+        Just prevNode -> do
+            let sidebarMode = prevNode ^. SidebarNode.mode
+            NodeEditor.addOutputNode $ node & SidebarNode.mode .~ sidebarMode
+            updateScene
+            return True
 
 localUpdateOrAddOutputNode :: OutputNode -> Command State ()
-localUpdateOrAddOutputNode node = unlessM (localUpdateOutputNode node) $ localAddOutputNode node
+localUpdateOrAddOutputNode node
+    = unlessM (localUpdateOutputNode node) $ localAddOutputNode node
 
-localUpdateOrAddExpressionNode :: Set NodeUpdateModification -> ExpressionNode -> Command State ()
-localUpdateOrAddExpressionNode mods node = unlessM (localUpdateExpressionNode mods node) $ localAddExpressionNode node
+localUpdateOrAddExpressionNode :: Set NodeUpdateModification -> ExpressionNode
+    -> Command State ()
+localUpdateOrAddExpressionNode mods node = unlessM
+    (localUpdateExpressionNode mods node)
+    $ localAddExpressionNode node
 
-localUpdateExpressionNodeInPorts :: NodeLoc -> InPortTree InPort -> Command State ()
-localUpdateExpressionNodeInPorts nl ports = NodeEditor.modifyExpressionNode nl $ ExpressionNode.inPorts .= ports
+localUpdateExpressionNodeInPorts :: NodeLoc -> InPortTree InPort
+    -> Command State ()
+localUpdateExpressionNodeInPorts nl ports = NodeEditor.modifyExpressionNode nl
+    $ ExpressionNode.inPorts .= ports
 
-localUpdateExpressionNodeOutPorts :: NodeLoc -> OutPortTree OutPort -> Command State ()
-localUpdateExpressionNodeOutPorts nl ports = NodeEditor.modifyExpressionNode nl $ ExpressionNode.outPorts .= ports
+localUpdateExpressionNodeOutPorts :: NodeLoc -> OutPortTree OutPort
+    -> Command State ()
+localUpdateExpressionNodeOutPorts nl ports = NodeEditor.modifyExpressionNode nl
+    $ ExpressionNode.outPorts .= ports
 
 localUpdateIsDefinition :: NodeLoc -> Bool -> Command State ()
-localUpdateIsDefinition nl update = NodeEditor.modifyExpressionNode nl $ ExpressionNode.isDefinition .= update
+localUpdateIsDefinition nl update = NodeEditor.modifyExpressionNode nl
+    $ ExpressionNode.isDefinition .= update
 
 localUpdateNodeCode :: NodeLoc -> Text -> Command State ()
-localUpdateNodeCode nl update = NodeEditor.modifyExpressionNode nl $ ExpressionNode.code .= update
+localUpdateNodeCode nl update = NodeEditor.modifyExpressionNode nl
+    $ ExpressionNode.code .= update
 
-localUpdateExpressionNode :: Set NodeUpdateModification -> ExpressionNode -> Command State Bool
-localUpdateExpressionNode mods node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
-    Nothing       -> return False
-    Just prevNode -> do
-        let selected        = prevNode ^. isSelected
-            mode'           = prevNode ^. ExpressionNode.mode
-            errVis          = prevNode ^. ExpressionNode.errorVisEnabled
-            preventPorts    = Set.member KeepPorts    mods
-            preventNodeMeta = Set.member KeepNodeMeta mods
-            inPorts         = if preventPorts    then prevNode ^. ExpressionNode.inPorts           else node ^. ExpressionNode.inPorts
-            outPorts        = if preventPorts    then prevNode ^. ExpressionNode.outPorts          else node ^. ExpressionNode.outPorts
-            position        = if preventNodeMeta then prevNode ^. ExpressionNode.position          else node ^. ExpressionNode.position
-            visEnabled      = if preventNodeMeta then prevNode ^. ExpressionNode.visEnabled        else node ^. ExpressionNode.visEnabled
-            defVis          = if preventNodeMeta then prevNode ^. ExpressionNode.defaultVisualizer else node ^. ExpressionNode.defaultVisualizer
-            n               = node & isSelected                       .~ selected
-                                   & ExpressionNode.mode              .~ mode'
-                                   & ExpressionNode.inPorts           .~ inPorts
-                                   & ExpressionNode.outPorts          .~ outPorts
-                                   & ExpressionNode.position          .~ position
-                                   & ExpressionNode.visEnabled        .~ visEnabled
-                                   & ExpressionNode.defaultVisualizer .~ defVis
-                                   & ExpressionNode.errorVisEnabled   .~ errVis
-            mayPortSelfId = find isSelf . map (view portId) $ inPortsList n
-            updatePortSelfMode n' selfPid m = n' & inPortAt selfPid . mode .~ m
-        updatedNode <- maybe (return n) (\sPid -> updatePortSelfMode n sPid <$> calculatePortSelfMode n) mayPortSelfId
-        NodeEditor.addExpressionNode updatedNode
-        updateSearcherClassName updatedNode
-        when (prevNode ^. ExpressionNode.nodeType /= updatedNode ^. ExpressionNode.nodeType) $ do
-            let nl = updatedNode ^. ExpressionNode.nodeLoc
-            NodeEditor.updateNodeVisualizers nl
-            hasType       <- isJust <$> NodeEditor.getExpressionNodeType nl
-            noVisualizers <- maybe True (Map.null . view visualizers) <$> NodeEditor.getNodeVisualizations nl
-            let msg = if hasType && noVisualizers then noVisMsg else awaitingDataMsg
-            NodeEditor.setVisualizationData (node ^. ExpressionNode.nodeLoc) (MessageBackup msg) True
-        return True
+localUpdateExpressionNode :: Set NodeUpdateModification -> ExpressionNode
+    -> Command State Bool
+localUpdateExpressionNode mods node
+    = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
+        Nothing       -> return False
+        Just prevNode -> do
+            let selected        = prevNode ^. isSelected
+                mode'           = prevNode ^. ExpressionNode.mode
+                errVis          = prevNode ^. ExpressionNode.errorVisEnabled
+                preventPorts    = Set.member KeepPorts    mods
+                preventNodeMeta = Set.member KeepNodeMeta mods
+                inPorts         = if preventPorts
+                    then prevNode ^. ExpressionNode.inPorts
+                    else node ^. ExpressionNode.inPorts
+                outPorts        = if preventPorts
+                    then prevNode ^. ExpressionNode.outPorts
+                    else node ^. ExpressionNode.outPorts
+                position        = if preventNodeMeta
+                    then prevNode ^. ExpressionNode.position
+                    else node ^. ExpressionNode.position
+                visEnabled      = if preventNodeMeta
+                    then prevNode ^. ExpressionNode.visEnabled
+                    else node ^. ExpressionNode.visEnabled
+                defVis          = if preventNodeMeta
+                    then prevNode ^. ExpressionNode.defaultVisualizer
+                    else node ^. ExpressionNode.defaultVisualizer
+                n = node
+                    & isSelected                       .~ selected
+                    & ExpressionNode.mode              .~ mode'
+                    & ExpressionNode.inPorts           .~ inPorts
+                    & ExpressionNode.outPorts          .~ outPorts
+                    & ExpressionNode.position          .~ position
+                    & ExpressionNode.visEnabled        .~ visEnabled
+                    & ExpressionNode.defaultVisualizer .~ defVis
+                    & ExpressionNode.errorVisEnabled   .~ errVis
+                mayPortSelfId = find isSelf . map (view portId) $ inPortsList n
+                updatePortSelfMode n' selfPid m
+                    = n' & inPortAt selfPid . mode .~ m
+            updatedNode <- maybe
+                (return n)
+                (\sPid -> updatePortSelfMode n sPid <$> calculatePortSelfMode n)
+                mayPortSelfId
+            NodeEditor.addExpressionNode updatedNode
+            updateSearcherClassName updatedNode
+            let typeMatch
+                    =  prevNode ^. ExpressionNode.nodeType
+                    == updatedNode ^. ExpressionNode.nodeType
+            unless typeMatch $ do
+                let nl = updatedNode ^. ExpressionNode.nodeLoc
+                NodeEditor.updateNodeVisualizers nl
+                hasType       <- isJust <$> NodeEditor.getExpressionNodeType nl
+                noVisualizers <- maybe
+                    True
+                    (Map.null . view visualizers)
+                    <$> NodeEditor.getNodeVisualizations nl
+                let msg = if hasType && noVisualizers
+                        then noVisMsg
+                        else awaitingDataMsg
+                NodeEditor.setVisualizationData
+                    (node ^. ExpressionNode.nodeLoc)
+                    (MessageBackup msg)
+                    True
+            return True
 
 localUpdateCanEnterExpressionNode :: NodeLoc -> Bool -> Command State ()
-localUpdateCanEnterExpressionNode nl update = NodeEditor.modifyExpressionNode nl $ ExpressionNode.canEnter .= update
+localUpdateCanEnterExpressionNode nl update = NodeEditor.modifyExpressionNode nl
+    $ ExpressionNode.canEnter .= update
 
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
 localUpdateNodeTypecheck path update = do
     let nl = convert (path, update ^. tcNodeId)
     case update of
         API.ExpressionUpdate _ inPorts outPorts ->
-            withJustM (NodeEditor.getExpressionNode nl) $ \node -> void . localUpdateExpressionNode def $
-                node & ExpressionNode.inPorts  .~ convert `fmap` inPorts
-                     & ExpressionNode.outPorts .~ convert `fmap` outPorts
-                     & ExpressionNode.value    .~ ExpressionNode.AwaitingData
+            withJustM (NodeEditor.getExpressionNode nl)
+                $ \node -> void . localUpdateExpressionNode def $ node
+                    & ExpressionNode.inPorts  .~ convert `fmap` inPorts
+                    & ExpressionNode.outPorts .~ convert `fmap` outPorts
+                    & ExpressionNode.value    .~ ExpressionNode.AwaitingData
         API.OutputSidebarUpdate _ inPorts -> NodeEditor.modifyOutputNode nl $
             SidebarNode.outputSidebarPorts .= convert `fmap` inPorts
         API.InputSidebarUpdate _ outPorts -> NodeEditor.modifyInputNode nl $
@@ -128,7 +171,10 @@ localUpdateNodeTypecheck path update = do
 updateSearcherClassName :: ExpressionNode -> Command State ()
 updateSearcherClassName node = do
     let (className, _) = Searcher.getPredInfo node
-        isNodePred n s = s ^. Searcher.predNl == Just (n ^. ExpressionNode.nodeLoc)
+        isNodePred n s
+            = s ^. Searcher.predNl == Just (n ^. ExpressionNode.nodeLoc)
     whenM (maybe False (isNodePred node) <$> NodeEditor.getSearcher) $ do
-        NodeEditor.modifySearcher $ Searcher.mode . Searcher._Node . _2 . Searcher.className .= className
+        NodeEditor.modifySearcher
+            $ Searcher.mode . Searcher._Node . _2 . Searcher.className
+                .= className
         localUpdateSearcherHintsPreservingSelection

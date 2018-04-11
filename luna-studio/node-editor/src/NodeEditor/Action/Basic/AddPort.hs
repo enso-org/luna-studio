@@ -18,27 +18,33 @@ import           NodeEditor.State.Global                 (State)
 
 
 addPort :: OutPortRef -> Maybe InPortRef -> Maybe Text -> Command State ()
-addPort portRef connDst mayName = whenM (localAddPort portRef connDst mayName) $ Batch.addPort portRef connDst mayName
+addPort portRef connDst mayName = whenM (localAddPort portRef connDst mayName)
+    $ Batch.addPort portRef connDst mayName
 
 localAddPort :: OutPortRef -> Maybe InPortRef -> Maybe Text -> Command State Bool
 localAddPort portRef@(OutPortRef nid pid@[Projection pos]) mayConnDst mayName = do
     mayNode <- getInputNode nid
     flip (maybe (return False)) mayNode $ \node ->
-        if pos > countProjectionPorts node
-        || pos < 0
+        if pos > countProjectionPorts node || pos < 0
             then return False
             else do
-                let newPort     = LabeledTree (OutPorts []) $ convert $ Port pid (fromMaybe def mayName) TStar NotConnected
+                let newPort     = LabeledTree (OutPorts []) $ convert
+                        $ Port pid (fromMaybe def mayName) TStar NotConnected
                     oldPorts    = node ^. inputSidebarPorts
                     (portsBefore, portsAfter) = splitAt pos oldPorts
                     newPorts    = portsBefore <> [newPort] <> portsAfter
-                void . localUpdateInputNode $ node & inputSidebarPorts .~ newPorts
+                void . localUpdateInputNode
+                    $ node & inputSidebarPorts .~ newPorts
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. Connection.src of
-                    (OutPortRef srcNid (Projection i : p)) ->
-                        when (srcNid == nid && i >= pos) $
-                            void . localAddConnection $ Connection (conn ^. Connection.src & srcPortId .~ (Projection (i+1):p)) (conn ^. Connection.dst)
+                    (OutPortRef srcNid (Projection i : p)) -> do
+                        let correctPort = srcNid == nid && i >= pos
+                        when correctPort $ void . localAddConnection $ Connection
+                            (conn ^. Connection.src
+                                & srcPortId .~ (Projection (i+1):p))
+                            (conn ^. Connection.dst)
                     _ -> return ()
-                withJust mayConnDst $ void . localAddConnection . Connection portRef
+                withJust mayConnDst
+                    $ void . localAddConnection . Connection portRef
                 return True
 localAddPort _ _ _ = $notImplemented

@@ -41,9 +41,12 @@ createNode parentPath nodePos expr isDefinition = do
         connectTo   = if length selected == 1
                       then view nodeLoc <$> listToMaybe selected
                       else Nothing
-        defInPorts  = LabeledTree def $ Port [Arg 0] (Text.pack "") TStar NotConnected
-        defOutPorts = LabeledTree def $ Port []      (Text.pack "") TStar NotConnected
-        empireNode  = Empire.ExpressionNode nid expr isDefinition def def defInPorts defOutPorts nodeMeta False
+        defInPorts  = LabeledTree def
+            $ Port [Arg 0] (Text.pack "") TStar NotConnected
+        defOutPorts = LabeledTree def
+            $ Port []      (Text.pack "") TStar NotConnected
+        empireNode  = Empire.ExpressionNode nid expr isDefinition def def
+            defInPorts defOutPorts nodeMeta False
         node        = convert (parentPath, empireNode)
         nl          = NodeLoc parentPath nid
     localAddExpressionNode node
@@ -55,9 +58,12 @@ localAddExpressionNodes = mapM_ localAddExpressionNode
 
 localAddExpressionNode :: ExpressionNode -> Command State ()
 localAddExpressionNode node = do
-    let mayPortSelfId            = find isSelf . map (view portId) $ inPortsList node
+    let mayPortSelfId = find isSelf . map (view portId) $ inPortsList node
         updatePortSelf selfPid m = node & inPortAt selfPid . mode .~ m
-    node' <- maybe (return node) (\selfPid -> updatePortSelf selfPid <$> calculatePortSelfMode node) mayPortSelfId
+    node' <- maybe
+        (return node)
+        (\selfPid -> updatePortSelf selfPid <$> calculatePortSelfMode node)
+        mayPortSelfId
     NodeEditor.addExpressionNode node'
     setVisualizationData (node ^. nodeLoc) (MessageBackup awaitingDataMsg) True
     updateNodeVisualizers $ node ^. nodeLoc
