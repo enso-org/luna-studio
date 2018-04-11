@@ -48,7 +48,7 @@ class Dim2 a => Dim3 a where
 -- === Definition === --
 
 data Vector2 a = Vector2
-    { __x, __y :: a
+    { _vector2_x, _vector2_y :: a
     } deriving (Eq, Functor, Generic, Ord, Show)
 
 makeLenses ''Vector2
