@@ -11,3 +11,5 @@ instance Binary   Code
 instance NFData   Code
 instance ToJSON   Code
 instance FromJSON Code
+instance Mempty   Code where
+    mempty = Code mempty
