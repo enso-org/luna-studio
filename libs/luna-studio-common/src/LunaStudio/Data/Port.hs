@@ -11,24 +11,28 @@ import           LunaStudio.Data.TypeRep     (TypeRep)
 import           Prologue                    hiding (TypeRep, head)
 
 
-data InPortIndex = Self | Head | Arg Int deriving (Eq, Generic, Ord, Read, Show)
+data InPortIndex
+    = Self
+    | Head
+    | Arg Int
+    deriving (Eq, Generic, Ord, Read, Show)
 
-data InPorts s   = InPorts
+data InPorts s = InPorts
     { _self :: Maybe s
     , _head :: Maybe s
     , _args :: [s]
     } deriving (Eq, Foldable, Functor, Generic, Show, Traversable)
 
-type InPortId    = [InPortIndex]
+type InPortId = [InPortIndex]
 
 makeLenses ''InPorts
 
-data    OutPortIndex = Projection Int deriving (Eq, Generic, Ord, Read, Show)
+data OutPortIndex = Projection Int deriving (Eq, Generic, Ord, Read, Show)
 
-newtype OutPorts s   = OutPorts [s]
+newtype OutPorts s = OutPorts [s]
     deriving (Default, Eq, Foldable, Functor, Generic, Show, Traversable)
 
-type    OutPortId    = [OutPortIndex]
+type OutPortId = [OutPortIndex]
 
 makeWrapped ''OutPorts
 

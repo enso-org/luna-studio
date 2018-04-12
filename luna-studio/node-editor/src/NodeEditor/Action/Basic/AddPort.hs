@@ -39,10 +39,11 @@ localAddPort portRef@(OutPortRef nid pid@[Projection pos]) mayConnDst mayName = 
                 forM_ conns $ \conn -> case conn ^. Connection.src of
                     (OutPortRef srcNid (Projection i : p)) -> do
                         let correctPort = srcNid == nid && i >= pos
-                        when correctPort $ void . localAddConnection $ Connection
-                            (conn ^. Connection.src
-                                & srcPortId .~ (Projection (i+1):p))
-                            (conn ^. Connection.dst)
+                        when correctPort $ void . localAddConnection
+                            $ Connection
+                                (conn ^. Connection.src
+                                    & srcPortId .~ (Projection (i+1):p))
+                                (conn ^. Connection.dst)
                     _ -> return ()
                 withJust mayConnDst
                     $ void . localAddConnection . Connection portRef

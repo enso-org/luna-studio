@@ -54,8 +54,6 @@ instance Ord VisualizerId where
             visName1 = Text.unpack (visId1 ^. visualizerName)
             visName2 = Text.unpack (visId2 ^. visualizerName)
 
-
-
 data Visualizer = Visualizer
     { _visualizerId      :: VisualizerId
     , _visualizerRelPath :: VisualizerPath

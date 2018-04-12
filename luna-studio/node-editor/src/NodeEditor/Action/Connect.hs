@@ -101,9 +101,10 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId
                             withJust mayModifiedConnId $ \connId ->
                                 NodeEditor.connections . at connId .= Nothing
                             NodeEditor.halfConnections .= [halfConnectionModel]
-        when (isNothing maySuccess && isArgumentConstructor) $ case anyPortRef of
-            OutPortRef' outPortRef -> void $ localRemovePort outPortRef
-            _                      -> return ()
+        when (isNothing maySuccess && isArgumentConstructor)
+            $ case anyPortRef of
+                OutPortRef' outPortRef -> void $ localRemovePort outPortRef
+                _                      -> return ()
 
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. connectSnappedPort) $ do
@@ -149,14 +150,19 @@ stopConnectingUnsafe _ = do
     updateAllPortsMode
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
-connectToPort dst action = 
-    withJust (toValidConnection dst $ action ^. connectSourcePort) $ \newConn ->
-    case (action ^. connectIsArgumentConstructor, action ^. connectSourcePort) of
-        (True, OutPortRef' outPortRef) -> do
-            void . localAddConnection . ConnectionAPI.Connection outPortRef
-                $ newConn ^. ConnectionAPI.dst
-            Batch.addPort outPortRef (Just $ newConn ^. ConnectionAPI.dst) def
-        _ -> connect
-            (Left $ newConn ^. ConnectionAPI.src)
-            (Left $ newConn ^. ConnectionAPI.dst)
+connectToPort dst action = do
+    withJust (toValidConnection dst $ action ^. connectSourcePort)
+        $ \newConn -> case (action ^. connectIsArgumentConstructor
+            , action ^. connectSourcePort) of
+                (True, OutPortRef' outPortRef) -> do
+                    void . localAddConnection
+                        . ConnectionAPI.Connection outPortRef
+                            $ newConn ^. ConnectionAPI.dst
+                    Batch.addPort
+                        outPortRef
+                        (Just $ newConn ^. ConnectionAPI.dst)
+                        def
+                _ -> connect
+                    (Left $ newConn ^. ConnectionAPI.src)
+                    (Left $ newConn ^. ConnectionAPI.dst)
     stopConnectingUnsafe action

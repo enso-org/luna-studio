@@ -202,7 +202,8 @@ saveSettings gl settings newGl = handle logError action where
             Project.updateLocationSettings cp fp bc settings lastBcInOldFile
         when (filePath /= newFilePath)
             $ withJustM (getProjectPathAndRelativeModulePath newFilePath)
-                $ \(cp, fp) -> Project.updateCurrentBreadcrumbSettings cp fp newBc
+                $ \(cp, fp) ->
+                    Project.updateCurrentBreadcrumbSettings cp fp newBc
 
 getClosestBcLocation :: GraphLocation -> Breadcrumb Text -> Empire GraphLocation
 getClosestBcLocation gl (Breadcrumb []) = pure gl
@@ -244,7 +245,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                     (GraphLocation.GraphLocation filePath def)
             mayProjectPathAndRelModulePath <- liftIO
                 $ getProjectPathAndRelativeModulePath filePath
-            mayModuleSettings              <- liftIO $ maybe
+            mayModuleSettings <- liftIO $ maybe
                 (pure def)
                 (uncurry Project.getModuleSettings)
                 mayProjectPathAndRelModulePath
@@ -272,10 +273,10 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                     Just ms ->
                         let visMap = Project.fromOldAPI
                                 <$> ms ^. Project.typeRepToVisMap
-                            bc     = Breadcrumb.toNames crumb
-                            bs     = Map.lookup bc
+                            bc = Breadcrumb.toNames crumb
+                            bs = Map.lookup bc
                                 $ ms ^. Project.breadcrumbsSettings
-                            cam     = maybe
+                            cam = maybe
                                 defaultCamera
                                 (view Project.breadcrumbCameraSettings)
                                 bs
@@ -377,18 +378,20 @@ handlePaste = modifyGraph defInverse action replyResult where
         = withDefaultResult location $ Graph.paste location position string
 
 data ConnectionDoesNotExistException
-    = ConnectionDoesNotExistException InPortRef deriving (Show)
+    = ConnectionDoesNotExistException InPortRef
+    deriving (Show)
 
 instance Exception ConnectionDoesNotExistException where
     fromException = astExceptionFromException
-    toException = astExceptionToException
+    toException   = astExceptionToException
 
 data DestinationDoesNotExistException
-    = DestinationDoesNotExistException InPortRef deriving (Show)
+    = DestinationDoesNotExistException InPortRef
+    deriving (Show)
 
 instance Exception DestinationDoesNotExistException where
     fromException = astExceptionFromException
-    toException = astExceptionToException
+    toException   = astExceptionToException
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraph inverse action replyResult where
@@ -477,7 +480,7 @@ handleSearchNodes origReq@(Request uuid guiID
                 Graph.addImports location missingImps
                 SearchNodes.Result <$> Graph.getSearcherHints location
             case result of
-                Left  (exc :: SomeException) -> do
+                Left (exc :: SomeException) -> do
                     err <- liftIO $ Graph.prepareLunaError exc
                     let msg = Response.error origReq invStatus err
                     atomically . writeTChan toBusChan
@@ -501,7 +504,8 @@ handleSetCode = modifyGraph inverse action replyResult where
             Graph.loadCode location code
             Graph.resendCode location
 
-handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
+handleSetNodeExpression :: Request SetNodeExpression.Request
+    -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleSetNodeExpression = modifyGraph inverse action replyResult where
     inverse (SetNodeExpression.Request location nodeId _) = do
         oldExpr <- Graph.withGraph location . runASTOp $
@@ -540,10 +544,10 @@ handleSetNodesMetaUpdate (SetNodesMeta.Update location updates) = do
     result <- liftIO . try . Empire.runEmpire empireNotifEnv currentEmpireEnv
         $ actionSetNodesMeta location updates
     case result of
-        Left  (exc :: SomeASTException) -> do
+        Left (exc :: SomeASTException) -> do
             err <- liftIO $ prettyException exc
             logger Logger.error err
-        Right (result, newEmpireEnv)    -> Env.empireEnv .= newEmpireEnv
+        Right (result, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
 handleSetPortDefault = modifyGraph inverse action replyResult where

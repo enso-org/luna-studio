@@ -103,8 +103,10 @@ showNodeMatrix camera nodePos
     = foldl (<>) "matrix3d(" (intersperse ", " $ fmap show mx2) <> ")" where
         mx1    = Matrix.toList camera
         scale' = mx1!!0
-        nx     = fromInteger (round $ mx1!!12 + (scale' * nodePos ^. x):: Integer)
-        ny     = fromInteger (round $ mx1!!13 + (scale' * nodePos ^. y):: Integer)
+        nx     = fromInteger
+            (round $ mx1!!12 + (scale' * nodePos ^. x):: Integer)
+        ny     = fromInteger
+            (round $ mx1!!13 + (scale' * nodePos ^. y):: Integer)
         mx2    = take 12 mx1 <> (nx : ny : drop 14 mx1)
 
 showNodeTranslate :: Matrix Double -> Position -> String

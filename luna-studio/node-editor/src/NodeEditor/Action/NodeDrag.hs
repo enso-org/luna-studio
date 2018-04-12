@@ -114,7 +114,7 @@ snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1)
                     withJust ((,,) <$> mayConn <*> mayConnModel1 <*> mayConnModel2)
                         $ \(conn, connModel1, connModel2) -> do
                             ne <- getNodeEditor
-                            let conns = Connection.mode .~ Highlighted
+                            let conns = (Connection.mode .~ Highlighted)
                                     <$> [connModel1, connModel2]
                                 conns' = mapMaybe (toPosConnection ne) conns
                             modifyNodeEditor
@@ -129,10 +129,12 @@ snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1)
                             modifyConnection connId $ Connection.mode .= Dimmed
                             modifyExpressionNode nl $ do
                                 outPortAt [] . mode .= Port.Highlighted
-                                inPortAt (selfPortRef ^. PortRef.dstPortId) . mode
-                                    .= Port.Highlighted
-                            modifyOutPort (conn ^. src) $ mode .= Port.Highlighted
-                            modifyInPort  (conn ^. dst) $ mode .= Port.Highlighted
+                                inPortAt (selfPortRef ^. PortRef.dstPortId)
+                                    . mode .= Port.Highlighted
+                            modifyOutPort (conn ^. src)
+                                $ mode .= Port.Highlighted
+                            modifyInPort (conn ^. dst)
+                                $ mode .= Port.Highlighted
 
 handleNodeDragMouseUp :: MouseEvent -> NodeDrag -> Command State ()
 handleNodeDragMouseUp evt nodeDrag = do

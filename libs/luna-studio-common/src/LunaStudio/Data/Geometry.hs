@@ -57,15 +57,31 @@ closestPointOnLineParam (p1, p2) p3
         v3 = p3 ^. vector
 
 doSegmentsIntersect :: (Position, Position) -> (Position, Position) -> Bool
-doSegmentsIntersect seg1@(beg1, end1) seg2@(beg2, end2) = not (beg1 == end1 || beg2 == end2) && doIntersect where
-    isBeg1OnSeg2    = distanceSquared beg1 beg2 + distanceSquared beg1 end2 == distanceSquared beg2 end2
-    isBeg2OnSeg1    = distanceSquared beg2 beg1 + distanceSquared beg2 end1 == distanceSquared beg1 end1
-    leftTop1        = fromDoubles (min (beg1 ^. x) (end1 ^. x)) (min (beg1 ^. y) (end1 ^. y))
-    rightBottom1    = fromDoubles (max (beg1 ^. x) (end1 ^. x)) (max (beg1 ^. y) (end1 ^. y))
-    leftTop2        = fromDoubles (min (beg2 ^. x) (end2 ^. x)) (min (beg2 ^. y) (end2 ^. y))
-    rightBottom2    = fromDoubles (max (beg2 ^. x) (end2 ^. x)) (max (beg2 ^. y) (end2 ^. y))
-    isInRectangle p = isPointInRectangle p (leftTop1, rightBottom1) && isPointInRectangle p (leftTop2, rightBottom2)
-    doIntersect     = maybe (isBeg1OnSeg2 || isBeg2OnSeg1) isInRectangle $ intersectLineLine seg1 seg2
+doSegmentsIntersect seg1@(beg1, end1) seg2@(beg2, end2)
+    = not (beg1 == end1 || beg2 == end2) && doIntersect where
+        isBeg1OnSeg2    = distanceSquared beg1 beg2 + distanceSquared beg1 end2
+            == distanceSquared beg2 end2
+        isBeg2OnSeg1    = distanceSquared beg2 beg1 + distanceSquared beg2 end1
+            == distanceSquared beg1 end1
+        leftTop1        = fromDoubles
+            (min (beg1 ^. x) (end1 ^. x))
+            (min (beg1 ^. y) (end1 ^. y))
+        rightBottom1    = fromDoubles
+            (max (beg1 ^. x) (end1 ^. x))
+            (max (beg1 ^. y) (end1 ^. y))
+        leftTop2        = fromDoubles
+            (min (beg2 ^. x) (end2 ^. x))
+            (min (beg2 ^. y) (end2 ^. y))
+        rightBottom2    = fromDoubles
+            (max (beg2 ^. x) (end2 ^. x))
+            (max (beg2 ^. y) (end2 ^. y))
+        isInRectangle p
+            =  isPointInRectangle p (leftTop1, rightBottom1)
+            && isPointInRectangle p (leftTop2, rightBottom2)
+        doIntersect = maybe
+            (isBeg1OnSeg2 || isBeg2OnSeg1)
+            isInRectangle
+            $ intersectLineLine seg1 seg2
 
 
 -- Line-Line intersection from Graphics.Gloss.Geometry.Line
@@ -82,7 +98,8 @@ doSegmentsIntersect seg1@(beg1, end1) seg2@(beg2, end2) = not (beg1 == end1 || b
 --      P3  P2
 --     /     \\
 -- @
-intersectLineLine :: (Position, Position) -> (Position, Position) -> Maybe Position
+intersectLineLine :: (Position, Position) -> (Position, Position)
+    -> Maybe Position
 intersectLineLine (p1, p2) (p3, p4) = do
     let x1   = p1 ^. x
         y1   = p1 ^. y

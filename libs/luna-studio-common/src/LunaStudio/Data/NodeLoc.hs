@@ -102,7 +102,8 @@ normalise_ b n = (b & breadcrumb %~ (<> (n ^. breadcrumb)), n ^. nodeId)
 normalise' :: (HasBreadcrumb b, HasNodeLoc n) => b -> [n] -> (b, [n])
 normalise' b ns =
     let split n = case n ^. nodeLoc . path . localBc . Breadcrumb.items of
-            (h:t) -> Just (h, n & nodeLoc . path . localBc . Breadcrumb.items .~ t)
+            (h:t) -> Just
+                (h, n & nodeLoc . path . localBc . Breadcrumb.items .~ t)
             _     -> Nothing
         splitted = sequence $ fmap split ns
     in case splitted of

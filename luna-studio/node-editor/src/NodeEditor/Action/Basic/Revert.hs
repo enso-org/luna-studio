@@ -18,6 +18,7 @@ import qualified LunaStudio.API.Graph.SetNodesMeta         as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault       as SetPortDefault
 import qualified LunaStudio.API.Response                   as Response
 import           LunaStudio.Data.Connection                (Connection (Connection), dst, src)
+import qualified LunaStudio.Data.Connection                as Connection
 import           LunaStudio.Data.Node                      (nodeId)
 import           LunaStudio.Data.NodeLoc                   (prependPath)
 import           LunaStudio.Data.PortRef                   (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
@@ -101,7 +102,7 @@ revertRemovePort
     (Response.Ok (RemovePort.Inverse prevName conns)) = inCurrentLocation loc
     $ \path -> do
         void $ localAddPort (prependPath path portRef) Nothing (Just prevName)
-        void . localAddConnections $ Connection.prependPath <$> conns
+        void . localAddConnections $ Connection.prependPath path <$> conns
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg)
     = panic
 

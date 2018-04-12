@@ -28,7 +28,7 @@ import           NodeEditor.React.Model.Node.ExpressionNode (countVisibleArgPort
                                                              visibleOutPortNumber)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, IsAlias, IsOnly, IsSelf, OutPort, OutPortId,
-                                                             argumentConstructorNumber, argumentConstructorOffsetY, isSelf, portAngleStart, 
+                                                             argumentConstructorNumber, argumentConstructorOffsetY, isSelf, portAngleStart,
                                                              portAngleStop, portGap, portId)
 import qualified NodeEditor.React.Model.Port                as Port
 
@@ -179,7 +179,7 @@ instance Convertible Connection Empire.Connection where
     convert = Empire.Connection <$> view src <*> view dst
 
 argConstructorPosition :: ExpressionNode -> Position
-argConstructorPosition n = 
+argConstructorPosition n =
     if n ^. ExpressionNode.mode == ExpressionNode.Collapsed
         then n ^. position & y %~ (+ portRadius)
         else expandedInputPosition (n ^. position)
@@ -267,11 +267,11 @@ toHalfConnection portRef n pos
         sidebarConn'  = has Node._Input n || has Node._Output n
         mode' = case portRef of
             OutPortRef' {}    -> Normal
-            InPortRef' dstRef -> let isPortVisible =
-                elem (dstRef ^. PortRef.dstPortId)
-                    . (Node.argumentConstructorRef n ^. PortRef.dstPortId :)
+            InPortRef' dstRef
+                -> let isPortVisible = elem (dstRef ^. PortRef.dstPortId)
+                        . (Node.argumentConstructorRef n ^. PortRef.dstPortId :)
                         $ (view portId) <$> Node.inPortsList n
-                in if isPortVisible then Normal else Internal
+                    in if isPortVisible then Normal else Internal
 
 getConnectionMode :: InPortRef -> Node -> Mode
 getConnectionMode dstRef dstNode = if isPortVisible
@@ -310,7 +310,7 @@ halfConnectionSrcPosition (Expression node) eport mousePos _ =
                 then visibleInPortNumber node $ port ^. portId
                 else visibleArgPortNumber node $ port ^. portId
             )
-            allPorts 
+            allPorts
             (isSelf $ port ^. portId)
             (has (inPorts . LT.value . Port.state . Port._Connected) node)
             1
@@ -331,12 +331,12 @@ connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsOnly
     -> Int -> Int -> Position
 connectionSrc srcNode dstNode srcExpanded _dstExpanded srcPortNum srcPorts
     isSingle dstPortNum dstPorts =
-        if srcExpanded 
+        if srcExpanded
             then expandedOutputPosition srcNode srcPortNum
             else if isSingle then moveToOutputRadius portRadius t  srcNode
                              else moveToOutputRadius portRadius t' srcNode
-        where 
-            t  = toOutputAngle trueSrc trueDst 
+        where
+            t  = toOutputAngle trueSrc trueDst
             t1 = portAngleStart True srcPortNum srcPorts portRadius
             t2 = portAngleStop  True srcPortNum srcPorts portRadius
             t' = limitAngle t1 t2 t
@@ -351,12 +351,12 @@ connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf
     -> IsAlias -> Int -> Int -> Position
 connectionDst srcNode dstNode srcExpanded dstExpanded dstPortNum dstPorts
     isSelf' isAlias srcPortNum srcPorts =
-        if dstExpanded || isSelf' 
-            then trueDst 
+        if dstExpanded || isSelf'
+            then trueDst
             else if isAlias then moveToInputRadius portAliasRadius t  dstNode
                             else moveToInputRadius portRadius      t' trueDst
         where
-            t  = toInputAngle trueSrc trueDst 
+            t  = toInputAngle trueSrc trueDst
             t1 = portAngleStart True dstPortNum dstPorts portRadius
             t2 = portAngleStop  True dstPortNum dstPorts portRadius
             t'      = limitAngle t1 t2 t
@@ -385,17 +385,17 @@ expandedOutputPosition = expandedPortPosition False
 -- Math Calculations
 
 limitAngle :: Angle -> Angle -> Angle -> Angle
-limitAngle opening closing current =  
-    if current < opening then opening 
-                         else if current > closing then closing 
+limitAngle opening closing current =
+    if current < opening then opening
+                         else if current > closing then closing
                                                    else current
 
 toAngle :: Position -> Position -> Angle
 toAngle srcPosition dstPosition =
-    if srcPosition == dstPosition 
-        then 0 
-        else if srcX < dstX 
-            then t 
+    if srcPosition == dstPosition
+        then 0
+        else if srcX < dstX
+            then t
             else t + pi
     where
         t    = atan $ (srcY - dstY) / (srcX - dstX)
@@ -405,12 +405,12 @@ toAngle srcPosition dstPosition =
         dstY = dstPosition ^. y
 
 toInputAngle :: Position -> Position -> Angle
-toInputAngle srcPosition dstPosition = 
+toInputAngle srcPosition dstPosition =
     if srcX <= dstX
-        then 0.5*pi - t 
-        else if srcY < dstY 
+        then 0.5*pi - t
+        else if srcY < dstY
             then -0.5*pi - t
-            else  1.5*pi - t      
+            else  1.5*pi - t
     where
         t    = atan $ (dstY - srcY) / (dstX - srcX)
         srcX = srcPosition ^. x
@@ -419,10 +419,10 @@ toInputAngle srcPosition dstPosition =
         dstY = dstPosition ^. y
 
 toOutputAngle :: Position -> Position -> Angle
-toOutputAngle srcPosition dstPosition = 
+toOutputAngle srcPosition dstPosition =
     if srcX <= dstX
         then 0.5*pi + t
-        else if srcY < dstY 
+        else if srcY < dstY
             then t + 1.5*pi
             else t - 0.5*pi
     where

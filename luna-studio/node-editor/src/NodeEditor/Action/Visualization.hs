@@ -114,7 +114,8 @@ selectVisualizer (Node nl) visId visualizerId
                                         def
                                         $ VisualizerProperties
                                             visualizer'
-                                            (Just $ visualizer' ^. Vis.visualizerId)
+                                            (Just $ visualizer'
+                                                ^. Vis.visualizerId)
                                         )
                             mayTpe <- getExpressionNodeType nl
                             withJust ((,)
@@ -137,7 +138,8 @@ selectVisualizer (Node nl) visId visualizerId
                                         def
                                         $ VisualizerProperties
                                             visualizer'
-                                            (Just $ visualizer' ^. Vis.visualizerId)
+                                            (Just $ visualizer'
+                                                ^. Vis.visualizerId)
                                         )
                             mayTpe <- getExpressionNodeType nl
                             withJust ((,)

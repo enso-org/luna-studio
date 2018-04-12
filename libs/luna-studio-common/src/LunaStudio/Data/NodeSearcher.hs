@@ -109,7 +109,8 @@ toEntries (NodeSearcherData ih currImps) tPref
         classToEntries impName cName c
             =  methodsToEntries impName cName (c ^. methods)
             <> constructorsToEntries impName cName (c ^. constructors)
-        methodsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
+        methodsToEntries :: ImportName -> ClassName -> [(Name, Doc)]
+            -> [RawEntry]
         methodsToEntries impName cName
             = fmap (uncurry $ methodToEntry impName cName)
         methodToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
@@ -121,7 +122,8 @@ toEntries (NodeSearcherData ih currImps) tPref
                     et
                     (getWeight impName cName et)
                     $ Just $ ImportInfo impName $ isImported impName
-        constructorsToEntries :: ImportName -> ClassName -> [(Name, Doc)] -> [RawEntry]
+        constructorsToEntries :: ImportName -> ClassName -> [(Name, Doc)]
+            -> [RawEntry]
         constructorsToEntries impName cName
             = fmap (uncurry $ constructorToEntry impName cName)
         constructorToEntry :: ImportName -> ClassName -> Name -> Doc -> RawEntry
@@ -147,11 +149,14 @@ toEntries (NodeSearcherData ih currImps) tPref
         isImported impName = impName `elem` currImps
         getWeight :: ImportName -> ClassName -> EntryType -> Double
         getWeight moduleName cName et = case et of
-            Function      -> if moduleName == "Local"
+            Function -> if moduleName == "Local"
                 then tPref ^. localFunctionsWeight
                 else tPref ^. globalFunctionsWeight
-            Method      _ -> if Set.member cName . fst $ tPref ^. specialWeightForClassMethods
-                then snd $ tPref ^. specialWeightForClassMethods
-                else tPref ^. methodsWeight
+            Method _
+                -> let applySpecialWeight = Set.member cName . fst
+                        $ tPref ^. specialWeightForClassMethods
+                in if applySpecialWeight
+                    then snd $ tPref ^. specialWeightForClassMethods
+                    else tPref ^. methodsWeight
             Constructor _ -> tPref ^. constructorsWeight
             _             -> def

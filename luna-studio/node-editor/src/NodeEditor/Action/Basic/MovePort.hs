@@ -41,18 +41,21 @@ localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos =
                     $ node & inputSidebarPorts .~ newPorts
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
-                    OutPortRef srcNid (Projection i : p) -> when (srcNid == nid) $
-                        if i == pos
+                    OutPortRef srcNid (Projection i : p) -> when (srcNid == nid)
+                        $ if i == pos
                             then void . localAddConnection $ Connection
-                                (conn ^. src & srcPortId .~ Projection newPos : p)
+                                (conn ^. src
+                                    & srcPortId .~ Projection newPos : p)
                                 (conn ^. dst)
                         else if i > pos && i <= newPos
                             then void . localAddConnection $ Connection
-                                (conn ^. src & srcPortId .~ Projection (i-1) : p)
+                                (conn ^. src
+                                    & srcPortId .~ Projection (i-1) : p)
                                 (conn ^. dst)
                         else when (i < pos && i >= newPos) $
                             void . localAddConnection $ Connection
-                                (conn ^. src & srcPortId .~ Projection (i+1) : p)
+                                (conn ^. src
+                                    & srcPortId .~ Projection (i+1) : p)
                                 (conn ^. dst)
                     _ -> return ()
                 return . Just $ OutPortRef nid (Projection newPos : p')

@@ -156,9 +156,8 @@ handleGraphError e = case e ^. errorType of
     BreadcrumbDoesNotExist -> do
         setGraphStatus (GraphError e)
         mayWorkspace <- getWorkspace
-        let isOnTop = fromJust
-                True
-                (Workspace.isOnTopBreadcrumb <$> mayWorkspace)
+        let isOnTop = fromMaybe True
+                $ Workspace.isOnTopBreadcrumb <$> mayWorkspace
         if isOnTop then fatal "Cannot get file from backend" else exitBreadcrumb
     _ -> setGraphStatus (GraphError e)
 
@@ -201,7 +200,8 @@ handle (Event.Batch ev) = Just $ case ev of
                 diff = if ownRequest
                     then result ^. GetProgram.diff
                     else (result ^. GetProgram.diff)
-                        & Diff.reversedModifications %~ filter worksForForeignRequest
+                        & Diff.reversedModifications
+                            %~ filter worksForForeignRequest
             applyDiff location mempty diff
             updateScene
         failure err _ = handleLunaError err
@@ -239,18 +239,21 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId    = response ^. Response.requestId
         request      = response ^. Response.request
         location     = request  ^. AddSubgraph.location
-        failure _ _  = whenM (isOwnRequest requestId) $ revertAddSubgraph request
+        failure _ _  = whenM (isOwnRequest requestId)
+            $ revertAddSubgraph request
         success diff = do
             applyDiff location mempty diff
-            whenM (isOwnRequest requestId) $ inCurrentLocation location $ \p -> do
-                let addedNodeId (Diff.AddNode m)
-                        = Just $ convert (p, m ^. Diff.newNode . API.nodeId)
-                    addedNodeId m
-                        = (convert . (p,) . view NodeLoc.nodeId)
-                            <$> Diff.getNodeModificationNodeLoc m
-                    addedNodesIds = catMaybes
-                        $ addedNodeId <$> diff ^. Diff.reversedModifications
-                unless (null addedNodesIds) $ collaborativeModify addedNodesIds
+            whenM (isOwnRequest requestId)
+                $ inCurrentLocation location $ \p -> do
+                    let addedNodeId (Diff.AddNode m)
+                            = Just $ convert (p, m ^. Diff.newNode . API.nodeId)
+                        addedNodeId m
+                            = (convert . (p,) . view NodeLoc.nodeId)
+                                <$> Diff.getNodeModificationNodeLoc m
+                        addedNodesIds = catMaybes
+                            $ addedNodeId <$> diff ^. Diff.reversedModifications
+                    unless (null addedNodesIds)
+                        $ collaborativeModify addedNodesIds
 
     AtomPasteResponse response -> handleResponse response success doNothing2 where
         request   = response ^. Response.request
@@ -279,13 +282,14 @@ handle (Event.Batch ev) = Just $ case ev of
                         Node.collaboration . Node.touch  . at clientId
                             ?= (DT.addSeconds (2 * refreshTime) currentTime
                                , clientColor)
-                    CollaborationUpdate.Modify nodeLocs -> touchNodes nodeLocs $ do
-                        Node.collaboration . Node.touch  . at clientId
-                            %= bumpTime
-                                (DT.addSeconds modifyTime currentTime)
-                                clientColor
-                        Node.collaboration . Node.modify . at clientId
-                            ?= DT.addSeconds modifyTime currentTime
+                    CollaborationUpdate.Modify nodeLocs
+                        -> touchNodes nodeLocs $ do
+                            Node.collaboration . Node.touch  . at clientId
+                                %= bumpTime
+                                    (DT.addSeconds modifyTime currentTime)
+                                    clientColor
+                            Node.collaboration . Node.modify . at clientId
+                                ?= DT.addSeconds modifyTime currentTime
                     CollaborationUpdate.CancelTouch nodeLocs ->
                         touchNodes nodeLocs
                             $ Node.collaboration . Node.touch  . at clientId

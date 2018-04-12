@@ -40,7 +40,11 @@ import           Test.QuickCheck.Gen                  (chooseAny)
 
 instance Arbitrary Text where
     arbitrary = do
-        let allowedChars = ['$', '>', '<', '*', '+', '.', '!', '?', '|'] <> ['0' .. '9'] <> ['a' .. 'z'] <> ['A' .. 'Z']
+        let allowedChars
+                = ['$', '>', '<', '*', '+', '.', '!', '?', '|']
+                <> ['0' .. '9']
+                <> ['a' .. 'z']
+                <> ['A' .. 'Z']
         Text.pack <$> listOf (elements allowedChars)
 
 instance Arbitrary NodeId where
@@ -85,7 +89,8 @@ instance Arbitrary PortValue where
                       ]
 
 instance Arbitrary PortDefault where
-    arbitrary = oneof [PortDef.Expression <$> arbitrary, PortDef.Constant <$> arbitrary]
+    arbitrary = oneof
+        [PortDef.Expression <$> arbitrary, PortDef.Constant <$> arbitrary]
 
 
 instance Arbitrary a => Arbitrary (Port a) where
@@ -96,7 +101,12 @@ instance Arbitrary a => Arbitrary (Port a) where
         state <- oneof [pure Port.NotConnected, Port.WithDefault <$> arbitrary]
         pure $ Port pid name tpe state
 
-genTree :: (Mempty (f (LabeledTree f a)), Traversable f, Arbitrary a, Arbitrary (f ())) => Int -> Int -> Gen (LabeledTree f a)
+genTree
+    :: (Mempty (f (LabeledTree f a))
+    , Traversable f
+    , Arbitrary a
+    , Arbitrary (f ())
+    ) => Int -> Int -> Gen (LabeledTree f a)
 genTree maxDepth maxWidth = go maxDepth where
     go d = LabeledTree <$> subtrees d <*> arbitrary
     subtrees d = do
@@ -111,8 +121,14 @@ instance Arbitrary a => Arbitrary (InPorts a) where
 instance Arbitrary a => Arbitrary (OutPorts a) where
     arbitrary = OutPorts <$> arbitrary
 
-genPortsTree ::  forall f ind. (Mempty (f (LabeledTree f (Port ()))), Traversable f, FunctorWithIndex ind (LabeledTree f), Arbitrary (f ())) => Int -> Int -> Gen (LabeledTree f (Port ind))
-genPortsTree maxDepth maxWidth = imap (Port.portId .~) <$> (genTree maxDepth maxWidth :: Gen (LabeledTree f (Port ())))
+genPortsTree ::  forall f ind.
+    (Mempty (f (LabeledTree f (Port ())))
+    , Traversable f
+    , FunctorWithIndex ind (LabeledTree f)
+    , Arbitrary (f ())
+    ) => Int -> Int -> Gen (LabeledTree f (Port ind))
+genPortsTree maxDepth maxWidth = imap (Port.portId .~)
+    <$> (genTree maxDepth maxWidth :: Gen (LabeledTree f (Port ())))
 
 instance Arbitrary NodeMeta where
     arbitrary = do
@@ -132,10 +148,12 @@ instance Arbitrary ExpressionNode where
         outPorts <- genPortsTree 5 5
         nodeMeta <- arbitrary
         canEnter <- arbitrary
-        pure $ ExpressionNode nid expr isDef name code inPorts outPorts nodeMeta canEnter
+        pure $ ExpressionNode nid expr isDef name code inPorts outPorts
+            nodeMeta canEnter
 
 instance Arbitrary InputSidebar where
-    arbitrary = InputSidebar <$> arbitrary <*> (choose (0,5) >>= \n -> vectorOf n (genPortsTree 5 5))  <*> arbitrary
+    arbitrary = InputSidebar <$> arbitrary <*> (choose (0,5)
+        >>= \n -> vectorOf n (genPortsTree 5 5))  <*> arbitrary
 
 instance Arbitrary OutputSidebar where
     arbitrary = OutputSidebar <$> arbitrary <*> genPortsTree 5 5
@@ -167,32 +185,51 @@ genMonadPaths nids = do
 
 instance Arbitrary Graph where
     arbitrary = do
-        nodes       <- Map.fromList . fmap (convert . view Node.exprNodeId &&& id) <$> listOf arbitrary
+        nodes       <- Map.fromList
+            . fmap (convert . view Node.exprNodeId &&& id) <$> listOf arbitrary
         inSidebar   <- arbitrary
         outSidebar  <- arbitrary
-        let portIds :: forall a i f. (Foldable f, FunctorWithIndex i f) => f a -> [i]
+        let portIds :: forall a i f. (Foldable f, FunctorWithIndex i f)
+                => f a -> [i]
             portIds = toList . imap const
             inSidebarOutPortRefs :: [OutPortRef]
-            inSidebarOutPortRefs = fmap (OutPortRef (convert $ inSidebar  ^. Node.inputNodeId))  . concatMap portIds $ inSidebar  ^. Node.inputEdgePorts
+            inSidebarOutPortRefs
+                = fmap (OutPortRef (convert $ inSidebar  ^. Node.inputNodeId))
+                . concatMap portIds
+                $ inSidebar  ^. Node.inputEdgePorts
             outSidebarInPortRefs :: [InPortRef]
-            outSidebarInPortRefs = fmap (InPortRef  (convert $ outSidebar ^. Node.outputNodeId)) . portIds           $ outSidebar ^. Node.outputEdgePorts
+            outSidebarInPortRefs
+                = fmap (InPortRef (convert $ outSidebar ^. Node.outputNodeId))
+                . portIds $ outSidebar ^. Node.outputEdgePorts
             nodesInPortsRefs :: [InPortRef]
-            nodesInPortsRefs  = Map.foldlWithKey (\acc nl n -> (acc <>) . fmap (InPortRef  nl) . portIds $ n ^. Node.inPorts ) mempty nodes
+            nodesInPortsRefs = Map.foldlWithKey
+                (\acc nl n -> (acc <>) . fmap (InPortRef  nl) . portIds
+                    $ n ^. Node.inPorts
+                ) mempty nodes
             nodesOutPortsRefs :: [OutPortRef]
-            nodesOutPortsRefs = Map.foldlWithKey (\acc nl n -> (acc <>) . fmap (OutPortRef nl) . portIds $ n ^. Node.outPorts) mempty nodes
+            nodesOutPortsRefs = Map.foldlWithKey
+                (\acc nl n -> (acc <>) . fmap (OutPortRef nl) . portIds
+                    $ n ^. Node.outPorts
+                ) mempty nodes
             allInPortsRefs  = outSidebarInPortRefs <> nodesInPortsRefs
             allOutPortsRefs = inSidebarOutPortRefs <> nodesOutPortsRefs
         numOfConns <- sized $ \k -> choose (0, min k $ length allInPortsRefs)
-        connIds <- if not $ null allOutPortsRefs then take numOfConns <$> shuffle allInPortsRefs else pure mempty
-        let genSrc  dst = suchThat (elements allOutPortsRefs) (\src -> dst ^. PortRef.nodeLoc /= src ^. PortRef.nodeLoc)
+        connIds <- if not $ null allOutPortsRefs
+            then take numOfConns <$> shuffle allInPortsRefs
+            else pure mempty
+        let genSrc  dst = suchThat
+                (elements allOutPortsRefs)
+                (\src -> dst ^. PortRef.nodeLoc /= src ^. PortRef.nodeLoc)
             genConn dst = flip Connection dst <$> genSrc dst
-        conns  <- Map.fromList <$> mapM (\connId -> (connId, ) <$> genConn connId) connIds
+        conns <- Map.fromList
+            <$> mapM (\connId -> (connId, ) <$> genConn connId) connIds
         monads <- genMonadPaths =<< sublistOf (convert <$> Map.keys nodes)
         pure $ Graph nodes conns (Just inSidebar) (Just outSidebar) monads
 
 instance Arbitrary (Error GraphError) where
     arbitrary = do
-        tpe <- oneof $ pure <$> [BreadcrumbDoesNotExist, ParseError, OtherGraphError]
+        tpe <- oneof $ pure
+            <$> [BreadcrumbDoesNotExist, ParseError, OtherGraphError]
         Error tpe <$> arbitrary
 
 instance Arbitrary Code where
@@ -215,5 +252,6 @@ testExactCopies p = diff p p
 
 spec :: Spec
 spec = describe "graphDiff" $
-    it "Diff of two copies of the same graph is empty" $ property $ \p -> testExactCopies p `shouldBe` mempty
+    it "Diff of two copies of the same graph is empty" $ property
+        $ \p -> testExactCopies p `shouldBe` mempty
 

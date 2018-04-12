@@ -32,18 +32,22 @@ data Response req inv res = Response
 type SimpleResponse req inv = Response req inv ()
 
 
-class ( MessageTopic (Request req)
-      , MessageTopic (Response req inv res)
-      , Binary req
-      , Binary inv
-      , Binary res
-      ) => ResponseResult req inv res | req -> inv res where
-    result :: Request req -> inv -> res -> Response req inv res
-    result (Request uuid guiID req) inv payload
-        = Response uuid guiID req (Ok inv) (Ok payload)
+class
+    ( MessageTopic (Request req)
+    , MessageTopic (Response req inv res)
+    , Binary req
+    , Binary inv
+    , Binary res
+    ) => ResponseResult req inv res | req -> inv res where
+      
+        result :: Request req -> inv -> res -> Response req inv res
+        result (Request uuid guiID req) inv payload
+            = Response uuid guiID req (Ok inv) (Ok payload)
 
-    error :: Request req -> Status inv -> Error LunaError -> Response req inv res
-    error  (Request uuid guiID req) inv err = Response uuid guiID req inv (Error err)
+        error :: Request req -> Status inv -> Error LunaError
+            -> Response req inv res
+        error  (Request uuid guiID req) inv err
+            = Response uuid guiID req inv (Error err)
 
 ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) 
    => Request req -> inv -> Response req inv ()

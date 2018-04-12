@@ -24,23 +24,29 @@ import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import           LunaStudio.Data.Point                      (Point)
 
 
-notifyMonadsUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> [MonadPath] -> m ()
+notifyMonadsUpdate :: (MonadReader CommunicationEnv m, MonadIO m)
+    => GraphLocation -> [MonadPath] -> m ()
 notifyMonadsUpdate loc m =
     sendUpdate $ MonadsUpdate $ Monads.Update loc m
 
-notifyNodeTypecheck :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeTypecheckerUpdate -> m ()
+notifyNodeTypecheck :: (MonadReader CommunicationEnv m, MonadIO m)
+    => GraphLocation -> NodeTypecheckerUpdate -> m ()
 notifyNodeTypecheck loc n =
     sendUpdate $ TypecheckerUpdate $ NodeTCUpdate.Update loc n
 
-notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeId -> NodeValue -> Integer -> m ()
+notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m)
+    => GraphLocation -> NodeId -> NodeValue -> Integer -> m ()
 notifyResultUpdate loc nid v t =
     sendUpdate $ ResultUpdate $ NodeResult.Update loc nid v t
 
-notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Text -> Maybe Point -> m ()
+notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m)
+    => FilePath -> Text -> Maybe Point -> m ()
 notifyCodeUpdate path code cursor =
-    sendUpdate $ CodeUpdate $ Substitute.Update path [TextDiff Nothing code cursor]
+    sendUpdate $ CodeUpdate
+        $ Substitute.Update path [TextDiff Nothing code cursor]
 
-notifyInterpreterUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => Text -> m ()
+notifyInterpreterUpdate :: (MonadReader CommunicationEnv m, MonadIO m)
+    => Text -> m ()
 notifyInterpreterUpdate msg =
     sendUpdate $ InterpreterUpdate $ Interpreter.Update msg
 

@@ -73,8 +73,9 @@ modifyNodeEditor = modify nodeEditor
 
 inTopLevelBreadcrumb :: Command State Bool
 inTopLevelBreadcrumb = inTopLevelBreadcrumb' <$> getWorkspace where
-    inTopLevelBreadcrumb' Nothing  = False
-    inTopLevelBreadcrumb' (Just w) = isTopLevel $ w ^. currentLocation . breadcrumb
+    inTopLevelBreadcrumb' Nothing = False
+    inTopLevelBreadcrumb' (Just w)
+        = isTopLevel $ w ^. currentLocation . breadcrumb
 
 isGraphLoaded :: Command State Bool
 isGraphLoaded = view NE.isGraphLoaded <$> getNodeEditor
@@ -96,7 +97,8 @@ separateSubgraph nodeLocs = do
     let idSet = Set.fromList nodeLocs
         inSet = flip Set.member idSet
         mkMap = HashMap.fromList . map (view nodeLoc &&& id)
-    nodes' <- HashMap.filterWithKey (inSet .: const) . mkMap <$> getExpressionNodes
+    nodes'
+        <- HashMap.filterWithKey (inSet .: const) . mkMap <$> getExpressionNodes
     conns' <- HashMap.filter (inSet . view dstNodeLoc) <$> getConnectionsMap
     return $ Graph (HashMap.map convert nodes') (HashMap.map convert conns')
 
@@ -106,19 +108,33 @@ addNode (Input      node) = addInputNode node
 addNode (Output     node) = addOutputNode node
 
 addExpressionNode :: ExpressionNode -> Command State ()
-addExpressionNode node = Internal.addNodeRec NE.expressionNodes ExpressionNode.expressionNodes (node ^. nodeLoc) node
+addExpressionNode node = Internal.addNodeRec
+    NE.expressionNodes
+    ExpressionNode.expressionNodes
+    (node ^. nodeLoc)
+    node
 
 addInputNode :: InputNode -> Command State ()
-addInputNode node = Internal.setNodeRec NE.inputNode ExpressionNode.inputNode (node ^. nodeLoc) node
+addInputNode node = Internal.setNodeRec
+    NE.inputNode
+    ExpressionNode.inputNode
+    (node ^. nodeLoc)
+    node
 
 addOutputNode :: OutputNode -> Command State ()
-addOutputNode node = Internal.setNodeRec NE.outputNode ExpressionNode.outputNode (node ^. nodeLoc) node
+addOutputNode node = Internal.setNodeRec
+    NE.outputNode
+    ExpressionNode.outputNode
+    (node ^. nodeLoc)
+    node
 
 findPredecessorPosition :: ExpressionNode -> Command State Position
-findPredecessorPosition n = ExpressionNode.findPredecessorPosition n <$> getExpressionNodes
+findPredecessorPosition n
+    = ExpressionNode.findPredecessorPosition n <$> getExpressionNodes
 
 findSuccessorPosition :: ExpressionNode -> Command State Position
-findSuccessorPosition n = ExpressionNode.findSuccessorPosition n <$> getExpressionNodes
+findSuccessorPosition n
+    = ExpressionNode.findSuccessorPosition n <$> getExpressionNodes
 
 getNode :: NodeLoc -> Command State (Maybe Node)
 getNode nl = NE.getNode nl <$> getNodeEditor
@@ -128,7 +144,10 @@ getAllNodes = do
     inputNodes      <- getInputNodes
     outputNodes     <- getOutputNodes
     expressionNodes <- getExpressionNodes
-    return $ map Input inputNodes <> map Output outputNodes <> map Expression expressionNodes
+    return
+        $  map Input      inputNodes
+        <> map Output     outputNodes
+        <> map Expression expressionNodes
 
 getInputNode :: NodeLoc -> Command State (Maybe InputNode)
 getInputNode nl = NE.getInputNode nl <$> getNodeEditor
@@ -148,8 +167,10 @@ getExpressionNode nl = NE.getExpressionNode nl <$> getNodeEditor
 getExpressionNodes :: Command State [ExpressionNode]
 getExpressionNodes = view NE.expressionNodesRecursive <$> getNodeEditor
 
-modifyExpressionNode :: Monoid r => NodeLoc -> M.State ExpressionNode r -> Command State r
-modifyExpressionNode = Internal.modifyNodeRec NE.expressionNodes ExpressionNode.expressionNodes
+modifyExpressionNode :: Monoid r
+    => NodeLoc -> M.State ExpressionNode r -> Command State r
+modifyExpressionNode
+  = Internal.modifyNodeRec NE.expressionNodes ExpressionNode.expressionNodes
 
 modifyExpressionNodes_ :: M.State ExpressionNode () -> Command State ()
 modifyExpressionNodes_ = void . modifyExpressionNodes
@@ -157,16 +178,23 @@ modifyExpressionNodes_ = void . modifyExpressionNodes
 modifyExpressionNodes :: M.State ExpressionNode r -> Command State [r]
 modifyExpressionNodes modifier = do
     nodeLocs <- view ExpressionNode.nodeLoc `fmap2` getExpressionNodes --FIXME it can be done faster
-    catMaybes . map getFirst <$> forM nodeLocs (flip modifyExpressionNode $ (fmap (First . Just) modifier))
+    catMaybes . map getFirst <$> forM
+        nodeLocs
+        (flip modifyExpressionNode $ (fmap (First . Just) modifier))
 
-modifyInputNode :: Monoid r => NodeLoc -> M.State InputNode r -> Command State r
-modifyInputNode = Internal.modifySidebarRec NE.inputNode ExpressionNode.inputNode
+modifyInputNode :: Monoid r
+    => NodeLoc -> M.State InputNode r -> Command State r
+modifyInputNode
+    = Internal.modifySidebarRec NE.inputNode ExpressionNode.inputNode
 
-modifyOutputNode :: Monoid r => NodeLoc -> M.State OutputNode r -> Command State r
-modifyOutputNode = Internal.modifySidebarRec NE.outputNode ExpressionNode.outputNode
+modifyOutputNode :: Monoid r
+    => NodeLoc -> M.State OutputNode r -> Command State r
+modifyOutputNode
+    = Internal.modifySidebarRec NE.outputNode ExpressionNode.outputNode
 
 removeNode :: NodeLoc -> Command State ()
-removeNode = Internal.removeNodeRec NE.expressionNodes ExpressionNode.expressionNodes
+removeNode
+    = Internal.removeNodeRec NE.expressionNodes ExpressionNode.expressionNodes
 
 getSelectedNodes :: Command State [ExpressionNode]
 getSelectedNodes = filter (view isSelected) <$> getExpressionNodes
@@ -178,7 +206,8 @@ updateOutputNode :: Maybe OutputNode -> Command State ()
 updateOutputNode update = modifyNodeEditor $ NE.outputNode .= update
 
 updateExpressionNodes :: [ExpressionNode] -> Command State ()
-updateExpressionNodes update = modifyNodeEditor $ NE.expressionNodes .= toNodesMap update
+updateExpressionNodes update
+    = modifyNodeEditor $ NE.expressionNodes .= toNodesMap update
 
 addConnection :: Connection -> Command State ()
 addConnection conn = modifyNodeEditor $ NE.connections . at connId ?= conn where
@@ -203,35 +232,45 @@ getConnectionsMap :: Command State ConnectionsMap
 getConnectionsMap = view NE.connections <$> getNodeEditor
 
 getConnectionsBetweenNodes :: NodeLoc -> NodeLoc -> Command State [Connection]
-getConnectionsBetweenNodes nl1 nl2 =
-    filter (\conn -> containsNode nl1 conn && containsNode nl2 conn) <$> getConnections
+getConnectionsBetweenNodes nl1 nl2 = filter
+    (\conn -> containsNode nl1 conn && containsNode nl2 conn)
+    <$> getConnections
 
 getConnectionsContainingNode :: NodeLoc -> Command State [Connection]
 getConnectionsContainingNode nl = filter (containsNode nl) <$> getConnections
 
 getConnectionsContainingNodes :: [NodeLoc] -> Command State [Connection]
-getConnectionsContainingNodes nodeLocs = filter containsNode' <$> getConnections where
-    nodeLocsSet        = Set.fromList nodeLocs
-    containsNode' conn = Set.member (conn ^. srcNodeLoc) nodeLocsSet
-                      || Set.member (conn ^. dstNodeLoc) nodeLocsSet
+getConnectionsContainingNodes nodeLocs
+    = filter containsNode' <$> getConnections where
+        nodeLocsSet = Set.fromList nodeLocs
+        containsNode' conn
+            = Set.member (conn ^. srcNodeLoc) nodeLocsSet
+            || Set.member (conn ^. dstNodeLoc) nodeLocsSet
 
 getConnectionsContainingPortRef :: AnyPortRef -> Command State [Connection]
-getConnectionsContainingPortRef portRef = filter (containsPortRef portRef) <$> getConnections
+getConnectionsContainingPortRef portRef
+    = filter (containsPortRef portRef) <$> getConnections
 
 getConnectionsFromNode :: NodeLoc -> Command State [Connection]
-getConnectionsFromNode nl = filter (\conn -> conn ^. srcNodeLoc == nl) <$> getConnections
+getConnectionsFromNode nl
+    = filter (\conn -> conn ^. srcNodeLoc == nl) <$> getConnections
 
 getConnectionsToNode :: NodeLoc -> Command State [Connection]
-getConnectionsToNode nl = filter (\conn -> conn ^. dstNodeLoc == nl) <$> getConnections
+getConnectionsToNode nl
+    = filter (\conn -> conn ^. dstNodeLoc == nl) <$> getConnections
 
-modifyConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command State r
-modifyConnection connId = modify (nodeEditor . NE.connections . at connId) . zoom traverse
+modifyConnection :: Monoid r
+    => ConnectionId -> M.State Connection r -> Command State r
+modifyConnection connId
+    = modify (nodeEditor . NE.connections . at connId) . zoom traverse
 
 removeConnection :: ConnectionId -> Command State ()
-removeConnection connId = modifyNodeEditor $ NE.connections . at connId .= Nothing
+removeConnection connId
+    = modifyNodeEditor $ NE.connections . at connId .= Nothing
 
 updateConnections :: [Connection] -> Command State ()
-updateConnections update = modifyNodeEditor $ NE.connections .= toConnectionsMap update
+updateConnections update
+    = modifyNodeEditor $ NE.connections .= toConnectionsMap update
 
 
 getMonads :: Command State [MonadPath]
@@ -262,11 +301,14 @@ getScreenTransform :: Command State CameraTransformation
 getScreenTransform = view Scene.screenTransform <$> getLayout
 
 setScreenTransform :: CameraTransformation -> Command State ()
-setScreenTransform camera = modifyNodeEditor $ NE.layout . Scene.screenTransform .= camera
+setScreenTransform camera
+    = modifyNodeEditor $ NE.layout . Scene.screenTransform .= camera
 
 getNodeSearcherData :: Command State (Map ImportName ModuleHints)
 getNodeSearcherData = getAvailableImports <$> use nodeSearcherData where
-    getAvailableImports nsd = Map.filterWithKey (\k _ -> Set.member k $ nsd ^. NS.currentImports) $ nsd ^. NS.imports
+    getAvailableImports nsd = Map.filterWithKey
+        (\k _ -> Set.member k $ nsd ^. NS.currentImports)
+        $ nsd ^. NS.imports
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
@@ -279,74 +321,109 @@ getPort :: NE.GetPort a b => a -> Command State (Maybe b)
 getPort portRef = NE.getPort portRef <$> getNodeEditor
 
 modifyInPort :: Monoid r => InPortRef -> M.State InPort r -> Command State r
-modifyInPort portRef action = modifyExpressionNode (portRef ^. PortRef.nodeLoc) $ zoom (inPortAt $ portRef ^. PortRef.dstPortId) action
+modifyInPort portRef action = modifyExpressionNode (portRef ^. PortRef.nodeLoc)
+    $ zoom (inPortAt $ portRef ^. PortRef.dstPortId) action
 
-modifyInPortsForNode :: Monoid r => NodeLoc -> M.State InPort r -> Command State ()
-modifyInPortsForNode nl action = withJustM (getExpressionNode nl) $ \n -> do
-    mapM_ (flip modifyInPort action) (map (InPortRef nl . view Port.portId) $ inPortsList n)
+modifyInPortsForNode :: Monoid r
+    => NodeLoc -> M.State InPort r -> Command State ()
+modifyInPortsForNode nl action = withJustM (getExpressionNode nl)
+     $ \n -> mapM_
+        (flip modifyInPort action)
+        (InPortRef nl . view Port.portId <$> inPortsList n)
 
 modifyOutPort :: Monoid r => OutPortRef -> M.State OutPort r -> Command State r
-modifyOutPort portRef action = modifyExpressionNode (portRef ^. PortRef.nodeLoc) $ zoom (outPortAt $ portRef ^. PortRef.srcPortId) action
+modifyOutPort portRef action = modifyExpressionNode (portRef ^. PortRef.nodeLoc)
+    $ zoom (outPortAt $ portRef ^. PortRef.srcPortId) action
 
-modifyOutPortsForNode :: Monoid r => NodeLoc -> M.State OutPort r -> Command State ()
-modifyOutPortsForNode nl action = withJustM (getExpressionNode nl) $ \n -> do
-    mapM_ (flip modifyOutPort action) (map (OutPortRef nl . view Port.portId) $ outPortsList n)
+modifyOutPortsForNode :: Monoid r
+    => NodeLoc -> M.State OutPort r -> Command State ()
+modifyOutPortsForNode nl action = withJustM (getExpressionNode nl)
+    $ \n -> mapM_
+        (flip modifyOutPort action)
+        (OutPortRef nl . view Port.portId <$> outPortsList n)
 
 getPortDefault :: InPortRef -> Command State (Maybe PortDefault)
-getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> (NE.getPort portRef <$> getNodeEditor)
+getPortDefault portRef = maybe
+    Nothing
+    (\mayPort -> mayPort ^? state . _WithDefault)
+    <$> (NE.getPort portRef <$> getNodeEditor)
 
 getLocalFunctions :: Command State [Text]
 getLocalFunctions = do
-    functionsNames  <- Set.toList . Set.fromList . map (view Port.name) . concatMap outPortsList <$> getAllNodes
-    searcherMode    <- fmap2 (view Searcher.mode) $ getSearcher
+    functionsNames <- toList . Set.fromList
+        . fmap (view Port.name) . concatMap outPortsList <$> getAllNodes
+    searcherMode <- fmap2 (view Searcher.mode) $ getSearcher
     let lambdaArgsNames = case searcherMode of
-            Just (Searcher.Node _ (Searcher.NodeModeInfo _ _ argNames _) _) -> argNames
-            _                                                               -> []
+            Just (Searcher.Node _ (Searcher.NodeModeInfo _ _ argNames _) _)
+                -> argNames
+            _   -> []
     return $ functionsNames <> lambdaArgsNames
 
 getVisualizationsBackupMap :: Command State (Map NodeLoc VisualizationBackup)
-getVisualizationsBackupMap = view (NE.visualizationsBackup . NE.backupMap) <$> getNodeEditor
+getVisualizationsBackupMap
+    = view (NE.visualizationsBackup . NE.backupMap) <$> getNodeEditor
 
 getVisualizationBackup :: NodeLoc -> Command State (Maybe VisualizationBackup)
 getVisualizationBackup nl = Map.lookup nl <$> getVisualizationsBackupMap
 
 removeBackupForNodes :: [NodeLoc] -> Command State ()
-removeBackupForNodes nls = modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap %= \backupMap -> foldl (flip Map.delete) backupMap nls
+removeBackupForNodes nls = modifyNodeEditor
+    $ NE.visualizationsBackup . NE.backupMap
+        %= \backupMap -> foldl (flip Map.delete) backupMap nls
 
 updateVisualizers :: Maybe FilePath -> Command State ()
 updateVisualizers mayProjectVisPath = do
     internalVisPath <- liftIO $ JS.getInternalVisualizersLibraryPath
     lunaVisPath     <- liftIO $ JS.getLunaVisualizersLibraryPath
-    modifyNodeEditor $ NE.visualizersLibPaths .= VisualizersPaths internalVisPath lunaVisPath mayProjectVisPath
+    modifyNodeEditor $ NE.visualizersLibPaths
+        .= VisualizersPaths internalVisPath lunaVisPath mayProjectVisPath
 
-    internalVisMap <- liftIO $ fromJSInternalVisualizersMap <$> JS.mkInternalVisualizersMap
-    lunaVisMap     <- liftIO $ Map.mapKeys (flip VisualizerId LunaVisualizer) . fromJSVisualizersMap <$> JS.mkLunaVisualizersMap
+    internalVisMap
+        <- liftIO $ fromJSInternalVisualizersMap <$> JS.mkInternalVisualizersMap
+    lunaVisMap <- liftIO $ Map.mapKeys
+        (flip VisualizerId LunaVisualizer)
+        . fromJSVisualizersMap <$> JS.mkLunaVisualizersMap
     projectVisMap  <- case mayProjectVisPath of
         Nothing -> return mempty
-        Just fp -> liftIO $ Map.mapKeys (flip VisualizerId ProjectVisualizer)  . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap fp
+        Just fp -> liftIO $ Map.mapKeys
+            (flip VisualizerId ProjectVisualizer)
+            . fromJSVisualizersMap <$> JS.mkProjectVisualizersMap fp
     Global.visualizers         .= Map.union lunaVisMap projectVisMap
     Global.internalVisualizers .= internalVisMap
 
 updateNodeVisualizers :: NodeLoc -> Command State ()
-updateNodeVisualizers nl = getExpressionNodeType nl >>= maybe (return def) getVisualizersForType >>= applyVisualizers where
-    applyVisualizers    mayVis = modifyNodeEditor $ NE.nodeVisualizations . ix nl %= updateNodeVis mayVis
-    updateSelectedVisId vis vp = vp & Visualization.selectedVisualizerId      .~ (view visualizerId . fst <$> vis)
-    updateRunningVis    vis rv = rv & Visualization.visualizerProperties      %~ updateSelectedVisId vis
-    updateIdleVis       vis iv = iv & Visualization.idleVisualizerProperties  %~ updateSelectedVisId vis
-    updateNodeVis       vis nv = nv & Visualization.visualizations            %~ (updateRunningVis   vis <$>)
-                                    & Visualization.idleVisualizations        %~ (updateIdleVis      vis <$>)
-                                    & Visualization.visualizers               .~ maybe def snd vis
+updateNodeVisualizers nl
+    = getExpressionNodeType nl
+    >>= maybe (return def) getVisualizersForType
+    >>= applyVisualizers where
+        applyVisualizers mayVis = modifyNodeEditor
+            $ NE.nodeVisualizations . ix nl %= updateNodeVis mayVis
+        updateSelectedVisId vis vp = vp & Visualization.selectedVisualizerId
+            .~ (view visualizerId . fst <$> vis)
+        updateRunningVis vis rv = rv & Visualization.visualizerProperties
+            %~ updateSelectedVisId vis
+        updateIdleVis vis iv = iv & Visualization.idleVisualizerProperties
+            %~ updateSelectedVisId vis
+        updateNodeVis vis nv = nv
+            & Visualization.visualizations     %~ (updateRunningVis   vis <$>)
+            & Visualization.idleVisualizations %~ (updateIdleVis      vis <$>)
+            & Visualization.visualizers        .~ maybe def snd vis
 
 getNodeVisualizations :: NodeLoc -> Command State (Maybe NodeVisualizations)
 getNodeVisualizations nl = (^? NE.nodeVisualizations . ix nl) <$> getNodeEditor
 
-getVisualizersForType :: TypeRep -> Command State (Maybe (Visualizer, Map VisualizerId VisualizerPath))
+getVisualizersForType :: TypeRep
+    -> Command State (Maybe (Visualizer, Map VisualizerId VisualizerPath))
 getVisualizersForType tpe = do
     mayPrefVis   <- HashMap.lookup tpe <$> use preferedVisualizers
     visualizers' <- use visualizers >>= applyType tpe
-    let mayFirstVisInMap = fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
-        fromPrefVis vis  = maybe mayFirstVisInMap (Just . Visualizer (vis ^. visualizerId)) $ Map.lookup (vis ^. visualizerId) visualizers'
-        mayDefVis        = maybe mayFirstVisInMap fromPrefVis mayPrefVis
+    let mayFirstVisInMap
+            = fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
+        fromPrefVis vis = maybe
+            mayFirstVisInMap
+            (Just . Visualizer $ vis ^. visualizerId)
+            $ Map.lookup (vis ^. visualizerId) visualizers'
+        mayDefVis = maybe mayFirstVisInMap fromPrefVis mayPrefVis
     return $ if isNothing mayDefVis || Map.null visualizers'
         then Nothing
         else (, visualizers') <$> mayDefVis
@@ -354,18 +431,28 @@ getVisualizersForType tpe = do
 addVisualizationForNode :: NodeLoc -> Command State ()
 addVisualizationForNode nl = withJustM (getExpressionNode nl) $ \n -> do
     mayVisualizer <- if ExpressionNode.returnsError n then getErrorVisualizer
-                else if ExpressionNode.hasData n && isJust (n ^. ExpressionNode.defaultVisualizer) then return $ n ^. ExpressionNode.defaultVisualizer
+        else
+            if ExpressionNode.hasData n
+            && isJust (n ^. ExpressionNode.defaultVisualizer)
+                then return $ n ^. ExpressionNode.defaultVisualizer
                 else getPlaceholderVisualizer
     withJust mayVisualizer $ \visualizer' -> do
-        let newVis = Visualization.IdleVisualization Visualization.Ready $ VisualizerProperties visualizer' (Just $ visualizer' ^. visualizerId)
-            updateNodeVisualizations _ nodeVis = nodeVis & Visualization.idleVisualizations %~ (newVis :)
-        modifyNodeEditor $ NE.nodeVisualizations %= Map.insertWith updateNodeVisualizations
-                                                                   nl
-                                                                   (Visualization.NodeVisualizations def [newVis] def)
+        let newVis = Visualization.IdleVisualization
+                Visualization.Ready
+                $ VisualizerProperties
+                    visualizer'
+                    (Just $ visualizer' ^. visualizerId)
+            updateNodeVisualizations _ nodeVis
+                = nodeVis & Visualization.idleVisualizations %~ (newVis :)
+        modifyNodeEditor $ NE.nodeVisualizations %= Map.insertWith
+            updateNodeVisualizations
+            nl
+            (Visualization.NodeVisualizations def [newVis] def)
 
-updateDefaultVisualizer :: NodeLoc -> Maybe Visualizer -> Bool -> Command State ()
-updateDefaultVisualizer nl vis sendAsRequest = withJustM (getExpressionNode nl) $ \n ->
-    when (n ^. ExpressionNode.defaultVisualizer /= vis) $ do
+updateDefaultVisualizer :: NodeLoc -> Maybe Visualizer -> Bool
+    -> Command State ()
+updateDefaultVisualizer nl vis sendAsRequest = withJustM (getExpressionNode nl)
+    $ \n -> when (n ^. ExpressionNode.defaultVisualizer /= vis) $ do
         modifyExpressionNode nl $ ExpressionNode.defaultVisualizer .= vis
         withJustM (getNodeMeta nl) $ \nm -> if sendAsRequest
             then Batch.setNodesMeta        $ Map.fromList [(nl, nm)]
@@ -375,24 +462,39 @@ recoverVisualizations :: NodeLoc -> Command State [VisualizationId]
 recoverVisualizations nl = getNodeVisualizations nl >>= \case
     Nothing -> return def
     Just nodeVis -> do
-        let (ready, outdated) = partition ((== Visualization.Ready) . view Visualization.visualizationStatus) $ nodeVis ^. Visualization.idleVisualizations
+        let (ready, outdated) = partition
+                ((== Visualization.Ready)
+                    . view Visualization.visualizationStatus)
+                $ nodeVis ^. Visualization.idleVisualizations
         running <- fmap Map.fromList . forM ready $ \vis -> do
             visId <- getUUID
             liftIO $ JS.registerVisualizerFrame visId
-            return (visId, Visualization.RunningVisualization visId def $ vis ^. Visualization.idleVisualizerProperties)
+            return (visId, Visualization.RunningVisualization
+                visId
+                def
+                $ vis ^. Visualization.idleVisualizerProperties)
         modifyNodeEditor $ do
-            NE.nodeVisualizations . ix nl . Visualization.visualizations     %= Map.union running
-            NE.nodeVisualizations . ix nl . Visualization.idleVisualizations .= outdated
-        maybe def (Map.keys . view Visualization.visualizations) <$> getNodeVisualizations nl
+            NE.nodeVisualizations . ix nl . Visualization.visualizations
+                %= Map.union running
+            NE.nodeVisualizations . ix nl . Visualization.idleVisualizations
+                .= outdated
+        maybe
+            def
+            (Map.keys . view Visualization.visualizations)
+            <$> getNodeVisualizations nl
 
 getPlaceholderVisualizer :: Command State (Maybe Visualizer)
-getPlaceholderVisualizer = fmap (Visualizer placeholderVisId) . Map.lookup placeholderVisId <$> use internalVisualizers
+getPlaceholderVisualizer
+    = fmap (Visualizer placeholderVisId) . Map.lookup placeholderVisId
+    <$> use internalVisualizers
 
 getErrorVisualizer :: Command State (Maybe Visualizer)
-getErrorVisualizer = fmap (Visualizer errorVisId) . Map.lookup errorVisId <$> use internalVisualizers
+getErrorVisualizer = fmap (Visualizer errorVisId) . Map.lookup errorVisId
+    <$> use internalVisualizers
 
 clearVisualizationsForNode :: NodeLoc -> Command State ()
-clearVisualizationsForNode nl = modifyNodeEditor $ NE.nodeVisualizations . ix nl .= def
+clearVisualizationsForNode nl
+    = modifyNodeEditor $ NE.nodeVisualizations . ix nl .= def
 
 setPlaceholderVisualization :: NodeLoc -> Command State [VisualizationId]
 setPlaceholderVisualization nl = getExpressionNode nl >>= \mayN -> do
@@ -401,42 +503,113 @@ setPlaceholderVisualization nl = getExpressionNode nl >>= \mayN -> do
         Just n  -> getPlaceholderVisualizer >>= \case
             Nothing             -> clearVisualizationsForNode nl
             Just placeholderVis -> do
-                mayVis <- maybe (return def) getVisualizersForType $ n ^. ExpressionNode.nodeType
+                mayVis <- maybe
+                    (return def)
+                    getVisualizersForType
+                    $ n ^. ExpressionNode.nodeType
                 modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
-                    let prevVis      = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                        running      = Map.filter ((placeholderVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
-                        idle         = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties placeholderVis def] else []
+                    let prevVis = maybe
+                            def
+                            (^. Visualization.visualizations)
+                            $ Map.lookup nl visMap
+                        running = Map.filter
+                            ((placeholderVis ==)
+                                . view (Visualization.visualizerProperties
+                                . Visualization.runningVisualizer)
+                            )
+                            prevVis
+                        idle = if Map.null running
+                            then [Visualization.IdleVisualization
+                                Visualization.Ready
+                                $ Visualization.VisualizerProperties
+                                    placeholderVis
+                                    def
+                                ]
+                            else []
                         visualizers' = maybe def snd mayVis
-                    Map.insert nl (Visualization.NodeVisualizations running idle visualizers') visMap
+                    Map.insert
+                        nl
+                        (Visualization.NodeVisualizations
+                            running
+                            idle
+                            visualizers'
+                        )
+                        visMap
     recoverVisualizations nl
 
 setErrorVisualization :: NodeLoc -> Command State [VisualizationId]
 setErrorVisualization nl = getExpressionNode nl >>= \mayN -> do
-    if isNothing mayN then clearVisualizationsForNode nl else getErrorVisualizer >>= \case
-        Nothing       -> clearVisualizationsForNode nl
-        Just errorVis -> modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
-            let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                running     = Map.filter ((errorVis ==) . view (Visualization.visualizerProperties . Visualization.runningVisualizer)) prevVis
-                idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties errorVis def] else []
-            Map.insert nl (Visualization.NodeVisualizations running idle def) visMap
+    if isNothing mayN
+        then clearVisualizationsForNode nl
+        else getErrorVisualizer >>= \case
+            Nothing       -> clearVisualizationsForNode nl
+            Just errorVis
+                -> modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
+                    let prevVis = maybe
+                            def
+                            (^. Visualization.visualizations)
+                            $ Map.lookup nl visMap
+                        running = Map.filter
+                            ((errorVis ==)
+                                . view (Visualization.visualizerProperties
+                                . Visualization.runningVisualizer)
+                            )
+                            prevVis
+                        idle = if Map.null running
+                            then [Visualization.IdleVisualization
+                                Visualization.Ready
+                                $ Visualization.VisualizerProperties
+                                    errorVis
+                                    def
+                                ]
+                            else []
+                    Map.insert
+                        nl
+                        (Visualization.NodeVisualizations running idle def)
+                        visMap
     recoverVisualizations nl
 
 updateVisualizationsForNode :: NodeLoc -> Command State [VisualizationId]
-updateVisualizationsForNode nl = do
-    mayN <- getExpressionNode nl
-    case mayN of
-        Nothing -> clearVisualizationsForNode nl >> return def
-        Just n -> do
-            if ExpressionNode.returnsError n then setErrorVisualization nl
-            else do
-                mayVis <- maybe (return def) getVisualizersForType $ n ^. ExpressionNode.nodeType
-                if not (ExpressionNode.hasData n) || isNothing mayVis then setPlaceholderVisualization nl
+updateVisualizationsForNode nl = getExpressionNode nl >>= \case
+    Nothing -> clearVisualizationsForNode nl >> return def
+    Just n -> if ExpressionNode.returnsError n
+        then setErrorVisualization nl
+        else do
+            mayVis <- maybe
+                (return def)
+                getVisualizersForType
+                $ n ^. ExpressionNode.nodeType
+            if not (ExpressionNode.hasData n) || isNothing mayVis
+                then setPlaceholderVisualization nl
                 else withJust mayVis $ \vis -> do
                     modifyNodeEditor $ NE.nodeVisualizations %= \visMap -> do
-                        let prevVis     = maybe def (^. Visualization.visualizations) $ Map.lookup nl visMap
-                            running     = Map.filter (not . has (Visualization.visualizerProperties . Visualization.runningVisualizer . visualizerId . visualizerType . _InternalVisualizer)) prevVis
-                            idle        = if Map.null running then [Visualization.IdleVisualization Visualization.Ready $ Visualization.VisualizerProperties (fst vis) $ Just $ (fst vis) ^. visualizerId] else []
-                        Map.insert nl (Visualization.NodeVisualizations running idle $ snd vis) visMap
+                        let prevVis = maybe
+                                def
+                                (^. Visualization.visualizations)
+                                $ Map.lookup nl visMap
+                            running = Map.filter
+                                (not . has (Visualization.visualizerProperties
+                                    . Visualization.runningVisualizer
+                                    . visualizerId . visualizerType
+                                    . _InternalVisualizer)
+                                )
+                                prevVis
+                            idle = if Map.null running
+                                then [Visualization.IdleVisualization
+                                    Visualization.Ready
+                                    $ Visualization.VisualizerProperties
+                                        (fst vis)
+                                        . Just $ (fst vis) ^. visualizerId
+                                    ]
+                                else []
+                        Map.insert
+                            nl
+                            (Visualization.NodeVisualizations
+                                running
+                                idle
+                                $ snd vis
+                            )
+                            visMap
                     updateDefaultVisualizer nl (Just $ fst vis) False
                     recoverVisualizations nl
 
@@ -444,37 +617,53 @@ updatePreferedVisualizer :: TypeRep -> Visualizer -> Command State ()
 updatePreferedVisualizer tpe vis = preferedVisualizers . at tpe ?= vis
 
 getExpressionNodeType :: NodeLoc -> Command State (Maybe TypeRep)
-getExpressionNodeType = fmap (maybe def (view ExpressionNode.nodeType)) . getExpressionNode
+getExpressionNodeType
+    = fmap (maybe def (view ExpressionNode.nodeType)) . getExpressionNode
 
 setNodeProfilingData :: NodeLoc -> Integer -> Command State ()
-setNodeProfilingData nl t = modifyExpressionNode nl $ ExpressionNode.execTime ?= t
+setNodeProfilingData nl t
+    = modifyExpressionNode nl $ ExpressionNode.execTime ?= t
 
 isNewData :: NodeLoc -> VisualizationBackup -> Command State Bool
 isNewData nl vp = (Just vp /=) <$> getVisualizationBackup nl
 
-setVisualizationData :: NodeLoc -> VisualizationBackup -> Bool -> Command State ()
-setVisualizationData nl backup@(NE.ValueBackup val) overwrite = whenM ((overwrite ||) <$> isNewData nl backup) $ do
-    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
-    visIds <- updateVisualizationsForNode nl
-    withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl) $ \cRep ->
-        liftIO . forM_ visIds $ \visId -> JS.sendVisualizationData visId cRep val
-setVisualizationData nl backup@(NE.StreamBackup values) _overwrite@True = whenM (isNewData nl backup) $ do
-    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
-    visIds <- updateVisualizationsForNode nl
-    withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl) $ \cRep ->
-        liftIO . forM_ visIds $ \visId -> JS.notifyStreamRestart visId cRep $ reverse values
+setVisualizationData :: NodeLoc -> VisualizationBackup -> Bool
+    -> Command State ()
+setVisualizationData nl backup@(NE.ValueBackup val) overwrite
+    = whenM ((overwrite ||) <$> isNewData nl backup) $ do
+        modifyNodeEditor
+            $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+        visIds <- updateVisualizationsForNode nl
+        withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl)
+            $ \cRep -> liftIO . forM_ visIds
+                $ \visId -> JS.sendVisualizationData visId cRep val
+setVisualizationData nl backup@(NE.StreamBackup values) _overwrite@True
+    = whenM (isNewData nl backup) $ do
+        modifyNodeEditor
+            $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+        visIds <- updateVisualizationsForNode nl
+        withJustM (maybe def toConstructorRep <$> getExpressionNodeType nl)
+            $ \cRep -> liftIO . forM_ visIds
+                $ \visId -> JS.notifyStreamRestart visId cRep $ reverse values
 setVisualizationData nl (NE.StreamBackup values) _overwrite@False = do
-    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . ix nl . NE._StreamBackup %= (values <>)
-    visIds <- maybe def (Map.keys . view Visualization.visualizations) <$> getNodeVisualizations nl
+    modifyNodeEditor
+        $ NE.visualizationsBackup . NE.backupMap . ix nl . NE._StreamBackup
+            %= (values <>)
+    visIds <- maybe def (Map.keys . view Visualization.visualizations)
+        <$> getNodeVisualizations nl
     liftIO . forM_ visIds $ forM_ values . JS.sendStreamDatapoint
-setVisualizationData nl backup@(NE.MessageBackup msg) overwrite = whenM ((overwrite ||) <$> isNewData nl backup) $ do
-    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
-    visIds <- setPlaceholderVisualization nl
-    liftIO . forM_ visIds $ flip JS.sendInternalData msg
-setVisualizationData nl backup@(NE.ErrorBackup msg) overwrite = whenM ((overwrite ||) <$> isNewData nl backup) $ do
-    modifyNodeEditor $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
-    visIds <- setErrorVisualization nl
-    liftIO . forM_ visIds $ flip JS.sendInternalData msg
+setVisualizationData nl backup@(NE.MessageBackup msg) overwrite
+    = whenM ((overwrite ||) <$> isNewData nl backup) $ do
+        modifyNodeEditor
+            $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+        visIds <- setPlaceholderVisualization nl
+        liftIO . forM_ visIds $ flip JS.sendInternalData msg
+setVisualizationData nl backup@(NE.ErrorBackup msg) overwrite
+    = whenM ((overwrite ||) <$> isNewData nl backup) $ do
+        modifyNodeEditor
+            $ NE.visualizationsBackup . NE.backupMap . at nl ?= backup
+        visIds <- setErrorVisualization nl
+        liftIO . forM_ visIds $ flip JS.sendInternalData msg
 
 resetSuccessors :: NodeLoc -> Command State ()
 resetSuccessors nl = do
@@ -494,6 +683,10 @@ resetNode nl = do
         ExpressionNode.value .= def
         newInPorts  <- use ExpressionNode.inPorts
         newOutPorts <- use ExpressionNode.inPorts
-        return $ First $ Just $ (oldInPorts /= newInPorts) && (oldOutPorts /= newOutPorts)
-    setVisualizationData nl (NE.MessageBackup Visualization.awaitingDataMsg) True
+        return . First . Just
+            $ (oldInPorts /= newInPorts) && (oldOutPorts /= newOutPorts)
+    setVisualizationData
+        nl
+        (NE.MessageBackup Visualization.awaitingDataMsg)
+        True
     return $ fromMaybe False $ getFirst maySuccess
