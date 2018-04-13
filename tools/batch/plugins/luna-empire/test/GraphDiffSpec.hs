@@ -185,8 +185,7 @@ genMonadPaths nids = do
 
 instance Arbitrary Graph where
     arbitrary = do
-        nodes       <- Map.fromList
-            . fmap (convert . view Node.exprNodeId &&& id) <$> listOf arbitrary
+        nodes       <- listOf arbitrary
         inSidebar   <- arbitrary
         outSidebar  <- arbitrary
         let portIds :: forall a i f. (Foldable f, FunctorWithIndex i f)
@@ -202,15 +201,21 @@ instance Arbitrary Graph where
                 = fmap (InPortRef (convert $ outSidebar ^. Node.outputNodeId))
                 . portIds $ outSidebar ^. Node.outputEdgePorts
             nodesInPortsRefs :: [InPortRef]
-            nodesInPortsRefs = Map.foldlWithKey
-                (\acc nl n -> (acc <>) . fmap (InPortRef  nl) . portIds
+            nodesInPortsRefs = foldl
+                (\acc n -> (acc <>)
+                    . fmap (InPortRef (convert $ n ^. Node.nodeId)) . portIds
                     $ n ^. Node.inPorts
-                ) mempty nodes
+                )
+                mempty
+                nodes
             nodesOutPortsRefs :: [OutPortRef]
-            nodesOutPortsRefs = Map.foldlWithKey
-                (\acc nl n -> (acc <>) . fmap (OutPortRef nl) . portIds
+            nodesOutPortsRefs = foldl
+                (\acc n -> (acc <>)
+                    . fmap (OutPortRef (convert $ n ^. Node.nodeId)) . portIds
                     $ n ^. Node.outPorts
-                ) mempty nodes
+                )
+                mempty
+                nodes
             allInPortsRefs  = outSidebarInPortRefs <> nodesInPortsRefs
             allOutPortsRefs = inSidebarOutPortRefs <> nodesOutPortsRefs
         numOfConns <- sized $ \k -> choose (0, min k $ length allInPortsRefs)
@@ -221,9 +226,8 @@ instance Arbitrary Graph where
                 (elements allOutPortsRefs)
                 (\src -> dst ^. PortRef.nodeLoc /= src ^. PortRef.nodeLoc)
             genConn dst = flip Connection dst <$> genSrc dst
-        conns <- Map.fromList
-            <$> mapM (\connId -> (connId, ) <$> genConn connId) connIds
-        monads <- genMonadPaths =<< sublistOf (convert <$> Map.keys nodes)
+        conns  <- mapM genConn connIds
+        monads <- genMonadPaths =<< sublistOf (view Node.nodeId <$> nodes)
         pure $ Graph nodes conns (Just inSidebar) (Just outSidebar) monads
 
 instance Arbitrary (Error GraphError) where

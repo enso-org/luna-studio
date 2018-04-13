@@ -48,15 +48,15 @@ import           EmpireUtils
 import           Text.RawString.QQ               (r)
 
 
-multiFunCode = [r|## Docs
+multiFunCode = [r|# Docs
 def foo:
     5
 
-## Docs
+# Docs
 «0»def bar:
     "bar"
 
-## Docs
+# Docs
 def main:
     print bar
 |]
@@ -67,7 +67,7 @@ multiFunCodeWithoutMarkers = [r|def foo:
 def bar:
     "bar"
 
-## Docs
+# Docs
 def main:
     print bar
 |]
@@ -113,15 +113,15 @@ spec = around withChannels $ parallel $ do
             let initialCode = multiFunCode
                 expectedCode = [r|
                     import Foo
-                    ## Docs
+                    # Docs
                     def foo:
                         5
 
-                    ## Docs
+                    # Docs
                     def bar:
                         "bar"
 
-                    ## Docs
+                    # Docs
                     def main:
                         print bar
                     |]
@@ -233,15 +233,15 @@ spec = around withChannels $ parallel $ do
                 def quux a b c:
                     None
 
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -256,18 +256,18 @@ spec = around withChannels $ parallel $ do
             length nodes `shouldBe` 4
             find (\n -> n ^. Node.name == Just "quux") nodes `shouldSatisfy` isJust
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
                 def quux:
                     None
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -282,15 +282,15 @@ spec = around withChannels $ parallel $ do
             length nodes `shouldBe` 4
             find (\n -> n ^. Node.name == Just "quux") nodes `shouldSatisfy` isJust
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
 
@@ -311,15 +311,15 @@ spec = around withChannels $ parallel $ do
                 def quux:
                     None
 
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -347,11 +347,11 @@ spec = around withChannels $ parallel $ do
             find (\n -> n ^. Node.name == Just "foo") nodes `shouldSatisfy` isJust
             find (\n -> n ^. Node.name == Just "bar") nodes `shouldSatisfy` isNothing
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -369,15 +369,15 @@ spec = around withChannels $ parallel $ do
             find (\n -> n ^. Node.name == Just "foo") nodes `shouldSatisfy` isJust
             find (\n -> n ^. Node.name == Just "bar") nodes `shouldSatisfy` isJust
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -393,15 +393,15 @@ spec = around withChannels $ parallel $ do
             find (\n -> n ^. Node.name == Just "qwerty") nodes `shouldSatisfy` isJust
             find (\n -> n ^. Node.name == Just "bar") nodes `shouldSatisfy` isNothing
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def qwerty:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -419,16 +419,16 @@ spec = around withChannels $ parallel $ do
             find (\n -> n ^. Node.name == Just "qwerty") nodes `shouldSatisfy` isJust
             find (\n -> n ^. Node.name == Just "bar") nodes `shouldSatisfy` isNothing
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def qwerty:
                     number1 = 1
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -445,15 +445,15 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode (loc |>= main ^. Node.nodeId) u1 "1" (atXPos (-10))
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def qwerty:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     number1 = 1
                     print bar
@@ -469,15 +469,15 @@ spec = around withChannels $ parallel $ do
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             find (\n -> n ^. Node.name == Just "bar") nodes `shouldSatisfy` isJust
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
@@ -561,7 +561,7 @@ spec = around withChannels $ parallel $ do
                 Graph.loadCode loc multiFunCode
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 Graph.withUnit loc $ runASTOp $ forM funIds $ Code.functionBlockStart
-            sort offsets `shouldBe` [0, 30, 64]
+            sort offsets `shouldBe` [0, 29, 62]
         it "shows proper function offsets with imports" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -651,15 +651,15 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode (loc |>= bar) u2 "1" (atXPos (-10))
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 «1»def foo:
                     «6»number1 = 5
                     «3»5
-                ## Docs
+                # Docs
                 «0»def bar:
                     «7»number1 = 1
                     «4»"bar"
-                ## Docs
+                # Docs
                 «2»def main:
                     «5»print bar
                 |]
@@ -711,18 +711,18 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode (loc |>= bar) u2 "1" (atXPos (-20))
                 Graph.withUnit loc $ use Graph.code
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                    ## Docs
+                    # Docs
                     «1»def foo:
                         «3»5
 
-                    ## Docs
+                    # Docs
                     «0»def bar:
                         «7»number2 = 1
                         «4»text1 = "bar"
                         «6»number1 = 5
                         number1
 
-                    ## Docs
+                    # Docs
                     «2»def main:
                         «5»print bar
                 |]
@@ -741,21 +741,21 @@ spec = around withChannels $ parallel $ do
                 code <- Graph.withUnit loc $ use Graph.code
                 return (blockEnd, code)
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                    ## Docs
+                    # Docs
                     «1»def foo:
                         «3»5
 
-                    ## Docs
+                    # Docs
                     «0»def bar:
                         «4»text1 = "bar"
                         «6»number1 = 5
                         number1
 
-                    ## Docs
+                    # Docs
                     «2»def main:
                         «5»print bar
                 |]
-            blockEnd `shouldBe` 101
+            blockEnd `shouldBe` 99
         it "maintains proper block start info after adding node" $ \env -> do
             (starts, code) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -770,20 +770,20 @@ spec = around withChannels $ parallel $ do
                 code <- Graph.getCode loc
                 return (starts, Text.unpack code)
             normalizeQQ code `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     number1 = 5
                     5
 
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
-            starts `shouldMatchList` [0, 49, 83]
+            starts `shouldMatchList` [0, 48, 81]
         it "maintains proper function file offsets after adding node" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -798,7 +798,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",11), ("bar",60), ("main",94)]
+            offsets `shouldMatchList` [("foo",10), ("bar",58), ("main",91)]
         it "maintains proper function file offsets after adding a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -813,7 +813,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",11), ("bar",41), ("aaa",67), ("main",97)]
+            offsets `shouldMatchList` [("foo",10), ("bar",39), ("aaa",65), ("main",94)]
         it "maintains proper function file offsets after removing a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -827,7 +827,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",11), ("main",41)]
+            offsets `shouldMatchList` [("foo",10), ("main",39)]
         it "maintains proper function file offsets after renaming a function" $ \env -> do
             u1 <- mkUUID
             offsets <- evalEmp env $ do
@@ -842,7 +842,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo", 11), ("qwerty", 41), ("main", 78)]
+            offsets `shouldMatchList` [("foo", 10), ("qwerty", 39), ("main", 75)]
         it "adds the first function in a file" $ \env -> do
             u1 <- mkUUID
             (nodes, code) <- evalEmp env $ do
@@ -882,15 +882,15 @@ spec = around withChannels $ parallel $ do
                 Graph.pasteText loc [Range 23 23] ["«3»def quux: None### META {\"metas\":[{\"marker\":3,\"meta\":{\"_displayResult\":false,\"_selectedVisualizer\":null,\"_position\":{\"fromPosition\":{\"_vector2_y\":0,\"_vector2_x\":0}}}}]}"]
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
-                ## Docs
+                # Docs
                 def foo:
                     5
                 def quux: None
-                ## Docs
+                # Docs
                 def bar:
                     "bar"
 
-                ## Docs
+                # Docs
                 def main:
                     print bar
                 |]
