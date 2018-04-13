@@ -421,7 +421,7 @@ getVisualizersForType tpe = do
             = fmap (uncurry Visualizer) . listToMaybe $ Map.toList visualizers'
         fromPrefVis vis = maybe
             mayFirstVisInMap
-            (Just . Visualizer $ vis ^. visualizerId)
+            (Just . Visualizer (vis ^. visualizerId))
             $ Map.lookup (vis ^. visualizerId) visualizers'
         mayDefVis = maybe mayFirstVisInMap fromPrefVis mayPrefVis
     return $ if isNothing mayDefVis || Map.null visualizers'
