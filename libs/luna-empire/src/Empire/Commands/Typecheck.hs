@@ -56,7 +56,6 @@ import qualified Luna.Pass.Evaluation.Interpreter as Interpreter
 import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget(TgtDef))
 import qualified Luna.IR.Layer.Errors             as Errors
 import           OCI.IR.Name.Qualified            (QualName)
-import qualified System.IO as IO
 
 runTC :: QualName -> String -> Imports -> Command Graph ()
 runTC moduleName functionName imports = do
