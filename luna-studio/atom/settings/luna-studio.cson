@@ -3,3 +3,4 @@
     'commentStart': '## '
     'editor.tabLength': 4
     'editor.softWrap': true
+    'increaseIndentPattern': '^\s*(class|def)\b.*:\s*$'
