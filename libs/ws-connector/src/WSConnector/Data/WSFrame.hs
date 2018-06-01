@@ -8,7 +8,6 @@ module WSConnector.Data.WSFrame where
 
 import qualified Data.Binary                 as Binary
 import           Data.ByteString             (ByteString)
-import           Data.ByteString.Base64.Lazy (decodeLenient, encode)
 import           Data.ByteString.Lazy        (fromStrict, toStrict)
 import           Prologue
 
@@ -21,8 +20,8 @@ makeLenses ''WSFrame
 instance Binary.Binary WSFrame
 
 deserializeFrame :: ByteString -> WSFrame
-deserializeFrame = Binary.decode . decodeLenient . fromStrict
+deserializeFrame = Binary.decode . fromStrict
 
 serializeFrame :: WSFrame -> ByteString
-serializeFrame = toStrict . encode . Binary.encode
+serializeFrame = toStrict . Binary.encode
 

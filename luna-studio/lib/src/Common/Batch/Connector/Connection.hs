@@ -4,7 +4,8 @@ module Common.Batch.Connector.Connection where
 import           Common.Prelude              hiding (Text)
 import           Data.Binary                 (Binary)
 import qualified Data.Binary                 as Binary
-import qualified Data.ByteString.Base64.Lazy as Base64
+import qualified Data.ByteString.Lazy        as ByteString
+import qualified Data.ByteString             as Strict
 import           Data.ByteString.Lazy.Char8  (ByteString, pack)
 import           Data.JSString.Text
 import           Data.Text.Lazy.Encoding     (decodeUtf8)
@@ -42,11 +43,11 @@ instance Binary.Binary ControlCode
 instance Binary.Binary WebMessage
 instance Binary.Binary Frame
 
-serialize :: Frame -> JSString
-serialize = lazyTextToJSString . decodeUtf8 . Base64.encode . Binary.encode
+serialize :: Frame -> Strict.ByteString
+serialize = ByteString.toStrict . Binary.encode
 
-deserialize :: String -> Frame
-deserialize = Binary.decode . Base64.decodeLenient . pack
+deserialize :: Strict.ByteString -> Frame
+deserialize = Binary.decode . ByteString.fromStrict
 
 sendMessages :: [WebMessage] -> IO ()
 sendMessages msgs = do

@@ -9,7 +9,8 @@ module TextEditor.Event.Source
 
 import           Common.Prelude                    hiding (on)
 
-import           GHCJS.Prim                        (fromJSString)
+import           GHCJS.Buffer                      as Buffer
+import           GHCJS.Buffer.Types                as Buffer
 
 import qualified Common.Batch.Connector.Connection as BatchConnection
 import qualified JS.Atom                           as Atom
@@ -35,9 +36,8 @@ webSocketHandler conn = AddHandler $ \h -> do
     void $ WebSocket.onOpen conn $
         h $ Connection Connection.Opened
     void $ WebSocket.onMessage conn $ \event -> do
-        payloadJS <- WebSocket.getData event
-        let payload = fromJSString payloadJS
-            frame = BatchConnection.deserialize payload
+        payload <- WebSocket.getData event
+        let frame = BatchConnection.deserialize payload
         mapM_ (h . Connection . Connection.Message) $ frame ^. BatchConnection.messages
     void $ WebSocket.onClose conn $ \event -> do
         code <- WebSocket.getCode event

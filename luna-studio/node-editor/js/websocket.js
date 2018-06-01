@@ -92,6 +92,7 @@ module.exports = function () {
     },
     connect: function (addr) {
       connection = new WebSocket(addr);
+      connection.binaryType = "arraybuffer";
       attachListeners();
     },
     send: function (data) {

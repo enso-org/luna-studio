@@ -41,7 +41,7 @@ application clientCounter currentClient pingTime toBusChan fromBusChan pending =
     WS.forkPingThread conn pingTime
 
     let welcomeMessage = serializeFrame $ WSFrame [ControlMessage Welcome]
-    WS.sendTextData conn welcomeMessage
+    WS.sendBinaryData conn welcomeMessage
 
     fromBusListenChan <- atomically $ dupTChan fromBusChan
 
@@ -64,14 +64,14 @@ fromWeb :: Int -> TVar Int -> WS.Connection -> TChan WSMessage -> TChan WSMessag
 fromWeb clientId currentClient conn chan wsChan = do
     flip catch handleDisconnect $ fromWebLoop clientId currentClient conn chan wsChan
     let takeoverMessage = serializeFrame $ WSFrame [ControlMessage ConnectionTakeover]
-    WS.sendTextData conn takeoverMessage
-    WS.sendClose    conn takeoverMessage
+    WS.sendBinaryData conn takeoverMessage
+    WS.sendClose      conn takeoverMessage
 
 toWeb :: WS.Connection -> TChan WSMessage -> IO ()
 toWeb conn chan = flip catch handleDisconnect $ forever $ do
     msg <- atomically $ readTChan chan
     let webMessage = serializeFrame $ WSFrame [msg]
-    WS.sendTextData conn webMessage
+    WS.sendBinaryData conn webMessage
 
 run :: BusEndPoints -> WSConfig.Config -> IO ()
 run busEndPoints config = do
