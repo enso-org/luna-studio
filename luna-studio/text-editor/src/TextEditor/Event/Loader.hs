@@ -9,7 +9,7 @@ import           Common.Prelude
 
 withActiveConnection :: (WebSocket -> IO ()) -> IO ()
 withActiveConnection action = do
-    addr   <- getBackendAddress
+    (listenAddr, sendAddr) <- getBackendAddress
     socket <- WS.getWebSocket
     isOpen <- WS.isOpen socket
     let onConnectionClosed = putStrLn "ConnectionClosed."
@@ -19,4 +19,4 @@ withActiveConnection action = do
         void $ WS.onOpen socket $ action socket >> pushStatus (convert "Init") (convert "") (convert "")
         void $ WS.onClose socket $ const onConnectionClosed
         void $ WS.onError socket onConnectionClosed
-        void $ WS.connect socket addr
+        void $ WS.connect socket listenAddr sendAddr

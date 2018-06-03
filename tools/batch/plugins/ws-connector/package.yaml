@@ -18,6 +18,7 @@ dependencies:
   - base
   - bytestring
   - either
+  - ekg
   - lib-ws-connector
   - m-logger
   - mtl

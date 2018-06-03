@@ -9,8 +9,11 @@ import           Common.Prelude
 
 
 
-foreign import javascript safe "config.backendAddress"
-    getBackendAddress' :: IO JSString
+foreign import javascript safe "config.backendAddress.listen"
+    js_getListenAddress :: IO JSString
 
-getBackendAddress :: IO String
-getBackendAddress  = convert <$> getBackendAddress'
+foreign import javascript safe "config.backendAddress.send"
+    js_getSendAddress :: IO JSString
+
+getBackendAddress :: IO (String, String)
+getBackendAddress  = convert .: (,) <$> js_getListenAddress <*> js_getSendAddress

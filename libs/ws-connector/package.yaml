@@ -6,6 +6,8 @@ maintainer:          contact@nodelab.io
 
 default-extensions:
   - NoImplicitPrelude
+  - Strict
+  - StrictData
 
 library:
   source-dirs: src
@@ -21,10 +23,11 @@ dependencies:
   - either
   - exceptions
   - m-logger
+  - random
   - mtl
   - prologue
-  - stm
   - text
+  - unagi-chan
   - websockets
   - zeromq4-haskell
   - zmq-bus

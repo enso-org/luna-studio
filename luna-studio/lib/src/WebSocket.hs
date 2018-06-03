@@ -69,11 +69,11 @@ foreign import javascript safe "$1.unOnError()"
 foreign import javascript safe "$1.send($2)"
     js_send :: WebSocket -> ArrayBuffer -> IO ()
 
-foreign import javascript safe "$1.connect($2)"
-    connect' :: WebSocket -> JSString -> IO ()
+foreign import javascript safe "$1.connect($2, $3)"
+    connect' :: WebSocket -> JSString -> JSString -> IO ()
 
-connect :: WebSocket -> String -> IO ()
-connect ws addr = connect' ws $ convert addr
+connect :: WebSocket -> String -> String -> IO ()
+connect ws listenAddr sendAddr = connect' ws (convert listenAddr) (convert sendAddr)
 
 getData :: WSMessageEvent -> IO ByteString
 getData = fmap (toByteString 0 Nothing . createFromArrayBuffer) . js_getData

@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE BangPatterns    #-}
 
 module WSConnector.WSConnector where
 
@@ -7,9 +8,8 @@ import           Prologue
 import           System.Log.MLogger
 
 import           Control.Concurrent            (forkIO)
-import           Control.Concurrent.STM        (STM, atomically)
-import           Control.Concurrent.STM.TChan
-import           Control.Concurrent.STM.TVar
+import qualified Control.Concurrent.MVar       as MVar
+import qualified Control.Concurrent.Chan.Unagi as Unagi
 import           Control.Monad                 (forever)
 import qualified Data.ByteString               as ByteString
 import qualified Network.WebSockets            as WS
@@ -21,65 +21,87 @@ import           WSConnector.Data.WSMessage    (ControlCode (..), WSMessage (..)
 import qualified WSConnector.Workers.BusWorker as BusWorker
 import qualified WSConnector.WSConfig          as WSConfig
 
+import qualified System.CPUTime                as CPUTime
+
 logger :: Logger
 logger = getLogger $moduleName
+
+timed :: IO a -> IO Double
+timed act = do
+    t0 <- CPUTime.getCPUTime
+    act
+    t1 <- CPUTime.getCPUTime
+    return $ fromIntegral (t1 - t0) * 1e-12
 
 handleDisconnect :: WS.ConnectionException -> IO ()
 handleDisconnect _ = logger info "User disconnected"
 
-getFreshClientId :: TVar Int -> TVar Int -> STM Int
-getFreshClientId clientCounter currentClient = do
-    modifyTVar clientCounter (+ 1)
-    newId <- readTVar clientCounter
-    writeTVar currentClient newId
-    return newId
+fromWebApp :: Int -> Unagi.InChan WSMessage -> WS.ServerApp
+fromWebApp pingTime toBusChan pending = do
+    conn <- WS.acceptRequest pending
+    WS.forkPingThread conn pingTime
 
-application :: TVar Int -> TVar Int -> Int -> TChan WSMessage -> TChan WSMessage -> WS.ServerApp
-application clientCounter currentClient pingTime toBusChan fromBusChan pending = do
-    newId <- atomically $ getFreshClientId clientCounter currentClient
+    fromWeb conn toBusChan
+
+toWebApp :: Int -> Unagi.InChan WSMessage -> WS.ServerApp
+toWebApp pingTime fromBusChan pending = do
     conn <- WS.acceptRequest pending
     WS.forkPingThread conn pingTime
 
     let welcomeMessage = serializeFrame $ WSFrame [ControlMessage Welcome]
     WS.sendBinaryData conn welcomeMessage
 
-    fromBusListenChan <- atomically $ dupTChan fromBusChan
-
-    forkIO $ fromWeb newId clientCounter conn toBusChan fromBusChan
+    fromBusListenChan <- Unagi.dupChan fromBusChan
     toWeb conn fromBusListenChan
 
-whileActive :: Int -> TVar Int -> IO () -> IO ()
-whileActive clientId currentClient action = do
-    action
-    whileActive clientId currentClient action
-
-fromWebLoop :: Int -> TVar Int -> WS.Connection -> TChan WSMessage -> TChan WSMessage -> IO ()
-fromWebLoop clientId currentClient conn chan wsChan = whileActive clientId currentClient $ do
+fromWebLoop :: WS.Connection -> Unagi.InChan WSMessage -> IO ()
+fromWebLoop conn chan = forever $ do
     webMessage <- WS.receiveData conn
     let frame = deserializeFrame webMessage
-    atomically $ mapM_ (writeTChan chan) $ frame ^. messages
-    atomically $ mapM_ (writeTChan wsChan) $ frame ^. messages
+    mapM_ (Unagi.writeChan chan) $ frame ^. messages
 
-fromWeb :: Int -> TVar Int -> WS.Connection -> TChan WSMessage -> TChan WSMessage -> IO ()
-fromWeb clientId currentClient conn chan wsChan = do
-    flip catch handleDisconnect $ fromWebLoop clientId currentClient conn chan wsChan
+fromWeb :: WS.Connection -> Unagi.InChan WSMessage -> IO ()
+fromWeb conn chan = do
+    flip catch handleDisconnect $ fromWebLoop conn chan
     let takeoverMessage = serializeFrame $ WSFrame [ControlMessage ConnectionTakeover]
-    WS.sendBinaryData conn takeoverMessage
-    WS.sendClose      conn takeoverMessage
+    WS.sendClose conn takeoverMessage
 
-toWeb :: WS.Connection -> TChan WSMessage -> IO ()
-toWeb conn chan = flip catch handleDisconnect $ forever $ do
-    msg <- atomically $ readTChan chan
-    let webMessage = serializeFrame $ WSFrame [msg]
-    WS.sendBinaryData conn webMessage
+toWebLoop :: WS.Connection -> Unagi.OutChan WSMessage -> IO ()
+toWebLoop conn chan = forever $ do
+    msg <- Unagi.readChan chan
+    let !webMessage = serializeFrame $ WSFrame [msg]
+        len = ByteString.length webMessage
+    logger info $ "Sending " <> show len <> " bytes."
+    t <- timed $ WS.sendBinaryData conn webMessage
+    let mbps = floor $ fromIntegral len * 1e-6 / t
+    logger info $ "Sent " <> show len <> " bytes at " <> show mbps <> " MB/s."
+
+toWeb :: WS.Connection -> Unagi.OutChan WSMessage -> IO ()
+toWeb conn chan = do
+    flip catch handleDisconnect $ toWebLoop conn chan
+    let takeoverMessage = serializeFrame $ WSFrame [ControlMessage ConnectionTakeover]
+    WS.sendClose conn takeoverMessage
+
+sinkChan :: Unagi.OutChan a -> IO ()
+sinkChan c = forever $ do
+    !a <- Unagi.readChan c
+    return ()
 
 run :: BusEndPoints -> WSConfig.Config -> IO ()
 run busEndPoints config = do
-    toBusChan       <- atomically newTChan
-    fromBusChan     <- atomically newBroadcastTChan
-    clientCounter   <- atomically $ newTVar 0
-    currentClient   <- atomically $ newTVar 0
+    (toBusIn, toBusOut)     <- Unagi.newChan
+    (fromBusIn, fromBusOut) <- Unagi.newChan
 
-    BusWorker.start busEndPoints fromBusChan toBusChan
+    BusWorker.start busEndPoints fromBusIn toBusOut
 
-    WS.runServer (config ^. WSConfig.host) (config ^. WSConfig.port) $ application clientCounter currentClient (config ^. WSConfig.pingTime) toBusChan fromBusChan
+    let host        = config ^. WSConfig.host
+        fromWebPort = config ^. WSConfig.fromWebPort
+        toWebPort   = config ^. WSConfig.toWebPort
+        pingTime    = config ^. WSConfig.pingTime
+
+    -- We need this to flush data from the unused end of this channel.
+    -- Actual read ends are created with `Unagi.dupChan`, per-client.
+    forkIO $ sinkChan fromBusOut
+
+    forkIO $ WS.runServer host fromWebPort $ fromWebApp pingTime toBusIn
+    WS.runServer host toWebPort $ toWebApp pingTime fromBusIn

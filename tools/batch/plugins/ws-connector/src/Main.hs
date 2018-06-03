@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import           GHC.IO.Encoding        (setLocaleEncoding, utf8)
@@ -13,6 +15,7 @@ import qualified ZMQ.Bus.Config          as Config
 import qualified ZMQ.Bus.EndPoint        as EndPoint
 import qualified ZMQ.Bus.WS.Config       as WSConfigLoader
 
+import System.Remote.Monitoring (forkServer)
 
 
 rootLogger :: Logger
@@ -29,6 +32,7 @@ opts = Opt.info (helper <*> parser)
 main :: IO ()
 main = do
     setLocaleEncoding utf8
+    -- forkServer "127.0.0.1" 12345
     execParser opts >>= run
 
 run :: Cmd -> IO ()

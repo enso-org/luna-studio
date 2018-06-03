@@ -22,9 +22,10 @@ data Config = Config      { websocket :: Section
                           }
             deriving (Show)
 
-data Section = Websocket   { host     :: String
-                           , port     :: String
-                           , pingTime :: String
+data Section = Websocket   { host        :: String
+                           , fromWebPort :: String
+                           , toWebPort   :: String
+                           , pingTime    :: String
                            }
              deriving (Show)
 
@@ -48,6 +49,7 @@ load = do
 
 
     Config <$> ( Websocket <$> readConf "websocket.host"
-                           <*> readConf "websocket.port"
+                           <*> readConf "websocket.fromWebPort"
+                           <*> readConf "websocket.toWebPort"
                            <*> readConf "websocket.pingTime"
                )
