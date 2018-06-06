@@ -26,11 +26,11 @@ import qualified System.CPUTime                as CPUTime
 logger :: Logger
 logger = getLogger $moduleName
 
-timed :: IO a -> IO Double
+timed :: MonadIO m => m a -> m Double
 timed act = do
-    t0 <- CPUTime.getCPUTime
+    t0 <- liftIO $ CPUTime.getCPUTime
     act
-    t1 <- CPUTime.getCPUTime
+    t1 <- liftIO $ CPUTime.getCPUTime
     return $ fromIntegral (t1 - t0) * 1e-12
 
 handleDisconnect :: WS.ConnectionException -> IO ()
@@ -63,8 +63,8 @@ fromWebLoop conn chan = forever $ do
 fromWeb :: WS.Connection -> Unagi.InChan WSMessage -> IO ()
 fromWeb conn chan = do
     flip catch handleDisconnect $ fromWebLoop conn chan
-    let takeoverMessage = serializeFrame $ WSFrame [ControlMessage ConnectionTakeover]
-    WS.sendClose conn takeoverMessage
+    let closeMsg = serializeFrame $ WSFrame [ControlMessage ConnectionTakeover]
+    WS.sendClose conn closeMsg
 
 toWebLoop :: WS.Connection -> Unagi.OutChan WSMessage -> IO ()
 toWebLoop conn chan = forever $ do
@@ -84,7 +84,7 @@ toWeb conn chan = do
 
 sinkChan :: Unagi.OutChan a -> IO ()
 sinkChan c = forever $ do
-    !a <- Unagi.readChan c
+    !_ <- Unagi.readChan c
     return ()
 
 run :: BusEndPoints -> WSConfig.Config -> IO ()

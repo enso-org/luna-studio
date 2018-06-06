@@ -7,6 +7,7 @@ maintainer:          contact@nodelab.io
 
 default-extensions:
   - NoImplicitPrelude
+  - OverloadedStrings
 
 executables:
   ws-connector:

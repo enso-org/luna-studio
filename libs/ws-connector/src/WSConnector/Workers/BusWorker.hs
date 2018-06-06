@@ -32,12 +32,6 @@ shouldPassToClient frame clientId = isNotSender where
     isNotSender      = senderId /= clientId
     senderId         = frame ^. MessageFrame.senderID
 
--- shouldPassToClient frame clientId = isOriginalAuthor && isNotSender where
---     isOriginalAuthor = originalAuthorId == clientId
---     originalAuthorId = frame ^. MessageFrame.correlation . Message.clientID
---     isNotSender      = senderId /= clientId
---     senderId         = frame ^. MessageFrame.senderID
-
 fromBus :: Unagi.InChan WSMessage -> MVar.MVar Message.ClientID -> Bus ()
 fromBus chan idVar = do
     mapM_ Bus.subscribe relevantTopics
@@ -71,9 +65,14 @@ eitherToM = either (fail . show) return
 eitherToM' :: (Monad m, Show a) => m (Either a b) -> m b
 eitherToM' action = action >>= eitherToM
 
-start :: BusEndPoints -> Unagi.InChan WSMessage -> Unagi.OutChan WSMessage -> IO ()
+start :: BusEndPoints
+      -> Unagi.InChan WSMessage
+      -> Unagi.OutChan WSMessage
+      -> IO ()
 start busEndPoints fromBusChan toBusChan = do
     exchangeIdsVar <- MVar.newEmptyMVar
-    forkIO $ eitherToM' $ Bus.runBus busEndPoints $ fromBus fromBusChan exchangeIdsVar
-    forkIO $ eitherToM' $ Bus.runBus busEndPoints $ toBus   toBusChan   exchangeIdsVar
+    forkIO $ eitherToM' $ Bus.runBus busEndPoints
+        $ fromBus fromBusChan exchangeIdsVar
+    forkIO $ eitherToM' $ Bus.runBus busEndPoints
+        $ toBus   toBusChan   exchangeIdsVar
     return ()

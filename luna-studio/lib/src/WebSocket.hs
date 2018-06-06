@@ -13,12 +13,16 @@ module WebSocket (WebSocket
                  , send
                  ) where
 
-import           Data.ByteString        (ByteString)
+import           Data.ByteString                   (ByteString)
 import           Data.JSString
 import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
-import           GHCJS.Types            (IsJSVal)
-import           GHCJS.Buffer           (toByteString, createFromArrayBuffer, fromByteString, getArrayBuffer)
+import           GHCJS.Marshal.Pure                ( PFromJSVal (..)
+                                                   , PToJSVal (..))
+import           GHCJS.Types                       (IsJSVal)
+import           GHCJS.Buffer                      ( toByteString
+                                                   , createFromArrayBuffer
+                                                   , fromByteString
+                                                   , getArrayBuffer)
 import           JavaScript.TypedArray.ArrayBuffer (ArrayBuffer)
 import           Common.Prelude
 
@@ -73,7 +77,8 @@ foreign import javascript safe "$1.connect($2, $3)"
     connect' :: WebSocket -> JSString -> JSString -> IO ()
 
 connect :: WebSocket -> String -> String -> IO ()
-connect ws listenAddr sendAddr = connect' ws (convert listenAddr) (convert sendAddr)
+connect ws listenAddr sendAddr = connect' ws (convert listenAddr)
+                                             (convert sendAddr)
 
 getData :: WSMessageEvent -> IO ByteString
 getData = fmap (toByteString 0 Nothing . createFromArrayBuffer) . js_getData
