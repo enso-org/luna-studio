@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE RankNTypes             #-}
@@ -11,6 +10,7 @@ import           Common.Prelude
 import qualified Data.HashMap.Strict                        as HashMap
 import           Data.Map                                   (Map)
 import qualified Data.Map                                   as Map
+import           IdentityString                             (IdentityString)
 import qualified LunaStudio.Data.Breadcrumb                 as B
 import           LunaStudio.Data.CameraTransformation       (CameraTransformation)
 import qualified LunaStudio.Data.Error                      as Error
@@ -68,12 +68,18 @@ data NodeEditor = NodeEditor { _expressionNodes          :: ExpressionNodesMap
 data VisualizersPaths    = VisualizersPaths { _internalVisualizersPath :: FilePath
                                             , _lunaVisualizersPath     :: FilePath
                                             , _projectVisualizersPath  :: Maybe FilePath
-                                            } deriving (Default, Eq, Generic)
+                                            } deriving (Eq, Generic)
+instance Default VisualizersPaths
 
-data VisualizationBackup     = ValueBackup Text | StreamBackup [Text] | MessageBackup Text | ErrorBackup Text deriving (Generic, Eq, Show)
+data VisualizationBackup = ValueBackup IdentityString
+                         | StreamBackup [IdentityString]
+                         | MessageBackup Text
+                         | ErrorBackup Text
+                         deriving (Eq)
 data VisualizationsBackupMap = VisualizationsBackupMap { _backupMap :: Map NodeLoc VisualizationBackup
-                                                       } deriving (Generic, Default)
+                                                       } deriving (Generic)
 instance Eq VisualizationsBackupMap where _ == _ = True
+instance Default VisualizationsBackupMap
 
 instance Default NodeEditor where
     def = NodeEditor

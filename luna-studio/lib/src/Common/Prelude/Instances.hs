@@ -10,6 +10,7 @@ import           Data.HashMap.Strict          (HashMap)
 import qualified Data.HashMap.Strict          as HashMap
 import           Data.JSString                (JSString)
 import qualified Data.JSString                as JSString
+import qualified Data.JSString.Text           as JSString
 import           Development.Placeholders
 import           Prologue
 import           React.Flux
@@ -34,10 +35,10 @@ instance Default JSString where
     def = JSString.empty
 
 instance Convertible Text JSString where
-    convert = JSString.pack . convert
+    convert = JSString.textToJSString
 
 instance Convertible JSString Text where
-    convert = convert . JSString.unpack
+    convert = JSString.textFromJSString
 
 instance Convertible String JSString where
     convert = JSString.pack

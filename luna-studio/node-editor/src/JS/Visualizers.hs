@@ -9,6 +9,8 @@ import qualified Data.Map                   as Map
 import           Data.UUID.Types            (UUID)
 import           GHCJS.Marshal              (toJSValListOf)
 import           GHCJS.Marshal.Pure         (pFromJSVal)
+import           IdentityString             (IdentityString)
+import qualified IdentityString             as IS
 import           JavaScript.Array           (JSArray, toList)
 import           LunaStudio.Data.TypeRep    (ConstructorRep)
 
@@ -87,17 +89,24 @@ foreign import javascript safe "visualizerFramesManager.register($1);"
 foreign import javascript safe "visualizerFramesManager.notifyStreamRestart($1, $2, $3)"
     notifyStreamRestart' :: JSString -> JSString -> JSVal -> IO ()
 
-notifyStreamRestart :: UUID -> ConstructorRep -> [Text] -> IO ()
-notifyStreamRestart uid rep backup = notifyStreamRestart' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) =<< toJSValListOf backup
+notifyStreamRestart :: UUID -> ConstructorRep -> [IdentityString] -> IO ()
+notifyStreamRestart uid rep backup =
+    notifyStreamRestart' (convert $ show uid)
+                         (convert . BS.unpack $ Aeson.encode rep)
+                         =<< toJSValListOf (view IS.jsString <$> backup)
 
-sendStreamDatapoint :: UUID -> Text -> IO ()
-sendStreamDatapoint uid d = sendStreamDatapoint' (convert $ show uid) (convert d)
+sendStreamDatapoint :: UUID -> IdentityString -> IO ()
+sendStreamDatapoint uid d = sendStreamDatapoint' (convert $ show uid)
+                                                 (d ^. IS.jsString)
 
 registerVisualizerFrame :: UUID -> IO ()
 registerVisualizerFrame = registerVisualizerFrame' . convert . show
 
-sendVisualizationData :: UUID -> ConstructorRep -> Text -> IO ()
-sendVisualizationData uid rep d = sendVisualizationData' (convert $ show uid) (convert . BS.unpack $ Aeson.encode rep) (convert d)
+sendVisualizationData :: UUID -> ConstructorRep -> IdentityString -> IO ()
+sendVisualizationData uid rep d =
+    sendVisualizationData' (convert $ show uid)
+                           (convert . BS.unpack $ Aeson.encode rep)
+                           (d ^. IS.jsString)
 
 sendInternalData :: UUID -> Text -> IO ()
 sendInternalData uid d = sendInternalData' (convert $ show uid) (convert d)

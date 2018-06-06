@@ -34,6 +34,10 @@ dependencies:
   - yaml
   - zlib
 
+when:
+  - condition: impl(ghcjs)
+    dependencies: [ghcjs-base]
+
 default-extensions:
     - AllowAmbiguousTypes
     - ApplicativeDo

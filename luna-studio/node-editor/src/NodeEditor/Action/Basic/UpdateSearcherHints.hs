@@ -5,11 +5,13 @@ import           Common.Action.Command                (Command)
 import           Common.Prelude
 import qualified Data.Aeson                           as Aeson
 import qualified Data.ByteString.Lazy.Char8           as BS
+import qualified Data.JSString                        as JSString
 import qualified Data.Map                             as Map
 import           Data.Set                             (Set)
 import qualified Data.Set                             as Set
 import           Data.Text                            (Text)
 import qualified Data.Text                            as Text
+import qualified IdentityString                       as IS
 import           JS.Visualizers                       (sendVisualizationData)
 import           LunaStudio.Data.NodeSearcher         (EntryType (Function), ImportName, ImportsHints, Match (Match),
                                                        ModuleHints (ModuleHints), RawEntry (RawEntry), TypePreferation (TypePreferation),
@@ -65,7 +67,8 @@ updateDocs = withJustM getSearcher $ \s -> withJust (s ^. Searcher.docVis)
             sendVisualizationData
                 (docVis ^. visualizationId)
                 (ConstructorRep "Text" def)
-                (Text.pack . BS.unpack $ Aeson.encode doc)
+                =<< (IS.fromJSString . JSString.pack . BS.unpack
+                        $ Aeson.encode doc)
 
 localUpdateSearcherHintsPreservingSelection :: Command State ()
 localUpdateSearcherHintsPreservingSelection = do
