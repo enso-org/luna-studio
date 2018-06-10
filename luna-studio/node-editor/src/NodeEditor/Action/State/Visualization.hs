@@ -25,7 +25,7 @@ import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, 
 import           NodeEditor.Action.UUID                     (getUUID)
 import           NodeEditor.React.Model.Node                (NodeLoc)
 import           NodeEditor.React.Model.NodeEditor          (VisualizersPaths (VisualizersPaths))
-import           NodeEditor.React.Model.Visualization       (Content (Data, Error, Message), Data (Stream, Value), IframeId, Mode (Hidden),
+import           NodeEditor.React.Model.Visualization       (Content (Data, Error, Message), Data (Stream, Value), IframeId, Mode (Default, Hidden),
                                                              NodeVisualizations (NodeVisualizations), Visualization (Visualization),
                                                              VisualizationId, Visualizer (Visualizer), VisualizerId (VisualizerId),
                                                              VisualizerPath, VisualizerType (LunaVisualizer, ProjectVisualizer),
@@ -141,8 +141,19 @@ insertVisualization nl vis = getNodeVisualizations nl >>= \case
                 True
                 ((adjustedVis ^. iframeId /=) . view iframeId)
                 $ mayPrevVis
-            needsRegister = isActive visEnabled errVisEnabled c adjustedVis &&
-                (not prevActive || visualizerChanged || iframeChanged)
+
+            prevModeDefault = (view mode <$> mayPrevVis) /= Just Default
+            prevModeHidden  = (view mode <$> mayPrevVis) /= Just Hidden
+            -- TODO: Remove layerChanged when iframe replaced
+            layerChanged    = case adjustedVis ^. mode of
+                Default -> (view mode <$> mayPrevVis) /= Just Default
+                Hidden  -> False
+                _       -> prevModeDefault || prevModeHidden
+            needsRegister   = isActive visEnabled errVisEnabled c adjustedVis
+                    && ( not prevActive
+                        || visualizerChanged
+                        || iframeChanged
+                        || layerChanged )
         finalVis <- if not needsRegister then pure adjustedVis else do
             uuid <- getUUID
             JS.registerVisualizerFrame uuid

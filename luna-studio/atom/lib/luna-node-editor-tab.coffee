@@ -75,6 +75,9 @@ class LunaNodeEditorTab extends View
                     tag:      evt.tag.substring(0, evt.tag.length - 5)
                     contents: evt
 
+                unless target?
+                    target = []
+
                 @nodeEditor.pushViewEvent
                     path:   path
                     target: target

@@ -9,7 +9,7 @@ import           NodeEditor.Event.Event               (Event (View))
 import           NodeEditor.Event.Shortcut            (ShortcutEvent)
 import qualified NodeEditor.Event.Shortcut            as Shortcut
 import           NodeEditor.Event.UI                  (UIEvent (AppEvent, VisualizationEvent))
-import           NodeEditor.Event.View                (BaseEvent (SelectVisualizer), ViewEvent (ViewEvent), base, path, _SelectVisualizer)
+import           NodeEditor.Event.View                (BaseEvent (SelectVisualizer), ViewEvent (ViewEvent), base, path, _FocusVisualization, _SelectVisualizer)
 import qualified NodeEditor.Event.View                as View
 import qualified NodeEditor.React.Event.App           as App
 import qualified NodeEditor.React.Event.Visualization as Visualization
@@ -45,18 +45,27 @@ handleShortcutEvent evt = case evt ^. Shortcut.shortcut of
     Shortcut.CloseVisualizationPreview  -> Just exitAnyVisualizationMode
     _ -> Nothing
 
+unfocusesVisualization :: ViewEvent -> Bool
+unfocusesVisualization evt = case evt ^. base of
+    View.FocusVisualization {} -> False
+    View.Mouse mevt            -> not $ elem (mevt ^. View.type_)
+        ["mouseenter", "mouseleave", "mousemove", "mouseout", "mouseover"]
+    _                          -> True
+
 handleViewEvent :: ViewEvent -> Maybe (Command State ())
-handleViewEvent evt = if not $ has (base . _SelectVisualizer) evt
-    then Nothing
-    else case evt ^. path of
-        [ "NodeEditor"
-            , "NodeVisualizations", nlString
-            , "Visualization",      visIdString ]
-            -> Visualization.selectVisualizer
-                (Node $ read nlString)
-                (read visIdString)
+handleViewEvent evt = case evt ^. path of
+    [ "NodeEditor", "NodeVisualization", nlString, visIdString ] -> do
+        let parent    = Node $ read nlString
+            visId     = read visIdString
+            maySelect = Visualization.selectVisualizer parent visId 
                 <$> evt ^? base . _SelectVisualizer . View.visualizerId
-        _ -> Nothing
+            mayFocus  = if has (base . _FocusVisualization) evt
+                then Just $ Visualization.focusVisualization parent visId
+                else Nothing
+        listToMaybe $ catMaybes [mayFocus, maySelect]
+    _ -> if unfocusesVisualization evt
+        then Just exitAnyVisualizationMode
+        else Nothing
 
 exitAnyVisualizationMode :: Command State ()
 exitAnyVisualizationMode = do

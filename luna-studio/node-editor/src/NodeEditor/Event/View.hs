@@ -9,6 +9,7 @@ import           Data.Convert                       (Convertible (convert))
 import           LunaStudio.Data.NodeLoc            (NodeLoc)
 import           LunaStudio.Data.PortRef            (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           LunaStudio.Data.ScreenPosition     (ScreenPosition, fromDoubles)
+import           LunaStudio.Data.Visualization      (VisualizationId)
 import           LunaStudio.Data.Visualizer         (VisualizerId (VisualizerId))
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem)
 import           Prelude                            (error)
@@ -57,28 +58,28 @@ makeLenses ''MouseEvent
 
 data NavigateEvent = NavigateEvent
     { _to :: Breadcrumb BreadcrumbItem
-    , _aesonToOld1 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld1 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
     } deriving (Generic, Show)
 
 makeLenses ''NavigateEvent
 
 data NodeMoveEvent = NodeMoveEvent
     { _position :: (Double, Double)
-    , _aesonToOld2 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld2 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
     } deriving (Generic, Show)
 
 makeLenses ''NodeMoveEvent
 
 data NodeSelectEvent = NodeSelectEvent
     { _select :: Bool
-    , _aesonToOld3 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld3 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
     } deriving (Generic, Show)
 
 makeLenses ''NodeSelectEvent
 
 data DisconnectEvent = DisconnectEvent
     { _src :: Bool
-    , _aesonToOld4 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld4 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
     } deriving (Generic, Show)
 
 makeLenses ''DisconnectEvent
@@ -101,20 +102,28 @@ makeLenses ''SearcherEditEvent
 
 data SelectVisualizerEvent = SelectVisualizerEvent
     { _visualizerId :: VisualizerId
-    , _aesonToOld5 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld5 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
     } deriving (Generic, Show)
 
 makeLenses ''SelectVisualizerEvent
 
+data FocusVisualizationEvent = FocusVisualizationEvent
+    { _aesonTooOld6 :: Maybe ()
+    , _aesonTooOld7 :: Maybe ()
+    } deriving (Generic, Show)
+
+makeLenses ''FocusVisualizationEvent
+
 data BaseEvent
-    = Mouse            MouseEvent
-    | Navigate         NavigateEvent
-    | NodeMove         NodeMoveEvent
-    | NodeSelect       NodeSelectEvent
-    | Disconnect       DisconnectEvent
-    | SearcherAccept   SearcherAcceptEvent
-    | SearcherEdit     SearcherEditEvent
-    | SelectVisualizer SelectVisualizerEvent
+    = Mouse              MouseEvent
+    | Navigate           NavigateEvent
+    | NodeMove           NodeMoveEvent
+    | NodeSelect         NodeSelectEvent
+    | Disconnect         DisconnectEvent
+    | SearcherAccept     SearcherAcceptEvent
+    | SearcherEdit       SearcherEditEvent
+    | SelectVisualizer   SelectVisualizerEvent
+    | FocusVisualization FocusVisualizationEvent
     deriving (Generic, Show)
 
 makePrisms ''BaseEvent
@@ -135,34 +144,37 @@ instance NFData DisconnectEvent
 instance NFData SearcherAcceptEvent
 instance NFData SearcherEditEvent
 instance NFData SelectVisualizerEvent
+instance NFData FocusVisualizationEvent
 instance NFData Target
 instance NFData ViewEvent
 instance NFData BaseEvent
 
-instance FromJSON MouseEvent            where parseJSON = parseDropUnary
-instance FromJSON NavigateEvent         where parseJSON = parseDropUnary
-instance FromJSON NodeMoveEvent         where parseJSON = parseDropUnary
-instance FromJSON NodeSelectEvent       where parseJSON = parseDropUnary
-instance FromJSON DisconnectEvent       where parseJSON = parseDropUnary
-instance FromJSON SearcherAcceptEvent   where parseJSON = parseDropUnary
-instance FromJSON SearcherEditEvent     where parseJSON = parseDropUnary
-instance FromJSON SelectVisualizerEvent where parseJSON = parseDropUnary
-instance FromJSON Target                where parseJSON = parseDropUnary
-instance FromJSON ViewEvent             where parseJSON = parseDropUnary
-instance FromJSON BaseEvent             where parseJSON = parseDropUnary
+instance FromJSON MouseEvent              where parseJSON = parseDropUnary
+instance FromJSON NavigateEvent           where parseJSON = parseDropUnary
+instance FromJSON NodeMoveEvent           where parseJSON = parseDropUnary
+instance FromJSON NodeSelectEvent         where parseJSON = parseDropUnary
+instance FromJSON DisconnectEvent         where parseJSON = parseDropUnary
+instance FromJSON SearcherAcceptEvent     where parseJSON = parseDropUnary
+instance FromJSON SearcherEditEvent       where parseJSON = parseDropUnary
+instance FromJSON SelectVisualizerEvent   where parseJSON = parseDropUnary
+instance FromJSON FocusVisualizationEvent where parseJSON = parseDropUnary
+instance FromJSON Target                  where parseJSON = parseDropUnary
+instance FromJSON ViewEvent               where parseJSON = parseDropUnary
+instance FromJSON BaseEvent               where parseJSON = parseDropUnary
 
 
-instance ToJSON MouseEvent            where toEncoding = toEncodingDropUnary
-instance ToJSON NavigateEvent         where toEncoding = toEncodingDropUnary
-instance ToJSON NodeMoveEvent         where toEncoding = toEncodingDropUnary
-instance ToJSON NodeSelectEvent       where toEncoding = toEncodingDropUnary
-instance ToJSON DisconnectEvent       where toEncoding = toEncodingDropUnary
-instance ToJSON SearcherAcceptEvent   where toEncoding = toEncodingDropUnary
-instance ToJSON SearcherEditEvent     where toEncoding = toEncodingDropUnary
-instance ToJSON SelectVisualizerEvent where toEncoding = toEncodingDropUnary
-instance ToJSON Target                where toEncoding = toEncodingDropUnary
-instance ToJSON ViewEvent             where toEncoding = toEncodingDropUnary
-instance ToJSON BaseEvent             where toEncoding = toEncodingDropUnary
+instance ToJSON MouseEvent              where toEncoding = toEncodingDropUnary
+instance ToJSON NavigateEvent           where toEncoding = toEncodingDropUnary
+instance ToJSON NodeMoveEvent           where toEncoding = toEncodingDropUnary
+instance ToJSON NodeSelectEvent         where toEncoding = toEncodingDropUnary
+instance ToJSON DisconnectEvent         where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherAcceptEvent     where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherEditEvent       where toEncoding = toEncodingDropUnary
+instance ToJSON SelectVisualizerEvent   where toEncoding = toEncodingDropUnary
+instance ToJSON FocusVisualizationEvent where toEncoding = toEncodingDropUnary
+instance ToJSON Target                  where toEncoding = toEncodingDropUnary
+instance ToJSON ViewEvent               where toEncoding = toEncodingDropUnary
+instance ToJSON BaseEvent               where toEncoding = toEncodingDropUnary
 
 instance EventName ViewEvent where
     eventName = intercalate "." . view path
@@ -274,3 +286,7 @@ instance Convertible Target NodeLoc where
 instance Convertible Target VisualizerId where
     convert (Target [visId]) = read visId
     convert _ = error "Cannot parse Target to VisualizerId"
+
+instance Convertible Target VisualizationId where
+    convert (Target [visId]) = read visId
+    convert _ = error "Cannot parse Target to VisualizationId"
