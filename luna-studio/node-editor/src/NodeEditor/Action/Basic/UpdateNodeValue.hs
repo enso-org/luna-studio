@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BangPatterns #-}
 module NodeEditor.Action.Basic.UpdateNodeValue where
 
 import           Common.Action.Command                      (Command)

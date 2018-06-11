@@ -68,7 +68,7 @@ updateDocs = withJustM getSearcher $ \s -> withJust (s ^. Searcher.docVis)
                 (docVis ^. visualizationId)
                 (ConstructorRep "Text" def)
                 =<< (IS.fromJSString . JSString.pack . BS.unpack
-                        $ Aeson.encode doc)
+                    $ Aeson.encode doc)
 
 localUpdateSearcherHintsPreservingSelection :: Command State ()
 localUpdateSearcherHintsPreservingSelection = do

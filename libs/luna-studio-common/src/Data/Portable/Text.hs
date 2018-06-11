@@ -32,7 +32,7 @@ import           Data.Text        (Text)
 
 type PortableText = JSString
 
-foreign import javascript unsafe "new TextDecoder(\"utf-8\").decode(new DataView($1, $2, $3))"
+foreign import javascript unsafe "new TextDecoder('utf-8').decode(new DataView($1, $2, $3))"
     js_decodeUtf8 :: ArrayBuffer -> Int -> Int -> JSString
 
 foreign import javascript unsafe "new TextEncoder().encode($1)"

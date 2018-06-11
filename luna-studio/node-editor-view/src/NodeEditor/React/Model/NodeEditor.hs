@@ -71,11 +71,13 @@ data VisualizersPaths    = VisualizersPaths { _internalVisualizersPath :: FilePa
                                             } deriving (Eq, Generic)
 instance Default VisualizersPaths
 
-data VisualizationBackup = ValueBackup IdentityString
-                         | StreamBackup [IdentityString]
-                         | MessageBackup Text
-                         | ErrorBackup Text
-                         deriving (Eq)
+data VisualizationBackup
+    = ValueBackup IdentityString
+    | StreamBackup [IdentityString]
+    | MessageBackup Text
+    | ErrorBackup Text
+    deriving (Eq)
+
 data VisualizationsBackupMap = VisualizationsBackupMap { _backupMap :: Map NodeLoc VisualizationBackup
                                                        } deriving (Generic)
 instance Eq VisualizationsBackupMap where _ == _ = True

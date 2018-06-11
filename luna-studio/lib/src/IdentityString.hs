@@ -6,8 +6,9 @@ import Common.Prelude
 import Data.Text      (Text)
 import Unsafe.Coerce
 
-data IdentityString = IdentityString { _jsString :: !JSString
-                                     , _eqRef    :: !JSVal }
+data IdentityString = IdentityString
+    { _jsString :: !JSString
+    , _eqRef    :: !JSVal }
 
 makeLenses ''IdentityString
 
@@ -20,5 +21,5 @@ foreign import javascript safe "new Object()"
 instance Eq IdentityString where
     IdentityString _ r1 == IdentityString _ r2 = jsValEq r1 r2
 
-fromJSString :: JSString -> IO IdentityString
-fromJSString t = IdentityString t <$> newRef
+fromJSString :: MonadIO m => JSString -> m IdentityString
+fromJSString t = liftIO $ IdentityString t <$> newRef
