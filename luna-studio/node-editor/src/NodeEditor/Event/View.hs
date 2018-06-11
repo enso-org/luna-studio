@@ -114,16 +114,24 @@ data FocusVisualizationEvent = FocusVisualizationEvent
 
 makeLenses ''FocusVisualizationEvent
 
+data ToggleVisualizationsEvent = ToggleVisualizationsEvent
+    { _aesonTooOld8 :: Maybe ()
+    , _aesonTooOld9 :: Maybe ()
+    } deriving (Generic, Show)
+
+makeLenses ''ToggleVisualizationsEvent
+
 data BaseEvent
-    = Mouse              MouseEvent
-    | Navigate           NavigateEvent
-    | NodeMove           NodeMoveEvent
-    | NodeSelect         NodeSelectEvent
-    | Disconnect         DisconnectEvent
-    | SearcherAccept     SearcherAcceptEvent
-    | SearcherEdit       SearcherEditEvent
-    | SelectVisualizer   SelectVisualizerEvent
-    | FocusVisualization FocusVisualizationEvent
+    = Mouse                MouseEvent
+    | Navigate             NavigateEvent
+    | NodeMove             NodeMoveEvent
+    | NodeSelect           NodeSelectEvent
+    | Disconnect           DisconnectEvent
+    | SearcherAccept       SearcherAcceptEvent
+    | SearcherEdit         SearcherEditEvent
+    | SelectVisualizer     SelectVisualizerEvent
+    | FocusVisualization   FocusVisualizationEvent
+    | ToggleVisualizations ToggleVisualizationsEvent
     deriving (Generic, Show)
 
 makePrisms ''BaseEvent
@@ -145,36 +153,39 @@ instance NFData SearcherAcceptEvent
 instance NFData SearcherEditEvent
 instance NFData SelectVisualizerEvent
 instance NFData FocusVisualizationEvent
+instance NFData ToggleVisualizationsEvent
 instance NFData Target
 instance NFData ViewEvent
 instance NFData BaseEvent
 
-instance FromJSON MouseEvent              where parseJSON = parseDropUnary
-instance FromJSON NavigateEvent           where parseJSON = parseDropUnary
-instance FromJSON NodeMoveEvent           where parseJSON = parseDropUnary
-instance FromJSON NodeSelectEvent         where parseJSON = parseDropUnary
-instance FromJSON DisconnectEvent         where parseJSON = parseDropUnary
-instance FromJSON SearcherAcceptEvent     where parseJSON = parseDropUnary
-instance FromJSON SearcherEditEvent       where parseJSON = parseDropUnary
-instance FromJSON SelectVisualizerEvent   where parseJSON = parseDropUnary
-instance FromJSON FocusVisualizationEvent where parseJSON = parseDropUnary
-instance FromJSON Target                  where parseJSON = parseDropUnary
-instance FromJSON ViewEvent               where parseJSON = parseDropUnary
-instance FromJSON BaseEvent               where parseJSON = parseDropUnary
+instance FromJSON MouseEvent                where parseJSON = parseDropUnary
+instance FromJSON NavigateEvent             where parseJSON = parseDropUnary
+instance FromJSON NodeMoveEvent             where parseJSON = parseDropUnary
+instance FromJSON NodeSelectEvent           where parseJSON = parseDropUnary
+instance FromJSON DisconnectEvent           where parseJSON = parseDropUnary
+instance FromJSON SearcherAcceptEvent       where parseJSON = parseDropUnary
+instance FromJSON SearcherEditEvent         where parseJSON = parseDropUnary
+instance FromJSON SelectVisualizerEvent     where parseJSON = parseDropUnary
+instance FromJSON FocusVisualizationEvent   where parseJSON = parseDropUnary
+instance FromJSON ToggleVisualizationsEvent where parseJSON = parseDropUnary
+instance FromJSON Target                    where parseJSON = parseDropUnary
+instance FromJSON ViewEvent                 where parseJSON = parseDropUnary
+instance FromJSON BaseEvent                 where parseJSON = parseDropUnary
 
 
-instance ToJSON MouseEvent              where toEncoding = toEncodingDropUnary
-instance ToJSON NavigateEvent           where toEncoding = toEncodingDropUnary
-instance ToJSON NodeMoveEvent           where toEncoding = toEncodingDropUnary
-instance ToJSON NodeSelectEvent         where toEncoding = toEncodingDropUnary
-instance ToJSON DisconnectEvent         where toEncoding = toEncodingDropUnary
-instance ToJSON SearcherAcceptEvent     where toEncoding = toEncodingDropUnary
-instance ToJSON SearcherEditEvent       where toEncoding = toEncodingDropUnary
-instance ToJSON SelectVisualizerEvent   where toEncoding = toEncodingDropUnary
-instance ToJSON FocusVisualizationEvent where toEncoding = toEncodingDropUnary
-instance ToJSON Target                  where toEncoding = toEncodingDropUnary
-instance ToJSON ViewEvent               where toEncoding = toEncodingDropUnary
-instance ToJSON BaseEvent               where toEncoding = toEncodingDropUnary
+instance ToJSON MouseEvent                where toEncoding = toEncodingDropUnary
+instance ToJSON NavigateEvent             where toEncoding = toEncodingDropUnary
+instance ToJSON NodeMoveEvent             where toEncoding = toEncodingDropUnary
+instance ToJSON NodeSelectEvent           where toEncoding = toEncodingDropUnary
+instance ToJSON DisconnectEvent           where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherAcceptEvent       where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherEditEvent         where toEncoding = toEncodingDropUnary
+instance ToJSON SelectVisualizerEvent     where toEncoding = toEncodingDropUnary
+instance ToJSON FocusVisualizationEvent   where toEncoding = toEncodingDropUnary
+instance ToJSON ToggleVisualizationsEvent where toEncoding = toEncodingDropUnary
+instance ToJSON Target                    where toEncoding = toEncodingDropUnary
+instance ToJSON ViewEvent                 where toEncoding = toEncodingDropUnary
+instance ToJSON BaseEvent                 where toEncoding = toEncodingDropUnary
 
 instance EventName ViewEvent where
     eventName = intercalate "." . view path

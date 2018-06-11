@@ -9,7 +9,7 @@ import           NodeEditor.Event.Event               (Event (View))
 import           NodeEditor.Event.Shortcut            (ShortcutEvent)
 import qualified NodeEditor.Event.Shortcut            as Shortcut
 import           NodeEditor.Event.UI                  (UIEvent (AppEvent, VisualizationEvent))
-import           NodeEditor.Event.View                (BaseEvent (SelectVisualizer), ViewEvent (ViewEvent), base, path, _FocusVisualization, _SelectVisualizer)
+import           NodeEditor.Event.View                (BaseEvent (SelectVisualizer), ViewEvent (ViewEvent), base, path, _FocusVisualization, _SelectVisualizer, _ToggleVisualizations)
 import qualified NodeEditor.Event.View                as View
 import qualified NodeEditor.React.Event.App           as App
 import qualified NodeEditor.React.Event.Visualization as Visualization
@@ -63,9 +63,12 @@ handleViewEvent evt = case evt ^. path of
                 then Just $ Visualization.focusVisualization parent visId
                 else Nothing
         listToMaybe $ catMaybes [mayFocus, maySelect]
-    _ -> if unfocusesVisualization evt
-        then Just exitAnyVisualizationMode
-        else Nothing
+    _ -> if has (base . _ToggleVisualizations) evt
+            then Just . Visualization.toggleVisualizations
+                . Node . convert $ evt ^. View.target
+        else if unfocusesVisualization evt
+            then Just exitAnyVisualizationMode
+            else Nothing
 
 exitAnyVisualizationMode :: Command State ()
 exitAnyVisualizationMode = do
