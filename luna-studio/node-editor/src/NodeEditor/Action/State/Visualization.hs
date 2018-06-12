@@ -98,7 +98,7 @@ adjust vis nl nv = do
     let visId         = vis ^. visualizationId
         visEnabled    = nv ^. visualizationsEnabled
         errVisEnabled = nv ^. errorVisualizationsEnabled
-        c             = nv ^. content
+        visContent    = nv ^. content
         visualizerId' = vis ^. visualizer . visualizerId
         hide v        = v & mode .~ Hidden
         setDataVisualizer v newVisualizer = v
@@ -110,7 +110,7 @@ adjust vis nl nv = do
         else case Map.lookup visualizerId' $ nv ^. visualizers of
             Just visPath -> pure . Just $ Visualizer visualizerId' visPath
             Nothing      -> getPreferedVisualizer nl
-    pure $ if not (isActive visEnabled errVisEnabled c vis)
+    pure $ if not (isActive visEnabled errVisEnabled visContent vis)
         || isErrorVisualization vis
             then vis
             else case mayCurrentInternalVisualizer of
@@ -129,11 +129,11 @@ insertVisualization nl vis = getNodeVisualizations nl >>= \case
         let visId = vis ^. visualizationId
             visEnabled    = nv ^. visualizationsEnabled
             errVisEnabled = nv ^. errorVisualizationsEnabled
-            c             = nv ^. content
+            visContent    = nv ^. content
             mayPrevVis = Map.lookup visId $ nv ^. visualizations
             prevActive = maybe
                 False
-                (isActive visEnabled errVisEnabled c)
+                (isActive visEnabled errVisEnabled visContent)
                 mayPrevVis
             visualizerChanged = (view visualizer <$> mayPrevVis)
                 /= Just (adjustedVis ^. visualizer)
@@ -149,7 +149,8 @@ insertVisualization nl vis = getNodeVisualizations nl >>= \case
                 Default -> (view mode <$> mayPrevVis) /= Just Default
                 Hidden  -> False
                 _       -> prevModeDefault || prevModeHidden
-            needsRegister   = isActive visEnabled errVisEnabled c adjustedVis
+            needsRegister 
+                = isActive visEnabled errVisEnabled visContent adjustedVis
                     && ( not prevActive
                         || visualizerChanged
                         || iframeChanged
@@ -188,16 +189,16 @@ getContent :: NodeLoc -> Command State (Maybe Content)
 getContent nl = view content `fmap2` getNodeVisualizations nl
 
 setContent :: NodeLoc -> Content -> Command State ()
-setContent nl c = withJustM (getNodeVisualizations nl) $ \nv -> do
+setContent nl visContent = withJustM (getNodeVisualizations nl) $ \nv -> do
     let prevC = nv ^. content
-    unless (nv ^. content == c) $ do
-        modifyNodeEditor $ NE.nodeVisualizations . ix nl . content .= c
+    unless (nv ^. content == visContent) $ do
+        modifyNodeEditor $ NE.nodeVisualizations . ix nl . content .= visContent
         let visMap        = nv ^. visualizations
             visEnabled    = nv ^. visualizationsEnabled
             errVisEnabled = nv ^. errorVisualizationsEnabled
         forM_ visMap $ \vis -> do
             newVis <- insertVisualization nl vis
-            let needsUpdate = isActive visEnabled errVisEnabled c vis
+            let needsUpdate = isActive visEnabled errVisEnabled visContent vis
                     && vis ^. iframeId == newVis ^. iframeId
             when needsUpdate $ sendContent nl [newVis ^. iframeId]
 
@@ -332,7 +333,6 @@ toggleVisualizations :: NodeLoc -> Command State ()
 toggleVisualizations nl = withJustM (getNodeVisualizations nl) $ \nv -> do
     let visEnabled    = nv ^. visualizationsEnabled
         errVisEnabled = nv ^. errorVisualizationsEnabled
-        c             = nv ^. content
     toUpdate <- if has (content . _Error) nv
         then do
             modifyNodeEditor
