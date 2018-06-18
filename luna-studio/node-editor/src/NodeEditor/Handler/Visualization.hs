@@ -21,7 +21,7 @@ import           NodeEditor.State.Global              (State)
 handle :: Event -> Maybe (Command State ())
 handle (UI (VisualizationEvent evt))   = Just $ handleVisualizationEvent evt
 handle (Shortcut evt)                  = handleShortcutEvent evt
-handle (UI (AppEvent (App.Wheel _ _))) = Just exitAnyVisualizationMode
+handle (UI (AppEvent (App.Wheel _ _))) = Just Visualization.exitAnyVisualizationMode
 handle (View evt)                      = handleViewEvent evt
 handle _                               = Nothing
 
@@ -39,9 +39,8 @@ handleVisualizationEvent visEvt = let
 handleShortcutEvent :: ShortcutEvent -> Maybe (Command State())
 handleShortcutEvent evt = case evt ^. Shortcut.shortcut of
     Shortcut.ZoomVisualization -> Just $ Visualization.handleZoomVisualization
-    Shortcut.OpenVisualizationPreview
-        -> Just $ Visualization.enterVisualizationMode Preview
-    Shortcut.CloseVisualizationPreview  -> Just exitAnyVisualizationMode
+    Shortcut.OpenVisualizationPreview  -> Just $ Visualization.openPreview
+    Shortcut.CloseVisualizationPreview -> Just $ Visualization.closePreview
     _ -> Nothing
 
 unfocusesVisualization :: ViewEvent -> Bool
@@ -66,19 +65,5 @@ handleViewEvent evt = case evt ^. path of
             then Just . Visualization.toggleVisualizations
                 . Node $ View.getNodeLoc evt
         else if unfocusesVisualization evt
-            then Just exitAnyVisualizationMode
+            then Just Visualization.exitAnyVisualizationMode
             else Nothing
-
-exitAnyVisualizationMode :: Command State ()
-exitAnyVisualizationMode = do
-    continue Visualization.exitVisualizationMode
-    continue Visualization.exitDocVisualizationMode
-
--- handle :: Event -> Maybe (Command State ())
--- handle (UI (VisualizationEvent (Visualization.Pin   nodeLoc visIx         ))) = Just $ Visualization.pin   nodeLoc visIx
--- handle (UI (VisualizationEvent (Visualization.Unpin nodeLoc visIx position))) = Just $ Visualization.unpin nodeLoc visIx position
--- handle (UI (VisualizationEvent (Visualization.MouseDown evt nodeLoc visIx position))) = Just $
---     when (Mouse.withoutMods evt Mouse.leftButton) $ Visualization.startDrag nodeLoc visIx position evt
--- handle (UI (AppEvent (App.MouseMove mevt _))) = Just $ continue $ Visualization.drag mevt
--- handle (UI (AppEvent (App.MouseUp   mevt  ))) = Just $ continue $ Visualization.stopDrag mevt
--- handle _ = Nothing

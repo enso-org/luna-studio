@@ -184,6 +184,164 @@
     }
 }
 
-.luna-dropdown__active {
-    background-color: #131311;
+
+
+/////////////////////////////
+//        basegl-ui        //
+/////////////////////////////
+
+// This is a copy of basegl-ui/dist/style/_visualizations.less
+
+/////////////////////////////
+//      visualization      //
+/////////////////////////////
+
+.luna-basegl-visualization {
+    position: relative;
+    pointer-events: none;
+
+    .luna-basegl-visualization-iframe {
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        background-color: hsl(40,8%,10%);
+    }
+}
+
+
+/////////////////////////////
+//     fullscreen mode     //
+/////////////////////////////
+
+.luna-basegl-visualization--fullscreen {
+    position: fixed;
+    width:    100% !important;
+    height:   100% !important;
+    top:      0px;
+    left:     0px;
+    pointer-events: auto;
+
+    .luna-basegl-visualization-iframe {
+        width:    95%;
+        height:   95%;
+        position: relative;
+        left:     2.5%;
+        top:      2.5%;
+        pointer-events: auto;
+        background-color: hsl(40,8%,10%);
+    }
+}
+
+/////////////////////////////
+//      dropdown menu      //
+/////////////////////////////
+
+.luna-basegl-dropdown {
+    @w:          24px;
+    cursor:      pointer;
+    color:       @luna-text-color;
+    position:    absolute;
+    line-height: 24px;
+    z-index:     1;
+    top:         0;
+    left:       -@w/2;
+    width:       @w;
+    text-align:  center;
+    &:hover {
+        .luna-basegl-dropdown__menu {
+            opacity: 1;
+            display: flex;
+        }
+    }
+}
+
+
+.luna-basegl-dropdown--top {
+    @w:          24px;
+    cursor:      pointer;
+    color:       @luna-text-color;
+    position:    absolute;
+    line-height: 24px;
+    z-index:     1;
+    top:         0;
+    left:       -@w/2;
+    width:       @w;
+    text-align:  center;
+    pointer-events: auto;
+    &:hover {
+        .luna-basegl-dropdown__menu {
+            opacity: 1;
+            display: flex;
+        }
+    }
+}
+
+.luna-basegl-dropdown--fullscreen {
+    @w:          24px;
+    @h:          24px;
+    cursor:      pointer;
+    color:       @luna-text-color;
+    position:    absolute;
+    line-height: 24px;
+    z-index:     10000;
+    top:        -@h/2;
+    left:        @w/2;
+    width:       @w;
+    text-align:  center;
+    pointer-events: auto;
+    &:hover {
+        .luna-basegl-dropdown__menu--fullscreen {
+            opacity:    1;
+            display:    flex;
+        }
+    }
+}
+
+.luna-basegl-dropdown__menu {
+    opacity:        0;
+    display:        none;
+    margin-bottom:  4px;
+    list-style:     none;
+    width:          200px;
+    text-align:     right;
+    align-items:    flex-end;
+    flex-direction: column;
+    white-space:    nowrap;
+    position:       absolute;
+    right:          0;
+    li {
+        cursor:  pointer;
+        padding: 0 8px;
+        &:hover {
+            color: lighten(@luna-text-color, 20%);
+        }
+    }
+    .luna-basegl-dropdown__active {
+        background-color: #131311;
+    }    
+}
+
+.luna-basegl-dropdown__menu--fullscreen {
+    opacity:        0;
+    display:        none;
+    margin-bottom:  4px;
+    list-style:     none;
+    width:          200px;
+    text-align:     left;
+    align-items:    flex-begin;
+    flex-direction: column;
+    white-space:    nowrap;
+    position:       absolute;
+    left:           0;
+    pointer-events: auto;
+    li {
+        cursor:  pointer;
+        padding: 0 8px;
+        &:hover {
+            color: lighten(@luna-text-color, 20%);
+        }
+    }
+    .luna-basegl-dropdown__active {
+        background-color: #131311;
+    }    
 }

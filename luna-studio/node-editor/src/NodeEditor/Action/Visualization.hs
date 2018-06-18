@@ -23,6 +23,7 @@ import           NodeEditor.React.Model.Visualization       (Mode (Focused, Full
                                                              Visualization (Visualization), VisualizationId, Visualizer (Visualizer),
                                                              VisualizerId, mode, selectedVisualizerId, visualizationId, visualizations,
                                                              visualizer, visualizers)
+import qualified NodeEditor.React.Model.Visualization       as Vis
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update),
                                                              DocVisualizationActive (DocVisualizationActive),
                                                              VisualizationActive (VisualizationActive), docVisualizationActiveAction,
@@ -68,6 +69,14 @@ instance Action (Command State) DocVisualizationActive where
             & docVisualizationActiveSelectedMode   .~ Focused
             & docVisualizationActiveTriggeredByVis .~ False
 
+exitAnyVisualizationMode :: Command State ()
+exitAnyVisualizationMode
+    =  continue exitDocVisualizationMode
+    >> continue exitVisualizationMode where
+        exitDocVisualizationMode :: DocVisualizationActive -> Command State ()
+        exitDocVisualizationMode = end
+        exitVisualizationMode :: VisualizationActive -> Command State ()
+        exitVisualizationMode = end
 
 focusVisualization :: Parent -> VisualizationId -> Command State ()
 focusVisualization (Node nl) visId
@@ -75,12 +84,51 @@ focusVisualization (Node nl) visId
 focusVisualization Searcher  _
     = begin $ DocVisualizationActive Focused False
 
-exitVisualizationMode :: VisualizationActive -> Command State ()
-exitVisualizationMode = end
+handleZoomVisualization :: Command State ()
+handleZoomVisualization = do
+    mayMode <- view visualizationActiveSelectedMode
+        `fmap2` checkAction visualizationActiveAction
+    enterVisualizationMode $ if mayMode == Just FullScreen
+        then Focused
+        else FullScreen
 
-exitDocVisualizationMode :: DocVisualizationActive -> Command State ()
-exitDocVisualizationMode = end
+closePreview :: Command State ()
+closePreview = continue _closePreview where
+    _closePreview action = when
+        (action ^. visualizationActiveSelectedMode == Preview)
+        $ enterVisualizationMode Focused
 
+openPreview :: Command State ()
+openPreview = checkAction visualizationActiveAction >>= \mayAction -> do
+    unless ((view visualizationActiveSelectedMode <$> mayAction)
+        == Just FullScreen)
+            $ enterVisualizationMode Preview
+
+enterVisualizationMode :: Mode -> Command State ()
+enterVisualizationMode visMode = _enterVisualizationMode where
+    _enterVisualizationMode :: Command State ()
+    _enterVisualizationMode = do
+        mayNl    <- getNodeLoc
+        mayVisId <- maybe (pure Nothing) getVisId mayNl
+        withJust ((,) <$> mayNl <*> mayVisId) $ uncurry enterVisMode
+    getNodeLoc :: Command State (Maybe ExpressionNode.NodeLoc)
+    getNodeLoc = do
+        let _getNodeLoc [n] = Just $ n ^. nodeLoc
+            _getNodeLoc _   = Nothing
+        _getNodeLoc <$> getSelectedNodes
+    getVisId :: ExpressionNode.NodeLoc -> Command State (Maybe VisualizationId)
+    getVisId nl = do
+        let _getVisId nv = do
+                let visMap = nv ^. Vis.activeVisualizations
+                if Map.size visMap /= 1
+                    then Nothing
+                    else listToMaybe $ Map.keys visMap
+        fmap join $ _getVisId `fmap2` Visualization.getNodeVisualizations nl
+    enterVisMode :: ExpressionNode.NodeLoc -> VisualizationId -> Command State ()
+    enterVisMode nl visId = unlessM (checkIfActionPerfoming searcherAction) $ do
+        let action = VisualizationActive nl visId visMode False
+        mayPrevVisAction <- checkAction visualizationActiveAction
+        when (Just action /= mayPrevVisAction) $ begin action
 
 selectVisualizer :: Parent -> VisualizationId -> VisualizerId
     -> Command State ()
@@ -89,58 +137,6 @@ selectVisualizer (Node nl) visId visualizerId = do
     Visualization.selectVisualizer nl visId visualizerId
 selectVisualizer Searcher _ _ = $notImplemented
 
-
-handleZoomVisualization :: Command State ()
-handleZoomVisualization = do
-    searcherActive <- checkIfActionPerfoming searcherAction
-    let handleZoomVis = do
-            mayMode <- view visualizationActiveSelectedMode
-                `fmap2` checkAction visualizationActiveAction
-            if mayMode == Just FullScreen
-                then continue exitVisualizationMode
-                else enterVisualizationMode FullScreen
-        -- handleZoomDocVis = do
-        --     mayDocMode <- view docVisualizationActiveSelectedMode
-        --         `fmap2` checkAction docVisualizationActiveAction
-        --     if mayDocMode == Just FullScreen
-        --         then continue exitDocVisualizationMode
-        --         else enterVisualizationMode FullScreen
-    if searcherActive then return () else handleZoomVis
-
-exitPreviewMode :: VisualizationActive -> Command State ()
-exitPreviewMode action
-    = when (Preview == action ^. visualizationActiveSelectedMode) $
-        exitVisualizationMode action
-
-exitDocPreviewMode :: DocVisualizationActive -> Command State ()
-exitDocPreviewMode action
-    = when (Preview == action ^. docVisualizationActiveSelectedMode) $
-        exitDocVisualizationMode action
-
-enterVisualizationMode :: Mode -> Command State ()
-enterVisualizationMode visMode = do
-    searcherActive <- checkIfActionPerfoming searcherAction
-    -- let enterDocVisMode = do
-    --         fromDocVis <- maybe False (\action -> action ^. docVisualizationActiveSelectedMode == Focused || action ^. docVisualizationActiveTriggeredByVis) <$> checkAction docVisualizationActiveAction
-    --         begin $ DocVisualizationActive visMode fromDocVis
-    let enterVisMode = do
-            visLoc <- getSelectedNodes >>= \case
-                [n] -> let nl = n ^. nodeLoc in
-                    fmap (nl,) . maybe
-                        def
-                        (listToMaybe . Map.keys . view visualizations)
-                        <$> Visualization.getNodeVisualizations nl
-                _   -> return Nothing
-            fromVis <- maybe
-                False
-                (\action ->
-                    action ^. visualizationActiveSelectedMode == Focused
-                    || action ^. visualizationActiveTriggeredByVis
-                )
-                <$> checkAction visualizationActiveAction
-            withJust visLoc $ \(nl, visId) -> begin
-                $ VisualizationActive nl visId visMode fromVis
-    if searcherActive then return () else enterVisMode
 
 toggleVisualizations :: Parent -> Command State ()
 toggleVisualizations (Node nl) = do
@@ -152,41 +148,3 @@ toggleVisualizations (Node nl) = do
     withJustM (getNodeMeta nl) $ setNodeMeta nl
     Visualization.toggleVisualizations nl
 toggleVisualizations Searcher = $notImplemented
-
--- instance Action (Command State) VisualizationDrag where
---     begin    = beginActionWithKey    visualizationDragAction
---     continue = continueActionWithKey visualizationDragAction
---     update   = updateActionWithKey   visualizationDragAction
---     end _    = removeActionFromState visualizationDragAction
---
--- pin :: NodeLoc -> Int -> Command State ()
--- pin nl visIx = do
---     mayNode <- getExpressionNode nl
---     withJust mayNode $ \node ->
---         modifyNodeEditor $
---             visualizations %= ((nl, visIx, node ^. position) :)
---
--- unpin :: NodeLoc -> Int -> Position -> Command State ()
--- unpin nl visIx pos =
---     modifyNodeEditor $ visualizations %= delete (nl, visIx, pos)
---
--- startDrag :: NodeLoc -> Int -> Position -> MouseEvent -> Command State ()
--- startDrag nl visIx pos evt = do
---     begin $ VisualizationDrag nl visIx pos
---     moveTo evt nl visIx pos
---
--- drag :: MouseEvent -> VisualizationDrag -> Command State ()
--- drag evt (VisualizationDrag nl visIx pos) = moveTo evt nl visIx pos
---
--- stopDrag :: MouseEvent -> VisualizationDrag ->  Command State ()
--- stopDrag evt (VisualizationDrag nl visIx pos) = do
---     moveTo evt nl visIx pos
---     removeActionFromState visualizationDragAction
---
--- moveTo :: MouseEvent -> NodeLoc -> Int -> Position -> Command State ()
--- moveTo evt nl visIx oldPos = do
---     pos <- workspacePosition evt
---     update $ VisualizationDrag nl visIx pos
---     modifyNodeEditor $ do
---         visualizations %= delete (nl, visIx, oldPos)
---         visualizations %= ((nl, visIx, pos) :)
