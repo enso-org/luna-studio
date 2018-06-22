@@ -13,7 +13,7 @@
 
   <resetfailure>1 hour</resetfailure>
 
-  <env name="LUNAROOT" value="%BASE%\..\env" />
+  <env name="LUNA_LIBS_PATH" value="%BASE%\..\env" />
   <env name="LUNA_STUDIO_LOG_PATH" value="%BASE%\..\logs" />
 
   <logpath>%LUNA_STUDIO_LOG_PATH%</logpath>
