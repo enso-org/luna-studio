@@ -206,7 +206,7 @@ lunaTutorialsPath = do
     return $ lunaTmp </> (runnerCfg ^. tutorialsDirectory)
 backendLdLibraryPath = do
     ldLibPath <- liftIO $ getCurrentDirectory
-    return $ (decodeString ldLibPath) </> "lib" </> "zeromq"
+    return $ decodeString ldLibPath </> "lib" </> "zeromq"
 
 
 
