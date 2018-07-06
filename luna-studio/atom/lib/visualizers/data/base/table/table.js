@@ -70,7 +70,6 @@
 
   var genMatrix = function (data, level, header) {
     var result = "<tr><th></th>";
-    
     if (header) {
         header.forEach(function (elt, ix) {
           result += ("<th>" + elt + "</th>");
@@ -80,7 +79,6 @@
           result += ("<th>" + ix + "</th>");
         });
     };
-
     result += "</tr>";
     data.forEach(function (row, ix) {
       result += ("<tr><th>" + ix + "</th>");
