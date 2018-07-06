@@ -130,7 +130,13 @@
 
   var render = function (json) {
     var data  = JSON.parse(json);
-    var table = genTable(data, 0);
+    if (data.data) {
+        console.log("if")
+        var table = genTable(data.data, 0);
+    } else {
+        console.log("else")
+        var table = genTable(data, 0);
+    }
     document.body.innerHTML = table;
   };
   window.addEventListener("message", function (evt) {
