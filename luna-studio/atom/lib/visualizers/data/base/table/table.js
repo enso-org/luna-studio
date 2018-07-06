@@ -68,10 +68,11 @@
     return eachHasProperLen;
   }
 
-  var genMatrix = function (data, level, headers) {
+  var genMatrix = function (data, level, header) {
     var result = "<tr><th></th>";
-    if (headers) {
-        headers.forEach(function (elt, ix) {
+    
+    if (header) {
+        header.forEach(function (elt, ix) {
           result += ("<th>" + elt + "</th>");
         });
     } else {
@@ -125,9 +126,9 @@
     }
   }
 
-  var genTable = function (data, level, headers) {
+  var genTable = function (data, level, header) {
     if (isMatrix(data)) {
-      return genMatrix(data, level, headers);
+      return genMatrix(data, level, header);
     } else if (isObjectMatrix(data)) {
       return genObjectMatrix(data, level);
     } else {
