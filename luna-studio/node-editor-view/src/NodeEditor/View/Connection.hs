@@ -9,14 +9,15 @@ import qualified LunaStudio.Data.PortRef           as PortRef
 import           NodeEditor.React.Model.Connection (Connection, ConnectionsMap)
 import qualified NodeEditor.React.Model.Connection as Connection
 import           NodeEditor.View.Diff              (DiffT, diffApply, diffConvert, diffHashMap)
+import           NodeEditor.View.Key               (Key)
 
 
 data ConnectionView = ConnectionView
-    { _key :: String
-    , _srcNode :: String
-    , _srcPort :: String
-    , _dstNode :: String
-    , _dstPort :: String
+    { _key :: Key
+    , _srcNode :: Key
+    , _srcPort :: Key
+    , _dstNode :: Key
+    , _dstPort :: Key
     } deriving (Eq, Generic, Show)
 
 makeLenses ''ConnectionView
@@ -27,11 +28,11 @@ instance ToJSON ConnectionView where
 
 instance Convertible Connection ConnectionView where
     convert c = ConnectionView
-        {- key        -} (c ^. Connection.connectionId . to show)
-        {- srcNode    -} (c ^. Connection.src . PortRef.srcNodeLoc . to show)
-        {- srcPort    -} (c ^. Connection.src . PortRef.srcPortId  . to show)
-        {- dstNode    -} (c ^. Connection.dst . PortRef.dstNodeLoc . to show)
-        {- dstPort    -} (c ^. Connection.dst . PortRef.dstPortId  . to show)
+        {- key        -} (c ^. Connection.connectionId . to convert)
+        {- srcNode    -} (c ^. Connection.src . PortRef.srcNodeLoc . to convert)
+        {- srcPort    -} (c ^. Connection.src . PortRef.srcPortId  . to convert)
+        {- dstNode    -} (c ^. Connection.dst . PortRef.dstNodeLoc . to convert)
+        {- dstPort    -} (c ^. Connection.dst . PortRef.dstPortId  . to convert)
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setConnection($1)"
     setConnection__ :: JSVal -> IO ()

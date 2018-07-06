@@ -9,7 +9,7 @@ import           NodeEditor.Action.Connect         (cancelSnapToPort, handleConn
                                                     handlePortMouseUp, snapToPort)
 import           NodeEditor.Event.Event            (Event (UI, View))
 import           NodeEditor.Event.UI               (UIEvent (AppEvent, ConnectionEvent, PortEvent, SidebarEvent))
-import           NodeEditor.Event.View             (BaseEvent (Disconnect, Mouse), ViewEvent (ViewEvent), base)
+import           NodeEditor.Event.View             (BaseEvent (Disconnect, Mouse), ViewEvent, base)
 import qualified NodeEditor.Event.View             as View
 import qualified NodeEditor.React.Event.App        as App
 import           NodeEditor.React.Event.Connection (ModifiedEnd (Destination, Source))
@@ -48,17 +48,16 @@ handleUIEvent _ = Nothing
 handleViewEvent :: ViewEvent -> Maybe (Command State ())
 handleViewEvent evt = case evt ^. base of
     Disconnect e -> Just $ do
-        let portRef = evt ^. View.target
+        let inPortRef = View.getInPortRef evt
             connectionEnd = if e ^. View.src then Source else Destination
-        handleConnectionMouseDown def (convert portRef) connectionEnd
+        handleConnectionMouseDown def inPortRef connectionEnd
     Mouse e -> do
         let path = evt ^. View.path
-            portRef = evt ^. View.target
             isInPort  = last path == "InPort"
             isOutPort = last path == "OutPort"
             anyPortRef = if isInPort
-                then InPortRef'  $ convert portRef
-                else OutPortRef' $ convert portRef
+                then InPortRef'  $ View.getInPortRef evt
+                else OutPortRef' $ View.getOutPortRef evt
         if isInPort || isOutPort then case e ^. View.type_ of
             "mouseup"     -> Just . continue $ handlePortMouseUp anyPortRef
             "mouseenter"  -> Just . continue $ snapToPort anyPortRef

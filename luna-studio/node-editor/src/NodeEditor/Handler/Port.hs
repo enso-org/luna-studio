@@ -8,7 +8,7 @@ import           NodeEditor.Action.Port      (acceptEditTextPortControl, editTex
                                               handleMouseEnter, handleMouseLeave, startMoveSlider)
 import           NodeEditor.Event.Event      (Event (UI, View))
 import           NodeEditor.Event.UI         (UIEvent (PortEvent), _PortEvent)
-import           NodeEditor.Event.View       (BaseEvent (Mouse), ViewEvent (ViewEvent), mousePosition)
+import           NodeEditor.Event.View       (BaseEvent (Mouse, PortControl), PortControlEvent (PortControlEvent), ViewEvent, mousePosition)
 import qualified NodeEditor.Event.View       as View
 import qualified NodeEditor.React.Event.Port as Port
 import           NodeEditor.State.Action     (Action (continue))
@@ -28,9 +28,7 @@ handleViewEvent evt = case evt ^. View.base of
             portRef   = evt ^. View.target
             isInPort  = last path == "InPort"
             isOutPort = last path == "OutPort"
-            anyPortRef = if isInPort
-                then InPortRef'  $ convert portRef
-                else OutPortRef' $ convert portRef
+            anyPortRef = View.getAnyPortRef evt
         if isInPort || isOutPort then case e ^. View.type_ of
             "click"     -> Just
                 $ handleClick     (mousePosition $ evt ^. View.base) anyPortRef
@@ -38,6 +36,10 @@ handleViewEvent evt = case evt ^. View.base of
                 $ handleMouseDown (mousePosition $ evt ^. View.base) anyPortRef
             _ -> Nothing
         else Nothing
+    PortControl e -> do
+        let inPortRef = View.getInPortRef evt
+            content = e ^. View.content
+        Just $ setPortDefault inPortRef $ convert content
     _ -> Nothing
 
 handleUIEvent :: UIEvent -> Maybe (Command State ())

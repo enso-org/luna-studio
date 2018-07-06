@@ -9,10 +9,11 @@ import           NodeEditor.React.Model.Node.SidebarNode (InputNode, OutputNode)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
 import           NodeEditor.View.Diff                    (DiffT, diffApply)
 import           NodeEditor.View.Port                    (PortView)
+import           NodeEditor.View.Key                     (Key)
 
 
 data SidebarNodeView = SidebarNodeView
-    { _key      :: String
+    { _key      :: Key
     , _inPorts  :: [PortView]
     , _outPorts :: [PortView]
     } deriving (Generic, Show)
@@ -25,13 +26,13 @@ instance ToJSON SidebarNodeView where
 
 instance Convertible InputNode SidebarNodeView where
     convert n = SidebarNodeView
-        {- key      -} (n ^. SidebarNode.nodeLoc . to show)
+        {- key      -} (n ^. SidebarNode.nodeLoc . to convert)
         {- inPorts  -} def
         {- outPorts -} (n ^. to SidebarNode.outPortsList . to convert)
 
 instance Convertible OutputNode SidebarNodeView where
     convert n = SidebarNodeView
-        {- key      -} (n ^. SidebarNode.nodeLoc . to show)
+        {- key      -} (n ^. SidebarNode.nodeLoc . to convert)
         {- inPorts  -} (n ^. to SidebarNode.inPortsList . to convert)
         {- outPorts -} def
 

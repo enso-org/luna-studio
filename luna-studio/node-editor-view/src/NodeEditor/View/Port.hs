@@ -7,14 +7,18 @@ import           Data.Convert                (Convertible (convert))
 import           NodeEditor.React.Model.Port (InPort, OutPort)
 import qualified NodeEditor.React.Model.Port as Port
 import           NodeEditor.View.Color       (RGB)
+import           NodeEditor.View.PortControl (PortControlView)
+import qualified NodeEditor.View.PortControl as PortControl
+import           NodeEditor.View.Key         (Key)
 
 
 data PortView = PortView
-        { _key      :: String
+        { _key      :: Key
         , _color    :: RGB
         , _name     :: String
         , _typeName :: String
         , _mode     :: String
+        , _controls :: [PortControlView]
         } deriving (Eq, Generic, Show)
 
 makeLenses ''PortView
@@ -27,16 +31,18 @@ instance ToJSON   PortView where
 
 instance Convertible InPort PortView where
     convert p = PortView
-        {- key      -} (p ^. Port.portId . to show)
+        {- key      -} (p ^. Port.portId . to convert)
         {- color    -} (p ^. Port.color . to convert)
         {- name     -} (p ^. Port.name . to convert)
         {- typeName -} (p ^. Port.valueType . to toString)
         {- mode     -} (if p ^. Port.portId == [Port.Self] then "self" else "in")
+        {- controls -} (PortControl.fromPort p)
 
 instance Convertible OutPort PortView where
     convert p = PortView
-        {- key      -} (p ^. Port.portId . to show)
+        {- key      -} (p ^. Port.portId . to convert)
         {- color    -} (p ^. Port.color . to convert)
         {- name     -} (p ^. Port.name . to convert)
         {- typeName -} (p ^. Port.valueType . to toString)
         {- mode     -} def
+        {- controls -} def

@@ -16,7 +16,7 @@ import           NodeEditor.Event.Event                     (Event (View))
 import qualified NodeEditor.Event.Mouse                     as Mouse
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
 import           NodeEditor.Event.UI                        (UIEvent (AppEvent, NodeEvent, SidebarEvent))
-import           NodeEditor.Event.View                      (BaseEvent (NodeMove, NodeSelect), ViewEvent (ViewEvent))
+import           NodeEditor.Event.View                      (ViewEvent)
 import qualified NodeEditor.Event.View                      as View
 import qualified NodeEditor.React.Event.App                 as App
 import qualified NodeEditor.React.Event.Node                as Node hiding (nodeLoc)
@@ -25,8 +25,9 @@ import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node hiding (nodeLoc')
 import           NodeEditor.State.Action                    (Action (continue))
 import           NodeEditor.State.Global                    (State)
-import           NodeEditor.State.Mouse                     (mousePosition, mousePosition', workspacePosition, workspacePosition')
+import           NodeEditor.State.Mouse                     (mousePosition, workspacePosition)
 import           React.Flux                                 (MouseEvent, mouseButton, mouseCtrlKey, mouseMetaKey)
+
 
 nodeEventPath :: View.Path
 nodeEventPath = ["NodeEditor", "ExpressionNode"]
@@ -44,7 +45,7 @@ handle _ = Nothing
 
 
 handleViewEvent :: ViewEvent -> Maybe (Command State ())
-handleViewEvent evt = let nl = convert $ evt ^. View.target
+handleViewEvent evt = let nl = View.getNodeLoc evt
     in case evt ^. View.base of
         View.NodeMove   e -> Just . moveNode nl . fromTuple $ e ^. View.position
         View.NodeSelect e -> Just

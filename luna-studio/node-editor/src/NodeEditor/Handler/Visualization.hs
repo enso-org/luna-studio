@@ -65,7 +65,7 @@ handleViewEvent evt = case evt ^. path of
         listToMaybe $ catMaybes [mayFocus, maySelect]
     _ -> if has (base . _ToggleVisualizations) evt
             then Just . Visualization.toggleVisualizations
-                . Node . convert $ evt ^. View.target
+                . Node $ View.getNodeLoc evt
         else if unfocusesVisualization evt
             then Just exitAnyVisualizationMode
             else Nothing

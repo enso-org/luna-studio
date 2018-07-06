@@ -12,7 +12,7 @@ import           NodeEditor.Event.Event             (Event (Shortcut, UI, View))
 import qualified NodeEditor.Event.Shortcut          as Shortcut
 import           NodeEditor.Event.UI                (UIEvent (AppEvent, SearcherEvent))
 import           NodeEditor.Event.View              (BaseEvent (SearcherAccept, SearcherEdit), SearcherEditEvent (SearcherEditEvent),
-                                                     ViewEvent (ViewEvent), base)
+                                                     ViewEvent, base)
 import qualified NodeEditor.React.Event.App         as App
 import qualified NodeEditor.React.Event.Searcher    as Searcher
 import           NodeEditor.State.Action            (Action (continue))

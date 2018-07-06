@@ -10,8 +10,9 @@ import           LunaStudio.Data.Position                   (toTuple)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, ExpressionNodesMap)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import           NodeEditor.View.Diff                       (DiffT, diffApply, diffConvert, diffHashMap)
-import           NodeEditor.View.NodeLoc                    ()
 import           NodeEditor.View.Port                       (PortView (PortView))
+import           NodeEditor.View.Key                        (Key)
+
 
 data ValueContent
     = Visualization
@@ -24,7 +25,7 @@ data ValueView
     deriving (Eq, Generic, Show)
 
 data ExpressionNodeView = ExpressionNodeView
-    { _key        :: String
+    { _key        :: Key
     , _name       :: String
     , _expression :: String
     , _value      :: ValueView

@@ -12,7 +12,9 @@ import           NodeEditor.React.Model.Visualization (Mode, Mode (Default, Focu
                                                        VisualizerType (InternalVisualizer, LunaVisualizer, ProjectVisualizer))
 import qualified NodeEditor.React.Model.Visualization as Vis
 import           NodeEditor.View.Diff                 (DiffT, diffApply, diffConvert, diffMapWithKey)
-import           NodeEditor.View.NodeLoc              (NodeLoc)
+import           LunaStudio.Data.NodeLoc              (NodeLoc)
+import           NodeEditor.View.Key                  (Key)
+
 
 type VisualizerName = String
 
@@ -31,7 +33,7 @@ data VisualizerView = VisualizerView
 makeLenses ''VisualizerView
 
 data VisualizationView = VisualizationView
-    { _key                  :: String
+    { _key                  :: Key
     , _iframeId             :: String
     , _mode                 :: String
     , _currentVisualizer    :: VisualizerView
@@ -41,7 +43,7 @@ data VisualizationView = VisualizationView
 makeLenses ''VisualizationView
 
 data NodeVisualizationsView = NodeVisualizationsView
-    { _nodeKey        :: String
+    { _nodeKey        :: Key
     , _visualizations :: [VisualizationView]
     , _visualizers    :: [VisualizerIdView]
     } deriving (Eq, Generic, Show)
@@ -61,9 +63,6 @@ instance ToJSON VisualizationView where
 instance ToJSON NodeVisualizationsView where
     toEncoding = Lens.toEncoding
     toJSON = Lens.toJSON
-
-instance Convertible VisualizationId String where
-    convert = show
 
 instance Convertible Mode String where
     convert Focused    = "Focused"

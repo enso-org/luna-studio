@@ -5,8 +5,6 @@ import           Common.Prelude
 import           LunaStudio.Data.Position       (Position)
 import           LunaStudio.Data.ScreenPosition (ScreenPosition, fromDoubles)
 import           NodeEditor.Action.State.Scene  (getWorkspacePosition, translateToWorkspace)
-import           NodeEditor.Event.View          (BaseEvent)
-import qualified NodeEditor.Event.View          as View
 import           NodeEditor.State.Global        (State)
 import           React.Flux                     (MouseEvent, mousePageX, mousePageY)
 
@@ -17,11 +15,3 @@ workspacePosition = translateToWorkspace <=< mousePosition
 mousePosition :: MouseEvent -> Command State ScreenPosition
 mousePosition e = getWorkspacePosition >>= return . maybe pagePos (\workspacePos -> pagePos - workspacePos) where
     pagePos = fromDoubles (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e)
-
-
-workspacePosition' :: BaseEvent -> Command State Position
-workspacePosition' = translateToWorkspace <=< mousePosition'
-
-mousePosition' :: BaseEvent -> Command State ScreenPosition
-mousePosition' e = getWorkspacePosition >>= return . maybe pagePos (\workspacePos -> pagePos - workspacePos) where
-    pagePos = View.mousePosition e

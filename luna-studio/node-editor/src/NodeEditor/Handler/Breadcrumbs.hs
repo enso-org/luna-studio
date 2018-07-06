@@ -7,7 +7,7 @@ import           NodeEditor.Event.Event             (Event (Shortcut, UI, View))
 import           NodeEditor.Event.Shortcut          (ShortcutEvent, shortcut)
 import qualified NodeEditor.Event.Shortcut          as Shortcut
 import           NodeEditor.Event.UI                (UIEvent (BreadcrumbsEvent))
-import           NodeEditor.Event.View              (BaseEvent (Navigate), ViewEvent (ViewEvent), base)
+import           NodeEditor.Event.View              (BaseEvent (Navigate), ViewEvent, base)
 import qualified NodeEditor.Event.View              as View
 import qualified NodeEditor.React.Event.Breadcrumbs as Breadcrumbs
 import           NodeEditor.State.Global            (State)
@@ -29,7 +29,6 @@ handleUIEvent :: UIEvent -> Maybe (Command State ())
 handleUIEvent (BreadcrumbsEvent evt) = case evt of
     Breadcrumbs.Exit     -> Just exitBreadcrumb
     Breadcrumbs.Enter bc -> Just $ enterBreadcrumbs bc
-    _                    -> Nothing
 handleUIEvent _           = Nothing
 
 handleShortcutEvent :: ShortcutEvent -> Maybe (Command State ())

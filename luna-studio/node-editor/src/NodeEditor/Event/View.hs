@@ -5,19 +5,21 @@ import           Common.Data.Event                  (EventName (eventName))
 import           Common.Prelude
 import           Control.Lens.Aeson                 (parseDropUnary, toEncodingDropUnary)
 import           Data.Aeson                         (FromJSON (..), ToJSON (..))
-import           Data.Convert                       (Convertible (convert))
 import           LunaStudio.Data.NodeLoc            (NodeLoc)
-import           LunaStudio.Data.PortRef            (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           LunaStudio.Data.Port               (AnyPortId)
+import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef), toAnyPortRef)
 import           LunaStudio.Data.ScreenPosition     (ScreenPosition, fromDoubles)
 import           LunaStudio.Data.Visualization      (VisualizationId)
-import           LunaStudio.Data.Visualizer         (VisualizerId (VisualizerId))
+import           LunaStudio.Data.Visualizer         (VisualizerId)
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem)
 import           Prelude                            (error)
+import           NodeEditor.View.Key                (Key)
+import           NodeEditor.View.PortControl        (PortControlView)
 
 
 type Path = [String]
 
-newtype Target = Target { unTarget :: [String] }
+newtype Target = Target { unTarget :: [Key] }
     deriving (Generic, Show)
 
 data MouseEvent = MouseEvent
@@ -121,12 +123,20 @@ data ToggleVisualizationsEvent = ToggleVisualizationsEvent
 
 makeLenses ''ToggleVisualizationsEvent
 
+data PortControlEvent = PortControlEvent
+    { _content       :: PortControlView
+    , _aesonTooOld10 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    } deriving (Generic, Show)
+
+makeLenses ''PortControlEvent
+
 data BaseEvent
     = Mouse                MouseEvent
     | Navigate             NavigateEvent
     | NodeMove             NodeMoveEvent
     | NodeSelect           NodeSelectEvent
     | Disconnect           DisconnectEvent
+    | PortControl          PortControlEvent
     | SearcherAccept       SearcherAcceptEvent
     | SearcherEdit         SearcherEditEvent
     | SelectVisualizer     SelectVisualizerEvent
@@ -144,48 +154,51 @@ data ViewEvent = ViewEvent
 
 makeLenses ''ViewEvent
 
+instance NFData BaseEvent
+instance NFData DisconnectEvent
+instance NFData FocusVisualizationEvent
 instance NFData MouseEvent
 instance NFData NavigateEvent
 instance NFData NodeMoveEvent
 instance NFData NodeSelectEvent
-instance NFData DisconnectEvent
+instance NFData PortControlEvent
 instance NFData SearcherAcceptEvent
 instance NFData SearcherEditEvent
 instance NFData SelectVisualizerEvent
-instance NFData FocusVisualizationEvent
-instance NFData ToggleVisualizationsEvent
 instance NFData Target
+instance NFData ToggleVisualizationsEvent
 instance NFData ViewEvent
-instance NFData BaseEvent
 
+instance FromJSON BaseEvent                 where parseJSON = parseDropUnary
+instance FromJSON DisconnectEvent           where parseJSON = parseDropUnary
+instance FromJSON FocusVisualizationEvent   where parseJSON = parseDropUnary
 instance FromJSON MouseEvent                where parseJSON = parseDropUnary
 instance FromJSON NavigateEvent             where parseJSON = parseDropUnary
 instance FromJSON NodeMoveEvent             where parseJSON = parseDropUnary
 instance FromJSON NodeSelectEvent           where parseJSON = parseDropUnary
-instance FromJSON DisconnectEvent           where parseJSON = parseDropUnary
+instance FromJSON PortControlEvent          where parseJSON = parseDropUnary
 instance FromJSON SearcherAcceptEvent       where parseJSON = parseDropUnary
 instance FromJSON SearcherEditEvent         where parseJSON = parseDropUnary
 instance FromJSON SelectVisualizerEvent     where parseJSON = parseDropUnary
-instance FromJSON FocusVisualizationEvent   where parseJSON = parseDropUnary
-instance FromJSON ToggleVisualizationsEvent where parseJSON = parseDropUnary
 instance FromJSON Target                    where parseJSON = parseDropUnary
+instance FromJSON ToggleVisualizationsEvent where parseJSON = parseDropUnary
 instance FromJSON ViewEvent                 where parseJSON = parseDropUnary
-instance FromJSON BaseEvent                 where parseJSON = parseDropUnary
 
 
+instance ToJSON BaseEvent                 where toEncoding = toEncodingDropUnary
+instance ToJSON DisconnectEvent           where toEncoding = toEncodingDropUnary
+instance ToJSON FocusVisualizationEvent   where toEncoding = toEncodingDropUnary
 instance ToJSON MouseEvent                where toEncoding = toEncodingDropUnary
 instance ToJSON NavigateEvent             where toEncoding = toEncodingDropUnary
 instance ToJSON NodeMoveEvent             where toEncoding = toEncodingDropUnary
 instance ToJSON NodeSelectEvent           where toEncoding = toEncodingDropUnary
-instance ToJSON DisconnectEvent           where toEncoding = toEncodingDropUnary
+instance ToJSON PortControlEvent          where toEncoding = toEncodingDropUnary
 instance ToJSON SearcherAcceptEvent       where toEncoding = toEncodingDropUnary
 instance ToJSON SearcherEditEvent         where toEncoding = toEncodingDropUnary
 instance ToJSON SelectVisualizerEvent     where toEncoding = toEncodingDropUnary
-instance ToJSON FocusVisualizationEvent   where toEncoding = toEncodingDropUnary
-instance ToJSON ToggleVisualizationsEvent where toEncoding = toEncodingDropUnary
 instance ToJSON Target                    where toEncoding = toEncodingDropUnary
+instance ToJSON ToggleVisualizationsEvent where toEncoding = toEncodingDropUnary
 instance ToJSON ViewEvent                 where toEncoding = toEncodingDropUnary
-instance ToJSON BaseEvent                 where toEncoding = toEncodingDropUnary
 
 instance EventName ViewEvent where
     eventName = intercalate "." . view path
@@ -281,23 +294,33 @@ mousePosition = \case
     Mouse evt -> fromDoubles (evt ^. pageX) (evt ^. pageY)
     _         -> def
 
-instance Convertible Target InPortRef where
-    convert (Target [nodeLoc, portId]) = InPortRef (read nodeLoc) (read portId)
-    convert (Target [inPortRef])       = read inPortRef
-    convert t = error $ "Cannot parse Target to InPortRef (target = " <> show t <> ")"
+getInPortRef :: ViewEvent -> InPortRef
+getInPortRef = getInPortRef' . view target where
+    getInPortRef' (Target [nodeLoc, portId]) = InPortRef (convert nodeLoc) (convert portId)
+    getInPortRef' (Target [inPortRef])       = convert inPortRef
+    getInPortRef' t = error $ "Cannot parse Target to InPortRef (target = " <> show t <> ")"
 
-instance Convertible Target OutPortRef where
-    convert (Target [nodeLoc, portId]) = OutPortRef (read nodeLoc) (read portId)
-    convert t = error $ "Cannot parse Target to OutPortRef (target = " <> show t <> ")"
+getOutPortRef :: ViewEvent -> OutPortRef
+getOutPortRef = getOutPortRef' . view target where
+    getOutPortRef' (Target [nodeLoc, portId]) = OutPortRef (convert nodeLoc) (convert portId)
+    getOutPortRef' t = error $ "Cannot parse Target to OutPortRef (target = " <> show t <> ")"
 
-instance Convertible Target NodeLoc where
-    convert (Target [nodeLoc]) = read nodeLoc
-    convert t = error $ "Cannot parse Target to NodeLoc (target = " <> show t <> ")"
+getNodeLoc :: ViewEvent -> NodeLoc
+getNodeLoc = getNodeLoc' . view target where
+    getNodeLoc' (Target [nodeLoc]) = convert nodeLoc
+    getNodeLoc' t = error $ "Cannot parse Target to NodeLoc (target = " <> show t <> ")"
 
-instance Convertible Target VisualizerId where
-    convert (Target [visId]) = read visId
-    convert t = error $ "Cannot parse Target to VisualizerId (target = " <> show t <> ")"
+getVisualizerId :: ViewEvent -> VisualizerId
+getVisualizerId = getVisualizerId' . view target where
+    getVisualizerId' (Target [visId]) = convert visId
+    getVisualizerId' t = error $ "Cannot parse Target to VisualizerId (target = " <> show t <> ")"
 
-instance Convertible Target VisualizationId where
-    convert (Target [visId]) = read visId
-    convert t = error $ "Cannot parse Target to VisualizationId (target = " <> show t <> ")"
+getVisualizationId :: ViewEvent -> VisualizationId
+getVisualizationId = getVisualizationId' . view target where
+    getVisualizationId' (Target [visId]) = convert visId
+    getVisualizationId' t = error $ "Cannot parse Target to VisualizationId (target = " <> show t <> ")"
+
+getAnyPortRef :: ViewEvent -> AnyPortRef
+getAnyPortRef = getAnyPortRef' . view target where
+    getAnyPortRef' (Target [nodeLoc, portId]) = toAnyPortRef (convert nodeLoc) (convert portId :: AnyPortId)
+    getAnyPortRef' t = error $ "Cannot parse Target to AnyPortRef (target = " <> show t <> ")"

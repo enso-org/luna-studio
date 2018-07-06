@@ -13,6 +13,7 @@ import qualified NodeEditor.React.Model.Searcher as Searcher
 import           NodeEditor.View.Diff            (DiffT, diffApply)
 import           LunaStudio.Data.NodeSearcher    (Match)
 import qualified LunaStudio.Data.NodeSearcher    as Match
+import           NodeEditor.View.Key             (Key)
 
 
 
@@ -29,7 +30,7 @@ data EntryView = EntryView
     } deriving (Generic, Show)
 
 data SearcherView = SearcherView
-    { _key            :: Maybe String
+    { _key            :: Maybe Key
     , _selected       :: Int
     , _entries        :: [EntryView]
     , _input          :: String
@@ -70,10 +71,10 @@ instance Convertible Searcher SearcherView where
         {- input          -} "test"
         {- inputSelection -} (s ^. Searcher.inputSelection)
 
-nodeKey' :: Searcher.Mode -> Maybe String
+nodeKey' :: Searcher.Mode -> Maybe Key
 nodeKey' = \case
-    Searcher.Node nl _ _   -> Just $ show nl
-    Searcher.NodeName nl _ -> Just $ show nl
+    Searcher.Node nl _ _   -> Just $ convert nl
+    Searcher.NodeName nl _ -> Just $ convert nl
     _                      -> Nothing
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setSearcher($1)"

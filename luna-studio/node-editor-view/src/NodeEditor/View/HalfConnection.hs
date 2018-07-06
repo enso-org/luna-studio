@@ -9,12 +9,13 @@ import qualified LunaStudio.Data.PortRef           as PortRef
 import           NodeEditor.React.Model.Connection (HalfConnection)
 import qualified NodeEditor.React.Model.Connection as HalfConnection
 import           NodeEditor.View.Diff              (DiffT, diffApply, diffConvert)
+import           NodeEditor.View.Key               (Key)
 import           LunaStudio.Data.Port              (AnyPortId (InPortId', OutPortId'))
 
 
 data HalfConnectionView = HalfConnectionView
-    { _srcNode  :: String
-    , _srcPort  :: String
+    { _srcNode  :: Key
+    , _srcPort  :: Key
     , _reversed :: Bool
     } deriving (Eq, Generic, Show)
 
@@ -26,13 +27,9 @@ instance ToJSON HalfConnectionView where
 
 instance Convertible HalfConnection HalfConnectionView where
     convert c = HalfConnectionView
-        {- srcNode  -} (c ^. HalfConnection.from . PortRef.nodeLoc . to show)
-        {- srcPort  -} (c ^. HalfConnection.from . PortRef.portId  . to srcPortKey)
+        {- srcNode  -} (c ^. HalfConnection.from . PortRef.nodeLoc . to convert)
+        {- srcPort  -} (c ^. HalfConnection.from . PortRef.portId  . to convert)
         {- reversed -} (c ^. HalfConnection.from . to PortRef.isInPortRef)
-
-srcPortKey :: AnyPortId -> String
-srcPortKey (InPortId'  p) = show p
-srcPortKey (OutPortId' p) = show p
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setHalfConnections($1)"
     setHalfConnections__ :: JSVal -> IO ()
