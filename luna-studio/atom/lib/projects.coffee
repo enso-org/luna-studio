@@ -213,51 +213,54 @@ openLunaProject = (paths) ->
 ## EXPORTS ##
 
 module.exports =
-    closeAllFiles: closeAllFiles
-    openMainIfExists: openMainIfExists
-    selectLunaProject: selectLunaProject
-    openLunaProject: openLunaProject
+    class ProjectManager
+        constructor: (@codeEditor) ->
 
-    temporaryProject:
-        path: temporaryProject.path
-        open: temporaryOpen
-        isOpen: =>
-            return isTemporary atom.project.getPaths()[0]
+        closeAllFiles: closeAllFiles
+        openMainIfExists: openMainIfExists
+        selectLunaProject: selectLunaProject
+        openLunaProject: openLunaProject
 
-        save: (callback) =>
-            if isTemporary atom.project.getPaths()[0]
-                inputView = new InputView()
-                suggestedProjectName = path.basename(atom.project.getPaths()[0])
-                inputView.attach "Save project as", defaultProjectPath, suggestedProjectName,
-                    (name) => !fs.existsSync(name),
-                    (name) => "Path already exists at '#{name}'",
-                    (name) => callback name
-    recent:
-        getItems: -> recentProjects
+        temporaryProject:
+            path: temporaryProject.path
+            open: temporaryOpen
+            isOpen: =>
+                return isTemporary atom.project.getPaths()[0]
 
-        refreshList: (callback) =>
-            recentProjects = []
-            loadRecentNoCheck (serializedProjectPaths) =>
-                serializedProjectPaths.forEach (serializedProjectPath) =>
-                    try
-                        fs.accessSync serializedProjectPath
-                        recentProjects.push mkRecentProject serializedProjectPath
-                    catch error
-                callback?()
+            save: (callback) =>
+                if isTemporary atom.project.getPaths()[0]
+                    inputView = new InputView()
+                    suggestedProjectName = path.basename(atom.project.getPaths()[0])
+                    inputView.attach "Save project as", defaultProjectPath, suggestedProjectName,
+                        (name) => !fs.existsSync(name),
+                        (name) => "Path already exists at '#{name}'",
+                        (name) => callback name
+        recent:
+            getItems: -> recentProjects
 
-        add: (recentProjectPath) =>
-            if isTemporary recentProjectPath then return
-            recentProjects = recentProjects.filter (project) -> project.uri isnt recentProjectPath
-            recentProjects.unshift mkRecentProject recentProjectPath
-            data = yaml.safeDump recentProjectsPaths()
-            fs.writeFile recentProjectsPath, data, encoding, (err) =>
-                if err?
-                    console.log err
-    tutorial:
-        getItems: =>
-            tutorials = {}
-            for key in Object.keys tutorialItems
-                tutorials[key] = mkTutorial tutorialItems[key]
-            tutorials
-        refreshList: refreshTutorialList
-        open: tutorialOpen
+            refreshList: (callback) =>
+                recentProjects = []
+                loadRecentNoCheck (serializedProjectPaths) =>
+                    serializedProjectPaths.forEach (serializedProjectPath) =>
+                        try
+                            fs.accessSync serializedProjectPath
+                            recentProjects.push mkRecentProject serializedProjectPath
+                        catch error
+                    callback?()
+
+            add: (recentProjectPath) =>
+                if isTemporary recentProjectPath then return
+                recentProjects = recentProjects.filter (project) -> project.uri isnt recentProjectPath
+                recentProjects.unshift mkRecentProject recentProjectPath
+                data = yaml.safeDump recentProjectsPaths()
+                fs.writeFile recentProjectsPath, data, encoding, (err) =>
+                    if err?
+                        console.log err
+        tutorial:
+            getItems: =>
+                tutorials = {}
+                for key in Object.keys tutorialItems
+                    tutorials[key] = mkTutorial tutorialItems[key]
+                tutorials
+            refreshList: refreshTutorialList
+            open: tutorialOpen
