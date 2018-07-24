@@ -4,8 +4,6 @@ module NodeEditor.Handler.Backend.Control
 
 import           Common.Action.Command         (Command)
 import           Common.Prelude
-import           Common.Report                 (fatal)
-import           Control.Concurrent            (threadDelay)
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
 import qualified NodeEditor.Action.Batch       as Batch
 import           NodeEditor.Action.State.App   (getWorkspace)

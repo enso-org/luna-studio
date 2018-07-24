@@ -5,12 +5,10 @@ import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import qualified Data.Aeson                                 as Aeson
 import qualified Data.Aeson.Encoding                        as Aeson
-import qualified Data.Map                                   as Map
 import qualified Data.Text                                  as Text
 import qualified Data.Text.Lazy                             as Text.Lazy
 import qualified Data.Text.Lazy.Encoding                    as Text.Lazy
 import qualified IdentityString                             as IS
-import           LunaStudio.Data.Error                      (errorContent)
 import           LunaStudio.Data.NodeValue                  (NodeValue (NodeError, NodeValue))
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodeType, getVisualizersForType, modifyExpressionNode,
                                                              setVisualizationData)

@@ -15,14 +15,9 @@ import qualified NodeEditor.React.Event.Node                as NodeEvent
 import qualified NodeEditor.React.Event.Port                as PortEvent
 import qualified NodeEditor.React.Event.Searcher            as Searcher
 import qualified NodeEditor.React.Event.Visualization       as VisualizationEvent
-import qualified NodeEditor.React.Model.App                 as App
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.React.Model.NodeEditor          (getExpressionNode, returnsGraphError)
-import qualified NodeEditor.React.Model.NodeEditor          as NE
-import qualified NodeEditor.React.Store.Ref                 as Ref
 import           NodeEditor.State.Global                    (State, getNodeEditor)
-import qualified NodeEditor.State.Global                    as Global
-import qualified NodeEditor.State.UI                        as UI
 
 
 toJSEvent :: Event -> State -> IO JS.Event

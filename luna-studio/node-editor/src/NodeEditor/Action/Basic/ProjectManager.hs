@@ -14,7 +14,7 @@ import NodeEditor.Action.State.App        (getWorkspace, modifyApp)
 import NodeEditor.Action.State.NodeEditor (getNodeEditor, getScreenTransform, modifyNodeEditor, resetGraph, setGraphStatus)
 import NodeEditor.Batch.Workspace         (currentLocation)
 import NodeEditor.React.Model.App         (workspace)
-import NodeEditor.React.Model.NodeEditor  (GraphStatus (GraphLoading), VisualizersPaths (VisualizersPaths), visualizersLibPaths)
+import NodeEditor.React.Model.NodeEditor  (GraphStatus (GraphLoading), visualizersLibPaths)
 import NodeEditor.State.Global            (State)
 
 

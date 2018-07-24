@@ -4,13 +4,10 @@ module TextEditor.Handler.Control
 
 import           Common.Action.Command              (Command)
 import           Common.Prelude
-import           Control.Concurrent                 (threadDelay)
-import           JS.Atom                            (activeLocation, openedFiles, openedFileUri, openedFileContents, pushInterpreterUpdate, setFileBuffer)
+import           JS.Atom                            (openedFiles, openedFileUri, openedFileContents, pushInterpreterUpdate, setFileBuffer)
 import qualified LunaStudio.API.Control.Interpreter as Interpreter
 import qualified LunaStudio.API.Response            as Response
-import           LunaStudio.Data.Diff               (Diff(Diff))
-import qualified LunaStudio.Data.GraphLocation      as GraphLocation
-import           TextEditor.Action.Batch            (interpreterPause, interpreterReload, interpreterStart, openFile, substitute)
+import           TextEditor.Action.Batch            (interpreterPause, interpreterReload, interpreterStart, openFile)
 import           TextEditor.Event.Batch             (BatchEvent (EmpireStarted, InterpreterResponse, InterpreterUpdate))
 import           TextEditor.Event.Event             (Event (Atom, Batch))
 import           TextEditor.Event.Internal          (InternalEvent (InterpreterPause, InterpreterReload, InterpreterStart))
@@ -23,17 +20,10 @@ handle (Batch (InterpreterUpdate (Interpreter.Update update))) = Just $ pushInte
 handle (Batch (InterpreterResponse response)) = Just $ handleResponse response success doNothing2 where
     success _ = pushInterpreterUpdate (head $ words $ show $ response ^. Response.request) Nothing
 handle (Batch (EmpireStarted _)) = Just $ do
-    openedFile <- activeLocation
     files <- openedFiles
-    liftIO $ print files
-    liftIO $ putStrLn "textedit"
     withJust files $ \opened -> forM_ opened $ \gl -> do
-        liftIO $ putStrLn "textedit" >> print gl
         let file = gl ^. openedFileUri
         openFile file
-        liftIO $ putStrLn "substitute"
-        -- substitute (GraphLocation.GraphLocation file def) [Diff Nothing (gl ^. openedFileContents) Nothing]
-        liftIO $ putStrLn "setBuffer"
         setFileBuffer file (gl ^. openedFileContents)
 handle (Atom InterpreterStart ) = Just $ interpreterStart
 handle (Atom InterpreterPause ) = Just $ interpreterPause

@@ -59,8 +59,6 @@ TextBuffer::subscribeToFileOverride = (codeEditor) ->
     @fileSubscriptions.add @file.onWillThrowWatchError (errorObject) =>
         @emitter.emit 'will-throw-watch-error', errorObject
 
-subscribe = null
-
 module.exports =
     class LunaCodeEditorTab extends TextEditor
 

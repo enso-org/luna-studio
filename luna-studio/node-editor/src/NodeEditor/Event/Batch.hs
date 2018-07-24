@@ -84,4 +84,4 @@ instance EventName Event
 
 instance IsTrackedEvent Event where
     isTracked (UnknownEvent _) = False
-    isTracked e                = True
+    isTracked _                = True

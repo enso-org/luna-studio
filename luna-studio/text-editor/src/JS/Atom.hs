@@ -20,8 +20,7 @@ module JS.Atom
 import           Common.Data.JSON              (fromJSONVal, toJSONVal)
 import           Common.Prelude                hiding (toList)
 import           Control.Monad.Trans.Maybe     (MaybeT (MaybeT), runMaybeT)
-import           Data.Aeson.Types              (FromJSON, ToJSON)
-import           Data.Map                      (Map)
+import           Data.Aeson.Types              (FromJSON)
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure            (PToJSVal (pToJSVal))
 import           LunaStudio.Data.GraphLocation (GraphLocation)

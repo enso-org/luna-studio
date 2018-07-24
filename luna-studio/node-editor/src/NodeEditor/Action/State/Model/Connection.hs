@@ -51,12 +51,12 @@ distSqFromMouseIfIntersect nl nodePos connId = runMaybeT $ do
             proj       = closestPointOnLine (srcPos, dstPos) nodePos
             u          = closestPointOnLineParam (srcPos, dstPos) nodePos
             distSq     = distanceSquared proj nodePos
-            intersect
+            intersection
                 = srcPos == dstPos
                 || u < 0
                 || u > 1
                 || distSq > nodeRadius ^ (2 :: Integer)
-        if intersect then nothing else return (connId, distSq)
+        if intersection then nothing else return (connId, distSq)
 
 getIntersectingConnections :: ExpressionNode -> Position
     -> Command State (Maybe ConnectionId)

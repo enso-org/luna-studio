@@ -7,7 +7,6 @@ import           Common.Debug                             (HasRequestTimes, requ
 import           Common.Prelude
 import           Data.HashMap.Lazy                        (HashMap)
 import           Data.Map                                 (Map)
-import qualified Data.Map                                 as Map
 import           Data.Set                                 (Set)
 import           Data.Time.Clock                          (UTCTime)
 import           Data.UUID.Types                          (UUID)
@@ -20,7 +19,7 @@ import           NodeEditor.Event.Event                   (Event)
 import           NodeEditor.React.Model.App               (App)
 import qualified NodeEditor.React.Model.App               as App
 import           NodeEditor.React.Model.NodeEditor        (NodeEditor)
-import           NodeEditor.React.Model.Visualization     (Visualizer, VisualizerId, VisualizerMatcher, VisualizerName, VisualizerPath)
+import           NodeEditor.React.Model.Visualization     (Visualizer, VisualizerId, VisualizerMatcher, VisualizerPath)
 import           NodeEditor.React.Store                   (Ref)
 import qualified NodeEditor.React.Store.Ref               as Ref
 import           NodeEditor.State.Action                  (ActionRep, Connect, SomeAction)

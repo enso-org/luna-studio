@@ -2,7 +2,6 @@ module NodeEditor.Action.Basic.CreateGraph where
 
 import           Common.Action.Command                 (Command)
 import           Common.Prelude
-import qualified Data.Map                              as Map
 import qualified Data.Set                              as Set
 import           LunaStudio.Data.Connection            (Connection)
 import qualified LunaStudio.Data.Connection            as Connection

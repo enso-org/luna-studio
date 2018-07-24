@@ -9,9 +9,6 @@ module TextEditor.Event.Source
 
 import           Common.Prelude                    hiding (on)
 
-import           GHCJS.Buffer                      as Buffer
-import           GHCJS.Buffer.Types                as Buffer
-
 import qualified Common.Batch.Connector.Connection as BatchConnection
 import qualified JS.Atom                           as Atom
 import qualified TextEditor.Event.Connection       as Connection
