@@ -17,8 +17,8 @@ temporaryPath         = process.env.LUNA_TMP
 tutorialsDownloadPath = process.env.LUNA_TUTORIALS
 
 temporaryProject = {
-    name: 'unsaved-luna-project'
-    path: path.join temporaryPath, 'unsaved-luna-project'
+    name: 'UnsavedLunaProject'
+    path: path.join temporaryPath, 'UnsavedLunaProject'
     srcDir: 'src'
     mainFile: 'Main.luna'
     mainContent: 'def main:\n    hello = "Hello, World!"\n    None'
@@ -174,12 +174,6 @@ createTemporary = (callback) =>
 
 isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith tutorialsDownloadPath)
 
-temporaryOpen = (callback) =>
-    if closeAllFiles()
-        createTemporary =>
-            atom.project.setPaths [temporaryProject.path]
-            callback?()
-
 ## PROJECTS ##
 
 closeAllFiles = ->
@@ -215,15 +209,19 @@ openLunaProject = (paths) ->
 module.exports =
     class ProjectManager
         constructor: (@codeEditor) ->
-
         closeAllFiles: closeAllFiles
         openMainIfExists: openMainIfExists
         selectLunaProject: selectLunaProject
         openLunaProject: openLunaProject
+        createProject: =>
+            if closeAllFiles()
+                fse.remove temporaryProject.path, (err) =>
+                    @codeEditor.pushInternalEvent
+                        tag: "CreateProject"
+                        _path: temporaryProject.path
 
         temporaryProject:
             path: temporaryProject.path
-            open: temporaryOpen
             isOpen: =>
                 return isTemporary atom.project.getPaths()[0]
 

@@ -19,11 +19,12 @@ import           TextEditor.State.Global           (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (Atom (CloseFile  path)) = Just $ BatchCmd.closeFile  path
-handle (Atom (IsSaved    path)) = Just $ BatchCmd.isSaved    path
-handle (Atom (OpenFile   path)) = Just $ BatchCmd.openFile   path
-handle (Atom (SaveFile   path)) = Just $ BatchCmd.saveFile   path
-handle (Atom (SetProject path)) = Just $ BatchCmd.setProject path
+handle (Atom (CloseFile     path)) = Just $ BatchCmd.closeFile     path
+handle (Atom (CreateProject path)) = Just $ BatchCmd.createProject path
+handle (Atom (IsSaved       path)) = Just $ BatchCmd.isSaved       path
+handle (Atom (OpenFile      path)) = Just $ BatchCmd.openFile      path
+handle (Atom (SaveFile      path)) = Just $ BatchCmd.saveFile      path
+handle (Atom (SetProject    path)) = Just $ BatchCmd.setProject    path
 handle (Atom (MoveProject oldPath newPath)) = Just $ BatchCmd.moveProject oldPath newPath
 
 handle (Batch (Batch.FileOpened  response))   = Just $ handleResponse response success doNothing2 where

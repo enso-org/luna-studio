@@ -22,6 +22,7 @@ import qualified Empire.Env                     as Env
 
 import qualified LunaStudio.API.Atom.CloseFile  as CloseFile
 import qualified LunaStudio.API.Atom.Copy       as Copy
+import qualified LunaStudio.API.Atom.CreateProject as CreateProject
 import qualified LunaStudio.API.Atom.IsSaved    as IsSaved
 import qualified LunaStudio.API.Atom.OpenFile   as OpenFile
 import qualified LunaStudio.API.Atom.Paste      as Paste
@@ -32,11 +33,14 @@ import qualified LunaStudio.API.Graph.Request   as G
 import           LunaStudio.API.Request         (Request (..))
 import qualified LunaStudio.API.Response        as Response
 import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..))
+import qualified LunaStudio.Data.Error          as Error
 import           LunaStudio.Data.GraphLocation  (GraphLocation(..))
 import qualified LunaStudio.Data.GraphLocation  as GraphLocation
+import qualified Luna.Package.Structure.Generate as PackageGen
 
 import           Debug
 import qualified Empire.Commands.Graph          as Graph
+import qualified Empire.Commands.Package        as Package
 import qualified Empire.Commands.Publisher      as Publisher
 import           Empire.Data.AST                (SomeASTException)
 import qualified Empire.Data.Graph              as Graph
@@ -63,6 +67,17 @@ replaceDir :: FilePath -> FilePath -> FilePath -> FilePath
 replaceDir oldPath newPath path = case stripPrefix (addTrailingPathSeparator oldPath) path of
     Just suffix -> newPath </> suffix
     _           -> path
+
+handleCreateProject :: Request CreateProject.Request -> StateT Env BusT ()
+handleCreateProject req@(Request _ _ (CreateProject.Request path)) = do
+    result <- PackageGen.genPackageStructure path Nothing def
+    logger Logger.info $ show ("CREATE PROJECT", req, result)
+    case result of
+        Left generatorError -> do
+            let lunaError = Package.prepareLunaError generatorError
+            replyFail logger lunaError req (Response.Error lunaError)
+        Right path' -> do
+            replyOk req ()
 
 handleMoveProject :: Request MoveProject.Request -> StateT Env BusT ()
 handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do

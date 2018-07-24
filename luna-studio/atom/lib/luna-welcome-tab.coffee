@@ -68,9 +68,9 @@ class LunaWelcomeTab extends View
                                     @div  class: 'luna-welcome__section__container', outlet: 'communityContainer', =>
 
     initialize: =>
-        @privateNew = new ProjectItem({name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
+        @privateNew = new ProjectItem {name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
-            @projects.temporaryProject.open())
+            @projects.createProject()
         @communityItems = []
         @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, communityNewClasses, (progress, finalize) =>
             finalize()

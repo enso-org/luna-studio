@@ -84,7 +84,7 @@ module.exports = LunaStudio =
         atom.packages.onDidActivateInitialPackages =>
             @toolbar.attach()
             atom.reopenProjectMenuManager.open = @projects.openLunaProject
-            openTemporaryProject = => @projects.temporaryProject.open (err) => if err then throw err
+            openTemporaryProject = => @projects.createProject()
             resetProjects = atom.config.get('luna-studio.resetProjects') and atom.project.getPaths().length == 0
             if atom.config.get('luna-studio.showWelcomeScreen') and atom.project.getPaths().length == 0
                 @welcome.attach()
