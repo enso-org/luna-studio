@@ -230,7 +230,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nl           = request  ^. AddNode.nodeLoc
         failure _ _  = whenM (isOwnRequest requestId) $ revertAddNode request
         success diff = do
-            applyDiff location (Set.singleton KeepNodeMeta) diff
+            applyDiff location (Set.fromList [KeepNodeMeta, KeepPorts]) diff
             whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where
