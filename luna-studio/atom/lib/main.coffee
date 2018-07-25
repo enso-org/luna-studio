@@ -40,22 +40,25 @@ module.exports = LunaStudio =
         @guide   = new VisualGuide nodeEditor
         @moving = false
         version.checkUpdates()
-        actStatus = (act, arg1, arg2) =>
+        actStatus = (act, arg0, arg1) =>
             switch act
                 when 'Init'
                     rootPath = atom.project.getPaths().shift()
                     if rootPath? and rootPath != ""
                         @projects.recent.add rootPath
                         codeEditor.pushInternalEvent(tag: "SetProject", _path: rootPath)
+                when 'ProjectCreated'
+                    atom.project.setPaths [arg0]
+                    @projects.openMainIfExists()
                 when 'ProjectSet'
                     @projects.openMainIfExists()
                 when 'FileOpened'
-                    codeEditor.pushInternalEvent(tag: "GetBuffer", _path: arg1)
+                    codeEditor.pushInternalEvent(tag: "GetBuffer", _path: arg0)
                 when 'ProjectMove'
-                    moveUri = (oldUri) -> if oldUri? and oldUri.startsWith arg2
-                        return arg1 + oldUri.slice arg2.length
+                    moveUri = (oldUri) -> if oldUri? and oldUri.startsWith arg1
+                        return arg0 + oldUri.slice arg1.length
                     @moving = true
-                    atom.project.setPaths [arg1]
+                    atom.project.setPaths [arg0]
                     for pane in atom.workspace.getPaneItems()
                         if pane instanceof LunaCodeEditorTab
                             newUri = moveUri pane.uri
