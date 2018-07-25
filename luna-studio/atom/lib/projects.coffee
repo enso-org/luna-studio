@@ -1,5 +1,7 @@
 fse     = require 'fs-extra'
 fs      = require 'fs-plus'
+fsNoEPERMMod = require 'fs-no-eperm-anymore'
+fsNoEPERM = fsNoEPERMMod.instantiate()
 path    = require 'path'
 request = require 'request'
 yaml    = require 'js-yaml'
@@ -122,11 +124,12 @@ tutorialOpen = (tutorial, progress, finalize) ->
                                 cloneError 'Wrong tutorial archive structure'
                             else
                                 srcPath = path.join unpackPath, files[0]
-                                fs.rename srcPath, dstPath, (err) =>
-                                    if err?
+                                fsNoEPERM.rename srcPath, dstPath
+                                    .then =>
+                                        atom.project.setPaths [dstPath]
+                                        finalize()
+                                    .catch (err) =>
                                         cloneError 'Cannot open tutorial: ' + err.message
-                                    atom.project.setPaths [dstPath]
-                                    finalize()
 
 ## RECENT PROJECTS ##
 
