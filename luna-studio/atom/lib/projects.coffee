@@ -16,15 +16,7 @@ defaultProjectPath    = process.env.LUNA_PROJECTS
 temporaryPath         = process.env.LUNA_TMP
 tutorialsDownloadPath = process.env.LUNA_TUTORIALS
 
-temporaryProject = {
-    name: 'UnsavedLunaProject'
-    path: path.join temporaryPath, 'UnsavedLunaProject'
-    srcDir: 'src'
-    mainFile: 'Main.luna'
-    mainContent: 'def main:\n    hello = "Hello, World!"\n    None'
-    }
-
-temporaryMainFilePath = path.join temporaryProject.path, temporaryProject.srcDir, temporaryProject.mainFile
+temporaryProjectPath = path.join temporaryPath, 'UnsavedLunaProject'
 
 encoding = 'utf8'
 
@@ -157,21 +149,6 @@ loadRecentNoCheck = (callback) =>
 
 ## TEMPORARY PROJECT ##
 
-createTemporary = (callback) =>
-    fse.remove temporaryProject.path, (err) =>
-        fse.mkdirs temporaryProject.path, (err) =>
-            if err then throw err
-            srcPath = path.join temporaryProject.path, temporaryProject.srcDir
-            fs.mkdir srcPath, (err) =>
-                if err then throw err
-                mainPath = path.join srcPath, temporaryProject.mainFile
-                fs.writeFile mainPath, temporaryProject.mainContent, (err) =>
-                    if err then throw err
-                    projectPath = path.join temporaryProject.path, '.lunaproject'
-                    fs.writeFile projectPath, '', (err) =>
-                        if err then throw err
-                        callback()
-
 isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith tutorialsDownloadPath)
 
 ## PROJECTS ##
@@ -215,13 +192,13 @@ module.exports =
         openLunaProject: openLunaProject
         createProject: =>
             if closeAllFiles()
-                fse.remove temporaryProject.path, (err) =>
+                fse.remove temporaryProjectPath, (err) =>
                     @codeEditor.pushInternalEvent
                         tag: "CreateProject"
-                        _path: temporaryProject.path
+                        _path: temporaryProjectPath
 
         temporaryProject:
-            path: temporaryProject.path
+            path: temporaryProjectPath
             isOpen: =>
                 return isTemporary atom.project.getPaths()[0]
 
