@@ -27,19 +27,19 @@ analyticsConfigRequest =
     headers:
         'User-Agent': 'luna-studio'
 
-module.exports = LunaStudio =
-    activate: (state) ->
+class LunaStudio
+    activate: (state) =>
         delete process.env.LD_LIBRARY_PATH # AppImage sets that for us and on Linux it interferes
                                            # with xdg-open, used to open a new browser when user
                                            # clicks Forum/Chat/Documentation buttons
                                            # Atom is already started so this change won't have an
                                            # effect on it
         stats.initialize()
+        @projects = new ProjectManager codeEditor
         atom.grammars.addGrammar(new LunaSemanticGrammar(atom.grammars, codeEditor.lex))
-        atom.workspace.addOpener @lunaOpener
+        atom.workspace.addOpener (uri) => @lunaOpener uri
         codeEditor.connect nodeEditor.connector
         nodeEditor.onNotification report.onNotification
-        @projects = new ProjectManager codeEditor
         @welcome = new LunaWelcomeTab @projects
         @toolbar = new LunaToolbar codeEditor
         @guide   = new VisualGuide nodeEditor
@@ -50,7 +50,7 @@ module.exports = LunaStudio =
                 when 'Init'
                     rootPath = atom.project.getPaths().shift()
                     if rootPath? and rootPath != ""
-                        @projects.recent.add rootPath
+                        @projects.addRecent rootPath
                         codeEditor.pushInternalEvent(tag: "SetProject", _path: rootPath)
                 when 'ProjectCreated'
                     atom.project.setPaths [arg0]
@@ -77,7 +77,8 @@ module.exports = LunaStudio =
         codeEditor.onStatus actStatus
         atom.workspace.onDidChangeActivePaneItem (item) => @handleItemChange item
         atom.workspace.onDidDestroyPaneItem (event) => @handleItemDestroy event
-        atom.workspace.observeTextEditors (editor) => @handleSaveAsLuna editor
+        atom.workspace.observeTextEditors (editor) =>
+            @handleSaveAsLuna editor
         atom.workspace.onDidAddPaneItem (pane) => @handleItemChange pane.item
         atom.project.onDidChangePaths (projectPaths) => @handleProjectPathsChange projectPaths
         atom.workspace.open(LUNA_STUDIO_URI, {split: atom.config.get('luna-studio.preferredNodeEditorPosition')})
@@ -104,8 +105,6 @@ module.exports = LunaStudio =
                 @guide.start()
         codeEditor.start()
 
-
-
     consumeStatusBar: (statusBar) ->
         myElement = new Statusbar(codeEditor)
         @statusBarTile = statusBar.addLeftTile(item: myElement, priority: -1)
@@ -116,11 +115,11 @@ module.exports = LunaStudio =
                 atom.workspace.open(uri, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
         codeEditor.statusListener actStatus
 
-    lunaOpener: (uri) ->
+    lunaOpener: (uri) =>
         if uri is LUNA_STUDIO_URI
-            new LunaNodeEditorTab null, nodeEditor, codeEditor
+            new LunaNodeEditorTab null, nodeEditor, codeEditor, @projects
         else if path.extname(uri) is '.luna'
-            new LunaCodeEditorTab uri, codeEditor
+            new LunaCodeEditorTab uri, codeEditor, @projects
 
     deactivate: ->
         stats.finalize()
@@ -158,8 +157,8 @@ module.exports = LunaStudio =
                     nodeEditor.pushEvent(tag: "UnsetFile")
                 return codeEditor.pushInternalEvent(tag: "CloseFile", _path: event.item.uri)
 
-    handleSaveAsLuna: (editor) ->
-        editor.getSaveDialogOptions = ->
+    handleSaveAsLuna: (editor) =>
+        editor.getSaveDialogOptions = =>
             projectPath = atom.project.getPaths()[0]
             unless projectPath? then return {}
             srcPath = projectPath + '/src'
@@ -171,10 +170,10 @@ module.exports = LunaStudio =
                 atom.workspace.destroyActivePaneItem()
                 atom.workspace.open(e.path, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
 
-    handleProjectPathsChange: (projectPaths) ->
+    handleProjectPathsChange: (projectPaths) =>
         projectPath = projectPaths[0]
         if projectPath?
-            @projects.recent.add projectPath
+            @projects.addRecent projectPath
             codeEditor.pushInternalEvent(tag: "SetProject", _path: projectPath)
             analytics.track 'LunaStudio.Project.Open',
                 name: path.basename projectPath
@@ -241,3 +240,6 @@ module.exports = LunaStudio =
             title: 'Open empty project on start up'
             type: 'boolean'
             default: true
+
+
+module.exports = new LunaStudio()
