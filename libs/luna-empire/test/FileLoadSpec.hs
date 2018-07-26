@@ -1180,6 +1180,17 @@ spec = around withChannels $ parallel $ do
                 Graph.setPortDefault loc (inPortRef c []) (Just $ PortDefault.Constant (PortDefault.IntValue 100000000))
                 Just bar <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 3
                 Graph.renameNode loc bar "baz"
+        it "updates literal real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = 2.71828
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 2.71828))
         it "preserves code after connecting & disconnecting lambda output" $ let
             code = [r|
                 def main a:

@@ -21,6 +21,7 @@ import           Prologue (convert, convertVia, mempty, wrap)
 
 import           Control.Monad.Catch          (catchAll)
 import           Data.Char                    (digitToInt)
+import qualified Data.List.Split              as Split
 import qualified Data.Text                    as Text
 
 import           Empire.ASTOp                    (EmpirePass, GraphOp)
@@ -203,7 +204,10 @@ parsePortDefault (Constant (TextValue s)) = do
 parsePortDefault (Constant (RealValue d)) = do
     let (int, frac) = properFraction d
     intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show int
-    fracPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show frac
-    generalize <$> IR.number 10 intPart fracPart `withLength` (length $ show d)
+    case Split.splitOn "." (show frac) of
+        [zero, frac'] -> do
+            fracPart <- Mutable.fromList $ map (fromIntegral . digitToInt) frac'
+            generalize <$> IR.number 10 intPart fracPart `withLength` (length $ show d)
+        _ -> throwM $ PortDefaultNotConstructibleException (Constant (RealValue d))
 parsePortDefault (Constant (BoolValue b)) = generalize <$> IR.cons (convert $ show b) []  `withLength` (length $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

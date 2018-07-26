@@ -17,7 +17,7 @@ import qualified Empire.Commands.AST             as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
                                                            getNodeIdForMarker, getNodes, loadCode, movePort, removeNodes, removePort,
                                                            renameNode, renamePort, setNodeExpression, setNodeMeta, withGraph,
-                                                           addPortWithConnections, filterPrimMethods)
+                                                           addPortWithConnections)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import           Empire.Commands.Library         (createLibrary, withLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
