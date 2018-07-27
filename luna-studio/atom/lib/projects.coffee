@@ -217,11 +217,11 @@ module.exports =
                     try
                         fs.accessSync serializedProjectPath
                         recentProjects.push mkRecentProject serializedProjectPath
-                    catch error
+                    catch error # we can just silently omit non-existing projects
                 callback?()
 
         addRecent: (recentProjectPath) =>
-            if isTemporary recentProjectPath then return
+            return if isTemporary recentProjectPath
             recentProjects = recentProjects.filter (project) -> project.uri isnt recentProjectPath
             recentProjects.unshift mkRecentProject recentProjectPath
             data = yaml.safeDump recentProjectsPaths()
@@ -231,8 +231,8 @@ module.exports =
 
         getTutorialItems: =>
             tutorials = {}
-            for key in Object.keys tutorialItems
-                tutorials[key] = mkTutorial tutorialItems[key]
+            for own key, tutorialItem of tutorialItems
+                tutorials[key] = mkTutorial tutorialItem
             tutorials
 
         refreshTutorialList: refreshTutorialList
