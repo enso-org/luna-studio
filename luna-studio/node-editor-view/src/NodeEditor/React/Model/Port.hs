@@ -128,6 +128,11 @@ instance Convertible (Port i) (Empire.Port i) where
         {- nodeType -} (p ^. valueType)
         {- state    -} (p ^. state)
 
+instance Default (InPortTree InPort) where
+    def = convert (def :: InPortTree Empire.InPort)
+
+instance Default (OutPortTree OutPort) where
+    def = convert (def :: OutPortTree Empire.OutPort)
 
 portGap :: Radius -> Angle
 portGap r = 0.2 * nodeRadius / r -- to avoid gap narrowing
@@ -150,8 +155,5 @@ portAngleStop trimmed portNumber numOfPorts r = n * t + t - trim
 argumentConstructorNumber :: Int -> Int
 argumentConstructorNumber = max 1
 
-
 argumentConstructorOffsetY :: Int -> Double
 argumentConstructorOffsetY numOfPorts = (fromIntegral $ argumentConstructorNumber numOfPorts) * gridSize
-
-

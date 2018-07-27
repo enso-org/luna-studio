@@ -1,5 +1,5 @@
 module NodeEditor.Action.Basic
-    ( NodeUpdateModification (KeepPorts, KeepNodeMeta)
+    ( NodeUpdateModification (KeepPorts, KeepNodeMeta, MergePorts)
     , addPort
     , addSubgraph
     , centerGraph
@@ -149,7 +149,7 @@ import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPor
 import           NodeEditor.Action.Basic.Undo                (redo, undo)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts),
+import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts, MergePorts),
                                                               localUpdateCanEnterExpressionNode, localUpdateExpressionNode,
                                                               localUpdateExpressionNodeInPorts, localUpdateExpressionNodeOutPorts,
                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateIsDefinition,

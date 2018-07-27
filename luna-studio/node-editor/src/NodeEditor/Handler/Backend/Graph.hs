@@ -51,7 +51,7 @@ import qualified LunaStudio.Data.GraphLocation               as GraphLocation
 import qualified LunaStudio.Data.Node                        as API
 import           LunaStudio.Data.NodeLoc                     (NodePath, prependPath)
 import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
-import           NodeEditor.Action.Basic                     (NodeUpdateModification (KeepNodeMeta, KeepPorts), centerGraph, exitBreadcrumb,
+import           NodeEditor.Action.Basic                     (NodeUpdateModification (KeepNodeMeta, KeepPorts, MergePorts), centerGraph, exitBreadcrumb,
                                                               localAddConnection, localAddSearcherHints, localMerge, localMoveProject,
                                                               localRemoveConnection, localRemoveNode, localRenameNode, localSetInputSidebar,
                                                               localSetNodeExpression, localSetNodeMeta, localSetOutputSidebar,
@@ -230,7 +230,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nl           = request  ^. AddNode.nodeLoc
         failure _ _  = whenM (isOwnRequest requestId) $ revertAddNode request
         success diff = do
-            applyDiff location (Set.fromList [KeepNodeMeta, KeepPorts]) diff
+            applyDiff location (Set.fromList [KeepNodeMeta, MergePorts]) diff
             whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where

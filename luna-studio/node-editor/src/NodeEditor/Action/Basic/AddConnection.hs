@@ -34,7 +34,6 @@ localAddConnection c = do
     mayConn <- createConnectionModel src dst
     withJust mayConn $ \conn -> do
         NodeEditor.addConnection conn
-        NodeEditor.resetSuccessors $ dst ^. nodeLoc
         updatePortMode $ OutPortRef' src
         updatePortMode $ InPortRef'  dst
     return $ isJust mayConn
