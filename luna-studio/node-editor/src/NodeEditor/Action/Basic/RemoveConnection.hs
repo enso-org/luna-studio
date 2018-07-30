@@ -30,7 +30,6 @@ localRemoveConnection connId = do
     mayConn <- getConnection connId
     NodeEditor.removeConnection connId
     withJust mayConn $ \conn -> do
-        NodeEditor.resetSuccessors $ conn ^. dstNodeLoc
         updatePortMode . OutPortRef' $ conn ^. src
         updatePortMode . InPortRef'  $ conn ^. dst
     return $ isJust mayConn

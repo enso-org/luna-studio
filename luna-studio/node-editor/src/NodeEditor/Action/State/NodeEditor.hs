@@ -665,13 +665,6 @@ setVisualizationData nl backup@(NE.ErrorBackup msg) overwrite
         visIds <- setErrorVisualization nl
         liftIO . forM_ visIds $ flip JS.sendInternalData msg
 
-resetSuccessors :: NodeLoc -> Command State ()
-resetSuccessors nl = do
-    outConnections <- filter (\c -> c ^. srcNodeLoc == nl) <$> getConnections
-    let successors = view dstNodeLoc <$> outConnections
-    whenM (resetNode nl) $ do
-        mapM_ resetSuccessors successors
-
 resetNode :: NodeLoc -> Command State Bool
 resetNode nl = do
     maySuccess <- modifyExpressionNode nl $ do
