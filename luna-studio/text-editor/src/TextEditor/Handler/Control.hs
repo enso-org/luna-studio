@@ -18,7 +18,7 @@ import           TextEditor.State.Global            (State)
 handle :: Event -> Maybe (Command State ())
 handle (Batch (InterpreterUpdate (Interpreter.Update update))) = Just $ pushInterpreterUpdate "Update" $ Just update
 handle (Batch (InterpreterResponse response)) = Just $ handleResponse response success doNothing2 where
-    success _ = pushInterpreterUpdate (head $ words $ show $ response ^. Response.request) Nothing
+    success _ = pushInterpreterUpdate (response ^. Response.request . Interpreter.command . to show) Nothing
 handle (Batch (EmpireStarted _)) = Just $ do
     files <- openedFiles
     withJust files $ \opened -> forM_ opened $ \gl -> do
