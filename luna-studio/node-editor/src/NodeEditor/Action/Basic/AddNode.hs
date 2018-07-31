@@ -3,7 +3,6 @@ module NodeEditor.Action.Basic.AddNode where
 
 import           Common.Prelude
 
-import qualified Data.Text                            as Text
 import qualified LunaStudio.Data.Node                 as Empire
 import qualified NodeEditor.Action.Batch              as Batch
 import qualified NodeEditor.Action.State.NodeEditor   as NodeEditor
@@ -11,10 +10,8 @@ import qualified NodeEditor.Action.State.NodeEditor   as NodeEditor
 import           Common.Action.Command                (Command)
 import           Data.Text                            (Text)
 import           LunaStudio.Data.Geometry             (snap)
-import           LunaStudio.Data.LabeledTree          (LabeledTree (LabeledTree))
 import qualified LunaStudio.Data.Node                 as API
 import           LunaStudio.Data.NodeMeta             (NodeMeta (NodeMeta))
-import           LunaStudio.Data.Port                 (InPortIndex (Arg), Port (Port), PortState (NotConnected))
 import           LunaStudio.Data.Position             (Position)
 import           NodeEditor.Action.Basic.FocusNode    (focusNode)
 import           NodeEditor.Action.Basic.SelectNode   (selectNode)

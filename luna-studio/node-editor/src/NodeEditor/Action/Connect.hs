@@ -26,7 +26,7 @@ import           NodeEditor.Action.NodeDrag                 (startNodeDrag)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.Model              (createHalfConnectionModel, createHalfConnectionModel')
-import           NodeEditor.Action.State.NodeEditor         (getConnection, getNode, inTopLevelBreadcrumb, modifyNodeEditor)
+import           NodeEditor.Action.State.NodeEditor         (getConnection, getNode, inTopLevelBreadcrumb, modifyNodeEditor, resetSuccessors)
 import           NodeEditor.Action.State.Scene              (translateToWorkspace)
 import           NodeEditor.React.Event.Connection          (ModifiedEnd (Destination, Source))
 import           NodeEditor.React.Model.Connection          (ConnectionId, toValidConnection)
@@ -158,6 +158,7 @@ connectToPort dst action = do
                     void . localAddConnection
                         . ConnectionAPI.Connection outPortRef
                             $ newConn ^. ConnectionAPI.dst
+                    resetSuccessors $ dst ^. PortRef.nodeLoc
                     Batch.addPort
                         outPortRef
                         (Just $ newConn ^. ConnectionAPI.dst)

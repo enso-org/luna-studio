@@ -10,10 +10,11 @@ import           NodeEditor.State.Global                    (State)
 
 setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression nl update =
-    whenM (localSetNodeExpression nl update) $ Batch.setNodeExpression nl update
+    whenM (localSetNodeExpression nl update) $ do
+        resetSuccessors nl
+        Batch.setNodeExpression nl update
 
 localSetNodeExpression :: NodeLoc -> Text -> Command State Bool
 localSetNodeExpression nl update = do
     modifyExpressionNode nl $ expression .= update
-    resetSuccessors nl
     inGraph nl

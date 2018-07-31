@@ -10,29 +10,17 @@ import qualified LunaStudio.Data.Graph                 as API
 import           LunaStudio.Data.MonadPath             (MonadPath)
 import           LunaStudio.Data.NodeLoc               (NodePath)
 import           NodeEditor.Action.Basic.AddConnection (localAddConnections)
-import           NodeEditor.Action.Basic.AddNode       (localAddExpressionNodes)
 import           NodeEditor.Action.Basic.FocusNode     (updateNodeZOrder)
 import           NodeEditor.Action.Basic.RemoveNode    (localRemoveNodes)
 import           NodeEditor.Action.Basic.UpdateNode    (localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
                                                         localUpdateOrAddOutputNode)
-import           NodeEditor.Action.State.NodeEditor    (addInputNode, addOutputNode, getExpressionNodes, modifyNodeEditor, resetGraph,
+import           NodeEditor.Action.State.NodeEditor    (getExpressionNodes, modifyNodeEditor,
                                                         setGraphStatus, updateMonads)
 import           NodeEditor.React.Model.Node           (ExpressionNode, InputNode, OutputNode, nodeLoc)
 import qualified NodeEditor.React.Model.NodeEditor     as NE
 import           NodeEditor.State.Global               (State)
 
 
-
-createGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode
-    -> [Connection] -> [MonadPath] -> Command State ()
-createGraph nodes input output connections monads = do
-    resetGraph
-    localAddExpressionNodes nodes
-    mapM_ addInputNode input
-    mapM_ addOutputNode output
-    void $ localAddConnections connections
-    updateMonads monads
-    updateNodeZOrder
 
 updateWithAPIGraph :: NodePath -> Graph -> Command State ()
 updateWithAPIGraph p g = updateGraph nodes input output conns monads

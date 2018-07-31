@@ -17,11 +17,15 @@ import           NodeEditor.State.Global            (State)
 connect :: Either OutPortRef NodeLoc -> Either InPortRef NodeLoc
     -> Command State ()
 connect src'@(Left srcPortRef) (Left dstPortRef)
-    = whenM (localAddConnection $ Connection srcPortRef dstPortRef)
-        $ Batch.addConnection src' (Left $ InPortRef' dstPortRef)
-connect src' (Left dstPortRef)
-    = Batch.addConnection src' (Left $ InPortRef' dstPortRef)
-connect src' (Right nid) = Batch.addConnection src' (Right nid)
+    = whenM (localAddConnection $ Connection srcPortRef dstPortRef) $ do
+        NodeEditor.resetSuccessors $ dstPortRef ^. nodeLoc
+        Batch.addConnection src' (Left $ InPortRef' dstPortRef)
+connect src' (Left dstPortRef) = do
+    NodeEditor.resetSuccessors $ dstPortRef ^. nodeLoc
+    Batch.addConnection src' (Left $ InPortRef' dstPortRef)
+connect src' (Right nl) = do
+    NodeEditor.resetSuccessors nl
+    Batch.addConnection src' (Right nl)
 
 localAddConnections :: [Connection] -> Command State [ConnectionId]
 localAddConnections
