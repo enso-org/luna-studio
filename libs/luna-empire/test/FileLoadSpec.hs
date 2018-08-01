@@ -1191,6 +1191,67 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 2.71828))
+        it "updates literal huge real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = 5102342220534060.0
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 121.51023535519526))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102352295050615e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102350925977542e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102353663122158e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234662807987e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234222053406e15))
+        it "updates literal really small real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = 0.00000000000000510234222053406
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 121.51023535519526))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102352295050615e-15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102350925977542e-15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102353663122158e-15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234662807987e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234222053406e-15))
+        it "updates literal huge negative real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = -5102342220534060.0
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 121.51023535519526))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -5.102352295050615e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -5.102350925977542e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102353663122158e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234662807987e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -5.10234222053406e15))
+        it "updates literal negative real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = -2.71828
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 2.71828))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -2.7))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -2.71828))
         it "preserves code after connecting & disconnecting lambda output" $ let
             code = [r|
                 def main a:

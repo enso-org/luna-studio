@@ -23,6 +23,7 @@ import           Control.Monad.Catch          (catchAll)
 import           Data.Char                    (digitToInt)
 import qualified Data.List.Split              as Split
 import qualified Data.Text                    as Text
+import qualified Data.Scientific              as Scientific
 
 import           Empire.ASTOp                    (EmpirePass, GraphOp)
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
@@ -202,12 +203,24 @@ parsePortDefault (Constant (TextValue s)) = do
     l <- Mutable.fromList s
     generalize <$> IR.rawString l `withLength` (length s)
 parsePortDefault (Constant (RealValue d)) = do
-    let (int, frac) = properFraction d
-    intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show int
-    case Split.splitOn "." (show frac) of
-        [zero, frac'] -> do
-            fracPart <- Mutable.fromList $ map (fromIntegral . digitToInt) frac'
-            generalize <$> IR.number 10 intPart fracPart `withLength` (length $ show d)
+    let negative    = d < 0
+        sc          = Scientific.fromFloatDigits $ abs d
+        scString    = Scientific.formatScientific Scientific.Fixed Nothing sc
+    case Split.splitOn "." scString of
+        [int, frac] -> do
+            intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) int
+            let minusLength = 1
+                dotLength   = 1
+            fracPart <- Mutable.fromList $ map (fromIntegral . digitToInt) frac
+            number   <- generalize <$> IR.number 10 intPart fracPart `withLength`
+                (length int + dotLength + length frac)
+            if negative then do
+                minus <- generalize <$> IR.var Parser.uminus `withLength` minusLength
+                app   <- generalize <$> IR.app minus number `withLength`
+                    (minusLength + length int + dotLength + length frac)
+                return app
+            else
+                return number
         _ -> throwM $ PortDefaultNotConstructibleException (Constant (RealValue d))
 parsePortDefault (Constant (BoolValue b)) = generalize <$> IR.cons (convert $ show b) []  `withLength` (length $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

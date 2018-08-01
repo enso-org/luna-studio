@@ -81,6 +81,7 @@ dependencies:
     - prologue
     - safe
     - safe-exceptions
+    - scientific
     - split
     - stm
     - text
