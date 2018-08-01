@@ -211,13 +211,15 @@ parsePortDefault (Constant (RealValue d)) = do
             intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) int
             let minusLength = 1
                 dotLength   = 1
+                intLength   = length int
+                fracLength  = length frac
             fracPart <- Mutable.fromList $ map (fromIntegral . digitToInt) frac
             number   <- generalize <$> IR.number 10 intPart fracPart `withLength`
-                (length int + dotLength + length frac)
+                (intLength + dotLength + fracLength)
             if negative then do
                 minus <- generalize <$> IR.var Parser.uminus `withLength` minusLength
                 app   <- generalize <$> IR.app minus number `withLength`
-                    (minusLength + length int + dotLength + length frac)
+                    (minusLength + intLength + dotLength + fracLength)
                 return app
             else
                 return number
