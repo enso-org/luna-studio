@@ -99,7 +99,7 @@ tutorialOpen = (tutorial, progress, finalize) ->
     cloneError = (err) =>
         report.displayError 'Error while cloning tutorial', err
         finalize()
-    if closeAllFiles()
+    tryCloseAllFiles =>
         fse.remove dstPath, (err) =>
             if err?
                 cloneError err.toString()
@@ -135,7 +135,7 @@ recentProjectsPaths = ->
 mkRecentProject = (projectPath) ->
     new ProjectItem {uri: projectPath}, recentClasses, (progress, finalize) =>
         progress 0.5
-        if closeAllFiles()
+        tryCloseAllFiles =>
             atom.project.setPaths [projectPath]
         finalize()
 
@@ -156,13 +156,17 @@ isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projec
 
 ## PROJECTS ##
 
-closeAllFiles = ->
-    for pane in atom.workspace.getPanes()
-        for paneItem in pane.getItems()
-            if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
-                unless pane.destroyItem paneItem
-                    return false
-    return true
+tryCloseAllFiles = (callback) ->
+    x = atom.project.onDidChangePaths =>
+        for pane in atom.workspace.getPanes()
+            for paneItem in pane.getItems()
+                if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
+                    unless pane.destroyItem paneItem
+                        x.dispose()
+                        return
+        x.dispose()
+        callback()
+    atom.project.setPaths []
 
 openMainIfExists = ->
     projectPath = atom.project.getPaths()[0]
@@ -180,7 +184,7 @@ selectLunaProject = (e) ->
 
 openLunaProject = (paths) ->
     if paths?
-        if closeAllFiles()
+        tryCloseAllFiles =>
             atom.project.setPaths [paths[0]]
             openMainIfExists
 
@@ -189,12 +193,11 @@ openLunaProject = (paths) ->
 module.exports =
     class ProjectManager
         constructor: (@codeEditor) ->
-        closeAllFiles: closeAllFiles
         openMainIfExists: openMainIfExists
         selectLunaProject: selectLunaProject
         openLunaProject: openLunaProject
         createProject: =>
-            if closeAllFiles()
+            tryCloseAllFiles =>
                 fse.remove temporaryProjectPath, (err) =>
                     @codeEditor.pushInternalEvent
                         tag: "CreateProject"
