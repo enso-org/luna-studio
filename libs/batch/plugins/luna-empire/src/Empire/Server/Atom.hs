@@ -5,15 +5,14 @@ module Empire.Server.Atom where
 import           Control.Exception.Safe         (try, catchAny)
 import           Control.Lens                   ((.=), use)
 import qualified Control.Monad.Catch            as MC
-import           Control.Monad.State            (StateT)
-import           Data.List                      (stripPrefix)
+import           Control.Monad.State            (StateT, forM)
+import           Data.List                      (stripPrefix, (++))
 import qualified Data.Map                       as Map
 import qualified Data.Text.IO                   as Text
 import qualified Path
 import           Prologue                       hiding (Item)
-import qualified Shelly
 import qualified System.Directory               as Dir
-import           System.FilePath                (addTrailingPathSeparator, (</>))
+import           System.FilePath                (addTrailingPathSeparator, makeRelative, (</>))
 import qualified System.IO                      as IO
 import qualified System.IO.Temp                 as Temp
 
@@ -79,13 +78,30 @@ handleCreateProject req@(Request _ _ (CreateProject.Request path)) = do
         Right path' -> do
             replyOk req ()
 
+-- from package `extra` with BSD3 licence 
+partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a],[a])
+partitionM f [] = return ([],[])
+partitionM f (x:xs) = do 
+    res <- f x 
+    (as, bs) <- partitionM f xs
+    return ([x | res] ++ as, [x | not res] ++ bs)
+
 handleMoveProject :: Request MoveProject.Request -> StateT Env BusT ()
 handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
     result <- liftIO $ do
-        r <- try $ Shelly.shelly $ do
-            let conv = Shelly.fromText . convert
-            Shelly.mkdir_p (conv newPath)
-            Shelly.ls (conv oldPath) >>= mapM (flip Shelly.cp_r (conv newPath))
+        r <- try $ do
+            let listDirRecursively d = do
+                    contents      <- map (d </>) <$> Dir.listDirectory d
+                    (files, dirs) <- partitionM Dir.doesFileExist contents
+                    (recFiles, recDirs) <- fmap unzip $ mapM listDirRecursively dirs
+                    return (files ++ concat recFiles, dirs ++ concat recDirs)
+            (filesToCopy, dirsToCreate) <- listDirRecursively oldPath
+            forM_ dirsToCreate $ \d -> do 
+                let relPath = makeRelative oldPath d 
+                Dir.createDirectoryIfMissing True $ newPath </> relPath
+            forM_ filesToCopy $ \f -> do
+                let relPath = makeRelative oldPath f
+                Dir.copyFile f (newPath </> relPath)
         Dir.removeDirectoryRecursive oldPath `catchAny` (\e -> logger Logger.error $ "couldn't remove directory" <> oldPath)
         return r
     case result of
