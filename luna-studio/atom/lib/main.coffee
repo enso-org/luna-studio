@@ -167,8 +167,9 @@ class LunaStudio
             return { defaultPath: srcPath }
         editor.onDidSave (e) =>
             if path.extname(e.path) is ".luna"
-                atom.workspace.destroyActivePaneItem()
-                atom.workspace.open(e.path, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
+                unless @projects.isClosingAll()
+                    atom.workspace.destroyActivePaneItem()
+                    atom.workspace.open(e.path, {split: atom.config.get('luna-studio.preferredCodeEditorPosition')})
 
     handleProjectPathsChange: (projectPaths) =>
         projectPath = projectPaths[0]

@@ -92,6 +92,23 @@ mkTutorial = (tutorial) ->
     new ProjectItem tutorial, tutorialClasses, (progress, finalize) =>
         tutorialOpen tutorial, progress, finalize
 
+retryEBUSY = (operation, callback) ->
+    retryCount = 0
+    maxRetries = 8
+    waitTimeMS = 100
+    retry = => operation (err) =>
+        if err? and (err.code == 'EBUSY')
+            if retryCount >= maxRetries
+                callback err
+            else
+                waitTimeMS *= 2
+                retryCount++
+                console.warn 'resource EBUSY, retry ', retryCount, 'wait', waitTimeMS, 'ms'
+                setTimeout retry, waitTimeMS
+        else
+            callback err
+    retry()
+
 tutorialOpen = (tutorial, progress, finalize) ->
     dstPath = path.join tutorialsDownloadPath, tutorial.name
     dstZipPath = dstPath + '.zip'
@@ -100,7 +117,7 @@ tutorialOpen = (tutorial, progress, finalize) ->
         report.displayError 'Error while cloning tutorial', err
         finalize()
     tryCloseAllFiles =>
-        fse.remove dstPath, (err) =>
+        retryEBUSY ((callback) => fse.remove dstPath, callback), (err) =>
             if err?
                 cloneError err.toString()
             else
@@ -156,16 +173,21 @@ isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projec
 
 ## PROJECTS ##
 
+closingAll = false
+
 tryCloseAllFiles = (callback) ->
+    closingAll = true
     x = atom.project.onDidChangePaths =>
         for pane in atom.workspace.getPanes()
             for paneItem in pane.getItems()
                 if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
                     unless pane.destroyItem paneItem
                         x.dispose()
+                        closingAll = false
                         return
         x.dispose()
         callback()
+        closingAll = false
     atom.project.setPaths []
 
 openMainIfExists = ->
@@ -196,6 +218,7 @@ module.exports =
         openMainIfExists: openMainIfExists
         selectLunaProject: selectLunaProject
         openLunaProject: openLunaProject
+        isClosingAll: => closingAll
         createProject: =>
             tryCloseAllFiles =>
                 fse.remove temporaryProjectPath, (err) =>
