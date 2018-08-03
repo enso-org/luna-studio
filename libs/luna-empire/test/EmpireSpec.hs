@@ -377,6 +377,15 @@ spec = around withChannels $ parallel $ do
           withResult res $ \conns -> do
               -- one from a to +, one from b to + and one from + to output edge
               conns `shouldSatisfy` ((== 3) . length)
+        it "shows connection between node and list containing it" $ \env -> do
+          u1 <- mkUUID
+          u2 <- mkUUID
+          res <- evalEmp env $ do
+              Graph.addNode top u1 "2" def
+              Graph.addNode top u2 "[number1]" def
+              Graph.getConnections top
+          withResult res $ \conns -> do
+              conns `shouldSatisfy` ((== 1) . length)
         it "cleans after removing `foo = a: a` with `4` inside connected to output" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID

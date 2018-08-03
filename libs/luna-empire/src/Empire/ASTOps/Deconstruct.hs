@@ -59,6 +59,7 @@ extractAppArguments = extractArguments' FApp
 extractAppPorts :: NodeRef -> GraphOp [NodeRef]
 extractAppPorts expr = matchExpr expr $ \case
     Tuple elts -> mapM source =<< ptrListToList elts
+    List elts  -> mapM source =<< ptrListToList elts
     _          -> reverse <$> extractAppArguments expr
 
 extractArguments' :: ExtractFilter -> NodeRef -> GraphOp [NodeRef]
