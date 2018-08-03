@@ -95,20 +95,17 @@ editExpression nodeLoc = do
 editName :: NodeLoc -> Command State ()
 editName nodeLoc = do
     mayN <- getExpressionNode nodeLoc
-    putStrLn $ "editName, expressionNode: " <> show mayN
     withJust mayN $ \n -> do
         openWith (maybe "" id $ n ^. ExpressionNode.name) $ Searcher.NodeName nodeLoc def
 
 editPortName :: OutPortRef -> Command State ()
 editPortName portRef = do
     mayP <- getPort portRef
-    putStrLn $ "editPortName, port: " <> show mayP
     withJust mayP $ \p ->
         openWith (p ^. Port.name) $ Searcher.PortName portRef def
 
 open :: Maybe Position -> Command State ()
 open mayPosition = do
-    putStrLn "Searcher.open (new node)"
     (className, nn) <- getSelectedNodes >>= \case
         [n] -> do
             pos <- findSuccessorPosition n
@@ -123,12 +120,10 @@ open mayPosition = do
 
 openWith :: Text -> Searcher.Mode -> Command State ()
 openWith input mode = do
-    putStrLn $ "Searcher.openWith " <> show input <> " " <> show mode
     mayNodePosAndTop <- case mode of
         Searcher.Command  {} -> return Nothing
         Searcher.PortName {} -> return Nothing
         Searcher.NodeName nl _ -> do
-            putStrLn $ "NodeLoc: " <> show nl
             maySearcherBottom <- mapM translateToScreen . fmap (view ExpressionNode.topPosition) =<< getExpressionNode nl
             let maySearcherTop = move (Vector2 0 (-2 * searcherHeight)) <$> maySearcherBottom
             return $ (,) <$> maySearcherBottom <*> maySearcherTop

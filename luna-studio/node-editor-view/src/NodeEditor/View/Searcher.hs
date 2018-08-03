@@ -66,11 +66,18 @@ instance Convertible Match EntryView where
         {- className  -} (m ^. Match.className . to convert)
         {- highlights -} (m ^. Match.match . to convert)
 
+sliceEntries :: Searcher -> [EntryView]
+sliceEntries s = f es
+    where
+        es = s ^. Searcher.hints . to convert
+        f  = if length es <= entriesNum then id
+             else take entriesNum . drop (s ^. Searcher.selected)
+
 instance Convertible Searcher SearcherView where
     convert s = SearcherView
         {- key            -} (s ^. Searcher.mode . to nodeKey')
         {- selected       -} (s ^. Searcher.selected)
-        {- entries        -} (s ^. Searcher.hints . to convert & take entriesNum)
+        {- entries        -} (sliceEntries s)
         {- input          -} (s ^. Searcher.inputText)
         {- inputSelection -} (s ^. Searcher.inputSelection)
         {- targetField    -} (s ^. Searcher.targetField)

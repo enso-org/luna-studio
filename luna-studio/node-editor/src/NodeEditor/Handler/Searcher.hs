@@ -20,7 +20,6 @@ import           NodeEditor.State.Action            (Action (continue))
 import           NodeEditor.State.Global            (State)
 import           Text.Read                          (readMaybe)
 
-import           System.IO.Unsafe                   (unsafePerformIO)
 
 handle :: (Event -> IO ()) -> Event -> Maybe (Command State ())
 handle scheduleEvent (UI (SearcherEvent evt))
@@ -59,7 +58,7 @@ handleSearcherEvent scheduleEvent = \case
     Searcher.HintShortcut i -> Just . continue $ Searcher.updateInputWithHint i
     Searcher.TabPressed     -> Just $ continue Searcher.handleTabPressed
     Searcher.MoveDown       -> Just $ continue Searcher.selectPreviousHint
-    Searcher.MoveUp         -> seq (unsafePerformIO $ putStrLn "HANDLE SEARCHER MOVE UP EVENT.") (Just $ continue Searcher.selectNextHint)
+    Searcher.MoveUp         -> Just $ continue Searcher.selectNextHint
     _                       -> Nothing
 
     -- Searcher.KeyUp k                  -> when (Keys.withoutMods k Keys.backspace) $ continue Searcher.enableRollback
