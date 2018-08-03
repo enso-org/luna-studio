@@ -29,7 +29,7 @@ import           NodeEditor.Action.State.Action             (beginActionWithKey,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.App                (renderIfNeeded)
 import           NodeEditor.Action.State.NodeEditor         (findSuccessorPosition, getExpressionNode, getPort, getSearcher,
-                                                             getSelectedNodes, getSelectedNodes, modifyNodeEditor, modifySearcher)
+                                                             getSelectedNodes, modifyNodeEditor, modifySearcher)
 import           NodeEditor.Action.State.Scene              (getScreenSize, translateToScreen)
 import           NodeEditor.Action.UUID                     (getUUID)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
@@ -45,8 +45,8 @@ import           NodeEditor.State.Action                    (Action (begin, cont
 import           NodeEditor.State.Global                    (State)
 import           NodeEditor.State.Global                    (visualizers)
 import qualified NodeEditor.State.Global                    as Global
-import           Text.Read                                  (readMaybe)
 import qualified NodeEditor.View.NodeEditor                 as NodeEditor
+import           Text.Read                                  (readMaybe)
 
 
 instance Action (Command State) Searcher where
@@ -89,41 +89,46 @@ editExpression nodeLoc = do
             _                 -> Nothing
     mayN <- getExpressionNode nodeLoc
     mayDocVis <- mkDocVis
-    withJust mayN $ \n -> do
+    withJust mayN $ \n ->
         openWith (n ^. ExpressionNode.code) $ Searcher.Node nodeLoc (Searcher.NodeModeInfo (getClassName n) def def mayDocVis) def
 
 editName :: NodeLoc -> Command State ()
 editName nodeLoc = do
     mayN <- getExpressionNode nodeLoc
+    putStrLn $ "editName, expressionNode: " <> show mayN
     withJust mayN $ \n -> do
         openWith (maybe "" id $ n ^. ExpressionNode.name) $ Searcher.NodeName nodeLoc def
 
 editPortName :: OutPortRef -> Command State ()
 editPortName portRef = do
     mayP <- getPort portRef
-    withJust mayP $ \p -> do
+    putStrLn $ "editPortName, port: " <> show mayP
+    withJust mayP $ \p ->
         openWith (p ^. Port.name) $ Searcher.PortName portRef def
 
 open :: Maybe Position -> Command State ()
 open mayPosition = do
+    putStrLn "Searcher.open (new node)"
     (className, nn) <- getSelectedNodes >>= \case
         [n] -> do
             pos <- findSuccessorPosition n
             let (className, predPortRef) = Searcher.getPredInfo n
-            return $ (className, Searcher.NewNode (snap pos) predPortRef)
+            return (className, Searcher.NewNode (snap pos) predPortRef)
         _   -> do
             pos <- maybe NodeEditor.getMousePosition return mayPosition
-            return $ (def, Searcher.NewNode (snap pos) def)
+            return (def, Searcher.NewNode (snap pos) def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
     mayDocVis <- mkDocVis
     openWith "" $ Searcher.Node nl (Searcher.NodeModeInfo className (Just nn) def mayDocVis) def
 
 openWith :: Text -> Searcher.Mode -> Command State ()
 openWith input mode = do
+    putStrLn $ "Searcher.openWith " <> show input <> " " <> show mode
     mayNodePosAndTop <- case mode of
         Searcher.Command  {} -> return Nothing
         Searcher.PortName {} -> return Nothing
         Searcher.NodeName nl _ -> do
+            putStrLn $ "NodeLoc: " <> show nl
             maySearcherBottom <- mapM translateToScreen . fmap (view ExpressionNode.topPosition) =<< getExpressionNode nl
             let maySearcherTop = move (Vector2 0 (-2 * searcherHeight)) <$> maySearcherBottom
             return $ (,) <$> maySearcherBottom <*> maySearcherTop
@@ -148,11 +153,15 @@ openWith input mode = do
             mayDelta = if isNothing xShift && isNothing yShift then Nothing else Just $ Vector2 (fromMaybe def xShift) (fromMaybe def yShift)
         withJust mayDelta $ \delta ->
             modifyCamera (invertedTranslationMatrix delta) (translationMatrix delta)
-    let action   = Searcher
-        inputLen = Text.length input
+    let action      = Searcher
+        inputLen    = Text.length input
+        targetField = case mode of
+                Searcher.NodeName{} -> Just "name"
+                Searcher.Node{}     -> Just "expression"
+                _                   -> Nothing
     begin action
     waitingForTc <- use Global.waitingForTc
-    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher 0 mode def False def False waitingForTc def
+    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher 0 mode def False def False waitingForTc def targetField
     modifyInput input inputLen inputLen action
     renderIfNeeded --TODO[basegl] Remove
     -- Searcher.focus --TODO[basegl] Remove
@@ -161,22 +170,21 @@ updateInput :: Text -> Int -> Int -> Searcher -> Command State ()
 updateInput input selectionStart selectionEnd action = do
     clearSearcherError
     let inputStream = evalDefLexer $ convert input
-        newInput    = if selectionStart /= selectionEnd
-                          then Searcher.Raw input
-                      else if Text.null input
-                          then Searcher.Divided $ Searcher.DividedInput def def def
-                          else Searcher.fromStream input inputStream selectionStart
+        newInput
+            | selectionStart /= selectionEnd = Searcher.Raw input
+            | Text.null input = Searcher.Divided $ Searcher.DividedInput def def def
+            | otherwise = Searcher.fromStream input inputStream selectionStart
     modifySearcher $ Searcher.input .= newInput
-    m <- fmap2 (view Searcher.mode) $ getSearcher
+    m <- fmap2 (view Searcher.mode) getSearcher
     if      isNothing $ newInput ^? Searcher._Divided then clearHints action
-    else if isJust $ maybe def (^? Searcher._Node) m  then do
+    else if isJust $ maybe def (^? Searcher._Node) m  then
         case Searcher.findLambdaArgsAndEndOfLambdaArgs (convert input) inputStream of
             Nothing             -> do
                 modifySearcher $ Searcher.mode %= Searcher.updateNodeArgs []
                 updateHints action
             Just (args, endPos) -> do
                 modifySearcher $ Searcher.mode %= Searcher.updateNodeArgs (convert args)
-                if selectionStart < endPos then clearHints action else do updateHints action
+                if selectionStart < endPos then clearHints action else updateHints action
     else updateHints action
 
 modifyInput :: Text -> Int -> Int -> Searcher -> Command State ()

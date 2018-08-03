@@ -11,14 +11,16 @@ import           NodeEditor.Action.State.NodeEditor (whenGraphLoaded)
 import           NodeEditor.Event.Event             (Event (Shortcut, UI, View))
 import qualified NodeEditor.Event.Shortcut          as Shortcut
 import           NodeEditor.Event.UI                (UIEvent (AppEvent, SearcherEvent))
-import           NodeEditor.Event.View              (BaseEvent (SearcherAccept, SearcherEdit), SearcherEditEvent (SearcherEditEvent),
-                                                     ViewEvent, base)
+import           NodeEditor.Event.View              (BaseEvent (EditNodeExpression, EditNodeName, SearcherAccept, SearcherEdit, SearcherMoveDown, SearcherMoveUp, SearcherTabPressed),
+                                                     SearcherEditEvent (SearcherEditEvent), ViewEvent, base)
+import qualified NodeEditor.Event.View              as View
 import qualified NodeEditor.React.Event.App         as App
 import qualified NodeEditor.React.Event.Searcher    as Searcher
 import           NodeEditor.State.Action            (Action (continue))
 import           NodeEditor.State.Global            (State)
 import           Text.Read                          (readMaybe)
 
+import           System.IO.Unsafe                   (unsafePerformIO)
 
 handle :: (Event -> IO ()) -> Event -> Maybe (Command State ())
 handle scheduleEvent (UI (SearcherEvent evt))
@@ -57,7 +59,7 @@ handleSearcherEvent scheduleEvent = \case
     Searcher.HintShortcut i -> Just . continue $ Searcher.updateInputWithHint i
     Searcher.TabPressed     -> Just $ continue Searcher.handleTabPressed
     Searcher.MoveDown       -> Just $ continue Searcher.selectPreviousHint
-    Searcher.MoveUp         -> Just $ continue Searcher.selectNextHint
+    Searcher.MoveUp         -> seq (unsafePerformIO $ putStrLn "HANDLE SEARCHER MOVE UP EVENT.") (Just $ continue Searcher.selectNextHint)
     _                       -> Nothing
 
     -- Searcher.KeyUp k                  -> when (Keys.withoutMods k Keys.backspace) $ continue Searcher.enableRollback
@@ -65,7 +67,15 @@ handleSearcherEvent scheduleEvent = \case
 
 handleViewEvent :: (Event -> IO ()) -> ViewEvent -> Maybe (Command State ())
 handleViewEvent scheduleEvent evt = case evt ^. base of
-    SearcherAccept {} -> Just . continue $ Searcher.accept scheduleEvent
-    SearcherEdit (SearcherEditEvent ss se input)
-        -> Just . continue $ Searcher.updateInput input ss se
-    _   -> Nothing
+    EditNodeName        {} -> Just $ Searcher.editName nl
+    EditNodeExpression  {} -> Just $ Searcher.editExpression nl
+    SearcherAccept      {} -> jc   $ Searcher.accept scheduleEvent
+    SearcherTabPressed  {} -> jc     Searcher.handleTabPressed
+    SearcherMoveDown    {} -> jc     Searcher.selectPreviousHint
+    SearcherMoveUp      {} -> jc     Searcher.selectNextHint
+    SearcherEdit (SearcherEditEvent ss se input) ->
+        jc $ Searcher.updateInput input ss se
+    _ -> Nothing
+    where
+        nl = View.getNodeLoc evt
+        jc = Just . continue

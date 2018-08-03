@@ -7,14 +7,15 @@ import           Control.Lens.Aeson                 (parseDropUnary, toEncodingD
 import           Data.Aeson                         (FromJSON (..), ToJSON (..))
 import           LunaStudio.Data.NodeLoc            (NodeLoc)
 import           LunaStudio.Data.Port               (AnyPortId)
-import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef), toAnyPortRef)
+import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
+                                                     toAnyPortRef)
 import           LunaStudio.Data.ScreenPosition     (ScreenPosition, fromDoubles)
 import           LunaStudio.Data.Visualization      (VisualizationId)
 import           LunaStudio.Data.Visualizer         (VisualizerId)
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem)
-import           Prelude                            (error)
 import           NodeEditor.View.Key                (Key)
 import           NodeEditor.View.PortControl        (PortControlView)
+import           Prelude                            (error)
 
 
 type Path = [String]
@@ -86,6 +87,16 @@ data DisconnectEvent = DisconnectEvent
 
 makeLenses ''DisconnectEvent
 
+data EditNodeNameEvent = EditNodeNameEvent
+    { _aesonTooOld11 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld12 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    } deriving (Generic, Show)
+
+data EditNodeExpressionEvent = EditNodeExpressionEvent
+    { _aesonTooOld13 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld14 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    } deriving (Generic, Show)
+
 data SearcherAcceptEvent = SearcherAcceptEvent
     { _acceptSelectionStart :: Int
     , _acceptSelectionEnd   :: Int
@@ -101,6 +112,27 @@ data SearcherEditEvent = SearcherEditEvent
     } deriving (Generic, Show)
 
 makeLenses ''SearcherEditEvent
+
+data SearcherMoveUpEvent = SearcherMoveUpEvent
+    { _aesonTooOld15 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld16 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    } deriving (Generic, Show)
+
+makeLenses ''SearcherMoveUpEvent
+
+data SearcherMoveDownEvent = SearcherMoveDownEvent
+    { _aesonTooOld17 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld18 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    } deriving (Generic, Show)
+
+makeLenses ''SearcherMoveDownEvent
+
+data SearcherTabPressedEvent = SearcherTabPressedEvent
+    { _aesonTooOld19 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    , _aesonTooOld20 :: Maybe () --FIXME: replace with tagSingleConstructors when Aeson bumped
+    } deriving (Generic, Show)
+
+makeLenses ''SearcherTabPressedEvent
 
 data SelectVisualizerEvent = SelectVisualizerEvent
     { _visualizerId :: VisualizerId
@@ -137,8 +169,13 @@ data BaseEvent
     | NodeSelect           NodeSelectEvent
     | Disconnect           DisconnectEvent
     | PortControl          PortControlEvent
+    | EditNodeName         EditNodeNameEvent
+    | EditNodeExpression   EditNodeExpressionEvent
     | SearcherAccept       SearcherAcceptEvent
     | SearcherEdit         SearcherEditEvent
+    | SearcherMoveUp       SearcherMoveUpEvent
+    | SearcherMoveDown     SearcherMoveDownEvent
+    | SearcherTabPressed   SearcherTabPressedEvent
     | SelectVisualizer     SelectVisualizerEvent
     | FocusVisualization   FocusVisualizationEvent
     | ToggleVisualizations ToggleVisualizationsEvent
@@ -162,8 +199,13 @@ instance NFData NavigateEvent
 instance NFData NodeMoveEvent
 instance NFData NodeSelectEvent
 instance NFData PortControlEvent
+instance NFData EditNodeNameEvent
+instance NFData EditNodeExpressionEvent
 instance NFData SearcherAcceptEvent
 instance NFData SearcherEditEvent
+instance NFData SearcherMoveUpEvent
+instance NFData SearcherMoveDownEvent
+instance NFData SearcherTabPressedEvent
 instance NFData SelectVisualizerEvent
 instance NFData Target
 instance NFData ToggleVisualizationsEvent
@@ -177,8 +219,13 @@ instance FromJSON NavigateEvent             where parseJSON = parseDropUnary
 instance FromJSON NodeMoveEvent             where parseJSON = parseDropUnary
 instance FromJSON NodeSelectEvent           where parseJSON = parseDropUnary
 instance FromJSON PortControlEvent          where parseJSON = parseDropUnary
+instance FromJSON EditNodeNameEvent         where parseJSON = parseDropUnary
+instance FromJSON EditNodeExpressionEvent   where parseJSON = parseDropUnary
 instance FromJSON SearcherAcceptEvent       where parseJSON = parseDropUnary
 instance FromJSON SearcherEditEvent         where parseJSON = parseDropUnary
+instance FromJSON SearcherMoveUpEvent       where parseJSON = parseDropUnary
+instance FromJSON SearcherMoveDownEvent     where parseJSON = parseDropUnary
+instance FromJSON SearcherTabPressedEvent   where parseJSON = parseDropUnary
 instance FromJSON SelectVisualizerEvent     where parseJSON = parseDropUnary
 instance FromJSON Target                    where parseJSON = parseDropUnary
 instance FromJSON ToggleVisualizationsEvent where parseJSON = parseDropUnary
@@ -193,8 +240,13 @@ instance ToJSON NavigateEvent             where toEncoding = toEncodingDropUnary
 instance ToJSON NodeMoveEvent             where toEncoding = toEncodingDropUnary
 instance ToJSON NodeSelectEvent           where toEncoding = toEncodingDropUnary
 instance ToJSON PortControlEvent          where toEncoding = toEncodingDropUnary
+instance ToJSON EditNodeNameEvent         where toEncoding = toEncodingDropUnary
+instance ToJSON EditNodeExpressionEvent   where toEncoding = toEncodingDropUnary
 instance ToJSON SearcherAcceptEvent       where toEncoding = toEncodingDropUnary
 instance ToJSON SearcherEditEvent         where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherMoveUpEvent       where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherMoveDownEvent     where toEncoding = toEncodingDropUnary
+instance ToJSON SearcherTabPressedEvent   where toEncoding = toEncodingDropUnary
 instance ToJSON SelectVisualizerEvent     where toEncoding = toEncodingDropUnary
 instance ToJSON Target                    where toEncoding = toEncodingDropUnary
 instance ToJSON ToggleVisualizationsEvent where toEncoding = toEncodingDropUnary
