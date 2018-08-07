@@ -31,9 +31,9 @@ handle _ _                      = Nothing
 
 
 handleAppEvent :: App.Event -> Maybe (Command State ())
-handleAppEvent App.ContextMenu    = Just $ whenGraphLoaded $ Searcher.open def
-handleAppEvent (App.MouseDown {}) = Just $ continue Searcher.close
-handleAppEvent _                  = Nothing
+handleAppEvent App.ContextMenu = Just $ whenGraphLoaded $ Searcher.open def
+handleAppEvent App.MouseDown{} = Just $ continue Searcher.close
+handleAppEvent _               = Nothing
 
 handleShortcutEvent :: Shortcut.ShortcutEvent -> Maybe (Command State ())
 handleShortcutEvent evt = case evt ^. Shortcut.shortcut of
@@ -68,12 +68,13 @@ handleViewEvent :: (Event -> IO ()) -> ViewEvent -> Maybe (Command State ())
 handleViewEvent scheduleEvent evt = case evt ^. base of
     EditNodeName        {} -> Just $ Searcher.editName nl
     EditNodeExpression  {} -> Just $ Searcher.editExpression nl
-    SearcherAccept      {} -> jc   $ Searcher.accept scheduleEvent
-    SearcherTabPressed  {} -> jc     Searcher.handleTabPressed
-    SearcherMoveDown    {} -> jc     Searcher.selectPreviousHint
-    SearcherMoveUp      {} -> jc     Searcher.selectNextHint
     SearcherEdit (SearcherEditEvent ss se input) ->
-        jc $ Searcher.updateInput input ss se
+           jc $ Searcher.updateInput input ss se
+    -- NOTE: this will come in handy when going atomless:
+    -- SearcherAccept      {} -> jc   $ Searcher.accept scheduleEvent
+    -- SearcherTabPressed  {} -> jc     Searcher.handleTabPressed
+    -- SearcherMoveDown    {} -> jc     Searcher.selectPreviousHint
+    -- SearcherMoveUp      {} -> jc     Searcher.selectNextHint
     _ -> Nothing
     where
         nl = View.getNodeLoc evt
