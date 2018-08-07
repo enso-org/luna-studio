@@ -9,6 +9,7 @@
   };
 
   window.addEventListener("message", function (evt) {
+    console.log(evt);
     if (evt.data.data) render(evt.data.data);
   });
 }());

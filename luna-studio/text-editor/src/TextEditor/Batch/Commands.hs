@@ -6,6 +6,7 @@ import           Data.UUID.Types                    (UUID)
 import           JS.Atom                            (activeLocation)
 import qualified LunaStudio.API.Atom.CloseFile      as CloseFile
 import qualified LunaStudio.API.Atom.Copy           as Copy
+import qualified LunaStudio.API.Atom.CreateProject  as CreateProject
 import qualified LunaStudio.API.Atom.FileChanged    as FileChanged
 import qualified LunaStudio.API.Atom.GetBuffer      as GetBuffer
 import qualified LunaStudio.API.Atom.IsSaved        as IsSaved
@@ -25,6 +26,10 @@ import           LunaStudio.Data.TextDiff           (TextDiff)
 closeFile :: FilePath -> UUID -> Maybe UUID -> IO ()
 closeFile path uuid guiID = sendRequest $ Message uuid guiID
     $ CloseFile.Request path
+
+createProject :: FilePath -> UUID -> Maybe UUID -> IO ()
+createProject path uuid guiID = sendRequest $ Message uuid guiID
+    $ CreateProject.Request path
 
 fileChanged :: FilePath -> UUID -> Maybe UUID -> IO ()
 fileChanged path uuid guiID = sendRequest $ Message uuid guiID

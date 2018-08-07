@@ -3,7 +3,7 @@
 
 module Empire.Data.BreadcrumbHierarchy where
 
-import           Prologue                   hiding (children)
+import           Empire.Prelude             hiding (children)
 
 import           LunaStudio.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
 import           LunaStudio.Data.NodeId     (NodeId)

@@ -9,62 +9,65 @@
 module FileLoadSpec (spec) where
 
 import           Control.Concurrent.MVar
-import           Control.Concurrent.STM                (atomically)
-import           Control.Concurrent.STM.TChan          (tryReadTChan)
-import           Control.Exception.Safe                (finally)
-import           Control.Monad                         (forM)
-import           Control.Monad.Loops                   (unfoldM)
-import           Control.Monad.Reader                  (ask)
+import           Control.Concurrent.STM          (atomically)
+import           Control.Concurrent.STM.TChan    (tryReadTChan)
+import           Control.Exception.Safe          (finally)
+import           Control.Lens                    (uses)
+import           Control.Monad                   (forM)
+import           Control.Monad.Loops             (unfoldM)
+import           Control.Monad.Reader            (ask)
 import           Data.Coerce
-import           Data.Char                             (isSpace)
-import           Data.List                             (dropWhileEnd, find, minimum, maximum)
-import qualified Data.Map                              as Map
-import           Data.Maybe                            (fromJust)
-import           Data.Reflection                       (Given (..), give)
-import qualified Data.Set                              as Set
-import qualified Data.Text                             as Text
-import qualified Data.Text.IO                          as Text
-import           Data.Text.Span                        (LeftSpacedSpan (..), SpacedSpan (..))
-import           Empire.ASTOp                          (runASTOp)
-import qualified Empire.ASTOps.Builder                 as ASTBuilder
-import qualified Empire.ASTOps.Modify                  as ASTModify
-import qualified Empire.ASTOps.Parse                   as ASTParse
-import qualified Empire.ASTOps.Print                   as ASTPrint
-import qualified Empire.ASTOps.Read                    as ASTRead
-import qualified Empire.Commands.AST                   as AST
-import qualified Empire.Commands.Code                  as Code
-import qualified Empire.Commands.Graph                 as Graph
-import qualified Empire.Commands.GraphBuilder          as GraphBuilder
-import qualified Empire.Commands.Library               as Library
-import qualified Empire.Commands.Typecheck             as Typecheck (Scope(..), createStdlib, run)
-import           Empire.Data.AST                       (SomeASTException)
-import qualified Empire.Data.BreadcrumbHierarchy       as BH
-import qualified Empire.Data.Graph                     as Graph (breadcrumbHierarchy, code, codeMarkers, nodeCache)
-import qualified Empire.Data.Library                   as Library (body)
-import           Empire.Empire                         (CommunicationEnv (..), InterpreterEnv(..), Empire, modules)
-import qualified Language.Haskell.TH                   as TH
-import qualified Luna.Project                          as Project
-import qualified Luna.Syntax.Text.Parser.Parser        as Parser (ReparsingChange (..), ReparsingStatus (..))
-import           LunaStudio.API.AsyncUpdate            (AsyncUpdate(ResultUpdate))
+import           Data.Char                       (isSpace)
+import qualified Data.Graph.Data.Component.Set   as MutableSet
+import           Data.List                       (dropWhileEnd, find, minimum, maximum)
+import qualified Data.Map                        as Map
+import           Data.Maybe                      (fromJust)
+import           Data.Reflection                 (Given (..), give)
+import qualified Data.Set                        as Set
+import qualified Data.Text                       as Text
+import qualified Data.Text.IO                    as Text
+import           Data.Text.Span                  (LeftSpacedSpan (..), SpacedSpan (..))
+import           Empire.ASTOp                    (runASTOp)
+import qualified Empire.ASTOps.Builder           as ASTBuilder
+import qualified Empire.ASTOps.Modify            as ASTModify
+import qualified Empire.ASTOps.Parse             as ASTParse
+import qualified Empire.ASTOps.Print             as ASTPrint
+import qualified Empire.ASTOps.Read              as ASTRead
+import qualified Empire.Commands.AST             as AST
+import qualified Empire.Commands.Code            as Code
+import qualified Empire.Commands.Graph           as Graph
+import qualified Empire.Commands.GraphBuilder    as GraphBuilder
+import qualified Empire.Commands.Library         as Library
+-- import qualified Empire.Commands.Typecheck       as Typecheck (Scope(..), createStdlib, run)
+import           Empire.Data.AST                 (SomeASTException)
+import qualified Empire.Data.BreadcrumbHierarchy as BH
+import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy, code, codeMarkers, nodeCache, userState)
+import qualified Empire.Data.Library             as Library (body)
+import           Empire.Empire                   (CommunicationEnv (..), InterpreterEnv(..), Empire) -- , modules)
+import qualified Language.Haskell.TH             as TH
+-- import qualified Luna.Project                    as Project
+-- import qualified Luna.Syntax.Text.Parser.Parser  as Parser (ReparsingChange (..), ReparsingStatus (..))
+import           LunaStudio.API.AsyncUpdate      (AsyncUpdate(ResultUpdate))
 import qualified LunaStudio.API.Graph.NodeResultUpdate as NodeResult
-import           LunaStudio.Data.Breadcrumb            (Breadcrumb (..), BreadcrumbItem (Definition))
-import           LunaStudio.Data.Connection            (Connection (..))
-import qualified LunaStudio.Data.Connection            as Connection
-import qualified LunaStudio.Data.Graph                 as Graph
-import           LunaStudio.Data.GraphLocation         (GraphLocation (..))
-import qualified LunaStudio.Data.Node                  as Node
-import           LunaStudio.Data.NodeLoc               (NodeLoc (..))
-import           LunaStudio.Data.NodeMeta              (NodeMeta (..))
-import qualified LunaStudio.Data.NodeMeta              as NodeMeta
-import           LunaStudio.Data.Point                 (Point (Point))
-import qualified LunaStudio.Data.Port                  as Port
-import qualified LunaStudio.Data.PortDefault           as PortDefault
-import           LunaStudio.Data.PortRef               (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified LunaStudio.Data.PortRef               as PortRef
-import qualified LunaStudio.Data.Position              as Position
-import           LunaStudio.Data.Range                 (Range (..))
-import           LunaStudio.Data.TextDiff              (TextDiff (..))
-import           LunaStudio.Data.TypeRep               (TypeRep (TStar))
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
+import qualified LunaStudio.Data.Connection      as Connection
+import           LunaStudio.Data.Connection      (Connection (..))
+import           LunaStudio.Data.Diff            (Diff (..))
+import qualified LunaStudio.Data.Graph           as Graph
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import qualified LunaStudio.Data.Node            as Node
+import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
+import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
+import qualified LunaStudio.Data.NodeMeta        as NodeMeta
+import           LunaStudio.Data.Point           (Point (Point))
+import qualified LunaStudio.Data.Port            as Port
+import qualified LunaStudio.Data.PortDefault     as PortDefault
+import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified LunaStudio.Data.PortRef         as PortRef
+import qualified LunaStudio.Data.Position        as Position
+import           LunaStudio.Data.Range           (Range (..))
+import           LunaStudio.Data.TextDiff        (TextDiff (..))
+import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
 import           LunaStudio.Data.NodeValue
 import           LunaStudio.Data.Vector2               (Vector2 (..))
 import           LunaStudio.Data.Visualization         (VisualizationValue (Value))
@@ -138,9 +141,9 @@ specifyCodeChange initialCode expectedCode act env = do
         [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
         let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
         (nodeIds, toplevel) <- Graph.withGraph loc' $ do
-            markers  <- fmap fromIntegral . Map.keys <$> use Graph.codeMarkers
+            markers  <- fmap fromIntegral . Map.keys <$> use (Graph.userState . Graph.codeMarkers)
             ids      <- runASTOp $ forM markers $ \i -> (i,) <$> Graph.getNodeIdForMarker i
-            toplevel <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
+            toplevel <- uses (Graph.userState . Graph.breadcrumbHierarchy) BH.topLevelIDs
             return (ids, toplevel)
         forM nodeIds $ \(i, nodeIdMay) ->
             forM nodeIdMay $ \nodeId -> do
@@ -424,9 +427,10 @@ spec = around withChannels $ parallel $ do
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
                 Graph.setNodeMeta loc' foo (NodeMeta (Position.Position (Vector2 15.3 99.2)) True Nothing)
                 Graph.substituteCode "TestPath" [(63, 64, "5")]
-                Graph.getNodeMeta loc' foo
+                a <- Graph.getNodeMeta loc' foo
+                return a
             meta `shouldBe` Just (NodeMeta (Position.Position (Vector2 15.3 99.2)) True Nothing)
-        xit "changing order of ports twice does nothing" $ \env -> do
+        it "changing order of ports twice does nothing" $ \env -> do
             -- [MM]: don't know why some nodes have empty code only in `before` so this test fails
             (before, after) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -814,8 +818,9 @@ spec = around withChannels $ parallel $ do
                 succs <- Graph.withGraph loc $ runASTOp $ do
                     var   <- ASTRead.getASTVar c
                     vars  <- ASTRead.dumpPatternVars var
-                    mapM (IR.getLayer @IR.Succs) vars
-                liftIO (maximum (map Set.size succs) `shouldBe` 2) -- two uses of c
+                    a     <- mapM (getLayer @IRSuccs) vars
+                    mapM MutableSet.size a
+                liftIO (maximum succs `shouldBe` 2) -- two uses of c
         it "renames used node in code to number" $ let
             expectedCode = [r|
                 def main:
@@ -1175,6 +1180,78 @@ spec = around withChannels $ parallel $ do
                 Graph.setPortDefault loc (inPortRef c []) (Just $ PortDefault.Constant (PortDefault.IntValue 100000000))
                 Just bar <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 3
                 Graph.renameNode loc bar "baz"
+        it "updates literal real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = 2.71828
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 2.71828))
+        it "updates literal huge real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = 5102342220534060.0
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 121.51023535519526))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102352295050615e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102350925977542e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102353663122158e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234662807987e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234222053406e15))
+        it "updates literal really small real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = 0.00000000000000510234222053406
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 121.51023535519526))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102352295050615e-15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102350925977542e-15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102353663122158e-15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234662807987e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234222053406e-15))
+        it "updates literal huge negative real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = -5102342220534060.0
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 121.51023535519526))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -5.102352295050615e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -5.102350925977542e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.102353663122158e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 5.10234662807987e15))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -5.10234222053406e15))
+        it "updates literal negative real node" $ let
+            expectedCode = [r|
+                def main:
+                    pi = -2.71828
+                    foo = a: b: a + b
+                    c = 4
+                    bar = foo 8 c
+                |]
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue 2.71828))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -2.7))
+                Graph.setPortDefault loc (inPortRef pi []) (Just $ PortDefault.Constant (PortDefault.RealValue -2.71828))
         it "preserves code after connecting & disconnecting lambda output" $ let
             code = [r|
                 def main a:
@@ -1547,6 +1624,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = loc |> foo
                 (input, _) <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.movePort loc' (outPortRef input [Port.Projection 1]) 0
+                return ()
         it "reorders function ports in a lambda 2" $ let
             initialCode = [r|
                 def main:
@@ -2407,7 +2485,7 @@ spec = around withChannels $ parallel $ do
                 (input, _) <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.addPortWithConnections loc' (outPortRef input [Port.Projection 1]) Nothing [InPortRef' $ inPortRef id1 [Port.Arg 0]]
                 Graph.removePort loc' (outPortRef input [Port.Projection 1])
-        xit "add port updates lambda length - core bug" $ let
+        it "add port updates lambda length - core bug" $ let
             initialCode = [r|
                 def main:
                     «2»lambda1 = x:
@@ -2444,47 +2522,47 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID
                 Graph.addNode loc u1 "first" (atXPos 300)
-        xit "interprets Fibonacci program" $ \env -> do
-            (res, st) <- runEmp env $ do
-                let initialCode = [r|
-                        import Std.Base
-                        def fib n:
-                            if n < 2 then 1 else fib (n-1) + fib (n-2)
+        -- xit "interprets Fibonacci program" $ \env -> do
+        --     (res, st) <- runEmp env $ do
+        --         let initialCode = [r|
+        --                 import Std.Base
+        --                 def fib n:
+        --                     if n < 2 then 1 else fib (n-1) + fib (n-2)
 
-                        def main:
-                            a = fib 10
-                            a
-                        |]
-                Library.createLibrary Nothing "/TestPath"
-                let loc = GraphLocation "/TestPath" $ Breadcrumb []
-                let normalize = Text.pack . normalizeQQ . Text.unpack
-                Graph.loadCode loc $ normalize initialCode
-                [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
-                let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
-                [fib] <- filter (\n -> n ^. Node.name == Just "fib") <$> Graph.getNodes loc
-                let loc'' = GraphLocation "/TestPath" $ Breadcrumb [Definition (fib ^. Node.nodeId)]
-                (loc',) <$> Library.withLibrary "/TestPath" (use Library.body)
-            withResult res $ \(loc, g) -> do
-                let imports = env ^. modules
-                let thisFilePath = $(do
-                        dir <- TH.runIO getCurrentDirectory
-                        filename <- TH.loc_filename <$> TH.location
-                        TH.litE $ TH.stringL $ dir </> filename)
-                liftIO $ do
-                    lunaroot <- canonicalizePath $ takeDirectory thisFilePath </> "../../../env"
-                    oldLunaRoot <- fromMaybe "" <$> lookupEnv Project.lunaRootEnv
-                    flip finally (setEnv Project.lunaRootEnv oldLunaRoot) $ do
-                        setEnv Project.lunaRootEnv lunaroot
-                        (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
-                        putMVar imports $ unwrap std
-                        runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True False
-            let updates = env ^. to _updatesChan
-            ups <- atomically $ unfoldM (tryReadTChan updates)
-            let _ResultUpdate = prism ResultUpdate $ \n -> case n of
-                    ResultUpdate a -> Right a
-                    _              -> Left n
-            let [fibUpdate] = ups ^.. traverse . _ResultUpdate . NodeResult.value
-            fibUpdate `shouldBe` NodeValue "89" (Just (Value "89.0"))
+        --                 def main:
+        --                     a = fib 10
+        --                     a
+        --                 |]
+        --         Library.createLibrary Nothing "/TestPath"
+        --         let loc = GraphLocation "/TestPath" $ Breadcrumb []
+        --         let normalize = Text.pack . normalizeQQ . Text.unpack
+        --         Graph.loadCode loc $ normalize initialCode
+        --         [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
+        --         let loc' = GraphLocation "/TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
+        --         [fib] <- filter (\n -> n ^. Node.name == Just "fib") <$> Graph.getNodes loc
+        --         let loc'' = GraphLocation "/TestPath" $ Breadcrumb [Definition (fib ^. Node.nodeId)]
+        --         (loc',) <$> Library.withLibrary "/TestPath" (use Library.body)
+        --     withResult res $ \(loc, g) -> do
+        --         let imports = env ^. modules
+        --         let thisFilePath = $(do
+        --                 dir <- TH.runIO getCurrentDirectory
+        --                 filename <- TH.loc_filename <$> TH.location
+        --                 TH.litE $ TH.stringL $ dir </> filename)
+        --         liftIO $ do
+        --             lunaroot <- canonicalizePath $ takeDirectory thisFilePath </> "../../../env"
+        --             oldLunaRoot <- fromMaybe "" <$> lookupEnv Project.lunaRootEnv
+        --             flip finally (setEnv Project.lunaRootEnv oldLunaRoot) $ do
+        --                 setEnv Project.lunaRootEnv lunaroot
+        --                 (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
+        --                 putMVar imports $ unwrap std
+        --                 runEmpire env (InterpreterEnv def def def g def def) $ Typecheck.run imports loc True False
+        --     let updates = env ^. to _updatesChan
+        --     ups <- atomically $ unfoldM (tryReadTChan updates)
+        --     let _ResultUpdate = prism ResultUpdate $ \n -> case n of
+        --             ResultUpdate a -> Right a
+        --             _              -> Left n
+        --     let [fibUpdate] = ups ^.. traverse . _ResultUpdate . NodeResult.value
+        --     fibUpdate `shouldBe` NodeValue "89" (Just (Value "89.0"))
         it "does not display connection to itself on anonymous nodes" $ let
             initialCode = [r|
                 def main:

@@ -5,6 +5,7 @@
 
 module Empire.Monitor where
 
+import           Control.Lens                     ((.=), to, use)
 import           Control.Monad                    (forever, when)
 import           Control.Monad.State              (StateT, evalStateT)
 import qualified Data.Binary                      as Bin

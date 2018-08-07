@@ -3,14 +3,13 @@ etch   = require 'etch'
 shell  = require 'shell'
 fuzzyFilter = null # defer until used
 {ProjectItem, privateNewClasses, communityNewClasses} = require './project-item'
-projects = require './projects'
 analytics = require './gen/analytics'
 report = require './report'
 
 
 module.exports =
 class LunaWelcomeTab extends View
-    constructor: (@codeEditor) ->
+    constructor: (@projects) ->
         super
 
     @content: -> @div =>
@@ -69,9 +68,9 @@ class LunaWelcomeTab extends View
                                     @div  class: 'luna-welcome__section__container', outlet: 'communityContainer', =>
 
     initialize: =>
-        @privateNew = new ProjectItem({name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
+        @privateNew = new ProjectItem {name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
-            projects.temporaryProject.open())
+            @projects.createProject()
         @communityItems = []
         @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, communityNewClasses, (progress, finalize) =>
             finalize()
@@ -84,18 +83,18 @@ class LunaWelcomeTab extends View
         @chatButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
         @docsButton.on 'click', -> shell.openExternal 'http://docs.luna-lang.org'
 
-        projects.recent.refreshList @hideSearchResults
+        @projects.refreshRecentList @hideSearchResults
 
         @noTutorialsMsg ?= 'Fetching tutorials list...'
         @redrawTutorials()
-        projects.tutorial.refreshList (error) =>
+        @projects.refreshTutorialList (error) =>
             @noTutorialsMsg = error
             @noTutorialsMsg ?= ''
             @redrawTutorials()
 
     redrawTutorials: =>
         @tutorialsContainer[0].innerText = @noTutorialsMsg
-        @tutorialItems = projects.tutorial.getItems()
+        @tutorialItems = @projects.getTutorialItems()
         for k, tutorialItem of @tutorialItems
             @tutorialsContainer.append(tutorialItem.element)
 
@@ -138,7 +137,7 @@ class LunaWelcomeTab extends View
             for k, tutorialItem of @tutorialItems
                 allItems.push tutorialItem
 
-            allItems = allItems.concat projects.recent.getItems()
+            allItems = allItems.concat @projects.getRecentItems()
             filteredItems = fuzzyFilter(allItems, filterQuery, key: @getFilterKey())
             @showSearchResults filteredItems
 
@@ -156,7 +155,7 @@ class LunaWelcomeTab extends View
     redrawPrivateItems: =>
         @privateContainer.empty()
         @privateContainer.append @privateNew.element
-        for recentProject in projects.recent.getItems()
+        for recentProject in @projects.getRecentItems()
             @privateContainer.append recentProject.element
 
     redrawCommunityItems: =>

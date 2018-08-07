@@ -1,5 +1,6 @@
 module LunaStudio.Data.PortDefault where
 
+import           Control.Lens     (makePrisms)
 import           Control.DeepSeq  (NFData)
 import           Data.Aeson.Types (FromJSON, ToJSON)
 import           Data.Binary      (Binary)

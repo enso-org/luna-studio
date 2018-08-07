@@ -5,7 +5,6 @@
 
 module ZMQ.RPC.Server.Server where
 
-import           Control.Monad            (forM_)
 import           System.ZMQ4.Monadic      (ZMQ)
 import qualified System.ZMQ4.Monadic      as ZMQ
 

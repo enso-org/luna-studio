@@ -1,3 +1,4 @@
+import Std.Primitive
 import Std.Base
 
 # A class representing Http request method

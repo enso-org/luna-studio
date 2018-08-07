@@ -5,6 +5,7 @@
 
 module Empire.Logger where
 
+import           Control.Lens                          ((.=))
 import           Control.Monad                         (forever)
 import           Control.Monad.State                   (StateT, evalStateT)
 import qualified Data.Binary                           as Bin

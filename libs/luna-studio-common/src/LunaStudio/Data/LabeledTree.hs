@@ -1,6 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 module LunaStudio.Data.LabeledTree where
 
+import           Control.Lens     (FunctorWithIndex(..))
 import           Data.Aeson.Types (FromJSON, ToJSON)
 import           Data.Binary      (Binary)
 import           Prologue

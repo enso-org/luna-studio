@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections       #-}
@@ -8,6 +9,7 @@
 
 module MetadataSpec (spec) where
 
+import           Control.Lens                     ((^..))
 import           Control.Monad                    (forM)
 import           Data.Coerce
 import           Data.List                        (find)
@@ -29,8 +31,8 @@ import           Empire.Data.AST                  (SomeASTException)
 import qualified Empire.Data.BreadcrumbHierarchy  as BH
 import qualified Empire.Data.Graph                as Graph (breadcrumbHierarchy, clsClass, clsFuns, code, codeMarkers, fileOffset)
 import           Empire.Empire                    (CommunicationEnv (..), Empire)
-import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
-import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingChange (..), ReparsingStatus (..))
+import qualified Luna.Syntax.Text.Parser.Data.CodeSpan as CodeSpan
+-- import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingChange (..), ReparsingStatus (..))
 import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem (Definition))
 import qualified LunaStudio.Data.Graph            as Graph
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
@@ -47,7 +49,7 @@ import           LunaStudio.Data.TypeRep          (TypeRep (TStar))
 import           LunaStudio.Data.Vector2          (Vector2 (..))
 
 import           Empire.Prelude
-import           Luna.Prelude                     (normalizeQQ)
+-- import           Luna.Prelude                     (normalizeQQ)
 
 import           Test.Hspec                       (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
                                                    shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, xit)
@@ -57,6 +59,7 @@ import           EmpireUtils
 import           Text.RawString.QQ                (r)
 
 import qualified Luna.IR                          as IR
+
 
 codeWithMetadata = [r|def foo:
     «10»pi = 3.14

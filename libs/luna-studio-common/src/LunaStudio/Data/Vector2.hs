@@ -1,7 +1,10 @@
 module LunaStudio.Data.Vector2 where
 
-import           Data.Aeson.Types (FromJSON, ToJSON)
-import           Data.Binary      (Binary)
+import           Control.Lens        ((*~), Rewrapped)
+import           Data.Aeson.Types    (FromJSON, ToJSON)
+import           Data.Binary         (Binary)
+import           Foreign.Ptr         (castPtr, plusPtr)
+import           Foreign.Storable    (Storable(..))
 import           Prologue
 
 --TODO[react]: Consider change Vector2 -> V2: https://hackage.haskell.org/package/linear-1.20.5/docs/Linear-V2.html
@@ -52,6 +55,15 @@ data Vector2 a = Vector2
     } deriving (Eq, Functor, Generic, Ord, Show)
 
 makeLenses ''Vector2
+
+instance Storable a => Storable (Vector2 a) where
+    sizeOf _ = 2 * sizeOf (undefined :: a)
+    alignment _ = alignment (undefined :: a)
+    peek p = Vector2 <$> peek (castPtr p)
+                     <*> peek (p `plusPtr` sizeOf (undefined :: a))
+    poke p v = do
+        poke (castPtr p) (v ^. vector2_x)
+        poke (p `plusPtr` (sizeOf (undefined :: a))) (v ^. vector2_y)
 
 
 -- === Instances === --

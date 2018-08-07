@@ -50,6 +50,7 @@ handlersMap = Map.fromList
     , makeHandler Library.handleListLibraries
     , makeHandler Atom.handleIsSaved
     , makeHandler Atom.handleMoveProject
+    , makeHandler Atom.handleCreateProject
     , makeHandler Atom.handleSetProject
     , makeHandler Atom.handleOpenFile
     , makeHandler Atom.handleSaveFile

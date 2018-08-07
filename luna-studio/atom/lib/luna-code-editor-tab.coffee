@@ -4,7 +4,6 @@
 path = require 'path'
 SubAtom = require 'sub-atom'
 Spinner = require './spinner'
-projects = require './projects'
 
 TextBuffer::setModified = (@modified) ->
 
@@ -59,12 +58,10 @@ TextBuffer::subscribeToFileOverride = (codeEditor) ->
     @fileSubscriptions.add @file.onWillThrowWatchError (errorObject) =>
         @emitter.emit 'will-throw-watch-error', errorObject
 
-subscribe = null
-
 module.exports =
     class LunaCodeEditorTab extends TextEditor
 
-        constructor: (@uri, @codeEditor) ->
+        constructor: (@uri, @codeEditor, @projects) ->
             super
             @initialized = false
             @setModified false
@@ -165,7 +162,7 @@ module.exports =
             e.stopImmediatePropagation()
             @codeEditor.pushInternalEvent(tag: "SaveFile", _path: @uri)
             oldPath = atom.project.getPaths()[0]
-            projects.temporaryProject.save (newPath) =>
+            @projects.temporaryProjectSave (newPath) =>
                 @codeEditor.pushInternalEvent(tag: 'MoveProject', _oldPath : oldPath, _newPath: newPath)
 
         insertCode: (uri, diffs) =>

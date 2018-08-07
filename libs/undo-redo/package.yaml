@@ -8,7 +8,7 @@ dependencies:
   - batch-lib-luna-empire
   - binary
   - bytestring
-  - container
+  - containers
   - errors
   - ghc
   - hspec

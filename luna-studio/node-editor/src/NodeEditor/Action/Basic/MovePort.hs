@@ -4,11 +4,12 @@ import           Common.Action.Command                   (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Connection              (Connection (Connection))
 import           LunaStudio.Data.LabeledTree             (value)
-import           LunaStudio.Data.PortRef                 (OutPortRef (OutPortRef), srcPortId)
+import           LunaStudio.Data.PortRef                 (OutPortRef, OutPortRef (OutPortRef), nodeLoc, srcPortId)
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch
 import           NodeEditor.Action.State.NodeEditor      (getConnectionsContainingNode, getInputNode)
+import           NodeEditor.Action.State.ResetNode       (resetSuccessors)
 import           NodeEditor.React.Model.Connection       (dst, src)
 import           NodeEditor.React.Model.Node.SidebarNode (countProjectionPorts, hasPort, inputSidebarPorts, isInputSidebar)
 import           NodeEditor.React.Model.Port             (OutPortIndex (Projection), portId)
@@ -16,8 +17,9 @@ import           NodeEditor.State.Global                 (State)
 
 
 movePort :: OutPortRef -> Int -> Command State ()
-movePort portRef newPos = withJustM (localMovePort portRef newPos) $ const
-    $ Batch.movePort portRef newPos
+movePort portRef newPos = withJustM (localMovePort portRef newPos) $ const $ do
+    resetSuccessors $ portRef ^. nodeLoc
+    Batch.movePort portRef newPos
 
 localMovePort :: OutPortRef -> Int -> Command State (Maybe OutPortRef)
 localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos =

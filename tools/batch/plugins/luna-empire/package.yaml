@@ -9,6 +9,7 @@ tests:
         ghc-options: -Wno-unused-do-bind -threaded -with-rtsopts=-N4
         dependencies:
             - luna-empire
+            - lens
             - hspec
             - monad-loops
             - QuickCheck

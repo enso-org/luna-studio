@@ -1,5 +1,6 @@
 module LunaStudio.Data.Matrix where
 
+import           Control.Lens                   (makeWrapped)
 import           Data.Convert                   (Convertible (..))
 import           Data.Matrix                    (Matrix)
 import qualified Data.Matrix                    as Matrix

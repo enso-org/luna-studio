@@ -11,11 +11,13 @@ import qualified Compress
 import           Control.Concurrent                   (forkIO, forkOn)
 import           Control.Concurrent.Async             (Async)
 import qualified Control.Concurrent.Async             as Async
+import qualified Control.Concurrent.Async.Lifted      as AsyncL
 import           Control.Concurrent.MVar
 import           Control.Concurrent.STM               (STM)
 import           Control.Concurrent.STM.TChan         (TChan, newTChan, readTChan, tryPeekTChan)
 import qualified Control.Exception.Safe               as Exception
-import           Control.Monad                        (forM_, forever)
+import           Control.Lens                         ((.=), use)
+import           Control.Monad                        (forever)
 import           Control.Monad.State                  (StateT, evalStateT)
 import           Control.Monad.STM                    (atomically)
 import qualified Data.Binary                          as Bin
@@ -29,22 +31,23 @@ import           System.FilePath.Find                 (always, extension, find, 
 import           System.FilePath.Glob                 ()
 import           System.FilePath.Manip                ()
 
-import           Data.Future                          (minCapabilityNumber, updateCapabilities)
+-- import           Data.Future                          (minCapabilityNumber, updateCapabilities)
 import           Empire.Data.AST                      (SomeASTException)
-import           Empire.Data.Graph                    (ClsGraph, Graph, ast)
+import           Empire.Data.Graph                    (ClsGraph, Graph)
 import qualified Empire.Data.Graph                    as Graph
-import qualified Luna.Project                         as Project
+import qualified Luna.Package                         as Package
 import           LunaStudio.API.AsyncUpdate           (AsyncUpdate (..))
 import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
 import qualified LunaStudio.API.Graph.SetNodesMeta    as SetNodesMeta
 import qualified LunaStudio.API.Topic                 as Topic
 import           LunaStudio.Data.GraphLocation        (GraphLocation)
 
+import           Empire.ASTOp                         (liftScheduler)
 import qualified Empire.Commands.AST                  as AST
 import qualified Empire.Commands.Graph                as Graph (openFile)
 import qualified Empire.Commands.Library              as Library
 import qualified Empire.Commands.Persistence          as Persistence
-import           Empire.Commands.Typecheck            (Scope (..))
+-- import           Empire.Commands.Typecheck            (Scope (..))
 import qualified Empire.Commands.Typecheck            as Typecheck
 import qualified Empire.Empire                        as Empire
 import           Empire.Env                           (Env)
@@ -72,6 +75,17 @@ import           ZMQ.Bus.EndPoint                     (BusEndPoints)
 import           ZMQ.Bus.Trans                        (BusT (..))
 import qualified ZMQ.Bus.Trans                        as BusT
 
+import qualified Luna.Pass.Sourcing.UnitLoader as UnitLoader
+import qualified Luna.Pass.Sourcing.Data.Unit  as Unit
+import           Luna.Pass.Data.Stage (Stage)
+import qualified Luna.Pass.Resolve.Data.Resolution  as Res
+import qualified Luna.Pass.Scheduler                 as Scheduler
+import qualified Luna.Pass.Sourcing.UnitMapper as UnitMap
+import qualified Luna.Std as Std
+import qualified Data.Bimap as Bimap
+import qualified Path
+import qualified Luna.Pass.Flow.ProcessUnits as ProcessUnits
+
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
@@ -85,33 +99,26 @@ requestCapability = 0
 tcCapability      = 1
 
 run :: BusEndPoints -> [Topic] -> Bool -> FilePath -> IO ()
-run endPoints topics formatted projectRoot = do
-    sendStarted endPoints
+run endPoints topics formatted packageRoot = do
     forkServer "localhost" 1234
     logger Logger.info $ "Subscribing to topics: " <> show topics
     logger Logger.info $ (Utils.display formatted) endPoints
-    scope            <- newEmptyMVar
     toBusChan        <- atomically newTChan
     fromEmpireChan   <- atomically newTChan
     tcReq            <- newEmptyMVar
     modules          <- newEmptyMVar
-    env              <- Env.make toBusChan fromEmpireChan tcReq scope modules projectRoot
+    env              <- Env.make toBusChan fromEmpireChan tcReq modules packageRoot
     let commEnv = env ^. Env.empireNotif
     forkIO $ void $ Bus.runBus endPoints $ BusT.runBusT $ evalStateT (startAsyncUpdateWorker fromEmpireChan) env
     forkIO $ void $ Bus.runBus endPoints $ startToBusWorker toBusChan
-    compiledStdlib <- newEmptyMVar
-    forkOn tcCapability $ do
-        writeIORef minCapabilityNumber 1
-        updateCapabilities
-        (std, cleanup) <- prepareStdlib
-        pmState <- Graph.defaultPMState
-        putMVar compiledStdlib (std, cleanup, pmState)
-    forkOn tcCapability $ void $ Bus.runBus endPoints $ startTCWorker compiledStdlib commEnv
     waiting <- newEmptyMVar
     requestThread <- forkOn requestCapability $ void $ Bus.runBus endPoints $ do
         mapM_ Bus.subscribe topics
-        BusT.runBusT $ evalStateT (runBus formatted projectRoot) env
+        BusT.runBusT $ evalStateT (runBus formatted packageRoot) env
         liftIO $ putMVar waiting ()
+    compiledStdlib <- newEmptyMVar
+    forkOn tcCapability $ void $ Bus.runBus endPoints $ startTCWorker commEnv
+    sendStarted endPoints
     takeMVar waiting
 
 runBus :: Bool -> FilePath ->  StateT Env BusT ()
@@ -121,48 +128,56 @@ runBus formatted projectRoot = do
     createDefaultState
     forever handleMessage
 
-prepareStdlib :: IO (Scope, IO ())
-prepareStdlib = do
-    lunaroot       <- canonicalizePath =<< getEnv Project.lunaRootEnv
-    (cleanup, std) <- Typecheck.createStdlib $ lunaroot <> "/Std/"
-    return (std, cleanup)
+-- killPreviousTC :: Empire.CommunicationEnv -> Maybe (Async Empire.InterpreterEnv) -> IO ()
+-- killPreviousTC env prevAsync = case prevAsync of
+--     Just a -> Async.poll a >>= \case
+--         Just finished -> case finished of
+--             Left exc     -> logger Logger.warning $ "[TCWorker]: TC failed with: " <> displayException exc
+--             Right intEnv -> do
+--                 logger Logger.info "[TCWorker]: killing listeners"
+--                 void $ Empire.evalEmpire env intEnv Typecheck.stop
+--         _      -> do
+--             logger Logger.info "[TCWorker]: cancelling previous request"
+--             Async.uninterruptibleCancel a
+--     _      -> return ()
 
-killPreviousTC :: Empire.CommunicationEnv -> Maybe (Async Empire.InterpreterEnv) -> IO ()
-killPreviousTC env prevAsync = case prevAsync of
-    Just a -> Async.poll a >>= \case
-        Just finished -> case finished of
-            Left exc     -> logger Logger.warning $ "[TCWorker]: TC failed with: " <> displayException exc
-            Right intEnv -> do
-                logger Logger.info "[TCWorker]: killing listeners"
-                void $ Empire.evalEmpire env intEnv Typecheck.stop
-        _      -> do
-            logger Logger.info "[TCWorker]: cancelling previous request"
-            Async.uninterruptibleCancel a
-    _      -> return ()
-
-startTCWorker :: MVar (Scope, IO (), Graph.PMState ClsGraph) -> Empire.CommunicationEnv -> Bus ()
-startTCWorker compiledStdlib env = liftIO $ do
-    tcAsync <- newEmptyMVar
+startTCWorker :: Empire.CommunicationEnv -> Bus ()
+startTCWorker env = liftIO $ do
     let reqs = env ^. Empire.typecheckChan
-        modules = env ^. Empire.modules
-    (std, cleanup, pmState) <- readMVar compiledStdlib
-    putMVar modules $ unwrap std
-    let interpreterEnv = Empire.InterpreterEnv def def def undefined cleanup def
-    forever $ do
-        Empire.TCRequest loc g flush interpret recompute stop <- takeMVar reqs
-        prevAsync <- tryTakeMVar tcAsync
-        killPreviousTC env prevAsync
-        async     <- Async.asyncOn tcCapability (Empire.evalEmpire env interpreterEnv $ do
-            case stop of
-                True  -> Typecheck.stop
-                False -> do
-                    when flush
-                        Typecheck.flushCache
-                    Empire.graph .= (g & Graph.clsAst . Graph.pmState .~ pmState)
-                    liftIO performGC
-                    Typecheck.run modules loc interpret recompute `Exception.onException` Typecheck.stop)
-        when recompute $ void (Async.waitCatch async)
-        putMVar tcAsync async
+    pmState <- Graph.defaultPMState
+    let interpreterEnv = Empire.InterpreterEnv (return ()) (error "startTCWorker: clsGraph") [] def def def
+        commandState   = Graph.CommandState pmState interpreterEnv
+    void $ Empire.evalEmpire env commandState $ do
+        Typecheck.makePrimStdIfMissing
+        forever $ do
+            Empire.TCRequest loc g rooted flush interpret recompute stop <- liftIO $ takeMVar reqs
+            if stop then do
+                Typecheck.stop
+            else do
+                as <- AsyncL.asyncOn tcCapability $ do
+                    Typecheck.run loc g rooted interpret recompute `Exception.onException`
+                        Typecheck.stop
+                res <- AsyncL.waitCatch as
+                case res of
+                    Left exc -> logger Logger.warning $ "TCWorker: TC failed with: " <> displayException exc
+                    Right _  -> return ()
+
+--     tcAsync <- newEmptyMVar
+--         modules = env ^. Empire.modules
+--     (std, cleanup, pmState) <- readMVar compiledStdlib
+--     putMVar modules $ unwrap std
+--         prevAsync <- tryTakeMVar tcAsync
+--         killPreviousTC env prevAsync
+--         async     <- Async.asyncOn tcCapability (Empire.evalEmpire env interpreterEnv $ do
+--             case stop of
+--                 True  -> Typecheck.stop
+--                 False -> do
+--                     when flush
+--                         Typecheck.flushCache
+--                     Empire.graph .= (g & Graph.clsAst . Graph.pmState .~ pmState)
+--                     liftIO performGC
+--         when recompute $ void (Async.waitCatch async)
+--         putMVar tcAsync async
 
 startToBusWorker :: TChan Message -> Bus ()
 startToBusWorker toBusChan = forever $ do
@@ -179,37 +194,38 @@ startAsyncUpdateWorker asyncChan = forever $ do
         CodeUpdate        up -> Server.sendToBus' up
         InterpreterUpdate up -> Server.sendToBus' up
 
-projectFiles :: FilePath -> IO [FilePath]
-projectFiles = find always (extension ==? ".luna")
+packageFiles :: FilePath -> IO [FilePath]
+packageFiles = find always (extension ==? ".luna")
 
-loadAllProjects :: StateT Env BusT ()
-loadAllProjects = do
-  projectRoot  <- use Env.projectRoot
-  empireNotifEnv   <- use Env.empireNotif
+loadAllPackages :: StateT Env BusT ()
+loadAllPackages = do
+    packageRoot  <- use Env.projectRoot
+    empireNotifEnv   <- use Env.empireNotif
+  
+    packages <- liftIO $ packageFiles packageRoot
+    loadedPackages <- flip mapM packages $ \proj -> do
+        currentEmpireEnv <- use Env.empireEnv
+        result <- liftIO $ Exception.try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
+        case result of
+            Left (exc :: SomeASTException) -> do
+              logger Logger.error $ "Cannot load package [" <> proj <> "]: " <> (displayException exc)
+              return Nothing
+            Right (_, newEmpireEnv) -> do
+              Env.empireEnv .= newEmpireEnv
+              return $ Just ()
+    return ()
 
-  projects <- liftIO $ projectFiles projectRoot
-  loadedProjects <- flip mapM projects $ \proj -> do
-    currentEmpireEnv <- use Env.empireEnv
-    result <- liftIO $ Exception.try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
-    case result of
-        Left (exc :: SomeASTException) -> do
-          logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> (displayException exc)
-          return Nothing
-        Right (_, newEmpireEnv) -> do
-          Env.empireEnv .= newEmpireEnv
-          return $ Just ()
-
-  when ((catMaybes loadedProjects) == []) $ do
-    currentEmpireEnv <- use Env.empireEnv
-    result <- liftIO $ Exception.try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $  Persistence.createDefaultProject
-    case result of
-        Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
-        Left (exc :: SomeASTException) -> return ()
+  -- when ((catMaybes loadedPackages) == []) $ do
+  --   currentEmpireEnv <- use Env.empireEnv
+  --   result <- liftIO $ Exception.try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $  Persistence.createDefaultPackage
+  --   case result of
+  --       Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
+  --       Left (exc :: SomeASTException) -> return ()
 
 
 
 createDefaultState :: StateT Env BusT ()
-createDefaultState = loadAllProjects
+createDefaultState = loadAllPackages
 
 handleMessage :: StateT Env BusT ()
 handleMessage = do

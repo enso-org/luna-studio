@@ -6,6 +6,7 @@ maintainer:         New Byte Order <contact@luna-lang.org>
 dependencies:
     - async
     - base
+    - bimap
     - binary
     - bytestring
     - containers
@@ -17,9 +18,13 @@ dependencies:
     - filemanip
     - filepath
     - groom
+    - lens
+    - lifted-async
     - luna-core
+    - luna-package
     - luna-empire
-    - luna-project
+    - luna-passes
+    - luna-stdlib
     - luna-studio-common
     - m-logger
     - mtl

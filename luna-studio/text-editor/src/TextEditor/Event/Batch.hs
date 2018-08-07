@@ -8,6 +8,7 @@ import           Common.Analytics                     (IsTrackedEvent(..))
 import           Common.Data.Event                    (EventName)
 import qualified LunaStudio.API.Atom.CloseFile        as CloseFile
 import qualified LunaStudio.API.Atom.Copy             as Copy
+import qualified LunaStudio.API.Atom.CreateProject    as CreateProject
 import qualified LunaStudio.API.Atom.GetBuffer        as GetBuffer
 import qualified LunaStudio.API.Atom.IsSaved          as IsSaved
 import qualified LunaStudio.API.Atom.MoveProject      as MoveProject
@@ -33,6 +34,7 @@ data BatchEvent
         | InterpreterUpdate                     Interpreter.Update
         | IsSaved                                   IsSaved.Response
         | ProjectMove                           MoveProject.Response
+        | ProjectCreated                      CreateProject.Response
         | ProjectSet                             SetProject.Response
         | SubstituteResponse                     Substitute.Response
         | SubstituteUpdate                       Substitute.Update

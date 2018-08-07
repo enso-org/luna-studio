@@ -5,7 +5,7 @@ import qualified Data.ByteString.Char8 as Char8
 import qualified System.ZMQ4.Monadic   as ZMQ
 
 import           Prelude               (putStrLn, print)
-import           Prologue              hiding (putStrLn, print, liftIO)
+import           Prologue              hiding (putStrLn, print, liftIO, void)
 import           Control.Monad.Trans   (liftIO)
 import           ZMQ.Bus.Bus           (Bus)
 import qualified ZMQ.Bus.Bus           as Bus

@@ -1,6 +1,7 @@
 module LunaStudio.Data.Breadcrumb where
 
 import           Control.DeepSeq        (NFData)
+import           Control.Lens           (toListOf, traversed)
 import qualified Control.Lens.Aeson     as Lens
 import           Data.Aeson.Types       (FromJSON (..), FromJSONKey, ToJSON (..), ToJSONKey)
 import           Data.Binary            (Binary)

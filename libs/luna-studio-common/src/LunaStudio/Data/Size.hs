@@ -3,6 +3,7 @@ module LunaStudio.Data.Size
     , vector
     ) where
 
+import           Control.Lens            (makeWrapped)
 import           Data.Aeson.Types        (ToJSON)
 import           LunaStudio.Data.Vector2
 import           Prologue

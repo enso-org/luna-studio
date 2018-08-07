@@ -4,12 +4,13 @@ module LunaStudio.Data.PortRef
     ) where
 
 import           Control.DeepSeq         (NFData)
+import           Control.Lens            (makePrisms)
 import           Data.Aeson.Types        (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
 import           Data.Binary             (Binary)
-import           LunaStudio.Data.NodeId  (NodeId)
+import           LunaStudio.Data.Node    (NodeId)
 import           LunaStudio.Data.NodeLoc (HasNodeLoc (..), NodeLoc)
 import qualified LunaStudio.Data.NodeLoc as NodeLoc
-import           LunaStudio.Data.Port    (AnyPortId (..), InPortId, OutPortId)
+import           LunaStudio.Data.Port    (AnyPortId (..), InPortId, OutPortId, OutPortIndex (Projection))
 import           Prologue
 
 

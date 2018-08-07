@@ -7,6 +7,7 @@ import qualified Data.HashMap.Strict                  as HashMap
 import qualified Data.Map                             as Map
 import qualified Data.Text                            as Text
 
+import           Control.Lens                         ((?~), to)
 import           Data.Aeson                           (FromJSON (parseJSON), ToJSON (toEncoding, toJSON))
 import           Data.Binary                          (Binary (get, put))
 import           Data.Hashable                        (Hashable)

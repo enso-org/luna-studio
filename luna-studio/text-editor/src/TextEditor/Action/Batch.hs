@@ -20,6 +20,9 @@ withUUID act = do
 closeFile :: FilePath -> Command State ()
 closeFile = withUUID . BatchCmd.closeFile
 
+createProject :: FilePath -> Command State ()
+createProject = withUUID . BatchCmd.createProject
+
 getBuffer :: FilePath -> Command State ()
 getBuffer = withUUID . BatchCmd.getBuffer
 

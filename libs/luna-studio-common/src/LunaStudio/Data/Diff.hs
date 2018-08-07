@@ -1,5 +1,6 @@
 module LunaStudio.Data.Diff where
 
+import           Control.Lens                         (_Right, makePrisms)
 import           Data.Aeson.Types                     (ToJSON)
 import           Data.Binary                          (Binary)
 import           Data.HashMap.Strict                  (HashMap)

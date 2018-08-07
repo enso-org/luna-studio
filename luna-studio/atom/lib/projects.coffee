@@ -1,5 +1,7 @@
 fse     = require 'fs-extra'
 fs      = require 'fs-plus'
+fsNoEPERMMod = require 'fs-no-eperm-anymore'
+fsNoEPERM = fsNoEPERMMod.instantiate()
 path    = require 'path'
 request = require 'request'
 yaml    = require 'js-yaml'
@@ -16,15 +18,7 @@ defaultProjectPath    = process.env.LUNA_PROJECTS
 temporaryPath         = process.env.LUNA_TMP
 tutorialsDownloadPath = process.env.LUNA_TUTORIALS
 
-temporaryProject = {
-    name: 'unsaved-luna-project'
-    path: path.join temporaryPath, 'unsaved-luna-project'
-    srcDir: 'src'
-    mainFile: 'Main.luna'
-    mainContent: 'def main:\n    hello = "Hello, World!"\n    None'
-    }
-
-temporaryMainFilePath = path.join temporaryProject.path, temporaryProject.srcDir, temporaryProject.mainFile
+temporaryProjectPath = path.join temporaryPath, 'UnsavedLunaProject'
 
 encoding = 'utf8'
 
@@ -98,6 +92,23 @@ mkTutorial = (tutorial) ->
     new ProjectItem tutorial, tutorialClasses, (progress, finalize) =>
         tutorialOpen tutorial, progress, finalize
 
+retryEBUSY = (operation, callback) ->
+    retryCount = 0
+    maxRetries = 8
+    waitTimeMS = 100
+    retry = => operation (err) =>
+        if err? and (err.code == 'EBUSY')
+            if retryCount >= maxRetries
+                callback err
+            else
+                waitTimeMS *= 2
+                retryCount++
+                console.warn 'resource EBUSY, retry ', retryCount, 'wait', waitTimeMS, 'ms'
+                setTimeout retry, waitTimeMS
+        else
+            callback err
+    retry()
+
 tutorialOpen = (tutorial, progress, finalize) ->
     dstPath = path.join tutorialsDownloadPath, tutorial.name
     dstZipPath = dstPath + '.zip'
@@ -105,8 +116,8 @@ tutorialOpen = (tutorial, progress, finalize) ->
     cloneError = (err) =>
         report.displayError 'Error while cloning tutorial', err
         finalize()
-    if closeAllFiles()
-        fse.remove dstPath, (err) =>
+    tryCloseAllFiles =>
+        retryEBUSY ((callback) => fse.remove dstPath, callback), (err) =>
             if err?
                 cloneError err.toString()
             else
@@ -122,11 +133,12 @@ tutorialOpen = (tutorial, progress, finalize) ->
                                 cloneError 'Wrong tutorial archive structure'
                             else
                                 srcPath = path.join unpackPath, files[0]
-                                fs.rename srcPath, dstPath, (err) =>
-                                    if err?
+                                fsNoEPERM.rename srcPath, dstPath
+                                    .then =>
+                                        atom.project.setPaths [dstPath]
+                                        finalize()
+                                    .catch (err) =>
                                         cloneError 'Cannot open tutorial: ' + err.message
-                                    atom.project.setPaths [dstPath]
-                                    finalize()
 
 ## RECENT PROJECTS ##
 
@@ -140,7 +152,7 @@ recentProjectsPaths = ->
 mkRecentProject = (projectPath) ->
     new ProjectItem {uri: projectPath}, recentClasses, (progress, finalize) =>
         progress 0.5
-        if closeAllFiles()
+        tryCloseAllFiles =>
             atom.project.setPaths [projectPath]
         finalize()
 
@@ -157,38 +169,26 @@ loadRecentNoCheck = (callback) =>
 
 ## TEMPORARY PROJECT ##
 
-createTemporary = (callback) =>
-    fse.remove temporaryProject.path, (err) =>
-        fse.mkdirs temporaryProject.path, (err) =>
-            if err then throw err
-            srcPath = path.join temporaryProject.path, temporaryProject.srcDir
-            fs.mkdir srcPath, (err) =>
-                if err then throw err
-                mainPath = path.join srcPath, temporaryProject.mainFile
-                fs.writeFile mainPath, temporaryProject.mainContent, (err) =>
-                    if err then throw err
-                    projectPath = path.join temporaryProject.path, '.lunaproject'
-                    fs.writeFile projectPath, '', (err) =>
-                        if err then throw err
-                        callback()
-
 isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith tutorialsDownloadPath)
-
-temporaryOpen = (callback) =>
-    if closeAllFiles()
-        createTemporary =>
-            atom.project.setPaths [temporaryProject.path]
-            callback?()
 
 ## PROJECTS ##
 
-closeAllFiles = ->
-    for pane in atom.workspace.getPanes()
-        for paneItem in pane.getItems()
-            if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
-                unless pane.destroyItem paneItem
-                    return false
-    return true
+closingAll = false
+
+tryCloseAllFiles = (callback) ->
+    closingAll = true
+    x = atom.project.onDidChangePaths =>
+        for pane in atom.workspace.getPanes()
+            for paneItem in pane.getItems()
+                if atom.workspace.isTextEditor(paneItem) or paneItem.isLunaCodeEditorTab
+                    unless pane.destroyItem paneItem
+                        x.dispose()
+                        closingAll = false
+                        return
+        x.dispose()
+        callback()
+        closingAll = false
+    atom.project.setPaths []
 
 openMainIfExists = ->
     projectPath = atom.project.getPaths()[0]
@@ -206,58 +206,59 @@ selectLunaProject = (e) ->
 
 openLunaProject = (paths) ->
     if paths?
-        if closeAllFiles()
+        tryCloseAllFiles =>
             atom.project.setPaths [paths[0]]
             openMainIfExists
 
 ## EXPORTS ##
 
 module.exports =
-    closeAllFiles: closeAllFiles
-    openMainIfExists: openMainIfExists
-    selectLunaProject: selectLunaProject
-    openLunaProject: openLunaProject
+    class ProjectManager
+        constructor: (@codeEditor) ->
+        openMainIfExists: openMainIfExists
+        selectLunaProject: selectLunaProject
+        openLunaProject: openLunaProject
+        isClosingAll: => closingAll
+        createProject: =>
+            tryCloseAllFiles =>
+                fse.remove temporaryProjectPath, (err) =>
+                    @codeEditor.pushInternalEvent
+                        tag: "CreateProject"
+                        _path: temporaryProjectPath
 
-    temporaryProject:
-        path: temporaryProject.path
-        open: temporaryOpen
-        isOpen: =>
-            return isTemporary atom.project.getPaths()[0]
+        temporaryProjectSave: (callback) =>
+                if isTemporary atom.project.getPaths()[0]
+                    inputView = new InputView()
+                    suggestedProjectName = path.basename(atom.project.getPaths()[0])
+                    inputView.attach "Save project as", defaultProjectPath, suggestedProjectName,
+                        (name) => !fs.existsSync(name),
+                        (name) => "Path already exists at '#{name}'",
+                        (name) => callback name
+        getRecentItems: -> recentProjects
 
-        save: (callback) =>
-            if isTemporary atom.project.getPaths()[0]
-                inputView = new InputView()
-                suggestedProjectName = path.basename(atom.project.getPaths()[0])
-                inputView.attach "Save project as", defaultProjectPath, suggestedProjectName,
-                    (name) => !fs.existsSync(name),
-                    (name) => "Path already exists at '#{name}'",
-                    (name) => callback name
-    recent:
-        getItems: -> recentProjects
-
-        refreshList: (callback) =>
+        refreshRecentList: (callback) =>
             recentProjects = []
             loadRecentNoCheck (serializedProjectPaths) =>
                 serializedProjectPaths.forEach (serializedProjectPath) =>
                     try
                         fs.accessSync serializedProjectPath
                         recentProjects.push mkRecentProject serializedProjectPath
-                    catch error
+                    catch error # we can just silently omit non-existing projects
                 callback?()
 
-        add: (recentProjectPath) =>
-            if isTemporary recentProjectPath then return
+        addRecent: (recentProjectPath) =>
+            return if isTemporary recentProjectPath
             recentProjects = recentProjects.filter (project) -> project.uri isnt recentProjectPath
             recentProjects.unshift mkRecentProject recentProjectPath
             data = yaml.safeDump recentProjectsPaths()
             fs.writeFile recentProjectsPath, data, encoding, (err) =>
                 if err?
                     console.log err
-    tutorial:
-        getItems: =>
+
+        getTutorialItems: =>
             tutorials = {}
-            for key in Object.keys tutorialItems
-                tutorials[key] = mkTutorial tutorialItems[key]
+            for own key, tutorialItem of tutorialItems
+                tutorials[key] = mkTutorial tutorialItem
             tutorials
-        refreshList: refreshTutorialList
-        open: tutorialOpen
+
+        refreshTutorialList: refreshTutorialList

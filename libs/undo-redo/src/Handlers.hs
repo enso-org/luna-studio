@@ -11,6 +11,7 @@ import           UndoState
 
 import           Control.Exception                       (Exception)
 import           Control.Exception.Safe                  (throwM)
+import           Control.Lens                            ((%=), (^..), _Right, to)
 import           Data.Binary                             (Binary, decode)
 import           Data.ByteString.Lazy                    (ByteString, fromStrict)
 import qualified Data.List                               as List

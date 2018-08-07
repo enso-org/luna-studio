@@ -1,6 +1,7 @@
 module LunaStudio.Data.Visualizer where
 
 import qualified Control.Lens.Aeson         as Lens
+import           Control.Lens               (makePrisms)
 import qualified Data.Aeson                 as Aeson
 import           Data.Aeson.Types           (FromJSON, ToJSON)
 import           Data.Binary                (Binary)
@@ -65,35 +66,24 @@ makeLenses ''Visualizer
 instance Binary   Visualizer
 instance Binary   VisualizerId
 instance Binary   VisualizerType
-instance FromJSON Visualizer      where parseJSON = Lens.parse
-instance FromJSON VisualizerEntry where parseJSON = Lens.parse
-instance FromJSON VisualizerId    where parseJSON = Lens.parse
-instance FromJSON VisualizerType  where parseJSON = Lens.parse
+instance FromJSON Visualizer
+instance FromJSON VisualizerEntry
+instance FromJSON VisualizerId
+instance FromJSON VisualizerType
 instance NFData   Visualizer
 instance NFData   VisualizerEntry
 instance NFData   VisualizerId
 instance NFData   VisualizerType
-instance ToJSON VisualizerType where
-    toEncoding = Lens.toEncoding
-    toJSON     = Lens.toJSON
-instance ToJSON VisualizerId where
-    toEncoding = Lens.toEncoding
-    toJSON     = Lens.toJSON
-instance ToJSON VisualizerEntry where
-    toEncoding = Lens.toEncoding
-    toJSON     = Lens.toJSON
-instance ToJSON Visualizer where
-    toEncoding = Lens.toEncoding
-    toJSON     = Lens.toJSON
+instance ToJSON   VisualizerType
+instance ToJSON   VisualizerId
+instance ToJSON   VisualizerEntry
+instance ToJSON   Visualizer
 
 
 errorVisId, mdVisId, placeholderVisId :: VisualizerId
 errorVisId       = VisualizerId "internal: error"       InternalVisualizer
 mdVisId          = VisualizerId "base: markdown"        LunaVisualizer
 placeholderVisId = VisualizerId "internal: placeholder" InternalVisualizer
-
-isInternal :: Visualizer -> Bool
-isInternal = has (visualizerId . visualizerType . _InternalVisualizer)
 
 transformJSVisualizerMatcher :: MonadIO m
     => (String -> m String) -> TypeRep -> m [VisualizerEntry]
@@ -102,8 +92,7 @@ transformJSVisualizerMatcher f r = case toConstructorRep r of
     Just r' -> fromJust def . Aeson.decode . BS.pack
         <$> f (BS.unpack $ Aeson.encode r')
 
-convertEntry :: VisualizerId -> VisualizerEntry
-    -> (VisualizerId, VisualizerPath)
+convertEntry :: VisualizerId -> VisualizerEntry -> (VisualizerId, VisualizerPath)
 convertEntry k (VisualizerEntry Nothing  p) = (k, p)
 convertEntry k (VisualizerEntry (Just n) p)
     = (k & visualizerName %~ Text.concat . (:[": ", n]), p)
@@ -119,8 +108,7 @@ applyType tpe = fmap toMap . liftIO . mapM applyToEntry . toList where
     toMap = fromList . concat
     applyToEntry (k, f) = fmap2 (convertEntry k) $ f tpe
 
-fromJSInternalVisualizersMap :: Map String String
-    -> Map VisualizerId VisualizerPath
+fromJSInternalVisualizersMap :: Map String String -> Map VisualizerId VisualizerPath
 fromJSInternalVisualizersMap = fromList . concatMap convertJSON . toList where
     convertJSON (k, v)
         =   convertEntry (VisualizerId (convert k) InternalVisualizer)

@@ -6,7 +6,9 @@
 
 module FileModuleSpec (spec) where
 
-import           Data.List                       (find)
+import           Control.Lens                    (toListOf)
+import           Data.Char                       (isSpace)
+import           Data.List                       (dropWhileEnd, find)
 import qualified Data.Map                        as Map
 import qualified Data.Set                        as Set
 import qualified Data.Text                       as Text
@@ -32,13 +34,14 @@ import           LunaStudio.Data.Port            (Port (..), PortState (..))
 import qualified LunaStudio.Data.Port            as Port
 import           LunaStudio.Data.PortDefault     (PortDefault (..))
 import           LunaStudio.Data.PortRef         (AnyPortRef (..))
+import qualified LunaStudio.Data.PortRef         as PortRef
 import qualified LunaStudio.Data.Position        as Position
 import           LunaStudio.Data.Range           (Range (..))
 import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
 
 import           Empire.Empire
-import           Empire.Prelude
-import           Luna.Prelude                    (forM, normalizeQQ)
+import           Empire.Prelude                  as P
+-- import           Luna.Prelude                    (forM, normalizeQQ)
 
 import           Test.Hspec                      (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
                                                   shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
@@ -84,6 +87,11 @@ def main:
     print bar
 |]
 
+normalizeQQ :: String -> String
+normalizeQQ str = intercalate "\n" $ fmap (drop minWs) allLines where
+    allLines = filter (not . null) $ dropWhileEnd isSpace <$> lines str
+    minWs    = P.minimum $ length . takeWhile isSpace <$> allLines
+
 atXPos = ($ def) . (NodeMeta.position . Position.x .~)
 
 specifyCodeChange :: Text -> Text -> (GraphLocation -> Empire a) -> CommunicationEnv -> Expectation
@@ -109,7 +117,7 @@ specifyCodeChange initialCode expectedCode act env = do
 spec :: Spec
 spec = around withChannels $ parallel $ do
     describe "imports" $ do
-        xit "adds import" $
+        it "adds import" $
             let initialCode = multiFunCode
                 expectedCode = [r|
                     import Foo
@@ -127,7 +135,7 @@ spec = around withChannels $ parallel $ do
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 Graph.addImports loc $ Set.singleton "Foo"
-        xit "adds import 2" $
+        it "adds import 2" $
             let initialCode = [r|
                     import A
                     import Std
@@ -161,7 +169,7 @@ spec = around withChannels $ parallel $ do
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 Graph.addImports loc $ Set.singleton "Foo"
-        xit "adds import 3" $
+        it "adds import 3" $
             let initialCode = [r|
                     import Std.Geo
                     import Time
@@ -177,9 +185,9 @@ spec = around withChannels $ parallel $ do
                         print bar
                     |]
                 expectedCode = [r|
-                    import Foo
                     import Bar
                     import Baz.Quux
+                    import Foo
                     import Std.Geo
                     import Time
                     import XML
@@ -795,7 +803,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode (loc |>= foo) u1 "5" (atXPos (-10))
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
-                    funs <- use Graph.clsFuns
+                    funs <- use $ Graph.userState . Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
             offsets `shouldMatchList` [("foo",10), ("bar",58), ("main",91)]
@@ -810,7 +818,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode loc u1 "def aaa" (atXPos $ 1.5 * gapBetweenNodes)
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
-                    funs <- use Graph.clsFuns
+                    funs <- use $ Graph.userState . Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
             offsets `shouldMatchList` [("foo",10), ("bar",39), ("aaa",65), ("main",94)]
@@ -824,7 +832,7 @@ spec = around withChannels $ parallel $ do
                 Graph.removeNodes loc [bar]
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
-                    funs <- use Graph.clsFuns
+                    funs <- use $ Graph.userState . Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
             offsets `shouldMatchList` [("foo",10), ("main",39)]
@@ -839,7 +847,7 @@ spec = around withChannels $ parallel $ do
                 Graph.renameNode loc (bar ^. Node.nodeId) "qwerty"
                 funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 offsets <- Graph.withUnit loc $ do
-                    funs <- use Graph.clsFuns
+                    funs <- use $ Graph.userState . Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
             offsets `shouldMatchList` [("foo", 10), ("qwerty", 39), ("main", 75)]
@@ -879,7 +887,7 @@ spec = around withChannels $ parallel $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc multiFunCode
-                Graph.pasteText loc [Range 23 23] ["«3»def quux: None### META {\"metas\":[{\"marker\":3,\"meta\":{\"_displayResult\":false,\"_selectedVisualizer\":null,\"_position\":{\"fromPosition\":{\"_vector2_y\":0,\"_vector2_x\":0}}}}]}"]
+                Graph.pasteText loc [Range 23 23] ["«3»def quux: None\n### META {\"metas\":[{\"marker\":3,\"meta\":{\"_displayResult\":false,\"_selectedVisualizer\":null,\"_position\":{\"fromPosition\":{\"_vector2_y\":0,\"_vector2_x\":0}}}}]}"]
                 (,) <$> Graph.getNodes loc <*> Graph.getCode loc
             normalizeQQ (Text.unpack code) `shouldBe` normalizeQQ [r|
                 # Docs

@@ -3,32 +3,32 @@ module NodeEditor.Action.Basic.AddNode where
 
 import           Common.Prelude
 
-import qualified Data.Text                                  as Text
-import qualified LunaStudio.Data.Node                       as Empire
-import qualified NodeEditor.Action.Batch                    as Batch
-import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
+import qualified Data.Text                             as Text
+import qualified LunaStudio.Data.Node                  as Empire
+import qualified NodeEditor.Action.Batch               as Batch
+import qualified NodeEditor.Action.State.NodeEditor    as NodeEditor
 
-import           Common.Action.Command                      (Command)
-import           Data.Text                                  (Text)
-import           LunaStudio.Data.Geometry                   (snap)
-import           LunaStudio.Data.LabeledTree                (LabeledTree (LabeledTree))
-import qualified LunaStudio.Data.Node                       as API
-import           LunaStudio.Data.NodeMeta                   (NodeMeta (NodeMeta))
-import           LunaStudio.Data.Port                       (InPortIndex (Arg), Port (Port), PortState (NotConnected))
-import           LunaStudio.Data.Position                   (Position)
-import           LunaStudio.Data.TypeRep                    (TypeRep (TStar))
-import           NodeEditor.Action.Basic.FocusNode          (focusNode)
-import           NodeEditor.Action.Basic.SelectNode         (selectNode)
-import           NodeEditor.Action.State.Model              (calculatePortSelfMode)
-import           NodeEditor.Action.State.NodeEditor         (addInputNode, addOutputNode, getNodeEditor, getSelectedNodes, modifyNodeEditor)
-import           NodeEditor.Action.State.Visualization      (addNodeVisualizations)
-import           NodeEditor.Action.UUID                     (getUUID)
-import           NodeEditor.React.Model.Node                (ExpressionNode, InputNode, NodeLoc (NodeLoc), NodePath, OutputNode, inPortAt,
-                                                             inPortsList, nodeLoc)
-import qualified NodeEditor.React.Model.NodeEditor          as NE
-import           NodeEditor.React.Model.Port                (isSelf, mode, portId)
-import           NodeEditor.React.Model.Visualization       (Content (Message), awaitingDataMsg)
-import           NodeEditor.State.Global                    (State)
+import           Common.Action.Command                 (Command)
+import           Data.Text                             (Text)
+import           LunaStudio.Data.Geometry              (snap)
+import           LunaStudio.Data.LabeledTree           (LabeledTree (LabeledTree))
+import qualified LunaStudio.Data.Node                  as API
+import           LunaStudio.Data.NodeMeta              (NodeMeta (NodeMeta))
+import           LunaStudio.Data.Port                  (InPortIndex (Arg), Port (Port), PortState (NotConnected))
+import           LunaStudio.Data.Position              (Position)
+import           LunaStudio.Data.TypeRep               (TypeRep (TStar))
+import           NodeEditor.Action.Basic.FocusNode     (focusNode)
+import           NodeEditor.Action.Basic.SelectNode    (selectNode)
+import           NodeEditor.Action.State.Model         (calculatePortSelfMode)
+import           NodeEditor.Action.State.NodeEditor    (addInputNode, addOutputNode, getNodeEditor, getSelectedNodes, modifyNodeEditor)
+import           NodeEditor.Action.State.Visualization (addNodeVisualizations)
+import           NodeEditor.Action.UUID                (getUUID)
+import           NodeEditor.React.Model.Node           (ExpressionNode, InputNode, NodeLoc (NodeLoc), NodePath, OutputNode, inPortAt,
+                                                        inPortsList, nodeLoc)
+import qualified NodeEditor.React.Model.NodeEditor     as NE
+import           NodeEditor.React.Model.Port           (isSelf, mode, portId)
+import           NodeEditor.React.Model.Visualization  (Content (Message), awaitingDataMsg)
+import           NodeEditor.State.Global               (State)
 
 
 createNode :: NodePath -> Position -> Text -> Bool -> Command State ()
@@ -40,12 +40,8 @@ createNode parentPath nodePos expr isDefinition = do
         connectTo   = if length selected == 1
                       then view nodeLoc <$> listToMaybe selected
                       else Nothing
-        defInPorts  = LabeledTree def
-            $ Port [Arg 0] (Text.pack "") TStar NotConnected
-        defOutPorts = LabeledTree def
-            $ Port []      (Text.pack "") TStar NotConnected
         empireNode  = Empire.ExpressionNode nid expr isDefinition def def
-            defInPorts defOutPorts nodeMeta False
+            def def nodeMeta False
         node        = convert (parentPath, empireNode)
         nl          = NodeLoc parentPath nid
     localAddExpressionNode node

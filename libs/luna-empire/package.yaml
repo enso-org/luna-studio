@@ -40,35 +40,52 @@ dependencies:
     - bimap
     - base
     - bytestring
+    - container
     - containers
     - convert
     - data-default
-    - dependent-state
+    - layered-state
     - directory
     - exceptions
     - filepath
+    - layouting
     - lens
+    - lens-utils
     - lifted-base
     - luna-core
+    - luna-cpp-containers
+    - luna-data-storable
+    - luna-data-tag
+    - luna-data-typemap
+    - luna-debug
+    - luna-exception
+    - luna-foreign-utils
+    - luna-generic-traversable
+    - luna-nested-containers
+    - luna-memory-pool
     - luna-passes
-    - luna-parser
-    - luna-lexer
-    - luna-studio-common
+    - luna-package
+    - luna-runtime
     - luna-stdlib
-    - luna-project
+    - luna-syntax-definition
+    - luna-syntax-text-parser
+    - luna-syntax-text-lexer
+    - luna-syntax-text-model
+    - luna-syntax-text-prettyprint
+    - luna-studio-common
     - m-logger
     - matrix
-    - megaparsec
     - mtl
     - open-browser
     - path
     - prologue
     - safe
     - safe-exceptions
+    - scientific
     - split
     - stm
     - text
-    - text-processing
+    - luna-text-processing
     - transformers
     - typelevel
     - unordered-containers

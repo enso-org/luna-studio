@@ -3,6 +3,7 @@
 module Empire.Server.Atom where
 
 import           Control.Exception.Safe         (try, catchAny)
+import           Control.Lens                   ((.=), use)
 import qualified Control.Monad.Catch            as MC
 import           Control.Monad.State            (StateT)
 import           Data.List                      (stripPrefix)
@@ -21,6 +22,7 @@ import qualified Empire.Env                     as Env
 
 import qualified LunaStudio.API.Atom.CloseFile  as CloseFile
 import qualified LunaStudio.API.Atom.Copy       as Copy
+import qualified LunaStudio.API.Atom.CreateProject as CreateProject
 import qualified LunaStudio.API.Atom.IsSaved    as IsSaved
 import qualified LunaStudio.API.Atom.OpenFile   as OpenFile
 import qualified LunaStudio.API.Atom.Paste      as Paste
@@ -31,11 +33,14 @@ import qualified LunaStudio.API.Graph.Request   as G
 import           LunaStudio.API.Request         (Request (..))
 import qualified LunaStudio.API.Response        as Response
 import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..))
+import qualified LunaStudio.Data.Error          as Error
 import           LunaStudio.Data.GraphLocation  (GraphLocation(..))
 import qualified LunaStudio.Data.GraphLocation  as GraphLocation
+import qualified Luna.Package.Structure.Generate as PackageGen
 
 import           Debug
 import qualified Empire.Commands.Graph          as Graph
+import qualified Empire.Commands.Package        as Package
 import qualified Empire.Commands.Publisher      as Publisher
 import           Empire.Data.AST                (SomeASTException)
 import qualified Empire.Data.Graph              as Graph
@@ -63,6 +68,17 @@ replaceDir oldPath newPath path = case stripPrefix (addTrailingPathSeparator old
     Just suffix -> newPath </> suffix
     _           -> path
 
+handleCreateProject :: Request CreateProject.Request -> StateT Env BusT ()
+handleCreateProject req@(Request _ _ (CreateProject.Request path)) = do
+    result <- PackageGen.genPackageStructure path Nothing def
+    logger Logger.info $ show ("CREATE PROJECT", req, result)
+    case result of
+        Left generatorError -> do
+            let lunaError = Package.prepareLunaError generatorError
+            replyFail logger lunaError req (Response.Error lunaError)
+        Right path' -> do
+            replyOk req ()
+
 handleMoveProject :: Request MoveProject.Request -> StateT Env BusT ()
 handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
     result <- liftIO $ do
@@ -77,11 +93,11 @@ handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
             err <- liftIO $ Graph.prepareLunaError e
             replyFail logger err req (Response.Error err)
         Right _ -> do
-            activeFiles <- use $ Env.empireEnv . Empire.activeFiles
+            activeFiles <- use $ Env.empireEnv . Graph.userState . Empire.activeFiles
             let activeFilesList = Map.toList activeFiles
                 changePath = replaceDir oldPath newPath
                 newFiles = map (\(k, v) -> (changePath k, v & Library.path %~ changePath)) activeFilesList
-            Env.empireEnv . Empire.activeFiles .= Map.fromList newFiles
+            Env.empireEnv . Graph.userState . Empire.activeFiles .= Map.fromList newFiles
             replyOk req ()
 
 handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
@@ -112,7 +128,7 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
     empireNotifEnv   <- use Env.empireNotif
     res <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ do
         (parseError, code) <- Graph.withUnit (GraphLocation inPath (Breadcrumb [])) $ do
-            (,) <$> use Graph.clsParseError <*> use Graph.code
+            (,) <$> use (Graph.userState . Graph.clsParseError) <*> use Graph.code
         case parseError of
             Just _ -> return code
             _      -> Graph.addMetadataToCode inPath
@@ -136,7 +152,7 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
 
 handleCloseFile :: Request CloseFile.Request -> StateT Env BusT ()
 handleCloseFile (Request _ _ (CloseFile.Request path)) = do
-    Env.empireEnv . Empire.activeFiles . at path .= Nothing
+    Env.empireEnv . Graph.userState . Empire.activeFiles . at path .= Nothing
     empireNotifEnv   <- use Env.empireNotif
     currentEmpireEnv <- use Env.empireEnv
     void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Publisher.stopTC

@@ -1,11 +1,10 @@
 module NodeEditor.Action.Basic
-    ( NodeUpdateModification (KeepPorts, KeepNodeMeta)
+    ( NodeUpdateModification (KeepPorts, KeepNodeMeta, MergePorts)
     , addPort
     , addSubgraph
     , centerGraph
     , collapseToFunction
     , connect
-    , createGraph
     , createNode
     , dropSelectionHistory
     , enterBreadcrumb
@@ -31,11 +30,9 @@ module NodeEditor.Action.Basic
     , localMoveProject
     , localRemoveConnection
     , localRemoveConnections
-    , localRemoveConnectionsBetweenNodes
     , localRemoveNode
     , localRemoveNodes
     , localRemovePort
-    , localRemoveSelectedNodes
     , localRenameNode
     , localRenamePort
     , localSetInputSidebar
@@ -46,7 +43,6 @@ module NodeEditor.Action.Basic
     , localSetPortDefault
     , localUnmerge
     , localUpdateCanEnterExpressionNode
-    , localUpdateConnection
     , localUpdateExpressionNode
     , localUpdateExpressionNodeInPorts
     , localUpdateExpressionNodeOutPorts
@@ -102,7 +98,6 @@ module NodeEditor.Action.Basic
     , updateArgConstructorMode
     , updateClient
     , updateCollaboration
-    , updateConnection
     , updateDocs
     , updateFilePath
     , updateGraph
@@ -121,7 +116,7 @@ import           NodeEditor.Action.Basic.AddPort             (addPort, localAddP
 import           NodeEditor.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
 import           NodeEditor.Action.Basic.Atom                (setFile, unsetFile, updateFilePath)
 import           NodeEditor.Action.Basic.CollapseToFunction  (collapseToFunction)
-import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph, updateWithAPIGraph)
+import           NodeEditor.Action.Basic.CreateGraph         (updateGraph, updateWithAPIGraph)
 import           NodeEditor.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           NodeEditor.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
 import           NodeEditor.Action.Basic.Merge               (localMerge, localUnmerge)
@@ -130,9 +125,9 @@ import           NodeEditor.Action.Basic.MovePort            (localMovePort, mov
 import           NodeEditor.Action.Basic.MoveProject         (localMoveProject)
 import           NodeEditor.Action.Basic.ProjectManager      (loadGraph, navigateToGraph, saveSettings)
 import           NodeEditor.Action.Basic.RemoveConnection    (localRemoveConnection, localRemoveConnections,
-                                                              localRemoveConnectionsBetweenNodes, removeConnection, removeConnections,
+                                                              removeConnection, removeConnections,
                                                               removeConnectionsBetweenNodes)
-import           NodeEditor.Action.Basic.RemoveNode          (localRemoveNode, localRemoveNodes, localRemoveSelectedNodes, removeNode,
+import           NodeEditor.Action.Basic.RemoveNode          (localRemoveNode, localRemoveNodes, removeNode,
                                                               removeNodes, removeSelectedNodes)
 import           NodeEditor.Action.Basic.RemovePort          (localRemovePort, removePort)
 import           NodeEditor.Action.Basic.RenameNode          (localRenameNode, renameNode)
@@ -148,8 +143,7 @@ import           NodeEditor.Action.Basic.SetPortDefault      (localSetPortDefaul
 import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPortMode, setOutputSidebarPortMode)
 import           NodeEditor.Action.Basic.Undo                (redo, undo)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
-import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts),
+import           NodeEditor.Action.Basic.UpdateNode          (NodeUpdateModification (KeepNodeMeta, KeepPorts, MergePorts),
                                                               localUpdateCanEnterExpressionNode, localUpdateExpressionNode,
                                                               localUpdateExpressionNodeInPorts, localUpdateExpressionNodeOutPorts,
                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateIsDefinition,

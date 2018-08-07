@@ -7,8 +7,8 @@ machine:
 dependencies:
     pre:
         - sudo apt-get update && sudo apt-get install openssh-client libzmq3-dev rpm2cpio
-        - curl -L https://github.com/commercialhaskell/stack/releases/download/v1.4.0/stack-1.4.0-linux-x86_64.tar.gz | tar zx -C /tmp
-        - sudo mv /tmp/stack-1.4.0-linux-x86_64/stack /usr/bin
+        - curl -L https://github.com/commercialhaskell/stack/releases/download/v1.7.1/stack-1.7.1-linux-x86_64.tar.gz | tar zx -C /tmp
+        - sudo mv /tmp/stack-1.7.1-linux-x86_64/stack /usr/bin
         - curl -o /tmp/luna-manager http://packages.luna-lang.org/linux/luna-manager
         - sudo mv /tmp/luna-manager /usr/bin
         - chmod +x /usr/bin/luna-manager
@@ -16,9 +16,9 @@ dependencies:
         - sudo mv /tmp/luna-package.yaml /home/ubuntu/luna-package.yaml
         - pip install requests
     override:
-        - stack build --stack-yaml=build-config/backend/stack.yaml --only-dependencies --install-ghc --test --fast -j1 --ghc-options=-j1 --ghc-options="+RTS -M3G -RTS" +RTS -N1 -RTS
-        - stack build --stack-yaml=luna-studio/stack.yaml --only-dependencies --install-ghc --fast -j1 --ghc-options=-j1 --ghc-options="+RTS -M3G -RTS" +RTS -N1 -RTS
-        - stack build --stack-yaml=runner/stack.yaml --only-dependencies --install-ghc --fast -j1 --ghc-options=-j1 --ghc-options="+RTS -M3G -RTS" +RTS -N1 -RTS
+        - /usr/bin/stack build --stack-yaml=build-config/backend/stack.yaml --only-dependencies --install-ghc --test --fast -j1 --ghc-options=-j1 --ghc-options="+RTS -M3G -RTS" +RTS -N1 -RTS
+        - /usr/bin/stack build --stack-yaml=luna-studio/stack.yaml --only-dependencies --install-ghc --fast -j1 --ghc-options=-j1 --ghc-options="+RTS -M3G -RTS" +RTS -N1 -RTS
+        - /usr/bin/stack build --stack-yaml=runner/stack.yaml --only-dependencies --install-ghc --fast -j1 --ghc-options=-j1 --ghc-options="+RTS -M3G -RTS" +RTS -N1 -RTS
 
     cache_directories:
         - "~/.stack"

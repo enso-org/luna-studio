@@ -6,6 +6,8 @@ import           Control.Concurrent                      (forkIO)
 import           Control.Concurrent.MVar                 (readMVar)
 import           Control.Concurrent.STM.TChan            (writeTChan)
 import           Control.Error                           (runExceptT)
+import           Control.Lens                            ((.=), (^..), to,
+                                                          traversed, use)
 import           Control.Monad                           (when)
 import           Control.Monad.Catch                     (handle, try)
 import           Control.Monad.Reader                    (asks)
@@ -44,7 +46,7 @@ import qualified Empire.Env                              as Env
 import           Empire.Server.Server                    (defInverse, errorMessage, modifyGraph, modifyGraphOk, prettyException, replyFail,
                                                           replyOk, replyResult, sendToBus', webGUIHack, withDefaultResult,
                                                           withDefaultResultTC)
-import           Luna.Project                            (findProjectFileForFile, getRelativePathForModule)
+import           Luna.Package                            (findPackageFileForFile, getRelativePathForModule, findPackageRootForFile)
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Control.Interpreter      as Interpreter
@@ -181,7 +183,7 @@ getProjectPathAndRelativeModulePath modulePath = do
     mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
         absModulePath  <- MaybeT $
             eitherToMaybe =<< try (parseAbsFile modulePath)
-        absProjectPath <- MaybeT $ findProjectFileForFile absModulePath
+        absProjectPath <- MaybeT $ findPackageFileForFile absModulePath
         relModulePath  <- MaybeT $
             getRelativePathForModule absProjectPath absModulePath
         pure (fromAbsFile absProjectPath, fromRelFile relModulePath)
@@ -245,6 +247,8 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                     (GraphLocation.GraphLocation filePath def)
             mayProjectPathAndRelModulePath <- liftIO
                 $ getProjectPathAndRelativeModulePath filePath
+            mayPackageRoot <- findPackageRootForFile
+                =<< Path.parseAbsFile filePath
             mayModuleSettings <- liftIO $ maybe
                 (pure def)
                 (uncurry Project.getModuleSettings)
@@ -261,8 +265,8 @@ handleGetProgram = modifyGraph defInverse action replyResult where
             crumb            <- Graph.decodeLocation location
             availableImports <- Graph.getAvailableImports location
             code             <- Code <$> Graph.getCode location
-            let mayVisPath    = ((</> "visualizers") . dropFileName . fst)
-                    <$> mayProjectPathAndRelModulePath
+            let mayVisPath    = ((</> "visualizers") . Path.toFilePath)
+                    <$> mayPackageRoot
                 defaultCamera = maybe
                     def
                     (`Camera.getCameraForRectangle` def)
@@ -586,9 +590,7 @@ handleSubstitute = modifyGraph defInverse action replyResult where
             $ Graph.substituteCodeFromPoints file diffs
         newImports  <- Graph.getAvailableImports location
         let impDiff = diff prevImports newImports
-        if mempty == impDiff
-            then Graph.typecheck location
-            else Graph.typecheckWithRecompute location
+        Graph.typecheckWithRecompute location
         pure $ impDiff <> graphDiff
 
 

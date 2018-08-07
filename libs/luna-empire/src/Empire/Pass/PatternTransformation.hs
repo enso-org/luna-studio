@@ -1,47 +1,51 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Empire.Pass.PatternTransformation where
 
-import           OCI.Pass        (SubPass, Pass, Inputs, Outputs, Preserves)
+import           Luna.Pass        (Pass)
+import qualified Luna.Pass        as Pass
 
-import Empire.Prelude hiding (List, Type, String, s, new, cons)
-import qualified Luna.Prelude as P hiding (List)
-import qualified OCI.IR.Repr.Vis as Vis
-import Data.TypeDesc
-import OCI.IR.Combinators
-import Luna.IR hiding (expr)
-import Luna.Pass.Data.ExprRoots
-import OCI.Pass.Manager
-import           Empire.Data.Layers   (Marker, Meta, TypeLayer, attachEmpireLayers, SpanLength, SpanOffset)
+import Empire.Prelude hiding (Type, String, s, new, cons)
+import qualified Prologue as P hiding (List)
+import qualified Data.Graph.Data.Graph.Class as Graph
+import qualified Luna.Pass.Attr         as Attr
+import Luna.IR (Draft, Type, Users, Terms, Model, Name, Source, Target, list, cons, tuple)
+import           Luna.Pass.Data.Stage (Stage)
+import qualified OCI.Pass.State.Cache as Pass
+import qualified OCI.Pass.Definition.Declaration as Pass
+import           Empire.Data.Layers      (TypeLayer)
 import           Data.Text.Position      (Delta)
-import           Data.Text.Span          (LeftSpacedSpan(..), SpacedSpan(..), leftSpacedSpan)
-import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
-import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan, realSpan)
-import Data.TypeDesc
+import           Data.Text.Span          (SpacedSpan(..), leftSpacedSpan)
+import qualified Luna.Syntax.Text.Parser.Data.CodeSpan as CodeSpan
+import           Luna.Syntax.Text.Parser.Data.CodeSpan (CodeSpan, realSpan)
+import Luna.Pass.Data.Layer.NodeMeta   (Meta)
+import Luna.Pass.Data.Layer.PortMarker (PortMarker)
+import Luna.Pass.Data.Layer.SpanLength (SpanLength)
+import Luna.Pass.Data.Layer.SpanOffset (SpanOffset)
 
 import qualified Data.Map   as Map
 import qualified Data.Set   as Set
 import           Data.Map   (Map)
 
-import System.Log
+
+newtype ExprRoots = ExprRoots [Expr Draft]
+makeWrapped ''ExprRoots
+type instance Attr.Type ExprRoots = Attr.Atomic
+instance Default ExprRoots where
+    def = ExprRoots []
 
 data PatternTransformation
-type instance Abstract         PatternTransformation = PatternTransformation
-type instance Inputs     Net   PatternTransformation = '[AnyExpr, AnyExprLink]
-type instance Inputs     Layer PatternTransformation = '[AnyExpr // Model, AnyExpr // CodeSpan, AnyExprLink // Model, AnyExpr // Type, AnyExpr // Succs, AnyExpr // SpanLength, AnyExprLink // SpanOffset]
-type instance Inputs     Attr  PatternTransformation = '[ExprRoots]
-type instance Inputs     Event PatternTransformation = '[]
+type instance Pass.Spec PatternTransformation t = PatternTransformationSpec t
+type family PatternTransformationSpec t where
+    PatternTransformationSpec (Pass.In  Pass.Attrs)  = '[ExprRoots]
+    PatternTransformationSpec (Pass.Out Pass.Attrs)  = '[]
+    PatternTransformationSpec (Pass.In  AnyExpr)     = '[Model, Type, Users, SpanLength, Meta, PortMarker, CodeSpan]
+    PatternTransformationSpec (Pass.Out AnyExpr)     = '[Model, Type, Users, SpanLength, Meta, PortMarker]
+    PatternTransformationSpec (Pass.In  AnyExprLink) = '[SpanOffset, Source, Target]
+    PatternTransformationSpec (Pass.Out AnyExprLink) = '[SpanOffset, Source, Target]
+    PatternTransformationSpec t                      = Pass.BasicPassSpec t
 
-type instance Outputs    Net   PatternTransformation = '[AnyExpr, AnyExprLink]
-type instance Outputs    Layer PatternTransformation = '[AnyExpr // Model,  AnyExprLink // Model, AnyExpr // Type, AnyExpr // Succs, AnyExpr // SpanLength, AnyExprLink // SpanOffset]
-type instance Outputs    Attr  PatternTransformation = '[]
-type instance Outputs    Event PatternTransformation = '[New // AnyExpr, New // AnyExprLink, Delete // AnyExpr, Delete // AnyExprLink, OnDeepDelete // AnyExpr]
-type instance Preserves        PatternTransformation = '[]
-
-runPatternTransformation :: (MonadRef m, MonadPassManager m, MonadThrow m) => Pass PatternTransformation m
+runPatternTransformation :: Pass Stage PatternTransformation ()
 runPatternTransformation = do
     roots <- unwrap <$> getAttr @ExprRoots
     mapM_ transformPatterns roots
@@ -52,65 +56,68 @@ data ParseError = ParseError P.String
 instance Exception ParseError where
     displayException (ParseError s) = "Parse error: " <> s
 
-dumpConsApplication :: (MonadRef m, MonadPassManager m, MonadThrow m) => Expr Draft -> SubPass PatternTransformation m (Name, [Expr Draft], [Link (Expr Draft) (Expr Draft)])
+dumpConsApplication :: Expr Draft -> SubPass Stage PatternTransformation (Name, [Expr Draft], [Link (Expr Draft) (Expr Draft)])
 dumpConsApplication expr = matchExpr expr $ \case
-    Grouped g -> dumpConsApplication =<< source g
+    Grouped g -> dumpConsApplication . coerce =<< source g
     Cons n _  -> return (n, [], [])
     App f a   -> do
-        (n, args, links) <- dumpConsApplication =<< source f
+        (n, args, links) <- dumpConsApplication . coerce =<< source f
         arg <- source a
-        return (n, arg : args, a:links)
+        return (n, coerce arg : args, (coerce a):links)
     _         -> throwM $ ParseError "Invalid pattern match in code"
 
-flattenPattern :: (MonadRef m, MonadPassManager m, MonadThrow m) => Expr Draft -> SubPass PatternTransformation m (Expr Draft)
+flattenPattern :: Expr Draft -> SubPass Stage PatternTransformation (Expr Draft)
 flattenPattern expr = matchExpr expr $ \case
     Grouped g -> do
-        a <- flattenPattern =<< source g
+        a <- flattenPattern . coerce =<< source g
         putLayer @SpanLength a =<< getLayer @SpanLength expr
         return a
     Var{}     -> return expr
     Cons{}    -> return expr
-    List as   -> do
-        as' <- mapM (flattenPattern <=< source) as
+    List links   -> do
+        as <- ptrListToList links
+        as' <- mapM (flattenPattern . coerce <=< source) as
         l   <- generalize <$> list as'
         putLayer @SpanLength l =<< getLayer @SpanLength expr
         childLinks <- inputs l
-        P.forM (zip as childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
+        forM (zip as childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
         return l
-    Tuple as   -> do
-        as' <- mapM (flattenPattern <=< source) as
+    Tuple links   -> do
+        as <- ptrListToList links
+        as' <- mapM (flattenPattern . coerce <=< source) as
         t   <- generalize <$> tuple as'
         putLayer @SpanLength t =<< getLayer @SpanLength expr
         childLinks <- inputs t
-        P.forM (zip as childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
+        forM (zip as childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
         return t
     App{}     -> do
         (name, children, links) <- dumpConsApplication expr
         flatChildren            <- mapM flattenPattern $ reverse children
         res                     <- generalize <$> cons name flatChildren
         childLinks              <- inputs res
-        P.forM (zip (reverse links) childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
+        forM (zip (reverse links) childLinks) $ \(orig, new) -> putLayer @SpanOffset new =<< getLayer @SpanOffset orig
         LeftSpacedSpan (SpacedSpan _off len) <- fmap (view CodeSpan.realSpan) $ getLayer @CodeSpan expr
         putLayer @SpanLength res len
         return res
     _         -> return expr
 
-transformPatterns :: (MonadRef m, MonadPassManager m, MonadThrow m) => Expr Draft -> SubPass PatternTransformation m ()
+transformPatterns :: Expr Draft -> SubPass Stage PatternTransformation ()
 transformPatterns expr = matchExpr expr $ \case
     Lam i o   -> do
-        inp <- source i
+        inp <- coerce <$> source i
         res <- flattenPattern inp
         replace res inp
-        transformPatterns =<< source o
+        transformPatterns . coerce =<< source o
     Unify l r -> do
-        left <- source l
+        left <- coerce <$> source l
         res  <- flattenPattern left
         replace res left
-        transformPatterns =<< source r
-    ASGFunction n as b -> do
-        P.forM_ as $ \a' -> do
-            a   <- source a'
+        transformPatterns . coerce =<< source r
+    ASGFunction n links b -> do
+        as <- ptrListToList links
+        forM_ as $ \a' -> do
+            a   <- coerce <$> source a'
             res <- flattenPattern a
             replace res a
-        transformPatterns =<< source b
-    _ -> mapM_ (transformPatterns <=< source) =<< inputs expr
+        transformPatterns . coerce =<< source b
+    _ -> mapM_ (transformPatterns . coerce <=< source) =<< inputs expr

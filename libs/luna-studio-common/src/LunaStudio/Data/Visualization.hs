@@ -1,5 +1,6 @@
 module LunaStudio.Data.Visualization where
 
+import           Control.Lens       (makePrisms)
 import           Data.Aeson.Types   (FromJSON, ToJSON)
 import           Data.Binary        (Binary)
 import           Data.Portable.Text (PortableText)

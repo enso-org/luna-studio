@@ -1,5 +1,6 @@
 module LunaStudio.API.Control.Interpreter where
 
+import           Control.Lens                  (makePrisms)
 import           Data.Aeson.Types              (ToJSON)
 import           Data.Binary                   (Binary)
 import qualified LunaStudio.API.Graph.Request  as G

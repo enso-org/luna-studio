@@ -51,7 +51,7 @@ import qualified LunaStudio.Data.GraphLocation               as GraphLocation
 import qualified LunaStudio.Data.Node                        as API
 import           LunaStudio.Data.NodeLoc                     (NodePath, prependPath)
 import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
-import           NodeEditor.Action.Basic                     (NodeUpdateModification (KeepNodeMeta, KeepPorts), centerGraph, exitBreadcrumb,
+import           NodeEditor.Action.Basic                     (NodeUpdateModification (KeepNodeMeta, KeepPorts, MergePorts), centerGraph, exitBreadcrumb,
                                                               localAddConnection, localAddSearcherHints, localMerge, localMoveProject,
                                                               localRemoveConnection, localRemoveNode, localRenameNode, localSetInputSidebar,
                                                               localSetNodeExpression, localSetNodeMeta, localSetOutputSidebar,
@@ -85,65 +85,70 @@ import qualified NodeEditor.State.Global                     as Global
 
 applyModification :: NodePath -> Set NodeUpdateModification -> Modification
     -> Command State ()
-applyModification p _  (AddConnection m)
-    = void . localAddConnection $ API.prependPath p $ m ^. Diff.newConnection
-applyModification p nm (AddNode m)
-    = localUpdateOrAddExpressionNode nm $ convert (p, m ^. Diff.newNode)
-applyModification p _  (RemoveConnection m)
-    = void . localRemoveConnection $ prependPath p $ m ^. Diff.removeConnectionId
-applyModification p _  (RemoveNode m)
-    = void . localRemoveNode
+applyModification p nm = \case
+    AddConnection m ->
+        void . localAddConnection $ API.prependPath p $ m ^. Diff.newConnection
+    AddNode m ->
+        localUpdateOrAddExpressionNode nm $ convert (p, m ^. Diff.newNode)
+    RemoveConnection m ->
+        void . localRemoveConnection $ prependPath p $ m ^. Diff.removeConnectionId
+    RemoveNode m ->
+        void . localRemoveNode
         $ convert (p, m ^. Diff.removeNodeLoc . NodeLoc.nodeId)
-applyModification p _  (RenameNode m)
-    = void . localRenameNode
+    RenameNode m ->
+        void . localRenameNode
         (convert (p, m ^. Diff.renameNodeLoc . NodeLoc.nodeId))
         $ m ^. Diff.newName
-applyModification _ _  (SetBreadcrumb m)
-    = setBreadcrumbs $ m ^. Diff.newBreadcrumb
-applyModification _ _  (SetCamera m)
-    = setScreenTransform $ m ^. Diff.newCameraTransformation
-applyModification p _  (SetCanEnterNode m)
-    = localUpdateCanEnterExpressionNode
+    SetBreadcrumb m ->
+        setBreadcrumbs $ m ^. Diff.newBreadcrumb
+    SetCamera m ->
+        setScreenTransform $ m ^. Diff.newCameraTransformation
+    SetCanEnterNode m ->
+        localUpdateCanEnterExpressionNode
         (convert (p, m ^. Diff.setCanEnterNodeLoc . NodeLoc.nodeId))
         $ m ^. Diff.newCanEnter
-applyModification _ _  (SetCode _) = return ()
-applyModification _ _  (SetDefaultVisualizers m)
-    = Global.preferedVisualizers .= m ^. Diff.newDefaultVisualizers
-applyModification p _  (SetExpression m)
-    = void . localSetNodeExpression
+    SetCode _ ->
+        return ()
+    SetDefaultVisualizers m ->
+        Global.preferedVisualizers .= m ^. Diff.newDefaultVisualizers
+    SetExpression m ->
+        void . localSetNodeExpression
         (convert (p, m ^. Diff.setExpressionNodeLoc . NodeLoc.nodeId))
         $ m ^. Diff.newExpression
-applyModification p _  (SetGraph m) = updateWithAPIGraph p $ m ^. Diff.newGraph
-applyModification _ _  (SetGraphError m)
-    = handleGraphError $ m ^. Diff.graphError
-applyModification _ _  (SetImports m) = setCurrentImports $ m ^. Diff.newImports
-applyModification p _  (SetInPorts m)
-    = localUpdateExpressionNodeInPorts
+    SetGraph m ->
+        updateWithAPIGraph p $ m ^. Diff.newGraph
+    SetGraphError m ->
+        handleGraphError $ m ^. Diff.graphError
+    SetImports m ->
+        setCurrentImports $ m ^. Diff.newImports
+    SetInPorts m ->
+        localUpdateExpressionNodeInPorts
         (convert (p, m ^. Diff.setInPortsNodeLoc . NodeLoc.nodeId))
         $ convert <$> m ^. Diff.newInPortTree
-applyModification p _  (SetInputSidebar m)
-    = localSetInputSidebar p $ m ^. Diff.newInputSidebar
-applyModification p _  (SetIsDefinition m)
-    = localUpdateIsDefinition
+    SetInputSidebar m ->
+        localSetInputSidebar p $ m ^. Diff.newInputSidebar
+    SetIsDefinition m ->
+        localUpdateIsDefinition
         (convert (p, m ^. Diff.setIsDefinitionNodeLoc . NodeLoc.nodeId))
         $ m ^. Diff.newIsDefinition
-applyModification _ _  (SetMonadPath m) = updateMonads $ m ^. Diff.newMonadPath
-applyModification p _  (SetNodeCode m)
-    = localUpdateNodeCode
+    SetMonadPath m ->
+        updateMonads $ m ^. Diff.newMonadPath
+    SetNodeCode m ->
+        localUpdateNodeCode
         (convert (p, m ^. Diff.setNodeCodeNodeLoc . NodeLoc.nodeId))
         $ m ^. Diff.newNodeCode
-applyModification p _  (SetNodeMeta m)
-    = void . localSetNodeMeta
+    SetNodeMeta m ->
+        void . localSetNodeMeta
         (convert (p, m ^. Diff.setNodeMetaNodeLoc . NodeLoc.nodeId))
         $ m ^. Diff.newNodeMeta
-applyModification p _  (SetOutPorts m)
-    = localUpdateExpressionNodeOutPorts
+    SetOutPorts m ->
+        localUpdateExpressionNodeOutPorts
         (convert (p, m ^. Diff.setOutPortsNodeLoc . NodeLoc.nodeId))
         $ convert <$> m ^. Diff.newOutPortTree
-applyModification p _  (SetOutputSidebar m)
-    = localSetOutputSidebar p $ m ^. Diff.newOutputSidebar
-applyModification _ _  (SetProjectVisPath m)
-    = updateVisualizers $ m ^. Diff.newProjectVisPath
+    SetOutputSidebar m ->
+        localSetOutputSidebar p $ m ^. Diff.newOutputSidebar
+    SetProjectVisPath m ->
+        updateVisualizers $ m ^. Diff.newProjectVisPath
 
 
 applyDiff :: GraphLocation -> Set NodeUpdateModification -> Diff
@@ -225,7 +230,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nl           = request  ^. AddNode.nodeLoc
         failure _ _  = whenM (isOwnRequest requestId) $ revertAddNode request
         success diff = do
-            applyDiff location (Set.singleton KeepNodeMeta) diff
+            applyDiff location (Set.fromList [KeepNodeMeta, MergePorts]) diff
             whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where

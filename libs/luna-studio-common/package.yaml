@@ -26,15 +26,22 @@ dependencies:
   - matrix
   - pretty-show
   - prologue
+  - storable-tuple
   - template-haskell
   - text
   - time
   - unordered-containers
+  - uuid
   - uuid-types
   - yaml
   - zlib
 
 when:
+  - condition: "!impl(ghcjs)"
+    dependencies:
+      - luna-core
+      - luna-cpp-containers
+      - luna-foreign-utils
   - condition: impl(ghcjs)
     dependencies: [ghcjs-base]
 

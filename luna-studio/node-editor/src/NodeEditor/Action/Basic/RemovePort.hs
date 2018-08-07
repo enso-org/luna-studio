@@ -3,12 +3,13 @@ module NodeEditor.Action.Basic.RemovePort where
 import           Common.Action.Command                    (Command)
 import           Common.Prelude
 import           LunaStudio.Data.Connection               (Connection (Connection))
-import           LunaStudio.Data.PortRef                  (OutPortRef (OutPortRef), srcPortId)
+import           LunaStudio.Data.PortRef                  (OutPortRef, OutPortRef (OutPortRef), nodeLoc, srcPortId)
 import           NodeEditor.Action.Basic.AddConnection    (localAddConnection)
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnection)
 import           NodeEditor.Action.Basic.UpdateNode       (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                  as Batch
 import           NodeEditor.Action.State.NodeEditor       (getConnectionsContainingNode, getInputNode)
+import           NodeEditor.Action.State.ResetNode        (resetSuccessors)
 import           NodeEditor.React.Model.Connection        (connectionId, dst, src)
 import           NodeEditor.React.Model.Node.SidebarNode  (countProjectionPorts, hasPort, inputIsDef, inputSidebarPorts, isInputSidebar)
 import           NodeEditor.React.Model.Port              (OutPortIndex (Projection))
@@ -16,7 +17,9 @@ import           NodeEditor.State.Global                  (State)
 
 
 removePort :: OutPortRef -> Command State ()
-removePort portRef = whenM (localRemovePort portRef) $ Batch.removePort portRef
+removePort portRef = whenM (localRemovePort portRef) $ do
+    resetSuccessors $ portRef ^. nodeLoc
+    Batch.removePort portRef
 
 localRemovePort :: OutPortRef -> Command State Bool
 localRemovePort (OutPortRef nid pid@(Projection pos : _)) = do

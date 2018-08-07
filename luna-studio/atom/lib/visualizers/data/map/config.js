@@ -27,6 +27,13 @@ module.exports = function (type) {
                                                      ]
                                       };
     var simpleMarkers = (cfgHelper.matchesType(type, geolocationPattern) || cfgHelper.matchesType(type, geolocationWithLabelsPattern)) ? [{name: "markers", path: "map.html"}] : [];
-    var generalMap = (type.constructor == "GeoJSONFeatureCollection" || (type.constructor == "Stream" && type.fields[0].constructor == "GeoJSONFeatureCollection")) ? [{name: "GeoJSON", path: "geojson.html"}] : [];
+    var featureTypes = ["GeoJSONFeatureCollection", "GeoJSONFeature", "GeoPoint"];
+    var collectionTypes = ["List", "Stream"]
+    var isCollectionOfFeatures = function (type) {
+       return featureTypes.includes(type.constructor)
+              || collectionTypes.includes(type.constructor)
+              && isCollectionOfFeatures(type.fields[0]);
+    };
+    var generalMap = isCollectionOfFeatures(type) ? [{name: "GeoJSON", path: "geojson.html"}] : [];
     return [].concat(simpleMarkers, generalMap);
 };

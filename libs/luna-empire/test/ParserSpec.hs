@@ -2,6 +2,7 @@
 
 module ParserSpec (spec) where
 
+import           Control.Lens                ((^..))
 import qualified Data.Map                    as Map
 import           Empire.ASTOps.Parse         (SomeParserException)
 import qualified Empire.Commands.Graph       as Graph

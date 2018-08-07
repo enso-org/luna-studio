@@ -22,6 +22,7 @@ module LunaStudio.Data.NodeSearcher
     , importInfo
     ) where
 
+import           Control.Lens     (Getter, to)
 import           Data.Aeson.Types (ToJSON)
 import           Data.Binary      (Binary)
 import           Data.Map         (Map)

@@ -15,7 +15,7 @@ import           LunaStudio.Data.NodeLoc       (NodeLoc)
 import           LunaStudio.Data.Visualization as X (VisualizationId)
 import           LunaStudio.Data.Visualizer    as X (Visualizer (Visualizer), VisualizerId (VisualizerId), VisualizerMatcher,
                                                      VisualizerName, VisualizerPath, VisualizerType (..), errorVisId, getMdVisualizer,
-                                                     isInternal, placeholderVisId, visualizerId, visualizerName, visualizerRelPath,
+                                                     placeholderVisId, visualizerId, visualizerName, visualizerRelPath,
                                                      visualizerType, _InternalVisualizer, _LunaVisualizer, _ProjectVisualizer)
 
 data Data

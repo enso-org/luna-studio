@@ -93,7 +93,7 @@ results_ ref selected results = if results == [] then return () else
         div_
             [ "key"       $= "searcherResultsList"
             , "className" $= Style.prefix "searcher__results__list"
-            ] $ forKeyed_ (drop (selected - 1) results) $ \(idx, result) -> do
+            ] $ forKeyed_ (take 10 $ drop (selected - 1) results) $ \(idx, result) -> do
             let resultClasses i = Style.prefixFromList $ "searcher__results__item" : (if selected > 0 && i == 0 then [ "searcher__results__item--selected" ] else [])
             div_
                 [ "key"       $= jsShow idx

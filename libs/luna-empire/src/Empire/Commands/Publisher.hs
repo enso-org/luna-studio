@@ -4,10 +4,14 @@ import           Control.Concurrent.MVar
 import           Control.Concurrent.STM.TChan               (writeTChan)
 import           Control.Monad.Reader                       hiding (liftIO)
 import           Control.Monad.STM                          (atomically)
+import qualified Data.Graph.Store                           as Store
 import           Data.Text                                  (Text)
-import           Empire.Data.Graph                          (ClsGraph, Graph, defaultClsGraph)
+import           Empire.ASTOp                               (defaultClsGraph)
+import           Empire.Data.AST                            (NodeRef)
+import           Empire.Data.Graph                          (ClsGraph, Graph)
 import           Empire.Empire
 import           Empire.Prelude
+import qualified Luna.IR                                    as IR
 import           LunaStudio.API.AsyncUpdate                 (AsyncUpdate (..))
 import           LunaStudio.Data.Diff                       (Diff (..))
 import           LunaStudio.Data.GraphLocation              (GraphLocation (..))
@@ -55,15 +59,15 @@ sendUpdate upd = do
     chan <- asks $ view updatesChan
     liftIO $ atomically $ writeTChan chan upd
 
-requestTC :: GraphLocation -> ClsGraph -> Bool -> Bool -> Bool -> Command s ()
-requestTC loc g flush runInterpreter recompute = do
+requestTC :: GraphLocation -> ClsGraph -> Store.RootedWithRedirects NodeRef -> Bool -> Bool -> Bool -> Command s ()
+requestTC loc g rooted flush runInterpreter recompute = do
     chan <- view typecheckChan
     liftIO $ do
         a <- tryTakeMVar chan
         let recompute' = case a of
                 Just h -> if h ^. tcRecompute then True else recompute
                 _      -> recompute
-        putMVar chan $ TCRequest loc g flush runInterpreter recompute' False
+        putMVar chan $ TCRequest loc g rooted flush runInterpreter recompute' False
 
 stopTC :: Command s ()
 stopTC = do
@@ -71,4 +75,4 @@ stopTC = do
     liftIO $ do
         g <- defaultClsGraph
         tryTakeMVar chan
-        putMVar chan $ TCRequest (GraphLocation "" def) g False False False True
+        putMVar chan $ TCRequest (GraphLocation "" def) g (error "stopTC: rooted") False False False True

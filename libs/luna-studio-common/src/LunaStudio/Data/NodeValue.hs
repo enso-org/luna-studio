@@ -1,5 +1,6 @@
 module LunaStudio.Data.NodeValue where
 
+import           Control.Lens                  (makePrisms)
 import           Data.Aeson.Types              (ToJSON)
 import           Data.Binary                   (Binary)
 import           Data.Text                     (Text)

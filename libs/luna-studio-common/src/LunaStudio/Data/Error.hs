@@ -1,6 +1,7 @@
 module LunaStudio.Data.Error where
 
 import           Control.DeepSeq  (NFData)
+import           Control.Lens     (makePrisms)
 import           Data.Aeson.Types (FromJSON, ToJSON)
 import           Data.Binary      (Binary)
 import           Prologue
@@ -17,8 +18,15 @@ data GraphError
     | OtherGraphError
     deriving (Eq, Generic, Show)
 
+data PackageGeneratorError
+    = InvalidPackageLocation
+    | InvalidPackageName
+    | SystemError
+    deriving (Eq, Generic, Show)
+
 data LunaError
     = Graph GraphError
+    | PackageGenerator PackageGeneratorError
     | OtherLunaError
     deriving (Eq, Generic, Show)
 
@@ -43,6 +51,7 @@ makeLenses ''Error
 makeLenses ''SourceLocation
 makePrisms ''NodeError
 makePrisms ''GraphError
+makePrisms ''PackageGeneratorError
 
 instance Binary   NodeError
 instance NFData   NodeError
@@ -64,6 +73,10 @@ instance Binary   LunaError
 instance NFData   LunaError
 instance FromJSON LunaError
 instance ToJSON   LunaError
+instance Binary   PackageGeneratorError
+instance NFData   PackageGeneratorError
+instance FromJSON PackageGeneratorError
+instance ToJSON   PackageGeneratorError
 instance Binary   a => Binary   (Error a)
 instance NFData   a => NFData   (Error a)
 instance ToJSON   a => ToJSON   (Error a)
