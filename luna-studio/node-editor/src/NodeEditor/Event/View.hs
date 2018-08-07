@@ -359,17 +359,12 @@ getOutPortRef = getOutPortRef' . view target where
 
 getNodeLoc :: ViewEvent -> NodeLoc
 getNodeLoc = getNodeLoc' . view target where
-    getNodeLoc' (Target [nodeLoc]) = convert nodeLoc
+    getNodeLoc' (Target (nodeLoc:_)) = convert nodeLoc
     getNodeLoc' t = error $ "Cannot parse Target to NodeLoc (target = " <> show t <> ")"
-
-getVisualizerId :: ViewEvent -> VisualizerId
-getVisualizerId = getVisualizerId' . view target where
-    getVisualizerId' (Target [visId]) = convert visId
-    getVisualizerId' t = error $ "Cannot parse Target to VisualizerId (target = " <> show t <> ")"
 
 getVisualizationId :: ViewEvent -> VisualizationId
 getVisualizationId = getVisualizationId' . view target where
-    getVisualizationId' (Target [visId]) = convert visId
+    getVisualizationId' (Target (_:visId:_)) = convert visId
     getVisualizationId' t = error $ "Cannot parse Target to VisualizationId (target = " <> show t <> ")"
 
 getAnyPortRef :: ViewEvent -> AnyPortRef

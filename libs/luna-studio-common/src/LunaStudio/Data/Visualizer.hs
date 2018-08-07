@@ -1,7 +1,8 @@
 module LunaStudio.Data.Visualizer where
 
-import qualified Control.Lens.Aeson         as Lens
 import           Control.Lens               (makePrisms)
+import           Control.Lens.Aeson         (parseDropUnary, toEncodingDropUnary)
+import qualified Control.Lens.Aeson         as Lens
 import qualified Data.Aeson                 as Aeson
 import           Data.Aeson.Types           (FromJSON, ToJSON)
 import           Data.Binary                (Binary)
@@ -66,18 +67,18 @@ makeLenses ''Visualizer
 instance Binary   Visualizer
 instance Binary   VisualizerId
 instance Binary   VisualizerType
-instance FromJSON Visualizer
-instance FromJSON VisualizerEntry
-instance FromJSON VisualizerId
-instance FromJSON VisualizerType
+instance FromJSON Visualizer      where parseJSON = parseDropUnary
+instance FromJSON VisualizerEntry where parseJSON = parseDropUnary
+instance FromJSON VisualizerId    where parseJSON = parseDropUnary
+instance FromJSON VisualizerType  where parseJSON = parseDropUnary
 instance NFData   Visualizer
 instance NFData   VisualizerEntry
 instance NFData   VisualizerId
 instance NFData   VisualizerType
-instance ToJSON   VisualizerType
-instance ToJSON   VisualizerId
-instance ToJSON   VisualizerEntry
-instance ToJSON   Visualizer
+instance ToJSON   VisualizerType  where toEncoding = toEncodingDropUnary
+instance ToJSON   VisualizerId    where toEncoding = toEncodingDropUnary
+instance ToJSON   VisualizerEntry where toEncoding = toEncodingDropUnary
+instance ToJSON   Visualizer      where toEncoding = toEncodingDropUnary
 
 
 errorVisId, mdVisId, placeholderVisId :: VisualizerId

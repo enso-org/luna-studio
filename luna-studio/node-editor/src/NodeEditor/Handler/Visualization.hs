@@ -51,19 +51,14 @@ unfocusesVisualization evt = case evt ^. base of
     _                          -> True
 
 handleViewEvent :: ViewEvent -> Maybe (Command State ())
-handleViewEvent evt = case evt ^. path of
-    [ "NodeEditor", "NodeVisualization", nlString, visIdString ] -> do
-        let parent    = Node $ read nlString
-            visId     = read visIdString
-            maySelect = Visualization.selectVisualizer parent visId 
-                <$> evt ^? base . _SelectVisualizer . View.visualizerId
-            mayFocus  = if has (base . _FocusVisualization) evt
-                then Just $ Visualization.focusVisualization parent visId
-                else Nothing
-        listToMaybe $ catMaybes [mayFocus, maySelect]
-    _ -> if has (base . _ToggleVisualizations) evt
-            then Just . Visualization.toggleVisualizations
-                . Node $ View.getNodeLoc evt
-        else if unfocusesVisualization evt
+handleViewEvent evt = case evt ^. base of
+    View.SelectVisualizer evt' -> Just $ do
+        let parent = Node $ View.getNodeLoc evt
+            visualizerId = evt' ^. View.visualizerId
+            visualizationId = View.getVisualizationId evt
+        Visualization.selectVisualizer parent visualizationId visualizerId
+    View.ToggleVisualizations _ -> Just . Visualization.toggleVisualizations
+        . Node $ View.getNodeLoc evt
+    _ -> if unfocusesVisualization evt
             then Just Visualization.exitAnyVisualizationMode
             else Nothing
