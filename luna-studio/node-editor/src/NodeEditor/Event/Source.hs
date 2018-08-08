@@ -4,7 +4,6 @@ module NodeEditor.Event.Source
     ( AddHandler(..)
     , atomHandler
     , movementHandler
-    , sceneResizeHandler
     , viewHandler
     , webSocketHandler
     ) where
@@ -26,10 +25,6 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
 atomHandler = AddHandler Atom.onEvent
-
-sceneResizeHandler :: AddHandler Event
-sceneResizeHandler = AddHandler $ \h ->
-    Scene.onSceneResize $ h $ UI $ AppEvent App.Resize
 
 movementHandler :: AddHandler Event
 movementHandler = AddHandler $ \h ->

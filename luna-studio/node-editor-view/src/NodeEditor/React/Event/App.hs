@@ -20,7 +20,6 @@ data Event
     | MouseLeave
     | MouseMove     MouseEvent Timestamp
     | MouseUp       MouseEvent
-    | Resize
     | Wheel         MouseEvent WheelEvent
     deriving (Show, Generic, NFData, Typeable)
 

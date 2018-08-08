@@ -93,3 +93,5 @@ supervisor/tmp/*
 supervisord.log
 workspace
 scripts
+
+.vscode/

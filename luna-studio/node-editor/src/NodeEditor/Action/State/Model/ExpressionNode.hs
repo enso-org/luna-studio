@@ -3,7 +3,6 @@ module NodeEditor.Action.State.Model.ExpressionNode where
 import           Common.Action.Command                      (Command)
 import           Common.Prelude
 import           Control.Monad                              (filterM)
-import qualified JS.Node                                    as JS
 import           LunaStudio.Data.Geometry                   (isPointInCircle, isPointInRectangle)
 import           LunaStudio.Data.PortRef                    (AnyPortRef (InPortRef'), toAnyPortRef)
 import qualified LunaStudio.Data.PortRef                    as PortRef
@@ -24,22 +23,6 @@ import           NodeEditor.React.Model.Port                (AnyPortId (InPortId
 import           NodeEditor.State.Action                    (connectSourcePort, penConnectAction)
 import           NodeEditor.State.Global                    (State, actions, currentConnectAction)
 
-isPointInNode :: Position -> ExpressionNode -> Command State Bool
-isPointInNode p node =
-    if isCollapsed node
-        then return $ isPointInCircle p (node ^. position, nodeRadius)
-        else do
-            let nid = node ^. nodeId
-            getScene >>= \case
-                Just scene -> isPointInRectangle p <$> JS.expandedNodeRectangle scene nid
-                Nothing -> return False
-
-getNodeAtPosition :: Position -> Command State (Maybe NodeLoc)
-getNodeAtPosition p = do
-    nodes <- getExpressionNodes >>= filterM (isPointInNode p)
-    if null nodes
-        then return Nothing
-        else return $ Just $ maximumBy (\node1 node2 -> compare (node1 ^. zPos) (node2 ^. zPos)) nodes ^. nodeLoc
 
 updateAllPortsMode :: Command State ()
 updateAllPortsMode = getAllNodes >>= mapM_ updatePortsModeForNode'

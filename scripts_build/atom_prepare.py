@@ -6,7 +6,7 @@ import fileinput
 import glob
 import subprocess
 import shutil
-import system as system
+import scripts_build.system as system
 
 def prepare_holder(output, content_start, content_end, input1, input2, placeholder):
     with open(output, 'a+') as modified:

@@ -16,8 +16,5 @@ foreign import javascript safe "document.getElementById($1).selectionStart" sele
 foreign import javascript safe "document.getElementById($1).selectionEnd"   selectionEnd   :: JSString -> IO Int
 foreign import javascript safe "document.getElementById($1).setSelectionRange($2, $3)" setSelection' :: JSString -> Int -> Int -> IO ()
 
-focus :: MonadIO m => m ()
-focus = UI.focus searcherId
-
 setSelection :: MonadIO m => Int -> Int -> m ()
 setSelection = liftIO .: setSelection' searcherId

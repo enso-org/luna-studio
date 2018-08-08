@@ -26,7 +26,6 @@ import qualified NodeEditor.Handler.Breadcrumbs         as Breadcrumbs
 import qualified NodeEditor.Handler.Camera              as Camera
 import qualified NodeEditor.Handler.Clipboard           as Clipboard
 import qualified NodeEditor.Handler.Connect             as Connect
-import qualified NodeEditor.Handler.ConnectionPen       as ConnectionPen
 import qualified NodeEditor.Handler.Debug               as Debug
 import qualified NodeEditor.Handler.MockMonads          as MockMonads
 import qualified NodeEditor.Handler.MultiSelection      as MultiSelection
@@ -48,7 +47,6 @@ actions loop =
     , Camera.handle
     , Clipboard.handle
     , Connect.handle
-    , ConnectionPen.handle
     , Control.handle
     , Graph.handle
     , MultiSelection.handle
@@ -85,7 +83,6 @@ connectEventSources :: WebSocket -> LoopRef -> IO ()
 connectEventSources conn loop = do
     let handlers = [ JSHandlers.webSocketHandler conn
                    , JSHandlers.atomHandler
-                   , JSHandlers.sceneResizeHandler
                    , JSHandlers.movementHandler
                    , JSHandlers.viewHandler
                    ]

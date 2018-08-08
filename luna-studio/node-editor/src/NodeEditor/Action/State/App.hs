@@ -7,7 +7,7 @@ import qualified Control.Monad.State                as M
 import           NodeEditor.Batch.Workspace         (Workspace)
 import           NodeEditor.React.Model.App         (App, breadcrumbs, workspace)
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem, Named)
-import           NodeEditor.React.Store             (Ref, commit, continueModify)
+import           NodeEditor.React.Store             (Ref, continueModify)
 import qualified NodeEditor.React.Store             as Store
 import           NodeEditor.View.App                (appView)
 import           NodeEditor.State.Global            (State, ui)
@@ -33,7 +33,6 @@ modifyApp action = do
 renderIfNeeded :: Command State ()
 renderIfNeeded = whenM (use $ ui . renderNeeded) $ timeIt "render" $ do
     renderBaseGL
-    withApp commit
     ui . renderNeeded .= False
 
 setBreadcrumbs :: Breadcrumb (Named BreadcrumbItem) -> Command State ()

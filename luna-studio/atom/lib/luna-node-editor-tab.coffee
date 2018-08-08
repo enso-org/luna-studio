@@ -1,7 +1,7 @@
 path = require 'path'
 {View} = require 'atom-space-pen-views'
 projects = require './projects'
-nodeEditorBaseGL = require 'node_editor_basegl'
+nodeEditorBaseGL = require 'luna-basegl-ui'
 
 uniqueTabNo = 0
 
@@ -13,7 +13,7 @@ class LunaNodeEditorTab extends View
     @pushSearcherEvent = null
 
     constructor: (@uri, @nodeEditor, @codeEditor, @projects) ->
-        super
+        super()
         @on 'contextmenu', -> false
         @handleEvents()
         @pushShortcutEvent = (name, arg = null) => @nodeEditor.pushEvent({_shortcut: name, _arg : arg})
@@ -81,11 +81,7 @@ class LunaNodeEditorTab extends View
                     path:   path
                     target: target
                     base:   base
-                    
-        # try
-        #     nodeEditorBaseGL.install mountPoint2
-        # catch e
-        #     console.error e
+
     @content: ->
         uniqueTabNo++
         mountPoint = "luna-studio-mount" + uniqueTabNo
@@ -95,19 +91,12 @@ class LunaNodeEditorTab extends View
                 =>
                     @div
                         id: mountPoint2
-                        style: 'flex-direction:row; width: 50%; height: inherit'
+                        style: 'flex-direction:row; width: 100%; height: inherit'
                         class: 'luna-studio-mount luna-studio luna-noselect'
                         tabindex: -1
                         =>
                             @h1 "Loading ..."
-                    @div
-                        id: mountPoint
-                        style: 'flex-direction:row; width: 50%; height: inherit'
-                        class: 'luna-studio-mount'
-                        =>
-                            @h1 "Loading ..."
 
-    # getTitle:     -> path.basename(@uri)
     getTitle:     -> 'Node editor'
 
     handleEvents: =>
@@ -208,3 +197,5 @@ class LunaNodeEditorTab extends View
             oldPath = atom.project.getPaths()[0]
             @projects.temporaryProjectSave (newPath) =>
                 @codeEditor.pushInternalEvent(tag: 'MoveProject', _oldPath : oldPath, _newPath: newPath)
+
+    attached: -> window.install()

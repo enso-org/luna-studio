@@ -68,7 +68,6 @@ handleCommand = \case
     Shortcut.ExpandSelectedNodes -> Just
         . toggleSelectedNodesMode $ Node.Expanded Node.Controls
     Shortcut.Accept -> Just $ continue PortControl.acceptEditTextPortControl
-        >> PortControl.unfocusEditTextPortControl
     Shortcut.AutolayoutAllNodes
         -> Just $ map (view Node.nodeLoc) <$> getExpressionNodes
             >>= flip autolayoutNodes True

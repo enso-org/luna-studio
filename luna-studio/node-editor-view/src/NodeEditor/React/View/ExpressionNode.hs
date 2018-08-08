@@ -63,9 +63,6 @@ prefixNode = Mount.prefix . ("node-" <>)
 nameLabelId :: JSString
 nameLabelId = Mount.prefix "focus-nameLabel"
 
-focusNameLabel :: IO ()
-focusNameLabel = UI.focus nameLabelId
-
 handleMouseDown :: IsRef ref => ref -> NodeLoc -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeLoc e m =
     if Mouse.withoutMods m Mouse.leftButton || Mouse.withShift m Mouse.leftButton

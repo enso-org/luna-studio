@@ -11,12 +11,11 @@ module NodeEditor.Action.Port
     , handleMouseLeave
     , editTextPortControl
     , acceptEditTextPortControl
-    , unfocusEditTextPortControl
     , rollbackEditTextPortControl
     ) where
 
 import           NodeEditor.Action.Basic          (localSetPortDefault)
 import           NodeEditor.Action.Port.Actions   (handleClick, handleMouseDown)
 import           NodeEditor.Action.Port.Control   (acceptEditTextPortControl, editTextPortControl, moveSlider, rollbackEditTextPortControl,
-                                                   startMoveSlider, stopMoveSlider, unfocusEditTextPortControl)
+                                                   startMoveSlider, stopMoveSlider)
 import           NodeEditor.Action.Port.Highlight (handleMouseEnter, handleMouseLeave)

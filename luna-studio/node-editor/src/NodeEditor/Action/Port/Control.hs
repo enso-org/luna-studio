@@ -6,7 +6,6 @@ module NodeEditor.Action.Port.Control
     , stopMoveSlider
     , editTextPortControl
     , acceptEditTextPortControl
-    , unfocusEditTextPortControl
     , rollbackEditTextPortControl
     ) where
 
@@ -123,9 +122,6 @@ editTextPortControl portRef val = do
 
 acceptEditTextPortControl :: TextPortControlEdit -> Command State ()
 acceptEditTextPortControl = end
-
-unfocusEditTextPortControl :: Command State ()
-unfocusEditTextPortControl = JS.focus appId
 
 rollbackEditTextPortControl :: TextPortControlEdit -> Command State ()
 rollbackEditTextPortControl _ = do

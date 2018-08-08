@@ -5,7 +5,7 @@ module NodeEditor.Handler.App
 import           Common.Prelude
 
 import           Common.Action.Command          (Command)
-import           NodeEditor.Action.Basic        (setFile, unselectAll, unsetFile, updateFilePath, updateScene)
+import           NodeEditor.Action.Basic        (setFile, unselectAll, unsetFile, updateFilePath)
 import qualified NodeEditor.Action.Batch        as Batch
 import qualified NodeEditor.Action.Port         as PortControl
 import           NodeEditor.Action.State.Action (checkIfActionPerfoming, endActions, endAllActions)
@@ -25,7 +25,6 @@ import qualified NodeEditor.State.Global        as Global
 handle :: Event -> Maybe (Command Global.State ())
 handle (UI (AppEvent App.MouseLeave))        = Just
     $ endActions actionsClosingOnMouseLeave
-handle (UI (AppEvent App.Resize))            = Just updateScene
 handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
 handle Init                                  = Just $ Batch.getProgram def True
 handle (Atom (Atom.SetFile path))            = Just $ setFile path
@@ -44,7 +43,6 @@ cancelAllActions = do
     tpcePerforming <- checkIfActionPerfoming textPortControlEditAction
     if not tpcePerforming then endAllActions else do
         continue PortControl.rollbackEditTextPortControl
-        PortControl.unfocusEditTextPortControl
         (textPortControlEditAction :) <$> endAllActions
 
 handleCommand :: Shortcut.Command -> Command State ()

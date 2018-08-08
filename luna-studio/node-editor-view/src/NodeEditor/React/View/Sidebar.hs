@@ -2,7 +2,6 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 module NodeEditor.React.View.Sidebar
     ( sidebar_
-    , focusPortLabel
     ) where
 
 import           Common.Prelude
@@ -223,9 +222,6 @@ sidebarDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
 
 portLabelId :: JSString
 portLabelId = Mount.prefix "focus-portLabel"
-
-focusPortLabel :: IO ()
-focusPortLabel = UI.focus portLabelId
 
 filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe SearcherProperties -> Maybe SearcherProperties
 filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just s) = case s ^. Searcher.mode of
