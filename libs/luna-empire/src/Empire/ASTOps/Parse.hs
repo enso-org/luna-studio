@@ -4,6 +4,7 @@ module Empire.ASTOps.Parse (
     SomeParserException
   , FunctionParsing(..)
   , parseExpr
+  , parseInlineExpr
   , parsePattern
   , parsePortDefault
   , runParser
@@ -25,7 +26,7 @@ import qualified Data.List.Split              as Split
 import qualified Data.Text                    as Text
 import qualified Data.Scientific              as Scientific
 
-import           Empire.ASTOp                    (EmpirePass, GraphOp)
+import           Empire.ASTOp                    (EmpirePass, GraphOp, liftScheduler)
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
 import           Empire.Data.Graph               (ClsGraph, Graph)
 import qualified Empire.Data.Graph               as Graph (codeMarkers)
@@ -75,11 +76,33 @@ instance Exception SomeParserException where
 parseExpr :: Text -> IO NodeRef
 parseExpr s = view _1 <$> runParser Parsing.expr s `catchAll` (\e -> throwM $ SomeParserException e)
 
+parseInlineExpr :: Text -> Command Graph NodeRef
+parseInlineExpr s = view _1 <$> parseInline Parsing.expr s `catchAll` (\e -> throwM $ SomeParserException e)
+
 parsePattern :: Text -> IO NodeRef
 parsePattern s = view _1 <$> runParser Parsing.pat s `catchAll` (\e -> throwM $ SomeParserException e)
 
 passConverter :: (stage1 ~ stage2) => Pass.Pass stage1 pass1 a -> Pass.Pass stage2 pass2 a
 passConverter = unsafeCoerce
+
+
+parseInline :: Token.Parser (IRBS IR.SomeTerm) -> Text -> Command g (NodeRef, MarkedExprMap)
+parseInline parser input = do
+    (ir, m) <- do
+        ref <- liftIO $ newIORef (error "emptyreturn")
+        foo <- liftScheduler $ do
+            Scheduler.registerPassFromFunction__ @Stage @EmpirePass $ do
+                ((ir,scope), m) <- passConverter $ flip Parser.runParser__ (convert input) $ do
+                    irb   <- parser
+                    scope <- State.get @Scope
+                    let Parser.IRBS irx = irb
+                        irb' = Parser.IRBS irx
+                    pure $ (,scope) <$> irb'
+                liftIO $ writeIORef ref $ generalize (ir, m)
+            Scheduler.runPassByType @EmpirePass
+            liftIO $ readIORef ref
+        return foo
+    return (ir, m)
 
 
 runParser :: Token.Parser (IRBS IR.SomeTerm) -> Text -> IO (NodeRef, LunaGraph.State Stage, Scheduler.State, MarkedExprMap)

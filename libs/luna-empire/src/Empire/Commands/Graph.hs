@@ -258,7 +258,7 @@ addFunNode loc parsing uuid expr meta = withUnit loc $ do
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> Maybe Text -> NodeMeta -> Command Graph ExpressionNode
 addNodeNoTC loc uuid input name meta = do
     let propInput = Text.strip input
-    parse <- liftIO $ ASTParse.parseExpr propInput
+    parse <- ASTParse.parseInlineExpr propInput
     expr <- runASTOp $ do
         Code.propagateLengths parse
         (parsedNode, newName) <- AST.addNode uuid name (generateNodeName parse) parse
