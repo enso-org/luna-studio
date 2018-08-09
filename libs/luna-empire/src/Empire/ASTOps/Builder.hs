@@ -1,16 +1,18 @@
 module Empire.ASTOps.Builder where
 
 import           Control.Monad                      (foldM, replicateM, zipWithM_)
-import           Data.Maybe                         (isNothing)
+import           Data.Maybe                         (isNothing, listToMaybe)
 import qualified Data.Text                          as Text
 import           Empire.Prelude
 import qualified Safe
 
+import qualified Data.Graph.Data.Component.Vector   as PtrList
 import           LunaStudio.Data.Node               (NodeId)
 import qualified LunaStudio.Data.PortRef            as PortRef
 import           LunaStudio.Data.PortRef            (OutPortRef (..))
 import           LunaStudio.Data.NodeLoc            (NodeLoc (..))
 import qualified LunaStudio.Data.Port               as Port
+import qualified Luna.Debug.IR.Visualizer           as Vis
 import           Empire.ASTOp                       (GraphOp, match)
 import           Empire.ASTOps.Deconstruct          (extractAppPorts, deconstructApp, extractFunctionPorts, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
@@ -186,12 +188,67 @@ dropBlankArgumentsAtTailPosition e beg = do
                 dropBlankArgumentsAtTailPosition e beg
         _ -> return ()
 
+dropListElement :: NodeRef -> Int -> GraphOp NodeRef
+dropListElement oldList index = match oldList $ \case
+    List elts -> do
+        l <- ptrListToList elts
+        let (before, after) = splitAt index l
+            l'              = before <> drop 1 after
+        newElems <- mapM source l'
+        newList <- IR.list' newElems
+        putLayer @SpanLength newList =<< getLayer @SpanLength oldList
+        match newList $ \case
+            List elts -> do
+                elems <- ptrListToList elts
+                forM (zip l' elems) $ \(prev, curr) -> do
+                    offset <- getLayer @SpanOffset prev
+                    putLayer @SpanOffset curr offset
+        replace newList oldList
+        return newList
+
 removeAppArgument :: EdgeRef -> Delta -> Int -> GraphOp ()
 removeAppArgument funE beg pos = do
-    bl <- generalize <$> IR.blank
-    putLayer @SpanLength bl 1
-    applyFunction funE beg bl pos
-    dropBlankArgumentsAtTailPosition funE beg
+    ref <- source funE
+    match ref $ \case
+        List elts -> do
+            l <- ptrListToList elts
+            let (before, after) = splitAt pos l
+                l'              = before <> drop 1 after
+            listLen <- getLayer @SpanLength ref
+            let removedArg = listToMaybe after
+            forM removedArg $ \a -> do
+                off <- Code.getOffsetRelativeToTarget $ coerce a
+                spanOffset <- getLayer @SpanOffset a
+                len <- getLayer @SpanLength =<< source a
+                let nextArg = listToMaybe (drop 1 after)
+                case nextArg of
+                    Just next -> do
+                        nextSpanOffset <- getLayer @SpanOffset next
+                        Code.removeAt (beg+off) (beg+off+len+nextSpanOffset)
+                        putLayer @SpanOffset next spanOffset
+                        newList <- dropListElement ref pos
+                        Code.gossipLengthsChangedBy (-(len+nextSpanOffset))
+                            newList
+                    _         -> do
+                        Just listBeginning <- Code.getAnyBeginningOf ref
+                        newList <- dropListElement ref pos
+                        if null l' then do
+                            Code.removeAt listBeginning (listBeginning+listLen)
+                            let empty = "[]"
+                                emptyLen = fromIntegral $ Text.length empty
+                            Code.insertAt listBeginning empty
+                            Code.gossipLengthsChangedBy
+                                (-(fromIntegral listLen - emptyLen)) newList
+                        else do
+                            Code.removeAt (beg+off-spanOffset) (beg+off+len)
+                            Code.gossipLengthsChangedBy
+                                (-(len+spanOffset)) newList
+            return ()
+        _      -> do
+            bl <- generalize <$> IR.blank
+            putLayer @SpanLength bl 1
+            applyFunction funE beg bl pos
+            dropBlankArgumentsAtTailPosition funE beg
 
 removeArgument :: EdgeRef -> Delta -> Port.InPortId -> GraphOp ()
 removeArgument funE beg [Port.Self]  = void $ removeAccessor   funE beg
@@ -282,6 +339,41 @@ applyFunction funE beg arg pos = do
     (edge, beg) <- getOrCreateArgument funE beg (argCount - 1) pos
     replaceEdgeSource edge beg arg
 
+data ListElementOutOfBoundsException = ListElementOutOfBoundsException NodeRef Int
+    deriving Show
+
+instance Exception ListElementOutOfBoundsException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+type ReplacedArgInfo = (Delta, Delta, Delta)
+
+addOrReplaceListArg :: NodeRef -> Int -> NodeRef -> GraphOp (NodeRef, Maybe ReplacedArgInfo)
+addOrReplaceListArg oldList pos newArg = match oldList $ \case
+    List elts -> do
+        l <- ptrListToList elts
+        let (before, after) = splitAt pos l
+        replacedSpan <- case Safe.headMay after of
+            Just replacedEdge -> do
+                argBeg <- Code.getOffsetRelativeToTarget $ unsafeRelayout replacedEdge
+                argLen <- getLayer @SpanLength =<< source replacedEdge
+                argOff <- getLayer @SpanOffset replacedEdge
+                return $ Just (argBeg, argLen, argOff)
+            _ -> return Nothing
+        beforeArgs <- mapM source before
+        afterArgs  <- mapM source $ drop 1 after
+        let newArgs = beforeArgs <> [newArg] <> afterArgs
+        newList <- IR.list' newArgs
+        putLayer @SpanLength newList =<< getLayer @SpanLength oldList
+        match newList $ \case
+            List elts -> do
+                elems <- ptrListToList elts
+                forM (zip l elems) $ \(prev, curr) -> do
+                    offset <- getLayer @SpanOffset prev
+                    putLayer @SpanOffset curr offset
+        replace newList oldList
+        return (newList, replacedSpan)
+
 makeConnection :: EdgeRef -> Delta -> Port.InPortId -> NodeRef -> GraphOp ()
 makeConnection funE beg [] arg = do
     replaceEdgeSource funE beg arg
@@ -289,10 +381,55 @@ makeConnection funE beg (Port.Self : rest) arg = do
     ensureHasSelf funE beg
     (edge, beg) <- getCurrentAccTarget funE beg
     makeConnection edge beg rest arg
-makeConnection funE beg (Port.Arg i : rest) arg = do
-    argCount <- countArguments =<< source funE
-    (edge, beg) <- getOrCreateArgument funE beg (argCount - 1) i
-    makeConnection edge beg rest arg
+makeConnection funE beg (Port.Arg i : rest) arg = source funE >>= flip match (\case
+    List elts -> do
+        l <- ptrListToList elts
+        ref <- source funE
+        when_ (i < 0 || i > length l) $
+            throwM $ ListElementOutOfBoundsException ref i
+        newArgCode <- ASTPrint.printFullExpression arg
+        (newList, replacedSpan) <- addOrReplaceListArg ref i arg
+        newArgs <- match newList $ \case
+            List elts -> ptrListToList elts
+        ithArg <- return (Safe.atMay newArgs i) <?!>
+            ListElementOutOfBoundsException newList i
+        case replacedSpan of
+            Just (argBeg, argLen, argOff) -> do
+                putLayer @SpanOffset ithArg argOff
+                Code.applyDiff (beg+argBeg) (beg+argBeg+argLen) newArgCode
+                Code.gossipLengthsChangedBy
+                    (fromIntegral (Text.length newArgCode) - argLen) newList
+            _ -> do
+                -- new arg at the end, nothing to replace
+                let prevArg = Safe.atMay newArgs (i - 1)
+                case prevArg of
+                    Just prev -> do
+                        let newCode = ", " <> newArgCode
+                            newCodeLength = fromIntegral $ Text.length newCode
+                            commaSpaceLen = fromIntegral $
+                                length (", " :: String)
+                        putLayer @SpanOffset ithArg commaSpaceLen
+                        lastArgBeg <- Code.getOffsetRelativeToTarget $
+                            unsafeRelayout prev
+                        lastArgLen <- getLayer @SpanLength =<< source prev
+                        Code.insertAt (beg+lastArgBeg+lastArgLen) newCode
+                        Code.gossipLengthsChangedBy newCodeLength newList
+                    _ -> do
+                        -- no previous arg, adding expr + ", " at the beginning
+                        -- and changing spanoffset of next arg
+                        let newCode = newArgCode <>
+                                if length newArgs == 1 then "" else ", "
+                            newCodeLength = fromIntegral $ Text.length newCode
+                            squareBracket =
+                                fromIntegral $ length ("[" :: String)
+                        putLayer @SpanOffset ithArg squareBracket
+                        Code.insertAt (beg+squareBracket) newCode
+                        Code.gossipLengthsChangedBy newCodeLength newList
+        return ()
+    _ -> do
+        argCount <- countArguments =<< source funE
+        (edge, beg) <- getOrCreateArgument funE beg (argCount - 1) i
+        makeConnection edge beg rest arg)
 makeConnection _ _ _ _ = return ()
 
 
@@ -419,15 +556,18 @@ ensureNodeHasName generateNodeName nid = do
         Marked _ e -> do
             expr  <- source e
             isUni <- ASTRead.isMatch expr
-            if isUni then return () else do
-                name     <- generateNodeName expr
-                (var, uni) <- attachName expr name
-                replaceSource uni $ coerce e
-                Just codeBeg <- Code.getOffsetRelativeToFile ref
-                off          <- Code.getOffsetRelativeToTarget $ coerce e
-                Code.insertAt (codeBeg + off) (name <> " = ")
-                Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
-                attachNodeMarkers nid [] var
+            match expr $ \case
+                Unify{} -> return ()
+                -- ASGFunction{} -> return ()
+                _ -> do
+                    name       <- generateNodeName expr
+                    (var, uni) <- attachName expr name
+                    replaceSource uni $ coerce e
+                    Just codeBeg <- Code.getOffsetRelativeToFile ref
+                    off          <- Code.getOffsetRelativeToTarget $ coerce e
+                    Code.insertAt (codeBeg + off) (name <> " = ")
+                    Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
+                    attachNodeMarkers nid [] var
         _ -> throwM $ ASTRead.MalformedASTRef ref
 
 makeNodeRep :: NodeId -> Maybe Text -> GraphOp Text -> NodeRef -> GraphOp (NodeRef, Maybe Text)

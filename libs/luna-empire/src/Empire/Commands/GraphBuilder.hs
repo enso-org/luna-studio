@@ -26,6 +26,7 @@ import qualified Empire.Data.Graph               as Graph
 import           Empire.Data.Layers              (Marker, SpanLength, TypeLayer)
 import           Empire.Empire
 import           Empire.Prelude                  hiding (read, toList)
+import qualified Luna.Debug.IR.Visualizer        as Vis
 import qualified Luna.IR                         as IR
 import qualified Luna.IR.Term.Literal            as Lit
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem, Named (..))
@@ -49,8 +50,10 @@ import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TStar))
 import           Luna.Syntax.Text.Parser.Data.CodeSpan (CodeSpan)
 import qualified Luna.Syntax.Text.Parser.Data.CodeSpan as CodeSpan
 import qualified Luna.Syntax.Text.Parser.Data.Name.Special as Parser (uminus)
+import           OCI.Data.Name.Qualified         (Qualified(..))
 -- import qualified OCI.IR.Combinators              as IR
 import           Prelude (read)
+import qualified System.IO as IO
 
 isDefinition :: BreadcrumbItem -> Bool
 isDefinition def | Breadcrumb.Definition{} <- def = True
@@ -357,9 +360,11 @@ extractAppliedPorts ::
 extractAppliedPorts seenApp seenLam bound node = matchExpr node $ \case
     Lam i o -> do
         inp   <- source i
+
         nameH <- matchExpr inp $ \case
             Var n -> pure $ Just $ unsafeHead $ convert n
             _     -> pure Nothing
+
         case (seenApp, nameH) of
             (_, Just '#') -> extractAppliedPorts seenApp seenLam (inp : bound) =<< source o
             (False, _)    -> extractAppliedPorts False   True    (inp : bound) =<< source o
@@ -396,12 +401,41 @@ mergePortInfo []             (t : ts) = (t, NotConnected) : mergePortInfo [] ts
 mergePortInfo (Nothing : as) (t : ts) = (t, NotConnected) : mergePortInfo as ts
 mergePortInfo (Just a  : as) ts       = a : mergePortInfo as ts
 
+extractListPorts :: NodeRef -> GraphOp [(TypeRep, PortState)]
+extractListPorts n = match n $ \case
+    App f a -> do
+        rest <- extractListPorts =<< source f
+        source a >>= flip match (\case
+            Var _ -> do
+                argTp <- source a >>= getLayer @TypeLayer >>= source
+                t     <- Print.getTypeRep argTp
+                ps    <- getPortState =<< source a
+                return $ (t,ps) : rest
+            _ -> do
+                foo <- extractListPorts =<< source a
+                return $ foo <> rest)
+    Lam i o -> do
+        foo <- extractListPorts =<< source i
+        bar <- extractListPorts =<< source o
+        return $ foo <> bar
+    ResolvedCons "Std.Base" "List" "Prepend" args -> do
+        args' <- ptrListToList args
+        as <- mapM (source >=> extractListPorts) args'
+        return $ concat as
+    _ -> do
+        return []
+
 extractPortInfo :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractPortInfo n = do
-    applied  <- reverse <$> extractAppliedPorts False False [] n
     tp       <- getLayer @TypeLayer n >>= source
-    fromType <- extractArgTypes tp
-    pure $ mergePortInfo applied fromType
+    match tp $ \case
+        ResolvedCons "Std.Base" "List" "List" args -> do
+            a <- extractListPorts n
+            return a
+        _ -> do
+            applied  <- reverse <$> extractAppliedPorts False False [] n
+            fromType <- extractArgTypes tp
+            pure $ mergePortInfo applied fromType
 
 isNegativeLiteral :: NodeRef -> GraphOp Bool
 isNegativeLiteral ref = match ref $ \case
@@ -420,7 +454,10 @@ isNegativeLiteral ref = match ref $ \case
 buildArgPorts :: InPortId -> NodeRef -> GraphOp [InPort]
 buildArgPorts currentPort ref = do
     typed <- extractPortInfo ref
-    names <- getPortsNames ref
+    tp    <- getLayer @TypeLayer ref >>= source
+    names <- match tp $ \case
+        ResolvedCons "Std.Base" "List" "List" _ -> return []
+        _                                       -> getPortsNames ref
     let portsTypes = fmap fst typed
             <> List.replicate (length names - length typed) TStar
         psCons = zipWith3 Port
