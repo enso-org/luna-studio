@@ -58,7 +58,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 7e29ec5da1d6514f0565dbf491aea0051cbecdf2, git: 'git@github.com:luna/luna-core.git'}
+  location: {commit: 7603839e02b382dc50dcd713c743397382184635, git: 'git@github.com:luna/luna.git'}
   subdirs:
     - core
     - syntax/text/parser
