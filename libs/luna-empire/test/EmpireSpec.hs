@@ -31,7 +31,6 @@ import qualified Empire.Data.Library             as Library (body)
 import qualified Empire.Data.Library             as Library (body)
 -- import qualified Luna.Builtin.Data.Class         as Class
 -- import qualified Luna.Builtin.Data.Function      as Function
-import qualified Luna.Debug.IR.Visualizer        as Vis
 import           Empire.Empire                   (InterpreterEnv (..))
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
 import           LunaStudio.Data.Connection      (Connection (Connection))

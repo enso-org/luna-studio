@@ -6,13 +6,11 @@ import qualified Data.Text                          as Text
 import           Empire.Prelude
 import qualified Safe
 
-import qualified Data.Graph.Data.Component.Vector   as PtrList
 import           LunaStudio.Data.Node               (NodeId)
 import qualified LunaStudio.Data.PortRef            as PortRef
 import           LunaStudio.Data.PortRef            (OutPortRef (..))
 import           LunaStudio.Data.NodeLoc            (NodeLoc (..))
 import qualified LunaStudio.Data.Port               as Port
-import qualified Luna.Debug.IR.Visualizer           as Vis
 import           Empire.ASTOp                       (GraphOp, match)
 import           Empire.ASTOps.Deconstruct          (extractAppPorts, deconstructApp, extractFunctionPorts, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
@@ -556,18 +554,15 @@ ensureNodeHasName generateNodeName nid = do
         Marked _ e -> do
             expr  <- source e
             isUni <- ASTRead.isMatch expr
-            match expr $ \case
-                Unify{} -> return ()
-                -- ASGFunction{} -> return ()
-                _ -> do
-                    name       <- generateNodeName expr
-                    (var, uni) <- attachName expr name
-                    replaceSource uni $ coerce e
-                    Just codeBeg <- Code.getOffsetRelativeToFile ref
-                    off          <- Code.getOffsetRelativeToTarget $ coerce e
-                    Code.insertAt (codeBeg + off) (name <> " = ")
-                    Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
-                    attachNodeMarkers nid [] var
+            if isUni then return () else do
+                name       <- generateNodeName expr
+                (var, uni) <- attachName expr name
+                replaceSource uni $ coerce e
+                Just codeBeg <- Code.getOffsetRelativeToFile ref
+                off          <- Code.getOffsetRelativeToTarget $ coerce e
+                Code.insertAt (codeBeg + off) (name <> " = ")
+                Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
+                attachNodeMarkers nid [] var
         _ -> throwM $ ASTRead.MalformedASTRef ref
 
 makeNodeRep :: NodeId -> Maybe Text -> GraphOp Text -> NodeRef -> GraphOp (NodeRef, Maybe Text)

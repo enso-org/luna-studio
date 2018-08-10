@@ -26,7 +26,6 @@ import qualified Empire.Data.Graph               as Graph
 import           Empire.Data.Layers              (Marker, SpanLength, TypeLayer)
 import           Empire.Empire
 import           Empire.Prelude                  hiding (read, toList)
-import qualified Luna.Debug.IR.Visualizer        as Vis
 import qualified Luna.IR                         as IR
 import qualified Luna.IR.Term.Literal            as Lit
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem, Named (..))
@@ -50,10 +49,8 @@ import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TStar))
 import           Luna.Syntax.Text.Parser.Data.CodeSpan (CodeSpan)
 import qualified Luna.Syntax.Text.Parser.Data.CodeSpan as CodeSpan
 import qualified Luna.Syntax.Text.Parser.Data.Name.Special as Parser (uminus)
-import           OCI.Data.Name.Qualified         (Qualified(..))
 -- import qualified OCI.IR.Combinators              as IR
 import           Prelude (read)
-import qualified System.IO as IO
 
 isDefinition :: BreadcrumbItem -> Bool
 isDefinition def | Breadcrumb.Definition{} <- def = True
@@ -360,11 +357,9 @@ extractAppliedPorts ::
 extractAppliedPorts seenApp seenLam bound node = matchExpr node $ \case
     Lam i o -> do
         inp   <- source i
-
         nameH <- matchExpr inp $ \case
             Var n -> pure $ Just $ unsafeHead $ convert n
             _     -> pure Nothing
-
         case (seenApp, nameH) of
             (_, Just '#') -> extractAppliedPorts seenApp seenLam (inp : bound) =<< source o
             (False, _)    -> extractAppliedPorts False   True    (inp : bound) =<< source o
