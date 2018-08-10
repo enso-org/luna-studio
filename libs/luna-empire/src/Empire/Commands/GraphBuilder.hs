@@ -405,12 +405,15 @@ extractListPorts :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractListPorts n = match n $ \case
     App f a -> do
         rest <- extractListPorts =<< source f
-        source a >>= flip match (\case
-            Var _ -> do
-                argTp <- source a >>= getLayer @TypeLayer >>= source
+        let addPort edge = do
+                argTp <- source edge >>= getLayer @TypeLayer >>= source
                 t     <- Print.getTypeRep argTp
-                ps    <- getPortState =<< source a
+                ps    <- getPortState =<< source edge
                 return $ (t,ps) : rest
+        source a >>= flip match (\case
+            Var _      -> addPort a
+            IRNumber{} -> addPort a
+            IRString{} -> addPort a
             _ -> do
                 foo <- extractListPorts =<< source a
                 return $ foo <> rest)
