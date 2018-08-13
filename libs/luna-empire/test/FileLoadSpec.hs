@@ -2767,6 +2767,26 @@ def main:
                 Graph.addNode loc u2 "( 1, 2,   3)" def
                 Graph.setPortDefault loc (inPortRef u1 [Port.Arg 0]) (Just (PortDefault.Constant (PortDefault.BoolValue False)))
                 Graph.setPortDefault loc (inPortRef u2 [Port.Arg 2]) (Just (PortDefault.Constant (PortDefault.IntValue 100)))
+        it "sets string port defaults" $ let
+            initialCode = [r|
+                def main:
+                    def foo x y: x + 1
+                    «0»foo 19 "heyyyyyy"
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    def foo x y: x + 1
+                    foo 19 "heyy"
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Just fooApp <- Graph.withGraph loc $ runASTOp $
+                    Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef fooApp [Port.Arg 1])
+                    (Just (PortDefault.Constant (PortDefault.TextValue "heyyyy")))
+                Graph.setPortDefault loc (inPortRef fooApp [Port.Arg 1])
+                    (Just (PortDefault.Constant (PortDefault.TextValue "heyy")))
         it "throws exception on setting out of bounds tuple element" $ \env -> let
             initialCode = [r|
                 def main:

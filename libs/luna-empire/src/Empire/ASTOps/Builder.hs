@@ -56,12 +56,14 @@ rewireApplication fun arg' pos = do
 replaceEdgeSource :: EdgeRef -> Delta -> NodeRef -> GraphOp ()
 replaceEdgeSource edge beg newSrc = do
     newCode <- ASTPrint.printFullExpression newSrc
+    let newCodeLen = fromIntegral $ Text.length newCode
+    putLayer @SpanLength newSrc newCodeLen
     oldSrc  <- source edge
     oldLen  <- getLayer @SpanLength oldSrc
     Code.applyDiff beg (beg + oldLen) newCode
     replaceSource newSrc $ coerce edge
     deleteSubtree oldSrc
-    Code.gossipLengthsChangedBy (fromIntegral (Text.length newCode) - oldLen) =<< target edge
+    Code.gossipLengthsChangedBy (newCodeLen - oldLen) =<< target edge
 
 countArguments :: NodeRef -> GraphOp Int
 countArguments expr = matchExpr expr $ \case
