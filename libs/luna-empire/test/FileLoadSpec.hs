@@ -2713,6 +2713,24 @@ def main:
                 Graph.addNode loc u1 "a=(1,2)" def
                 Graph.addNode loc u2 "(x,y)=a" def
                 Graph.addNodeWithConnection loc (convert u3) "succ" def (Just u2)
+        it "shows connection after autoconnecting function to output" $ let
+            initialCode = [r|
+                def main:
+                    def foo x y: x + 1
+                |]
+            expectedCode = [r|
+                def main:
+                    def foo x y: x + 1
+                    number1 = 5
+                    foo
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [foo] <- Graph.getNodes loc
+                u1 <- mkUUID
+                Graph.addNode loc u1 "5" $ atXPos 50.0
+                [conn] <- Graph.getConnections loc
+                (_, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
+                liftIO $ conn `shouldBe` Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef output [])
         it "connects nested patternmatch to output" $ let
             initialCode = [r|
                 def main:

@@ -418,16 +418,18 @@ ensureNodeHasName generateNodeName nid = do
     matchExpr ref $ \case
         Marked _ e -> do
             expr  <- source e
-            isUni <- ASTRead.isMatch expr
-            if isUni then return () else do
-                name     <- generateNodeName expr
-                (var, uni) <- attachName expr name
-                replaceSource uni $ coerce e
-                Just codeBeg <- Code.getOffsetRelativeToFile ref
-                off          <- Code.getOffsetRelativeToTarget $ coerce e
-                Code.insertAt (codeBeg + off) (name <> " = ")
-                Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
-                attachNodeMarkers nid [] var
+            match expr $ \case
+                Unify{} -> return ()
+                ASGFunction{} -> return ()
+                _ -> do
+                    name     <- generateNodeName expr
+                    (var, uni) <- attachName expr name
+                    replaceSource uni $ coerce e
+                    Just codeBeg <- Code.getOffsetRelativeToFile ref
+                    off          <- Code.getOffsetRelativeToTarget $ coerce e
+                    Code.insertAt (codeBeg + off) (name <> " = ")
+                    Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
+                    attachNodeMarkers nid [] var
         _ -> throwM $ ASTRead.MalformedASTRef ref
 
 makeNodeRep :: NodeId -> Maybe Text -> GraphOp Text -> NodeRef -> GraphOp (NodeRef, Maybe Text)
