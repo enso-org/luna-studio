@@ -6,13 +6,13 @@ import qualified Control.Lens.Aeson                         as Lens
 import           Data.Aeson                                 (FromJSON, ToJSON (toEncoding, toJSON))
 import           Data.Convert                               (Convertible (convert))
 import qualified Data.HashMap.Strict                        as HashMap
+import           LunaStudio.Data.PortRef                    (dstPortId)
 import           LunaStudio.Data.Position                   (toTuple)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, ExpressionNodesMap)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import           NodeEditor.View.Diff                       (DiffT, diffApply, diffConvert, diffHashMap)
 import           NodeEditor.View.Port                       (PortView (PortView))
 import           NodeEditor.View.Key                        (Key)
-
 
 data ValueContent
     = Visualization
@@ -31,6 +31,7 @@ data ExpressionNodeView = ExpressionNodeView
     , _value      :: ValueView
     , _inPorts    :: [PortView]
     , _outPorts   :: [PortView]
+    , _newPortKey :: Key
     , _position   :: (Double, Double)
     , _expanded   :: Bool
     , _selected   :: Bool
@@ -79,6 +80,7 @@ instance Convertible ExpressionNode ExpressionNodeView where
         {- value      -} (convert n)
         {- inPorts    -} (n ^. to ExpressionNode.inPortsList . to convert)
         {- outPorts   -} (n ^. to ExpressionNode.outPortsList . to convert)
+        {- newPortKey -} (n ^. to ExpressionNode.argumentConstructorRef . dstPortId . to convert)
         {- position   -} (n ^. ExpressionNode.position . to toTuple)
         {- expanded   -} (n ^. ExpressionNode.mode == ExpressionNode.Expanded ExpressionNode.Controls)
         {- selected   -} (n ^. ExpressionNode.isSelected)

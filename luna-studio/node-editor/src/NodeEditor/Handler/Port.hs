@@ -24,7 +24,7 @@ handleViewEvent :: ViewEvent -> Maybe (Command State ())
 handleViewEvent evt = case evt ^. View.base of
     Mouse e -> do
         let path = evt ^. View.path
-            isPort = "InPort" `elem` path || "OutPort" `elem` path
+            isPort = "InPort" `elem` path || "OutPort" `elem` path || "NewPort" `elem` path
             anyPortRef = View.getAnyPortRef evt
         if isPort then case e ^. View.type_ of
             "click"     -> Just
