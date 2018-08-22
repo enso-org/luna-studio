@@ -15,6 +15,7 @@ dependencies:
   - lens
   - luna-studio-common
   - mtl
+  - m-logger
   - prologue
   - safe-exceptions
   - stm

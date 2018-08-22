@@ -48,7 +48,13 @@ import qualified LunaStudio.Data.Graph                   as Graph
 import qualified LunaStudio.Data.Node                    as Node
 import           LunaStudio.Data.Port                    (OutPortIndex (Projection))
 import           LunaStudio.Data.PortRef                 (AnyPortRef (InPortRef'), OutPortRef (..))
+import qualified System.Log.MLogger                      as Logger
 import           Prologue                                hiding (throwM)
+
+
+logger :: Logger.Logger
+logger = Logger.getLogger $(Logger.moduleName)
+
 
 type Handler = ByteString -> UndoPure ()
 
@@ -156,7 +162,7 @@ compareMsgByUserId msg1 msg2 = case msg1 of
 handle :: UndoMessage -> UndoPure ()
 handle message = do
     undo    %= (message :)
-    redo    %= List.deleteBy compareMsgByUserId message
+    redo    %= List.filter (not . compareMsgByUserId message)
     history %= (message :)
 
 
