@@ -52,6 +52,10 @@ unfocusesVisualization evt = case evt ^. base of
 
 handleViewEvent :: ViewEvent -> Maybe (Command State ())
 handleViewEvent evt = case evt ^. base of
+    View.FocusVisualization evt' -> Just $ do
+        let parent = Node $ View.getNodeLoc evt
+            visualizationId = View.getVisualizationId evt
+        Visualization.focusVisualization parent visualizationId
     View.SelectVisualizer evt' -> Just $ do
         let parent = Node $ View.getNodeLoc evt
             visualizerId = evt' ^. View.visualizerId
