@@ -9,12 +9,11 @@ import           NodeEditor.Event.Event               (Event (View))
 import           NodeEditor.Event.Shortcut            (ShortcutEvent)
 import qualified NodeEditor.Event.Shortcut            as Shortcut
 import           NodeEditor.Event.UI                  (UIEvent (AppEvent, VisualizationEvent))
-import           NodeEditor.Event.View                (ViewEvent, base, path, _FocusVisualization, _SelectVisualizer, _ToggleVisualizations)
+import           NodeEditor.Event.View                (ViewEvent, base, path)
 import qualified NodeEditor.Event.View                as View
 import qualified NodeEditor.React.Event.App           as App
 import qualified NodeEditor.React.Event.Visualization as Visualization
-import           NodeEditor.React.Model.Visualization (Mode (Preview), Parent (Node))
-import           NodeEditor.State.Action              (continue)
+import           NodeEditor.React.Model.Visualization (Parent (Node))
 import           NodeEditor.State.Global              (State)
 
 

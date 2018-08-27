@@ -7,7 +7,7 @@ import           NodeEditor.Action.Port      (acceptEditTextPortControl, editTex
                                               handleMouseEnter, handleMouseLeave, startMoveSlider)
 import           NodeEditor.Event.Event      (Event (UI, View))
 import           NodeEditor.Event.UI         (UIEvent, _PortEvent)
-import           NodeEditor.Event.View       (BaseEvent (Mouse, PortControl), PortControlEvent (PortControlEvent), ViewEvent, mousePosition)
+import           NodeEditor.Event.View       (BaseEvent (Mouse, PortControl), ViewEvent, mousePosition)
 import qualified NodeEditor.Event.View       as View
 import qualified NodeEditor.React.Event.Port as Port
 import           NodeEditor.State.Action     (Action (continue))
