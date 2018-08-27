@@ -58,7 +58,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 7e29ec5da1d6514f0565dbf491aea0051cbecdf2, git: 'git@github.com:luna/luna-core.git'}
+  location: {commit: 2e303d4b0b2e2182ac3af24b6bee1a3bd2435333, git: 'git@github.com:luna/luna.git'}
   subdirs:
     - core
     - syntax/text/parser
@@ -84,6 +84,7 @@ packages:
     - lib/memory-manager
     - lib/memory-pool
     - lib/nested-containers
+    - lib/parser-utils
     - lib/syntax-definition
     - lib/text-processing
     - lib/th-builder

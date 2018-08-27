@@ -72,7 +72,7 @@ class HttpResponse:
     # The body of the response as a `Binary` blob.
     def body:
         chunks = repeatWhile self.getChunk (_.== "".toBinary . not)
-        chunks.fold "".toBinary (+)
+        concatBinary chunks
 
     # Body of the response converted to `Text`.
     def text: self.body.toText
@@ -243,3 +243,4 @@ class Http:
     # There is no need to call `perform` here, as it returns a `JSON` response.
     def getJSON uri:
         Http.get uri . perform . json
+

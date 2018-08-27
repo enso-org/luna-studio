@@ -355,3 +355,4 @@ class TimeInterval:
     def + other: self.add other
 
     def - other: self.sub other
+

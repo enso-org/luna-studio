@@ -24,6 +24,7 @@ import qualified LunaStudio.API.Request    as Request
 import           LunaStudio.API.Topic      (Topic)
 import           Prologue                  hiding (null, throwM)
 import           UndoState
+import qualified System.Log.MLogger        as Logger
 import qualified ZMQ.Bus.Bus               as Bus
 import qualified ZMQ.Bus.Data.Flag         as Flag
 import qualified ZMQ.Bus.Data.Message      as Message
@@ -34,6 +35,10 @@ import qualified ZMQ.Bus.Trans             as Bus
 
 import qualified System.IO as IO
 
+
+
+logger :: Logger.Logger
+logger = Logger.getLogger $(Logger.moduleName)
 
 topic :: Topic
 topic = "empire."
@@ -107,7 +112,7 @@ doUndo guiID = do
     forM maybeMsg $ \msg -> do
         redo %= (msg :)
         undo %= List.delete msg
-        history %= (msg :) --FIXME odwróć kolejność wiadomości undo-redo?
+        history %= (msg :) --FIXME reverse the order of undo-redo messages?
         return $ act ActUndo msg
 
 doRedo :: MonadState UndoState m => UUID -> m (Maybe Action)

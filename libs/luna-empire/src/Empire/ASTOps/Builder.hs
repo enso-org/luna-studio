@@ -56,12 +56,14 @@ rewireApplication fun arg' pos = do
 replaceEdgeSource :: EdgeRef -> Delta -> NodeRef -> GraphOp ()
 replaceEdgeSource edge beg newSrc = do
     newCode <- ASTPrint.printFullExpression newSrc
+    let newCodeLen = fromIntegral $ Text.length newCode
+    putLayer @SpanLength newSrc newCodeLen
     oldSrc  <- source edge
     oldLen  <- getLayer @SpanLength oldSrc
     Code.applyDiff beg (beg + oldLen) newCode
     replaceSource newSrc $ coerce edge
     deleteSubtree oldSrc
-    Code.gossipLengthsChangedBy (fromIntegral (Text.length newCode) - oldLen) =<< target edge
+    Code.gossipLengthsChangedBy (newCodeLen - oldLen) =<< target edge
 
 countArguments :: NodeRef -> GraphOp Int
 countArguments expr = matchExpr expr $ \case
@@ -553,16 +555,18 @@ ensureNodeHasName generateNodeName nid = do
     matchExpr ref $ \case
         Marked _ e -> do
             expr  <- source e
-            isUni <- ASTRead.isMatch expr
-            if isUni then return () else do
-                name       <- generateNodeName expr
-                (var, uni) <- attachName expr name
-                replaceSource uni $ coerce e
-                Just codeBeg <- Code.getOffsetRelativeToFile ref
-                off          <- Code.getOffsetRelativeToTarget $ coerce e
-                Code.insertAt (codeBeg + off) (name <> " = ")
-                Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
-                attachNodeMarkers nid [] var
+            match expr $ \case
+                Unify{} -> return ()
+                ASGFunction{} -> return ()
+                _ -> do
+                    name     <- generateNodeName expr
+                    (var, uni) <- attachName expr name
+                    replaceSource uni $ coerce e
+                    Just codeBeg <- Code.getOffsetRelativeToFile ref
+                    off          <- Code.getOffsetRelativeToTarget $ coerce e
+                    Code.insertAt (codeBeg + off) (name <> " = ")
+                    Code.gossipUsesChangedBy (fromIntegral $ Text.length name + 3) uni
+                    attachNodeMarkers nid [] var
         _ -> throwM $ ASTRead.MalformedASTRef ref
 
 makeNodeRep :: NodeId -> Maybe Text -> GraphOp Text -> NodeRef -> GraphOp (NodeRef, Maybe Text)

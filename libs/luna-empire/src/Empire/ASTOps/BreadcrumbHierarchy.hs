@@ -59,8 +59,11 @@ childrenFromSeq tgtBeg edge = do
             let uid    = fromMaybe newNodeId nodeId
             childTarget <- matchExpr expr' $ \case
                 Unify l r -> do
-                    ASTBuilder.attachNodeMarkers uid []      =<< source l
+                    ASTBuilder.attachNodeMarkers uid [] =<< source l
                     source r
+                ASGFunction n _ b -> do
+                    ASTBuilder.attachNodeMarkers uid [] =<< source n
+                    return expr'
                 _ -> do
                     putLayer @Marker expr' . Just =<< toPortMarker (OutPortRef (convert uid) [])
                     return expr'

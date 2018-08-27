@@ -136,3 +136,4 @@ class WebSocket:
     # ```
     def server host port:
         primCreateWSServer host port
+

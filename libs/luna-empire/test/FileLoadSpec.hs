@@ -2713,6 +2713,24 @@ def main:
                 Graph.addNode loc u1 "a=(1,2)" def
                 Graph.addNode loc u2 "(x,y)=a" def
                 Graph.addNodeWithConnection loc (convert u3) "succ" def (Just u2)
+        it "shows connection after autoconnecting function to output" $ let
+            initialCode = [r|
+                def main:
+                    def foo x y: x + 1
+                |]
+            expectedCode = [r|
+                def main:
+                    def foo x y: x + 1
+                    number1 = 5
+                    foo
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [foo] <- Graph.getNodes loc
+                u1 <- mkUUID
+                Graph.addNode loc u1 "5" $ atXPos 50.0
+                [conn] <- Graph.getConnections loc
+                (_, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
+                liftIO $ conn `shouldBe` Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef output [])
         it "connects nested patternmatch to output" $ let
             initialCode = [r|
                 def main:
@@ -2767,6 +2785,26 @@ def main:
                 Graph.addNode loc u2 "( 1, 2,   3)" def
                 Graph.setPortDefault loc (inPortRef u1 [Port.Arg 0]) (Just (PortDefault.Constant (PortDefault.BoolValue False)))
                 Graph.setPortDefault loc (inPortRef u2 [Port.Arg 2]) (Just (PortDefault.Constant (PortDefault.IntValue 100)))
+        it "sets string port defaults" $ let
+            initialCode = [r|
+                def main:
+                    def foo x y: x + 1
+                    «0»foo 19 "heyyyyyy"
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    def foo x y: x + 1
+                    foo 19 "heyy"
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                Just fooApp <- Graph.withGraph loc $ runASTOp $
+                    Graph.getNodeIdForMarker 0
+                Graph.setPortDefault loc (inPortRef fooApp [Port.Arg 1])
+                    (Just (PortDefault.Constant (PortDefault.TextValue "heyyyy")))
+                Graph.setPortDefault loc (inPortRef fooApp [Port.Arg 1])
+                    (Just (PortDefault.Constant (PortDefault.TextValue "heyy")))
         it "throws exception on setting out of bounds tuple element" $ \env -> let
             initialCode = [r|
                 def main:
