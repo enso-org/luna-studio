@@ -61,3 +61,11 @@ instance Convertible Key AnyPortId where
 
 instance Convertible UUID String where
     convert = show
+
+sliceAnyPortId :: AnyPortId -> AnyPortId
+sliceAnyPortId (InPortId' portId) = InPortId' $ slicePortId portId
+sliceAnyPortId (OutPortId' portId) = OutPortId' $ slicePortId portId
+
+slicePortId :: [a] -> [a]
+slicePortId [] = []
+slicePortId (h:_) = [h]

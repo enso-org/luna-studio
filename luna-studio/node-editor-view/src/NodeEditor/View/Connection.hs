@@ -9,7 +9,7 @@ import qualified LunaStudio.Data.PortRef           as PortRef
 import           NodeEditor.React.Model.Connection (Connection, ConnectionsMap)
 import qualified NodeEditor.React.Model.Connection as Connection
 import           NodeEditor.View.Diff              (DiffT, diffApply, diffConvert, diffHashMap)
-import           NodeEditor.View.Key               (Key)
+import           NodeEditor.View.Key               (Key, slicePortId)
 
 
 data ConnectionView = ConnectionView
@@ -30,9 +30,9 @@ instance Convertible Connection ConnectionView where
     convert c = ConnectionView
         {- key        -} (c ^. Connection.connectionId . to convert)
         {- srcNode    -} (c ^. Connection.src . PortRef.srcNodeLoc . to convert)
-        {- srcPort    -} (c ^. Connection.src . PortRef.srcPortId  . to convert)
+        {- srcPort    -} (c ^. Connection.src . PortRef.srcPortId  . to slicePortId . to convert)
         {- dstNode    -} (c ^. Connection.dst . PortRef.dstNodeLoc . to convert)
-        {- dstPort    -} (c ^. Connection.dst . PortRef.dstPortId  . to convert)
+        {- dstPort    -} (c ^. Connection.dst . PortRef.dstPortId  . to slicePortId . to convert)
 
 foreign import javascript safe "atomCallback.getNodeEditorView().setConnection($1)"
     setConnection__ :: JSVal -> IO ()
