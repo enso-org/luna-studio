@@ -34,7 +34,6 @@ dependencies:
     - prologue
     - safe
     - safe-exceptions
-    - shelly
     - split
     - stm
     - temporary
