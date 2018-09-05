@@ -80,7 +80,18 @@
         });
     };
     result += "</tr>";
-    data.forEach(function (row, ix) {
+    table = []
+
+    data.forEach(function(d, i) {
+      d.forEach(function(elem, idx) {
+        if (!table[idx]) {
+          table[idx] = []
+        }
+        table[idx].push(elem)
+      })
+    })
+
+    table.forEach(function (row, ix) {
       result += ("<tr><th>" + ix + "</th>");
       row.forEach(function (d) {
         result += toTableCell(d, level);
