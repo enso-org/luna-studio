@@ -84,9 +84,7 @@
 
     data.forEach(function(d, i) {
       d.forEach(function(elem, idx) {
-        if (!table[idx]) {
-          table[idx] = []
-        }
+        table[idx] = table[idx] || []
         table[idx].push(elem)
       })
     })
