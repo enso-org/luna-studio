@@ -84,24 +84,8 @@ stopMoveSlider _currentPostion state = do
 newSliderValue :: ScreenPosition -> UTCTime -> SliderDrag -> InitValue
 newSliderValue currentPostion currentTime slider =
     let dx   = currentPostion ^. x
-        dt   = fromRational $ toRational $ Clock.diffUTCTime currentTime (slider ^. sliderDragStartTime)
-        v    = if dt < 1e-10 then 0 else dx / dt -- 100 - 4 000
-        max' = 100 :: Double
-        nv   = v / max' :: Double
         f :: Double -> Double
-        f x' = x' + x'' * nv where
-          x'' = 1 + (abs x' ** 0.5)
-        -- f x = x + nv * x' * a where
-        -- a = 1 :: Double
-        -- b = 0.9  :: Double
-        -- c = 0.9  :: Double
-        -- f val
-        --   | val == 0 && v <  0 =     - a * (abs v ** b)
-        --   | val == 0           =       a * (v ** b)
-        --   |             v == 0 = val
-        --   |             v <  0 = val - a * (abs (val * v) ** b)
-        --   | otherwise          = val + a * ((val * v) ** b)
-        --
+        f x' = x' + dx
     in case slider ^. sliderDragInitValue of
           Continous val -> Continous $ f val
           Discrete  val -> Discrete  $ round $ f $ fromIntegral val
