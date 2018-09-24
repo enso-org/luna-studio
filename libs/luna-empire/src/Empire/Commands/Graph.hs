@@ -1688,7 +1688,7 @@ nativeModuleName = "Native"
 getImportsInFile :: ClassOp [Text]
 getImportsInFile = do
     unit <- use Graph.clsClass
-    matchExpr unit $ \case
+    imports <- matchExpr unit $ \case
         Unit imps _ _ -> do
             imps' <- source imps
             matchExpr imps' $ \case
@@ -1703,7 +1703,10 @@ getImportsInFile = do
                                     ImportSrc n -> case n of
                                         Term.Absolute n -> do
                                             let n' = convert n
-                                            return $ convert $ nameToString n'
+                                            return $ Just $ convert $ nameToString n'
+                                    _ -> return Nothing
+                            _ -> return Nothing
+    return $ catMaybes imports
 
 getAvailableImports :: GraphLocation -> Empire (Set ImportName)
 getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Breadcrumb [])) $ do
