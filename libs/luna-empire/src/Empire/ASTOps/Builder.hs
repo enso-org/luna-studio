@@ -360,6 +360,7 @@ ensureFunctionIsValid = do
                 matchExpr self $ \case
                     ASGFunction _ _ b -> putLayer @SpanOffset b $
                         fromIntegral $ length (":\n    " :: String)
+                Code.gossipLengthsChangedBy (fromIntegral $ Text.length section) =<< target b
         _ -> return ()
 
 

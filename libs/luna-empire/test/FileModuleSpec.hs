@@ -1163,4 +1163,26 @@ spec = around withChannels $ parallel $ do
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
                 Graph.substituteCode file [(109, 109, "\n    Foo.baz")]
+        it "creates and uses invalid top-level function" $
+            let initialCode = [r|
+                    def main:
+                        test = "Hello"
+                        None
+                    |]
+                expectedCode = [r|
+                    def foo:
+                        number1 = 15
+                        None
+                    |]
+            in specifyCodeChange initialCode expectedCode $
+                \loc@(GraphLocation file (Breadcrumb [main])) -> do
+                    u1 <- mkUUID
+                    let top = GraphLocation file def
+                    Graph.addNode top u1 "def foo" def
+                    names <- fmap (view Node.name) <$> Graph.getNodes top
+                    liftIO $ names `shouldMatchList` [Just "foo", Just "main"]
+                    u2 <- mkUUID
+                    Graph.addNode (top |>= u1) u2 "15" def
+                    Graph.removeNodes top [main ^. Breadcrumb.nodeId]
+
 
