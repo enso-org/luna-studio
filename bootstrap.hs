@@ -178,7 +178,7 @@ generateLunaShellScript = do
         initPyenv          = "eval \"$(pyenv init -)\""
         loadPython         = "pyenv" <>  " local " <> Shelly.toTextIgnore supportedPythonVersion
         lunaShellPath      = current </> lunaShell
-        fullCode           = T.unlines [addLdLibraryPath, addPath, pyenvEnviromentVar, loadPython]
+        fullCode           = T.unlines [addLdLibraryPath, addPath, pyenvEnviromentVar, initPyenv, loadPython]
     liftIO $ Data.Text.IO.writeFile (encodeString lunaShellPath) fullCode
 
 stackSetupForLunaStudio :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
