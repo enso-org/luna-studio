@@ -8,7 +8,7 @@ import qualified Shelly.Lifted as Shelly
 import Shelly.Lifted (MonadSh, (</>), shelly, liftIO)
 import qualified System.Directory as System
 import Control.Monad.Catch (throwM, MonadThrow)
-import Control.Monad (when, unless, void)
+import Control.Monad (when, unless)
 import Control.Monad.IO.Class ( MonadIO)
 import Control.Exception (Exception)
 import Data.Maybe (fromMaybe)
@@ -92,9 +92,9 @@ installPython = do
             Shelly.setenv "LDFLAGS" $ "-L" <> opensslPath <> "/lib"
         Shelly.cmd "pyenv" "install" supportedPythonVersion
 
-    void $ Shelly.chdir (fromText current) $ do
+    Shelly.chdir (fromText current) $ do
         Shelly.cmd "pyenv" "local" supportedPythonVersion
-        Shelly.run "pip" ["install", "--user", "-r", "requirements.txt"]
+        Shelly.cmd "pip" "install" "--user" "-r" "requirements.txt"
 
 installNode :: (MonadIO m, MonadSh m, Shelly.MonadShControl m) => m ()
 installNode = do
