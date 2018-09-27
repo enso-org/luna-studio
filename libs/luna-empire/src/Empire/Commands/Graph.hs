@@ -93,6 +93,7 @@ import           LunaStudio.Data.Connection       (Connection (..), ConnectionId
 import qualified LunaStudio.Data.Error            as ErrorAPI
 import qualified LunaStudio.Data.Graph            as APIGraph
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
+import qualified LunaStudio.Data.GraphLocation    as GraphLocation
 import           LunaStudio.Data.Node             (ExpressionNode (..), NodeId)
 import qualified LunaStudio.Data.Node             as Node
 import           LunaStudio.Data.NodeCache        (NodeCache (..), nodeMetaMap, nodeIdMap)
@@ -881,16 +882,16 @@ getBuffer :: FilePath -> Empire Text
 getBuffer file = getCode (GraphLocation file (Breadcrumb []))
 
 getGraphCondTC :: Bool -> GraphLocation -> Empire APIGraph.Graph
-getGraphCondTC tc loc = (if tc then withTC' loc True else withGraph' loc) (runASTOp $ do
-    exc <- use Graph.parseError
-    case exc of
-        Just e  -> throwM e
-        Nothing -> GraphBuilder.buildGraph)
-    (runASTOp $ do
-        exc <- use Graph.clsParseError
-        case exc of
-            Just e  -> throwM e
-            Nothing -> GraphBuilder.buildClassGraph)
+getGraphCondTC tc loc = withImports getFullGraph where
+    getFullGraph = (if tc then withTC' loc True else withGraph' loc)
+        (runASTOp buildGraph)
+        (runASTOp buildClassGraph)
+    unlessError action = maybe action throwM
+    buildGraph = unlessError GraphBuilder.buildGraph =<< use Graph.parseError
+    buildClassGraph = unlessError GraphBuilder.buildClassGraph 
+        =<< use Graph.clsParseError
+    withImports graphGetter = getAvailableImports loc >>= \imports ->
+        (& APIGraph.imports .~ imports) <$> graphGetter
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph = getGraphCondTC True
@@ -1687,39 +1688,33 @@ nativeModuleName = "Native"
 
 getImportsInFile :: ClassOp [Text]
 getImportsInFile = do
-    unit <- use Graph.clsClass
-    imports <- matchExpr unit $ \case
-        Unit imps _ _ -> do
-            imps' <- source imps
-            matchExpr imps' $ \case
-                ImportHub imps'' -> do
-                    imps <- ptrListToList imps''
-                    forM imps $ \imp -> do
-                        imp' <- source imp
-                        matchExpr imp' $ \case
-                            Import a _ -> do
-                                a' <- source a
-                                matchExpr a' $ \case
-                                    ImportSrc n -> case n of
-                                        Term.Absolute n -> do
-                                            let n' = convert n
-                                            return $ Just $ convert $ nameToString n'
-                                    _ -> return Nothing
-                            _ -> return Nothing
+    let matchUnit unit = matchExpr unit $ \(Unit imps _ _) -> 
+            matchImports =<< source imps
+        matchImports imps = matchExpr imps $ \(ImportHub imps') -> 
+            mapM matchImport =<< mapM source =<< ptrListToList imps'
+        matchImport imp = matchExpr imp $ \case
+            Import absolute _ -> matchAbsolute =<< source absolute
+            _                 -> pure Nothing
+        matchAbsolute a = matchExpr a $ \case
+            ImportSrc (Term.Absolute n) -> pure . Just . nameToText $ convert n
+            _                           -> pure Nothing
+    unit    <- use Graph.clsClass
+    imports <- matchUnit unit
     return $ catMaybes imports
 
 getAvailableImports :: GraphLocation -> Empire (Set ImportName)
-getAvailableImports (GraphLocation file _) = withUnit (GraphLocation file (Breadcrumb [])) $ do
-    explicitImports <- fromList <$> runASTOp getImportsInFile
-    let implicitImports = fromList [nativeModuleName, "Std.Base"]
-    pure $ explicitImports <> implicitImports
+getAvailableImports gl = withUnit pureGl mkImports where
+    pureGl = GraphLocation (gl ^. GraphLocation.filePath) mempty
+    implicitImports = [nativeModuleName, "Std.Base"]
+    mkImports = fromList . (implicitImports <>) <$> runASTOp getImportsInFile
 
 classToHints :: Class.Class -> ClassHints
-classToHints (Class.Class constructors methods _) = ClassHints cons' meth'
-    where
-        getDoc = fromMaybe def . view Def.documentation
-        cons'  = ((, def) . convert) <$> Map.keys constructors
-        meth'  = (convert *** getDoc) <$> (filter (isPublicMethod . fst) $ Map.toList $ unwrap methods)
+classToHints (Class.Class constructors methods _) 
+    = ClassHints constructorsHints methodsHints where
+        getDocumentation  = fromMaybe mempty . view Def.documentation
+        constructorsHints = ((, mempty) . convert) <$> Map.keys constructors
+        methodsHints      = (convert *** getDocumentation) <$> 
+            filter (isPublicMethod . fst) (Map.toList $ unwrap methods)
 
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (nameToString -> n) = Safe.headMay n /= Just '_'

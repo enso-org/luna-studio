@@ -53,7 +53,7 @@ import           LunaStudio.Data.Port            (InPorts (..), OutPorts (..))
 import qualified LunaStudio.Data.Port            as Port
 import           LunaStudio.Data.PortDefault     (PortDefault (Expression))
 import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified LunaStudio.Data.PortRef            as PortRef
+import qualified LunaStudio.Data.PortRef         as PortRef
 import qualified LunaStudio.Data.Position        as Position
 import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
 -- import           OCI.IR.Class                    (exprs, links)
@@ -103,7 +103,7 @@ spec = around withChannels $ parallel $ do
                 topLevel <- graphIDs top
                 n1Level  <- Graph.getGraph (top |> u1)
                 return (topLevel, n1Level)
-            withResult res $ \(topLevel, Graph.Graph n1LevelNodes _ i o _) -> do
+            withResult res $ \(topLevel, Graph.Graph n1LevelNodes _ i o _ _) -> do
                 length topLevel `shouldBe` 1
                 topLevel `shouldContain` [u1]
                 i            `shouldSatisfy` isJust
@@ -116,7 +116,7 @@ spec = around withChannels $ parallel $ do
                 topLevel <- graphIDs top
                 n1Level <- Graph.getGraph (top |> u1)
                 return (topLevel, n1Level)
-            withResult res $ \(topLevel, Graph.Graph n1LevelNodes _ i o _) -> do
+            withResult res $ \(topLevel, Graph.Graph n1LevelNodes _ i o _ _) -> do
                 length topLevel `shouldBe` 1
                 topLevel `shouldContain` [u1]
                 i            `shouldSatisfy` isJust
@@ -743,7 +743,7 @@ spec = around withChannels $ parallel $ do
                 Graph.setNodeExpression top u1 "a: b: a + b"
                 Graph.getGraph (top |> u1)
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                 let [node] = nodes
                 node ^. Node.expression `shouldBe` "• + •"
                 connections `shouldSatisfy` ((== 3) . length)
@@ -1571,7 +1571,7 @@ spec = around withChannels $ parallel $ do
                       Port.Port []           "alias" TStar (Port.WithDefault $ Expression "(Foobar a b c): b")
                     , Port.Port [Port.Arg 0] "arg0" TStar Port.NotConnected
                     ]
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                 nodes `shouldBe` mempty
                 input ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
                       Port.Port [Port.Projection 0]                    "Foobar a b c" TStar Port.NotConnected
@@ -1603,7 +1603,7 @@ spec = around withChannels $ parallel $ do
                     , Port.Port [Port.Arg 1] "x"    TStar Port.NotConnected
                     , Port.Port [Port.Arg 2] "arg2" TStar Port.NotConnected
                     ]
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                 nodes `shouldBe` mempty
                 input ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
                       Port.Port [Port.Projection 0]                                       "Foobar a b (Just c)" TStar Port.NotConnected

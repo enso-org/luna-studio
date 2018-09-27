@@ -62,6 +62,7 @@ import           LunaStudio.Data.Connection      (Connection (..))
 import           LunaStudio.Data.Diff            (Diff (..))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import qualified LunaStudio.Data.GraphLocation   as GraphLocation
 import qualified LunaStudio.Data.Node            as Node
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
@@ -229,7 +230,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
                 return graph
-            withResult res $ \(Graph.Graph nodes connections i _ _) -> do
+            withResult res $ \(Graph.Graph nodes connections i _ _ _) -> do
                 let Just pi = find (\node -> node ^. Node.name == Just "pi") nodes
                 pi ^. Node.code `shouldBe` "3.14"
                 pi ^. Node.canEnter `shouldBe` False
@@ -266,7 +267,7 @@ def main:
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
                 return graph
-            withResult res $ \(Graph.Graph nodes connections i _ _) -> do
+            withResult res $ \(Graph.Graph nodes connections i _ _ _) -> do
                 let Just pi = find (\node -> node ^. Node.name == Just "pi") nodes
                 pi ^. Node.code `shouldBe` "3.14"
                 pi ^. Node.canEnter `shouldBe` False
@@ -280,7 +281,7 @@ def main:
                 Graph.substituteCode "TestPath" [(71, 71, "3")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                     cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length cNodes `shouldBe` 1
                 let [cNode] = cNodes
@@ -301,7 +302,7 @@ def main:
                 Graph.substituteCode "TestPath" [(71, 71, "3")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                     cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length nodes `shouldBe` 4
                 length cNodes `shouldBe` 1
@@ -324,7 +325,7 @@ def main:
                 Graph.substituteCode "TestPath" [(91, 91, "1")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                     cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length nodes `shouldBe` 4
                 length cNodes `shouldBe` 1
@@ -347,7 +348,7 @@ def main:
                 Graph.substituteCode "TestPath" [(92, 92, "    d = 10\n")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                     Just d = find (\node -> node ^. Node.name == Just "d") nodes
                 d ^. Node.code `shouldBe` "10"
                 let Just c = find (\node -> node ^. Node.name == Just "c") nodes
@@ -409,7 +410,7 @@ def main:
                 Graph.substituteCode "TestPath" [(25, 26, "5")]
                 Graph.getGraph loc'
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                     Just pi = find (\node -> node ^. Node.name == Just "pi") nodes
                     Just c = find (\node -> node ^. Node.name == Just "c") nodes
                     Just bar = find (\node -> node ^. Node.name == Just "bar") nodes
@@ -436,7 +437,7 @@ def main:
                 Just foo <- Graph.withGraph loc' $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.withGraph (loc' |> foo) $ runASTOp $ GraphBuilder.buildGraph
             withResult res $ \graph -> do
-                let Graph.Graph nodes connections _ _ _ = graph
+                let Graph.Graph nodes connections _ _ _ _ = graph
                 nodes `shouldSatisfy` ((== 1) . length)
                 connections `shouldSatisfy` ((== 3) . length)
         it "lambda in code can be entered" $ \env -> do
@@ -452,7 +453,7 @@ def main:
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Just foo <- Graph.withGraph loc' $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.getGraph $ loc' |> foo
-            withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
+            withResult res $ \(Graph.Graph nodes connections _ _ _ _) -> do
                 nodes `shouldBe` mempty
                 connections `shouldSatisfy` (not . null)
         it "autolayouts nodes on file load" $ \env -> do
@@ -508,7 +509,7 @@ def main:
                 [main] <- Graph.getNodes loc
                 let loc' = loc |>= main ^. Node.nodeId
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
-                before@(Graph.Graph _ _ (Just input) _ _) <- Graph.getGraph $ loc' |> foo
+                before@(Graph.Graph _ _ (Just input) _ _ _) <- Graph.getGraph $ loc' |> foo
                 Graph.movePort (loc' |> foo) (outPortRef (input ^. Node.nodeId) [Port.Projection 0]) 1
                 Graph.movePort (loc' |> foo) (outPortRef (input ^. Node.nodeId) [Port.Projection 0]) 1
                 after <- Graph.getGraph $ loc' |> foo
@@ -522,7 +523,7 @@ def main:
                 [main] <- Graph.getNodes loc
                 let loc' = loc |>= main ^. Node.nodeId
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
-                before@(Graph.Graph _ _ (Just input) _ _) <- Graph.getGraph $ loc' |> foo
+                before@(Graph.Graph _ _ (Just input) _ _ _) <- Graph.getGraph $ loc' |> foo
                 Graph.movePort (loc' |> foo) (outPortRef (input ^. Node.nodeId) [Port.Projection 0]) 1
                 code <- Graph.withUnit loc $ use Graph.code
                 return code

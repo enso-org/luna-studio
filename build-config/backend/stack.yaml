@@ -83,4 +83,4 @@ packages:
 - extra-dep: true
   location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'git@github.com:luna/visualization-api.git'}
 - extra-dep: true
-  location: {commit: 8babf4c65507fa7608e6c6468be4fcabddf77327, git: 'git@github.com:luna/fuzzy-text.git'}
+  location: {commit: 1fe94d4d8b106b2ab37c65de9200b3f0404ac2ca, git: 'git@github.com:luna/fuzzy-text.git'}

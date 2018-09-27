@@ -2,6 +2,7 @@ module LunaStudio.Data.NodeSearcher
     ( module LunaStudio.Data.NodeSearcher
     , RawEntry (..)
     , Match (..)
+    , MatchType (..)
     , EntryType (..)
     , ClassName
     , ImportName
@@ -15,7 +16,7 @@ module LunaStudio.Data.NodeSearcher
     , weight
     , score
     , charsMatch
-    , exactMatch
+    , matchType
     , className
     , importName
     , imported
@@ -30,9 +31,9 @@ import qualified Data.Map         as Map
 import           Data.Set         (Set)
 import qualified Data.Set         as Set
 import           Data.Text        (Text)
-import           FuzzyText        (ClassName, EntryType (..), ImportInfo (ImportInfo), ImportName, Match (..), Query, Range, RawEntry (..),
-                                   Score, charsMatch, className, doc, entryType, exactMatch, fuzzySearch, importInfo, importName, imported,
-                                   name, score, weight)
+import           FuzzyText        (ClassName, EntryType (..), ImportInfo (ImportInfo), ImportName, Match (..), MatchType (..), Query, Range,
+                                   RawEntry (..), Score, charsMatch, className, doc, entryType, fuzzySearch, importInfo, importName,
+                                   imported, matchType, name, score, weight)
 import           Prologue         hiding (Item)
 
 type Name = Text
@@ -78,7 +79,7 @@ missingImports = to missingImports' where
             in Set.filter (`Set.notMember` neededImports) currentImps
 
 
-data TypePreferation = TypePreferation
+data TypePreference = TypePreference
     { _localFunctionsWeight         :: Double
     , _globalFunctionsWeight        :: Double
     , _specialWeightForClassMethods :: (Set ClassName, Double)
@@ -86,17 +87,17 @@ data TypePreferation = TypePreferation
     , _constructorsWeight           :: Double
     } deriving Show
 
-makeLenses ''TypePreferation
-instance Default TypePreferation where def = TypePreferation 1 1 (def, 1) 1 1
+makeLenses ''TypePreference
+instance Default TypePreference where def = TypePreference 1 1 (def, 1) 1 1
 
 searchCommands :: Query -> [Text] -> [Match]
 searchCommands q = fuzzySearch q . fmap (\c -> RawEntry c def Command 1 def)
 
-search :: Query -> NodeSearcherData -> Maybe TypePreferation -> [Match]
+search :: Query -> NodeSearcherData -> Maybe TypePreference -> [Match]
 search q nsData tp = fuzzySearch q $ toEntries nsData (fromJust def tp)
 
 
-toEntries :: NodeSearcherData -> TypePreferation -> [RawEntry]
+toEntries :: NodeSearcherData -> TypePreference -> [RawEntry]
 toEntries (NodeSearcherData ih currImps) tPref
     = concat . Map.elems $ Map.mapWithKey moduleHintsToEntries ih where
         moduleHintsToEntries :: ImportName -> ModuleHints -> [RawEntry]

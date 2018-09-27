@@ -721,7 +721,7 @@ spec = around withChannels $ parallel $ do
                 let Just bar = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "bar") nodes
                 u1 <- mkUUID
                 Graph.addNode (loc |>= bar) u1 "5" (atXPos 10)
-                APIGraph.Graph _ _ _ (Just output) _ <- Graph.getGraph (loc |>= bar)
+                APIGraph.Graph _ _ _ (Just output) _ _ <- Graph.getGraph (loc |>= bar)
                 Graph.connect (loc |>= bar) (outPortRef u1 []) (InPortRef' $ inPortRef (output ^. Node.nodeId) [])
                 u2 <- mkUUID
                 Graph.addNode (loc |>= bar) u2 "1" (atXPos (-20))
@@ -751,7 +751,7 @@ spec = around withChannels $ parallel $ do
                 let Just bar = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "bar") nodes
                 u1 <- mkUUID
                 Graph.addNode (loc |>= bar) u1 "5" (atXPos 10)
-                APIGraph.Graph _ _ _ (Just output) _ <- Graph.getGraph (loc |>= bar)
+                APIGraph.Graph _ _ _ (Just output) _ _ <- Graph.getGraph (loc |>= bar)
                 Graph.connect (loc |>= bar) (outPortRef u1 []) (InPortRef' $ inPortRef (output ^. Node.nodeId) [])
                 blockEnd <- Graph.withGraph (loc |>= bar) $ runASTOp $ Code.getCurrentBlockEnd
                 code <- Graph.withUnit loc $ use Graph.code
@@ -1175,4 +1175,25 @@ spec = around withChannels $ parallel $ do
             in specifyCodeChange initialCode initialCode $ \loc@(GraphLocation file _) -> do
                 imports <- Graph.getAvailableImports (GraphLocation file def)
                 liftIO $ toList imports `shouldMatchList` ["Native", "Std.Base"]
+        it "creates and uses invalid top-level function" $
+            let initialCode = [r|
+                    def main:
+                        test = "Hello"
+                        None
+                    |]
+                expectedCode = [r|
+                    def foo:
+                        number1 = 15
+                        None
+                    |]
+            in specifyCodeChange initialCode expectedCode $
+                \loc@(GraphLocation file (Breadcrumb [main])) -> do
+                    u1 <- mkUUID
+                    let top = GraphLocation file def
+                    Graph.addNode top u1 "def foo" def
+                    names <- fmap (view Node.name) <$> Graph.getNodes top
+                    liftIO $ names `shouldMatchList` [Just "foo", Just "main"]
+                    u2 <- mkUUID
+                    Graph.addNode (top |>= u1) u2 "15" def
+                    Graph.removeNodes top [main ^. Breadcrumb.nodeId]
 

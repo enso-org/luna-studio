@@ -3,7 +3,7 @@ module Empire.Server.Server where
 import qualified Compress
 import           Control.Arrow                 ((&&&))
 import           Control.Concurrent.STM.TChan  (writeTChan)
-import           Control.Lens                  (_Left, (.=), (^..), to, use)
+import           Control.Lens                  (to, use, (.=), (^..), _Left)
 import           Control.Monad.Catch           (handle, try)
 import           Control.Monad.State           (StateT)
 import           Control.Monad.STM             (atomically)

@@ -19,7 +19,6 @@ import           Prologue                             hiding (TypeRep)
 
 data GUIState = GUIState
     { _breadcrumb             :: Breadcrumb (Named BreadcrumbItem)
-    , _imports                :: Set ImportName
     , _defaultVisualizers     :: HashMap TypeRep Visualizer
     , _camera                 :: CameraTransformation
     , _projectVisualizersPath :: Maybe FilePath

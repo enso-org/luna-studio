@@ -1,10 +1,12 @@
 module LunaStudio.Data.Graph where
 
-import           Data.Aeson.Types           (FromJSON, ToJSON)
-import           Data.Binary                (Binary)
-import           LunaStudio.Data.Connection (Connection)
-import           LunaStudio.Data.MonadPath  (MonadPath)
-import           LunaStudio.Data.Node       (ExpressionNode, InputSidebar, OutputSidebar)
+import           Data.Aeson.Types             (FromJSON, ToJSON)
+import           Data.Binary                  (Binary)
+import           Data.Set                     (Set)
+import           LunaStudio.Data.Connection   (Connection)
+import           LunaStudio.Data.MonadPath    (MonadPath)
+import           LunaStudio.Data.Node         (ExpressionNode, InputSidebar, OutputSidebar)
+import           LunaStudio.Data.NodeSearcher (ImportName)
 import           Prologue
 
 
@@ -14,6 +16,7 @@ data Graph = Graph
     , _inputSidebar  :: Maybe InputSidebar
     , _outputSidebar :: Maybe OutputSidebar
     , _monads        :: [MonadPath]
+    , _imports       :: Set ImportName
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Graph
@@ -24,4 +27,4 @@ instance FromJSON Graph
 instance ToJSON   Graph
 
 instance Default Graph where
-    def = Graph def def def def def
+    def = Graph def def def def def def

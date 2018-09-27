@@ -14,7 +14,7 @@ import qualified Data.Text                            as Text
 import qualified IdentityString                       as IS
 import           JS.Visualizers                       (sendVisualizationData)
 import           LunaStudio.Data.NodeSearcher         (EntryType (Function), ImportName, ImportsHints, Match (Match),
-                                                       ModuleHints (ModuleHints), RawEntry (RawEntry), TypePreferation (TypePreferation),
+                                                       ModuleHints (ModuleHints), RawEntry (RawEntry), TypePreference (TypePreference),
                                                        currentImports, imports, missingImports)
 import qualified LunaStudio.Data.NodeSearcher         as NS
 import           LunaStudio.Data.TypeRep              (ConstructorRep (ConstructorRep))
@@ -89,8 +89,7 @@ localUpdateSearcherHints' :: Command State ()
 localUpdateSearcherHints' = unlessM inTopLevelBreadcrumb $ do
     nsData'        <- use nodeSearcherData
     localFunctions <- getLocalFunctions
-    let localFunctionsImportName = "Local"
-        nsData :: NS.NodeSearcherData
+    let nsData :: NS.NodeSearcherData
         nsData = nsData'
             & imports %~ Map.insert
                 localFunctionsImportName
@@ -99,48 +98,20 @@ localUpdateSearcherHints' = unlessM inTopLevelBreadcrumb $ do
     modifySearcher $ do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode
-        let selectInput = maybe True (Text.null . view Searcher.query) mayQuery
-            (mode, hintsLen) = case m of
-                (Searcher.Node _ nmi _) -> do
-                    let isFirstQuery         q = Text.null
-                            . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
-                        strippedPrefix       q = Text.dropWhileEnd (== ' ')
-                            $ q ^. Searcher.prefix
-                        searchForMethodsOnly q
-                            =  not (Text.null $ strippedPrefix q)
-                            && (Text.last (strippedPrefix q) == '.')
-                        processQuery q = do
-                            let query'     = q ^. Searcher.query
-                                weights    = Just $ getWeights
-                                    (isFirstQuery q)
-                                    (searchForMethodsOnly q)
-                                    nmi
-                                    query'
-                                searchRes' = NS.search query' nsData weights
-                                searchRes  = if query' == "_"
-                                    then Match
-                                        (RawEntry
-                                            query'
-                                            def
-                                            Function
-                                            1000000
-                                            . Just $ NS.ImportInfo
-                                                localFunctionsImportName
-                                                True
-                                        ) True 1000000 [(0, 1)] : searchRes'
-                                    else searchRes'
-                            if Text.strip (q ^. Searcher.prefix) == "def"
-                                then def
-                                else takeWhile (view NS.exactMatch) searchRes
-                        result = maybe [] processQuery mayQuery
+        let (mode, hintsLen) = case m of
+                Searcher.Node _ nmi _ -> do
+                    let hints input = search input nsData nmi
+                        result      = maybe mempty hints mayQuery
                     (updateNodeResult result m, length result)
                 Searcher.Command {} -> do
-                    let searchCommands q = NS.searchCommands
-                            (q ^. Searcher.query)
+                    let hints input = NS.searchCommands
+                            (input ^. Searcher.query)
                             allCommands
-                        result = maybe [] searchCommands mayQuery
+                        result = maybe mempty hints mayQuery
                     (updateCommandsResult result m, length result)
                 _                   -> (m, 0)
+            selectInput = maybe True (Text.null . view Searcher.query) mayQuery
+
         Searcher.selected      .= if selectInput then 0 else min 1 hintsLen
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
@@ -157,12 +128,53 @@ localClearSearcherHints = do
             Searcher.PortName pr     _ -> Searcher.PortName pr def
     updateDocs
 
-getWeights :: IsFirstQuery -> SearchForMethodsOnly -> NodeModeInfo -> Text
-    -> TypePreferation
-getWeights _     True _   _ = TypePreferation 0 0 (def, def) 1 0
-getWeights False _    _   q = TypePreferation 0.7 0.5 (def, def) 0.3
+localFunctionsImportName :: Text
+localFunctionsImportName = "Local"
+
+wildcardMatch :: Match
+wildcardMatch
+    = Match wildcardEntry NS.CaseSensitiveEquality 1000000 [(0,1)] where
+        wildcardImportInfo = NS.ImportInfo localFunctionsImportName True
+        wildcardEntry = RawEntry
+            "_"
+            def
+            Function
+            1000000
+            (Just wildcardImportInfo)
+
+search :: Searcher.DividedInput -> NS.NodeSearcherData -> NodeModeInfo
+    -> [Match]
+search input nsData nmi = let
+        query          = input ^. Searcher.query
+        strippedPrefix = Text.strip $ input ^. Searcher.prefix
+        searchResult   = NS.search query nsData (Just $ getWeights input nmi)
+        hints          = takeWhile
+            (\m -> m ^. NS.matchType /= NS.NotFullyMatched)
+            searchResult
+    in if strippedPrefix == "def" then mempty
+        else if query == "_" then wildcardMatch : hints
+        else hints
+
+getWeights :: Searcher.DividedInput -> NodeModeInfo -> TypePreference
+getWeights input nmi = getWeights'
+    isFirstQuery
+    searchForMethodsOnly
+    nmi
+    query where
+        query = input ^. Searcher.query
+        strippedPrefix = Text.strip $ input ^. Searcher.prefix
+        isFirstQuery = Text.null strippedPrefix
+        searchForMethodsOnly = not (Text.null strippedPrefix)
+            && Text.last strippedPrefix == '.'
+
+getWeights' :: IsFirstQuery -> SearchForMethodsOnly -> NodeModeInfo -> Text
+    -> TypePreference
+getWeights' _     True _   _ = TypePreference 0 0 (def, def) 1 0
+getWeights' False _    _   q = TypePreference 0.7 0.5 (def, def) 0.3
     $ if not (Text.null q) && isUpper (Text.head q) then 0.6 else 0.1
-getWeights _     _    nmi q = case nmi ^. className of
-    Nothing -> TypePreferation 0.5 0.7 (def, def) 0.3
+getWeights' _     _    nmi q = case nmi ^. className of
+    Nothing -> TypePreference 0.5 0.7 (def, def) 0.3
         $ if not (Text.null q) && isUpper (Text.head q) then 0.9 else 0.2
-    Just cn -> TypePreferation 0.2 0.3 (Set.singleton cn, 0.7) 0.5 0.1
+    Just cn -> TypePreference 0.2 0.3 (Set.singleton cn, 0.7) 0.5 0.1
+
+
