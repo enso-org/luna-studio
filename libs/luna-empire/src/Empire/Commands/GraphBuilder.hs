@@ -342,6 +342,11 @@ extractArgNames node funResolve = do
         ASGFunction _ a _ -> do
             args <- mapM source =<< ptrListToList a
             mapM safeGetVarName args
+        ResolvedDef mod n -> do
+            let fun = (\f -> f mod n) =<< funResolve
+            case fun of
+                Just f -> extractArgNames (generalize f) funResolve
+                _      -> pure []
         _ -> pure []
 
 extractAppArgNames :: NodeRef -> Maybe TCFunResolver -> GraphOp [Maybe String]

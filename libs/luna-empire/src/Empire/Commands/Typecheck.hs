@@ -318,7 +318,7 @@ compileCurrentScope modName path root = do
         Unit.Graph r -> when (Layout.relayout r /= root) $ IR.deleteSubtree r
         _ -> return ()
 
-    Graph.userState . mappedUnits  .= units
+    Graph.userState . mappedUnits  %= Map.union units
     Graph.userState . typedUnits   .= newTyped
     Graph.userState . runtimeUnits .= newEvald
     Graph.userState . resolvers    .= newResolvers
