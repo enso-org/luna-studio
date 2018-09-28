@@ -2854,6 +2854,42 @@ def main:
                 [conn] <- Graph.getConnections loc
                 (_, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
                 liftIO $ conn `shouldBe` Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef output [])
+        it "shows connection to left section" $ let
+            initialCode = [r|
+                def main:
+                    foo = 7
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    foo = 7
+                    expr1 = + foo
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [foo] <- Graph.getNodes loc
+                u1 <- mkUUID
+                Graph.addNode loc u1 "+ foo" $ atXPos 50.0
+                [conn] <- Graph.getConnections loc
+                liftIO $ conn `shouldBe` Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef u1 [Port.Arg 1])
+        it "shows connection to right section" $ let
+            initialCode = [r|
+                def main:
+                    foo = 7
+                    None
+                |]
+            expectedCode = [r|
+                def main:
+                    foo = 7
+                    expr1 = foo +
+                    None
+                |]
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
+                [foo] <- Graph.getNodes loc
+                u1 <- mkUUID
+                Graph.addNode loc u1 "foo +" $ atXPos 50.0
+                [conn] <- Graph.getConnections loc
+                liftIO $ conn `shouldBe` Connection (outPortRef (foo ^. Node.nodeId) []) (inPortRef u1 [Port.Arg 0])
         it "connects nested patternmatch to output" $ let
             initialCode = [r|
                 def main:

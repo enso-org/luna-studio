@@ -71,6 +71,8 @@ extractArguments' FApp expr = match expr $ \case
         return $ arg' : args
     Grouped g -> source g >>= extractArguments' FApp
     Acc t n -> source n >>= extractArguments' FApp
+    RightSection _op n -> source n >>= \a -> return [a]
+    LeftSection _op n  -> source n >>= \a -> return [a]
     _       -> return []
 extractArguments' FLam expr = match expr $ \case
     Lam b a -> do

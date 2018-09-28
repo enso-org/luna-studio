@@ -622,7 +622,10 @@ deepResolveInputs nid ref portRef@(InPortRef loc id) = do
             <$> (filter ((/= nid) . view srcNodeId) currentPortResolution)
         unfilteredPortConn = (, portRef) <$> currentPortResolution
     args       <- ASTDeconstruct.extractAppPorts ref
-    argsConns  <- forM (zip args [0..]) $ \(arg, i)
+    startingPortNumber <- match ref $ \case
+        LeftSection{} -> return 1
+        _             -> return 0
+    argsConns  <- forM (zip args [startingPortNumber..]) $ \(arg, i)
         -> deepResolveInputs nid arg (InPortRef loc (id <> [Arg i]))
     head       <- ASTDeconstruct.extractFun ref
     self       <- ASTDeconstruct.extractSelf head
