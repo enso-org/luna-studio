@@ -17,6 +17,7 @@ dependencies:
   - lens
   - luna-empire
   - luna-studio-common
+  - luna-undo-redo
   - m-logger
   - mtl
   - optparse-applicative
@@ -34,7 +35,6 @@ dependencies:
   - zeromq4-haskell >= 0.4
   - zmq-bus
   - zmq-bus-config
-  - undo-redo
 
 
 default-extensions:
