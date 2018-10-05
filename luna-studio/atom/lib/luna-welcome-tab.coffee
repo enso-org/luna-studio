@@ -31,15 +31,10 @@ class LunaWelcomeTab extends View
                                     title: 'Documentation'
                                     'Documentation'
                                 @div
-                                    outlet: 'forumButton'
-                                    class: 'luna-welcome-link luna-welcome-link--forum'
-                                    title: 'Forum'
-                                    'Forum'
-                                @div
-                                    outlet: 'chatButton'
-                                    class: 'luna-welcome-link luna-welcome-link--chat'
-                                    title: 'Chat'
-                                    'Chat'
+                                    outlet: 'supportButton'
+                                    class: 'luna-welcome-link luna-welcome-link--support'
+                                    title: 'Community support'
+                                    'Community support'
                     @div class: 'luna-welcome__body', =>
                         @div class: 'luna-welcome__block luna-welcome__block--projects', =>
                             @div
@@ -79,8 +74,7 @@ class LunaWelcomeTab extends View
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search
         @background.on 'click', @cancel
-        @forumButton.on 'click', -> shell.openExternal 'https://discuss.luna-lang.org'
-        @chatButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
+        @supportButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
         @docsButton.on 'click', -> shell.openExternal 'http://docs.luna-lang.org'
 
         @projects.refreshRecentList @hideSearchResults
