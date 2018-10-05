@@ -1,6 +1,6 @@
-name:                ws-connector
+name:                luna-ws-connector
 version:             0.1.0.0
-synopsis:            ws-connector
+synopsis:            luna-ws-connector
 license:             AllRightsReserved
 author:              New Byte Order
 maintainer:          contact@nodelab.io
@@ -10,7 +10,7 @@ default-extensions:
   - OverloadedStrings
 
 executables:
-  ws-connector:
+  luna-ws-connector:
     source-dirs: src
     ghc-options:    -Wall -O2 -threaded
     main: Main.hs
