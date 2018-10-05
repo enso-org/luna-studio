@@ -1,5 +1,5 @@
 module ZMQ.Bus.Broker.Config (
-    module Paths_zmq_bus_broker,
+    module Paths_luna_broker,
 ) where
 
-import           Paths_zmq_bus_broker (version)
+import           Paths_luna_broker (version)
