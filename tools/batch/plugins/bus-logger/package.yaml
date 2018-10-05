@@ -28,6 +28,6 @@ dependencies:
   - zmq-bus-config
 
 executables:
-  bus-logger:
+  luna-bus-logger:
     source-dirs: src
     main:        Main.hs
