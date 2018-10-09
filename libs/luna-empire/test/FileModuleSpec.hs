@@ -227,7 +227,8 @@ spec = around withChannels $ parallel $ do
             length nodes `shouldBe` 4
             find (\n -> n ^. Node.name == Just "quux") nodes `shouldSatisfy` isJust
             normalizeLunaCode code `shouldBe` normalizeLunaCode [r|
-                def quux a b c
+                def quux a b c:
+                    None
 
                 # Docs
                 def foo:
@@ -260,7 +261,8 @@ spec = around withChannels $ parallel $ do
                 def bar:
                     "bar"
 
-                def quux
+                def quux:
+                    None
 
                 # Docs
                 def main:
@@ -289,7 +291,8 @@ spec = around withChannels $ parallel $ do
                 def main:
                     print bar
 
-                def quux
+                def quux:
+                    None
                 |]
         it "adds function at top-level as def" $ \env -> do
             u1 <- mkUUID
@@ -302,7 +305,8 @@ spec = around withChannels $ parallel $ do
             length nodes `shouldBe` 4
             find (\n -> n ^. Node.name == Just "quux") nodes `shouldSatisfy` isJust
             normalizeLunaCode code `shouldBe` normalizeLunaCode [r|
-                def quux
+                def quux:
+                    None
 
                 # Docs
                 def foo:
@@ -326,7 +330,7 @@ spec = around withChannels $ parallel $ do
                 Graph.getGraph (GraphLocation "TestPath" (Breadcrumb [Definition (n ^. Node.nodeId)]))
             length (graph ^. APIGraph.nodes) `shouldBe` 0
             let Just (Node.OutputSidebar _ ports) = graph ^. APIGraph.outputSidebar
-            toListOf traverse ports `shouldBe` [Port [] "output" TStar (WithDefault (Expression "(MissingSection)"))]
+            toListOf traverse ports `shouldBe` [Port [] "output" TStar (WithDefault (Expression "None"))]
         it "removes function at top-level" $ \env -> do
             (nodes, code) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -810,7 +814,7 @@ spec = around withChannels $ parallel $ do
                     funs <- use $ Graph.userState . Graph.clsFuns
                     return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",10), ("bar",39), ("aaa",65), ("main",84)]
+            offsets `shouldMatchList` [("foo",10), ("bar",39), ("aaa",65), ("main",94)]
         it "maintains proper function file offsets after removing a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -851,7 +855,8 @@ spec = around withChannels $ parallel $ do
             length nodes `shouldBe` 1
             find (\n -> n ^. Node.name == Just "main") nodes `shouldSatisfy` isJust
             normalizeLunaCode code `shouldBe` normalizeLunaCode [r|
-                def main
+                def main:
+                    None
                 |]
         it "adds the first function in a file with imports" $ \env -> do
             u1 <- mkUUID
@@ -867,7 +872,8 @@ spec = around withChannels $ parallel $ do
                 import Std
                 import Foo
 
-                def main
+                def main:
+                    None
                 |]
         it "pastes top level function" $ \env -> do
             (nodes, code) <- evalEmp env $ do
@@ -1032,7 +1038,8 @@ spec = around withChannels $ parallel $ do
         it "adds def" $
             let initialCode = ""
                 expectedCode = [r|
-                    def
+                    def func:
+                        None
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -1041,7 +1048,8 @@ spec = around withChannels $ parallel $ do
         it "adds def name" $
             let initialCode = ""
                 expectedCode = [r|
-                    def foo
+                    def foo:
+                        None
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -1050,7 +1058,8 @@ spec = around withChannels $ parallel $ do
         it "adds def with invalid name" $
             let initialCode = ""
                 expectedCode = [r|
-                    def 4
+                    def 4:
+                        None
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID
@@ -1059,7 +1068,8 @@ spec = around withChannels $ parallel $ do
         it "adds def with invalid name and renames it from graph" $
             let initialCode = ""
                 expectedCode = [r|
-                    def foo
+                    def foo:
+                        None
                     |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID

@@ -280,14 +280,16 @@ renameLambdaArg p@(Port.Projection port : []) newName lam = match lam $ \case
     Lam _ _ -> do
         args <- ASTDeconstruct.extractArguments lam
         let arg = args !! port
+        oldLen <- getLayer @SpanLength arg
         renameVar arg newName
-        Code.replaceAllUses arg $ convert newName
+        Code.replaceAllUses arg oldLen $ convert newName
     ASGFunction _ as' _ -> do
         as <- ptrListToList as'
         for_ (as ^? ix port) $ \alink -> do
             arg <- source alink
+            oldLen <- getLayer @SpanLength arg
             renameVar arg newName
-            Code.replaceAllUses arg $ convert newName
+            Code.replaceAllUses arg oldLen $ convert newName
     _ -> throwM $ NotLambdaException lam
 
 redirectLambdaOutput :: NodeRef -> NodeRef -> GraphOp NodeRef

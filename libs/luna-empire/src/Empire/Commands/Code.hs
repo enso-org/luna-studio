@@ -282,13 +282,12 @@ getCodeWithIndentOf ref = do
     off <- getCurrentIndentationLength
     getAt (beg - off) (beg + len)
 
-replaceAllUses :: NodeRef -> Text -> GraphOp ()
-replaceAllUses ref new = do
-    len         <- getLayer @SpanLength ref
+replaceAllUses :: NodeRef -> Delta -> Text -> GraphOp ()
+replaceAllUses ref oldLen new = do
     occurrences <- getAllBeginningsOf ref
     let fromFileEnd = reverse $ sort occurrences
-    for_ fromFileEnd $ \beg -> applyDiff beg (beg + len) new
-    gossipLengthsChangedBy (fromIntegral (Text.length new) - len) ref
+    for_ fromFileEnd $ \beg -> applyDiff beg (beg + oldLen) new
+    gossipLengthsChangedBy (fromIntegral (Text.length new) - oldLen) ref
 
 computeLength :: NodeRef -> GraphOp Delta
 computeLength ref = do
