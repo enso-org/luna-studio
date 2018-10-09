@@ -123,6 +123,7 @@ graph = React.defineView name $ \(ref, ne', isTopLevel) -> do
                 [ "className" $= Style.prefixFromList (["graph"] <> if allowVisualizations && isAnyVisActive then ["graph--has-visualization-active"] else [])
                 , "key"       $= "graph"
                 ] $ do
+                when (null nodes) $ div_ $ elemString $ "Press TAB to start"
 
                 dynamicStyles_ camera $ ne ^. NodeEditor.expressionNodesRecursive
 
