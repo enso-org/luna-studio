@@ -1,5 +1,6 @@
 {View} = require 'atom-space-pen-views'
 logo   = require 'luna-logo'
+shell  = require 'shell'
 
 module.exports =
 class LunaToolbar extends View
@@ -22,28 +23,21 @@ class LunaToolbar extends View
                     outlet: 'buttonContainer'
                     =>
                         @div
-                            class: 'luna-toolbar__button icon-plus'
-                            outlet: 'buttonNew'
+                            class: 'luna-toolbar__button'
+                            outlet: 'buttonDocs'
+                            'Documentation'
                         @div
-                            class: 'luna-toolbar__button icon-search'
-                            outlet: 'buttonSearch'
-                        @div
-                            class: 'luna-toolbar__button icon-gear'
-                            outlet: 'buttonSettings'
+                            class: 'luna-toolbar__button'
+                            outlet: 'buttonSupport'
+                            'Community support'
     initialize: =>
         target = atom.views.getView atom.workspace
-        connectButton = (btn, action) =>
-            btn.on 'click', ->
-                atom.commands.dispatch target, action
-
-        connectButton @buttonLogo    , 'luna-studio:welcome'
-        connectButton @buttonNew     , 'application:new-file'
-        connectButton @buttonSearch  , 'fuzzy-finder:toggle-file-finder'
-        connectButton @buttonSettings, 'application:show-settings'
-
+        @buttonLogo.on    'click', -> atom.commands.dispatch target, 'luna-studio:welcome'
+        @buttonDocs.on    'click', -> shell.openExternal 'http://docs.luna-lang.org'
+        @buttonSupport.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
 
     attach: =>
-        @panel ?= atom.workspace.addLeftPanel({item: this, visible: false})
+        @panel ?= atom.workspace.addHeaderPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
         @buttonLogo[0].innerHTML = logo.generateInAppLogo 48
         @panel.show()
