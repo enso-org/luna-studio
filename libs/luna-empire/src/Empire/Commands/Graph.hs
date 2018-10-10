@@ -100,7 +100,7 @@ import Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
 import LunaStudio.Data.Breadcrumb           (Breadcrumb (..), BreadcrumbItem,
                                              Named)
 import LunaStudio.Data.Connection           (Connection (..))
-import LunaStudio.Data.GraphLocation        (GraphLocation (..))
+import LunaStudio.Data.GraphLocation        (GraphLocation (..), (|>))
 import LunaStudio.Data.Node                 (ExpressionNode (..), NodeId)
 import LunaStudio.Data.NodeLoc              (NodeLoc (..))
 import LunaStudio.Data.NodeMeta             (NodeMeta)

@@ -4,9 +4,10 @@ import Empire.Prelude
 
 import qualified LunaStudio.Data.Node         as Node
 
+import LunaStudio.Data.GraphLocation  ((|>|))
 import Test.Hspec                     (Spec, describe, it)
 import Test.Hspec.Empire              (addNode, emptyCodeTemplate,
-                                       runTests, testCase, (|>))
+                                       runTests, testCase)
 import Text.RawString.QQ              (r)
 
 
@@ -36,7 +37,7 @@ spec = runTests "adding function tests" $ do
                 |]
             in testCase emptyCodeTemplate expectedCode $ \gl -> do
                 node <- addNode gl "def foo"
-                addNode (gl |> node ^. Node.nodeId) "4"
+                addNode (gl |>| node ^. Node.nodeId) "4"
 
         it "adds def foo inside main and adds a function inside" $ let
             expectedCode = [r|
@@ -51,4 +52,4 @@ spec = runTests "adding function tests" $ do
                 |]
             in testCase emptyCodeTemplate expectedCode $ \gl -> do
                 node <- addNode gl "def foo"
-                addNode (gl |> node ^. Node.nodeId) "def bar"
+                addNode (gl |>| node ^. Node.nodeId) "def bar"
