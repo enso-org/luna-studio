@@ -10,13 +10,13 @@ report = require './report'
 requestProgress = require 'request-progress'
 unzip = require 'unzipper'
 
-{ProjectItem, recentClasses, tutorialClasses} = require './project-item'
+{ProjectItem, recentClasses, sampleProjectClasses} = require './project-item'
 
 recentProjectsPath    = path.join process.env.LUNA_STUDIO_DATA_PATH, 'recent-projects.yml'
-tutorialsBackupPath   = path.join process.env.LUNA_STUDIO_DATA_PATH, 'tutorials-backup.yml'
+sampleProjectsBackupPath   = path.join process.env.LUNA_STUDIO_DATA_PATH, 'sampleProjects-backup.yml'
 defaultProjectPath    = process.env.LUNA_PROJECTS
 temporaryPath         = process.env.LUNA_TMP
-tutorialsDownloadPath = process.env.LUNA_TUTORIALS
+sampleProjectsDownloadPath = process.env.LUNA_TUTORIALS
 
 temporaryProjectPath = path.join temporaryPath, 'UnsavedLunaProject'
 
@@ -30,21 +30,21 @@ mkRequestOpts = (url) ->
 
 ## TUTORIALS ##
 
-tutorialListRequestOpts = mkRequestOpts 'https://api.github.com/orgs/luna-packages/repos'
+sampleProjectListRequestOpts = mkRequestOpts 'https://api.github.com/orgs/luna-packages/repos'
 thumbnailRequestOpts = (name) -> mkRequestOpts 'https://api.github.com/repos/luna-packages/' + name + '/contents/thumb.png'
-tutorialItems = {}
+sampleProjectItems = {}
 
-refreshTutorialList = (callback) =>
+refreshSampleProjectList = (callback) =>
     onError = (errMessage) =>
-        tutorialListDeserialize (error) =>
+        sampleProjectListDeserialize (error) =>
             if error?
                 if errMessage?
                     errMessage = ', details: ' + errMessage
-                callback 'Cannot download tutorial list. \n\n Could not reach Github' + errMessage
+                callback 'Cannot download sample project list. \n\n Could not reach Github' + errMessage
             else
                 callback()
     try
-        request.get tutorialListRequestOpts, (err, response, body) =>
+        request.get sampleProjectListRequestOpts, (err, response, body) =>
             if err?
                 onError err.message
                 return
@@ -55,42 +55,42 @@ refreshTutorialList = (callback) =>
             else
                 parsed.forEach (repo) =>
                     archiveUrl = repo.archive_url.replace('{archive_format}', 'zipball').replace('{/ref}', '/master')
-                    tutorialItems[repo.name] =
+                    sampleProjectItems[repo.name] =
                         name: repo.name
                         description: repo.description
                         uri: archiveUrl
                     callback()
-                    tutorialListSerialize()
+                    sampleProjectListSerialize()
                     request.get thumbnailRequestOpts(repo.name), (err, response, body) =>
                         if body?
                             parsed = yaml.safeLoad(body)
-                            tutorialItems[repo.name] =
+                            sampleProjectItems[repo.name] =
                                 name: repo.name
                                 description: repo.description
                                 uri: archiveUrl
                                 thumb: 'data:image/png;base64,' + parsed.content
                             callback()
-                            tutorialListSerialize()
+                            sampleProjectListSerialize()
     catch error
-        report.displayError 'Error while getting tutorials. Could not reach Github. ', error.message
+        report.displayError 'Error while getting sampleProjects. Could not reach Github. ', error.message
 
-tutorialListSerialize = =>
-    data = yaml.safeDump tutorialItems
-    fs.writeFile tutorialsBackupPath, data, encoding, (err) =>
+sampleProjectListSerialize = =>
+    data = yaml.safeDump sampleProjectItems
+    fs.writeFile sampleProjectsBackupPath, data, encoding, (err) =>
         if err?
             report.silentError err
 
-tutorialListDeserialize = (callback) =>
-    fs.readFile tutorialsBackupPath, encoding, (err, data) =>
+sampleProjectListDeserialize = (callback) =>
+    fs.readFile sampleProjectsBackupPath, encoding, (err, data) =>
         if err? then callback
                         error: err.message
         else
-            tutorialItems = yaml.safeLoad(data)
+            sampleProjectItems = yaml.safeLoad(data)
             callback()
 
-mkTutorial = (tutorial) ->
-    new ProjectItem tutorial, tutorialClasses, (progress, finalize) =>
-        tutorialOpen tutorial, progress, finalize
+mkSampleProject = (sampleProject) ->
+    new ProjectItem sampleProject, sampleProjectClasses, (progress, finalize) =>
+        sampleProjectOpen sampleProject, progress, finalize
 
 retryEBUSY = (operation, callback) ->
     retryCount = 0
@@ -109,28 +109,28 @@ retryEBUSY = (operation, callback) ->
             callback err
     retry()
 
-tutorialOpen = (tutorial, progress, finalize) ->
-    dstPath = path.join tutorialsDownloadPath, tutorial.name
+sampleProjectOpen = (sampleProject, progress, finalize) ->
+    dstPath = path.join sampleProjectsDownloadPath, sampleProject.name
     dstZipPath = dstPath + '.zip'
-    unpackPath = path.join tutorialsDownloadPath, 'unzipped' + tutorial.name
+    unpackPath = path.join sampleProjectsDownloadPath, 'unzipped' + sampleProject.name
     cloneError = (err) =>
-        report.displayError 'Error while cloning tutorial', err
+        report.displayError 'Error while cloning sample project', err
         finalize()
     tryCloseAllFiles =>
         retryEBUSY ((callback) => fse.remove dstPath, callback), (err) =>
             if err?
                 cloneError err.toString()
             else
-                requestProgress(request mkRequestOpts tutorial.uri)
+                requestProgress(request mkRequestOpts sampleProject.uri)
                     .on 'progress', ((state) => progress state.percent)
                     .on 'error', cloneError
                     .pipe(unzip.Extract({ path: unpackPath }))
                     .on 'close', =>
                         fs.readdir unpackPath, (err, files) =>
                             if err?
-                                cloneError 'Cannot open tutorial: ' + err.message
+                                cloneError 'Cannot open sample project: ' + err.message
                             else unless files[0]?
-                                cloneError 'Wrong tutorial archive structure'
+                                cloneError 'Wrong sample project archive structure'
                             else
                                 srcPath = path.join unpackPath, files[0]
                                 fsNoEPERM.rename srcPath, dstPath
@@ -138,7 +138,7 @@ tutorialOpen = (tutorial, progress, finalize) ->
                                         atom.project.setPaths [dstPath]
                                         finalize()
                                     .catch (err) =>
-                                        cloneError 'Cannot open tutorial: ' + err.message
+                                        cloneError 'Cannot open sample project: ' + err.message
 
 ## RECENT PROJECTS ##
 
@@ -169,7 +169,7 @@ loadRecentNoCheck = (callback) =>
 
 ## TEMPORARY PROJECT ##
 
-isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith tutorialsDownloadPath)
+isTemporary = (projectPath) -> (projectPath.startsWith temporaryPath) or (projectPath.startsWith sampleProjectsDownloadPath)
 
 ## PROJECTS ##
 
@@ -255,10 +255,10 @@ module.exports =
                 if err?
                     console.log err
 
-        getTutorialItems: =>
-            tutorials = {}
-            for own key, tutorialItem of tutorialItems
-                tutorials[key] = mkTutorial tutorialItem
-            tutorials
+        getSampleProjectItems: =>
+            sampleProjects = {}
+            for own key, sampleProjectItem of sampleProjectItems
+                sampleProjects[key] = mkSampleProject sampleProjectItem
+            sampleProjects
 
-        refreshTutorialList: refreshTutorialList
+        refreshSampleProjectList: refreshSampleProjectList

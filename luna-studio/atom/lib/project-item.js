@@ -56,8 +56,7 @@ module.exports = {
                     </div>
         }
     },
-    tutorialClasses: projectClasses + "luna-welcome__tile--tutorial",
+    sampleProjectClasses: projectClasses + "luna-welcome__tile--sample-project",
     recentClasses: projectClasses + "luna-welcome__tile--recent",
     privateNewClasses: projectClasses + 'luna-welcome__tile--add-new',
-    communityNewClasses: projectClasses + 'luna-welcome__tile--add-new'
 };

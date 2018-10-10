@@ -26,7 +26,7 @@ import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbIte
 import qualified LunaStudio.Data.Breadcrumb      as Breadcrumb
 import           LunaStudio.Data.Constants       (gapBetweenNodes)
 import qualified LunaStudio.Data.Graph           as APIGraph
-import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..), (|>=), (|>-))
 import qualified LunaStudio.Data.Node            as Node
 import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
 import qualified LunaStudio.Data.NodeMeta        as NodeMeta

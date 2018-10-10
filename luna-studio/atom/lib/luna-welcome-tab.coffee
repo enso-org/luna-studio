@@ -2,7 +2,7 @@
 etch   = require 'etch'
 shell  = require 'shell'
 fuzzyFilter = null # defer until used
-{ProjectItem, privateNewClasses, communityNewClasses} = require './project-item'
+{ProjectItem, privateNewClasses} = require './project-item'
 analytics = require './gen/analytics'
 report = require './report'
 
@@ -31,15 +31,10 @@ class LunaWelcomeTab extends View
                                     title: 'Documentation'
                                     'Documentation'
                                 @div
-                                    outlet: 'forumButton'
-                                    class: 'luna-welcome-link luna-welcome-link--forum'
-                                    title: 'Forum'
-                                    'Forum'
-                                @div
-                                    outlet: 'chatButton'
-                                    class: 'luna-welcome-link luna-welcome-link--chat'
-                                    title: 'Chat'
-                                    'Chat'
+                                    outlet: 'supportButton'
+                                    class: 'luna-welcome-link luna-welcome-link--support'
+                                    title: 'Community support'
+                                    'Community support'
                     @div class: 'luna-welcome__body', =>
                         @div class: 'luna-welcome__block luna-welcome__block--projects', =>
                             @div
@@ -49,54 +44,42 @@ class LunaWelcomeTab extends View
                                     @h2 class: 'luna-welcome__section__title icon icon-search', 'Search results'
                                     @div class: 'luna-welcome__section__container', outlet: 'searchResultsContainer', =>
                             @div
-                                class: 'luna-welcome__section luna-welcome__section--tutorials'
-                                outlet: 'tutorialsSection'
+                                class: 'luna-welcome__section luna-welcome__section--sample-projects'
+                                outlet: 'sampleProjectsSection'
                                 =>
-                                    @h2 class: 'luna-welcome__section__title icon icon-book', 'Tutorials'
-                                    @div class: 'luna-welcome__section__container', outlet: 'tutorialsContainer', =>
+                                    @h2 class: 'luna-welcome__section__title icon icon-book', 'Sample projects'
+                                    @div class: 'luna-welcome__section__container', outlet: 'sampleProjectsContainer', =>
                             @div
                                 class: 'luna-welcome__section luna-welcome__section--private',
                                 outlet: 'privateSection'
                                 =>
-                                    @h2 class: 'luna-welcome__section__title icon icon-person', 'Private'
+                                    @h2 class: 'luna-welcome__section__title icon icon-person', 'My projects'
                                     @div class: 'luna-welcome__section__container', outlet: 'privateContainer', =>
-                            @div
-                                class: 'luna-welcome__section luna-welcome__section--community'
-                                outlet: 'communitySection'
-                                =>
-                                    @h2 class: 'luna-welcome__section__title icon icon-organization',  'Community'
-                                    @div  class: 'luna-welcome__section__container', outlet: 'communityContainer', =>
-
     initialize: =>
         @privateNew = new ProjectItem {name: 'New Project', uri: null}, privateNewClasses, (progress, finalize) =>
             finalize()
             @projects.createProject()
-        @communityItems = []
-        @comunnityNew = new ProjectItem({name: 'New Project', uri: null}, communityNewClasses, (progress, finalize) =>
-            finalize()
-            report.displayError 'Not supported yet', 'Community projects are not supported yet')
         @welcomeModal.on 'click', (e) -> e.stopPropagation()
         @searchInput.on 'search', @search
         @searchInput.on 'keyup', @search
         @background.on 'click', @cancel
-        @forumButton.on 'click', -> shell.openExternal 'https://discuss.luna-lang.org'
-        @chatButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
+        @supportButton.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
         @docsButton.on 'click', -> shell.openExternal 'http://docs.luna-lang.org'
 
         @projects.refreshRecentList @hideSearchResults
 
-        @noTutorialsMsg ?= 'Fetching tutorials list...'
-        @redrawTutorials()
-        @projects.refreshTutorialList (error) =>
-            @noTutorialsMsg = error
-            @noTutorialsMsg ?= ''
-            @redrawTutorials()
+        @noSampleProjectsMsg ?= 'Fetching sample projects list...'
+        @redrawSampleProjects()
+        @projects.refreshSampleProjectList (error) =>
+            @noSampleProjectsMsg = error
+            @noSampleProjectsMsg ?= ''
+            @redrawSampleProjects()
 
-    redrawTutorials: =>
-        @tutorialsContainer[0].innerText = @noTutorialsMsg
-        @tutorialItems = @projects.getTutorialItems()
-        for k, tutorialItem of @tutorialItems
-            @tutorialsContainer.append(tutorialItem.element)
+    redrawSampleProjects: =>
+        @sampleProjectsContainer[0].innerText = @noSampleProjectsMsg
+        @sampleProjectItems = @projects.getSampleProjectItems()
+        for k, sampleProjectItem of @sampleProjectItems
+            @sampleProjectsContainer.append(sampleProjectItem.element)
 
     getFilterKey: ->
         return 'name'
@@ -134,8 +117,8 @@ class LunaWelcomeTab extends View
         else
             fuzzyFilter ?= require('fuzzaldrin').filter
             allItems = []
-            for k, tutorialItem of @tutorialItems
-                allItems.push tutorialItem
+            for k, sampleProjectItem of @sampleProjectItems
+                allItems.push sampleProjectItem
 
             allItems = allItems.concat @projects.getRecentItems()
             filteredItems = fuzzyFilter(allItems, filterQuery, key: @getFilterKey())
@@ -147,9 +130,8 @@ class LunaWelcomeTab extends View
         for item in searchResults
             @searchResultsContainer.append item.element
 
-        @communitySection.hide()
         @privateSection.hide()
-        @tutorialsSection.hide()
+        @sampleProjectsSection.hide()
         @searchResultsSection.show()
 
     redrawPrivateItems: =>
@@ -158,20 +140,12 @@ class LunaWelcomeTab extends View
         for recentProject in @projects.getRecentItems()
             @privateContainer.append recentProject.element
 
-    redrawCommunityItems: =>
-        @communityContainer.empty()
-        @communityContainer.append @comunnityNew.element
-        for communityItem in @communityItems
-            @communityContainer.append communityItem.element
-
     hideSearchResults: =>
         @redrawPrivateItems()
-        @redrawCommunityItems()
-        @redrawTutorials()
+        @redrawSampleProjects()
 
         @searchResultsSection.hide()
-        @communitySection.show()
         @privateSection.show()
-        @tutorialsSection.show()
+        @sampleProjectsSection.show()
 
     getTitle: -> 'Welcome'

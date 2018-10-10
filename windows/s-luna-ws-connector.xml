@@ -1,9 +1,9 @@
 
 <configuration>
-  <id>s-undo-redo</id>
-  <name>Luna Undo-Redo Service</name>
-  <description>Undo-Redo support for Luna</description>
-  <executable>%BASE%\..\..\bin\private\undo-redo.exe</executable>
+  <id>s-luna-ws-connector</id>
+  <name>Luna WebSocket Connector Service</name>
+  <description>WebSocket connector for Luna bus</description>
+  <executable>%BASE%\..\..\bin\private\luna-ws-connector.exe</executable>
   <startmode>manual</startmode>
 
   <onfailure action="restart" delay="1 sec"/>

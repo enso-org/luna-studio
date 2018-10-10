@@ -1,4 +1,4 @@
-name:           zmq-bus-broker
+name:           luna-broker
 version:        0.0.1
 author:         New Byte Order <contact@luna-lang.org>
 
@@ -24,6 +24,6 @@ dependencies:
     - zeromq4-haskell >=0.4
 
 executables:
-  broker:
+  luna-broker:
     main: Main.hs
     source-dirs: src

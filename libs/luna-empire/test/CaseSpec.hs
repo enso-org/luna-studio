@@ -25,7 +25,7 @@ import qualified Empire.Data.Library             as Library (body)
 import           Empire.Empire                   (InterpreterEnv (..))
 import           LunaStudio.Data.Connection      (Connection (..))
 import qualified LunaStudio.Data.Graph           as Graph
-import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..), (|>|), (|>-))
 import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
 import qualified LunaStudio.Data.Node            as Node
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
@@ -126,7 +126,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             let res = evalEmp env $ do
                     Graph.addNode top u1 "map x:x" def
-                    Graph.getGraph (top |> u1)
+                    Graph.getGraph (top |>| u1)
             let breadcrumbException :: Selector BreadcrumbDoesNotExistException
                 breadcrumbException = const True
             res `shouldThrow` breadcrumbException

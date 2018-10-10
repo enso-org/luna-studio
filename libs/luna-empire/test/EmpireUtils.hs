@@ -1,7 +1,7 @@
 module EmpireUtils (module EmpireUtils, module X) where
 
-import Empire.Empire     as X (runEmpire)
-import Test.Hspec.Empire as X
+import Empire.Empire                 as X (runEmpire)
+import Test.Hspec.Empire             as X
 
 import Empire.Prelude
 
@@ -17,7 +17,7 @@ import Empire.Data.Graph             (ClsGraph, CommandState (..),
 import Empire.Empire                 (CommunicationEnv (..), Empire, Env,
                                       InterpreterEnv (..))
 import LunaStudio.Data.Breadcrumb    (Breadcrumb (Breadcrumb))
-import LunaStudio.Data.GraphLocation (GraphLocation (GraphLocation))
+import LunaStudio.Data.GraphLocation (GraphLocation (GraphLocation), (|>=))
 import LunaStudio.Data.Node          (NodeId, nodeId)
 import Test.Hspec                    (Expectation)
 

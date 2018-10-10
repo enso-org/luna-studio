@@ -31,7 +31,7 @@ import Empire.Empire                   (CommunicationEnv (CommunicationEnv),
                                         runEmpire)
 import Empire.Empire                   (InterpreterEnv (InterpreterEnv))
 import Luna.Package.Structure.Generate (genPackageStructure)
-import LunaStudio.Data.GraphLocation   (GraphLocation (GraphLocation))
+import LunaStudio.Data.GraphLocation   (GraphLocation (GraphLocation), (|>=))
 import System.FilePath                 ((</>))
 import Test.Hspec                      (Expectation, Spec, SpecWith, around,
                                         describe, parallel, shouldBe)

@@ -1,4 +1,4 @@
 s-luna-empire stop
-s-undo-redo stop
-s-ws-connector stop
-s-broker stop
+s-luna-undo-redo stop
+s-luna-ws-connector stop
+s-luna-broker stop

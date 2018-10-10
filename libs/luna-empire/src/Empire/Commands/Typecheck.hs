@@ -42,34 +42,34 @@ import qualified LunaStudio.Data.GraphLocation      as GraphLocation
 import qualified Memory                             as Memory
 import qualified Path
 
-import Control.Concurrent.Async        (Async)
-import Control.Exception.Safe          (mask_)
-import Control.Lens                    (uses)
-import Control.Monad.Reader            (ask, runReaderT)
-import Data.Graph.Component.Node.Class (Nodes)
-import Data.Graph.Data.Component.Class (Component (Component))
-import Data.Map                        (Map)
-import Data.Maybe                      (catMaybes)
-import Empire.ASTOp                    (liftScheduler, runASTOp)
-import Empire.Commands.Breadcrumb      (runInternalBreadcrumb,
-                                        withRootedFunction)
-import Empire.Data.AST                 (NodeRef)
-import Empire.Data.BreadcrumbHierarchy (topLevelIDs)
-import Empire.Data.Graph               (Graph)
-import Empire.Empire                   (Command, InterpreterEnv, zoomCommand)
-import Empire.Utils.ValueListener      (SingleRep (ErrorRep, SuccessRep),
-                                        ValueRep (OneTime, Streaming))
-import Foreign.Ptr                     (plusPtr)
-import Luna.Pass.Data.Stage            (Stage)
-import Luna.Pass.Evaluation.Data.Scope (LocalScope)
-import LunaStudio.Data.Breadcrumb      (Breadcrumb (Breadcrumb),
-                                        BreadcrumbItem (Definition))
-import LunaStudio.Data.GraphLocation   (GraphLocation (GraphLocation))
-import LunaStudio.Data.NodeValue       (NodeValue (NodeError, NodeValue))
-import LunaStudio.Data.Visualization   (VisualizationValue (StreamDataPoint, StreamStart, Value))
-import System.Directory                (canonicalizePath, withCurrentDirectory)
-import System.Environment              (getEnv)
-import System.FilePath                 (takeDirectory)
+import Control.Concurrent.Async         (Async)
+import Control.Exception.Safe           (mask_)
+import Control.Lens                     (uses)
+import Control.Monad.Reader             (ask, runReaderT)
+import Data.Graph.Component.Node.Class  (Nodes)
+import Data.Graph.Data.Component.Class  (Component (Component))
+import Data.Map                         (Map)
+import Data.Maybe                       (catMaybes)
+import Empire.ASTOp                     (liftScheduler, runASTOp)
+import Empire.Commands.Graph.Breadcrumb (runInternalBreadcrumb,
+                                         withRootedFunction)
+import Empire.Data.AST                  (NodeRef)
+import Empire.Data.BreadcrumbHierarchy  (topLevelIDs)
+import Empire.Data.Graph                (Graph)
+import Empire.Empire                    (Command, InterpreterEnv, zoomCommand)
+import Empire.Utils.ValueListener       (SingleRep (ErrorRep, SuccessRep),
+                                         ValueRep (OneTime, Streaming))
+import Foreign.Ptr                      (plusPtr)
+import Luna.Pass.Data.Stage             (Stage)
+import Luna.Pass.Evaluation.Data.Scope  (LocalScope)
+import LunaStudio.Data.Breadcrumb       (Breadcrumb (Breadcrumb),
+                                         BreadcrumbItem (Definition))
+import LunaStudio.Data.GraphLocation    (GraphLocation (GraphLocation))
+import LunaStudio.Data.NodeValue        (NodeValue (NodeError, NodeValue))
+import LunaStudio.Data.Visualization    (VisualizationValue (StreamDataPoint, StreamStart, Value))
+import System.Directory                 (canonicalizePath, withCurrentDirectory)
+import System.Environment               (getEnv)
+import System.FilePath                  (takeDirectory)
 
 
 

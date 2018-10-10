@@ -6,11 +6,13 @@ import           Control.Concurrent                      (forkIO)
 import           Control.Concurrent.MVar                 (readMVar)
 import           Control.Concurrent.STM.TChan            (writeTChan)
 import           Control.Error                           (runExceptT)
-import           Control.Lens                            (to, traversed, use, (.=), (^..))
+import           Control.Lens                            (to, traversed, use,
+                                                          (.=), (^..))
 import           Control.Monad                           (when)
 import           Control.Monad.Catch                     (handle, try)
 import           Control.Monad.Reader                    (asks)
-import           Control.Monad.State                     (StateT, evalStateT, get)
+import           Control.Monad.State                     (StateT, evalStateT,
+                                                          get)
 import           Control.Monad.STM                       (atomically)
 import qualified Data.Binary                             as Bin
 import           Data.ByteString                         (ByteString)
@@ -18,11 +20,14 @@ import           Data.ByteString.Lazy                    (fromStrict)
 import           Data.Char                               (isUpper)
 import qualified Data.HashMap.Strict                     as HashMap
 import qualified Data.IntMap                             as IntMap
-import           Data.List                               (break, find, partition, sortBy)
+import           Data.List                               (break, find,
+                                                          partition, sortBy)
 import           Data.List.Split                         (splitOneOf)
 import           Data.Map                                (Map)
 import qualified Data.Map                                as Map
-import           Data.Maybe                              (isJust, isNothing, listToMaybe, maybeToList)
+import           Data.Maybe                              (isJust, isNothing,
+                                                          listToMaybe,
+                                                          maybeToList)
 import qualified Data.Set                                as Set
 import           Data.Text                               (stripPrefix)
 import qualified Data.Text                               as Text
@@ -34,18 +39,34 @@ import           Empire.ASTOp                            (runASTOp)
 import qualified Empire.ASTOps.Print                     as Print
 import           Empire.Commands.Autolayout              (autolayoutNodes)
 import qualified Empire.Commands.Graph                   as Graph
-import           Empire.Commands.GraphBuilder            (buildClassGraph, buildConnections, buildGraph, buildNodes, getNodeName)
+import           Empire.Commands.GraphBuilder            (buildClassGraph,
+                                                          buildConnections,
+                                                          buildGraph,
+                                                          buildNodes,
+                                                          getNodeName)
 import qualified Empire.Commands.GraphUtils              as GraphUtils
-import           Empire.Data.AST                         (SomeASTException, astExceptionFromException, astExceptionToException)
-import qualified Empire.Data.Graph                       as Graph (code, nodeCache)
+import           Empire.Data.AST                         (SomeASTException, astExceptionFromException,
+                                                          astExceptionToException)
+import qualified Empire.Data.Graph                       as Graph (code,
+                                                                   nodeCache)
 import           Empire.Empire                           (Empire)
 import qualified Empire.Empire                           as Empire
 import           Empire.Env                              (Env)
 import qualified Empire.Env                              as Env
-import           Empire.Server.Server                    (defInverse, errorMessage, modifyGraph, modifyGraphOk, prettyException, replyFail,
-                                                          replyOk, replyResult, sendToBus', webGUIHack, withDefaultResult,
+import           Empire.Server.Server                    (defInverse,
+                                                          errorMessage,
+                                                          modifyGraph,
+                                                          modifyGraphOk,
+                                                          prettyException,
+                                                          replyFail, replyOk,
+                                                          replyResult,
+                                                          sendToBus',
+                                                          webGUIHack,
+                                                          withDefaultResult,
                                                           withDefaultResultTC)
-import           Luna.Package                            (findPackageFileForFile, findPackageRootForFile, getRelativePathForModule)
+import           Luna.Package                            (findPackageFileForFile,
+                                                          findPackageRootForFile,
+                                                          getRelativePathForModule)
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Control.Interpreter      as Interpreter
@@ -83,7 +104,8 @@ import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
 import qualified LunaStudio.Data.CameraTransformation    as Camera
 import           LunaStudio.Data.Code                    (Code (Code))
 import           LunaStudio.Data.Connection              as Connection
-import           LunaStudio.Data.Diff                    (Diff, diff, guiStateDiff)
+import           LunaStudio.Data.Diff                    (Diff, diff,
+                                                          guiStateDiff)
 import qualified LunaStudio.Data.Diff                    as Diff
 import           LunaStudio.Data.Graph                   (Graph (..))
 import qualified LunaStudio.Data.Graph                   as GraphAPI
@@ -92,7 +114,8 @@ import qualified LunaStudio.Data.GraphLocation           as GraphLocation
 import           LunaStudio.Data.GUIState                (GUIState (GUIState))
 import qualified LunaStudio.Data.GUIState                as GUIState
 import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
-import           LunaStudio.Data.Node                    (ExpressionNode (..), NodeId)
+import           LunaStudio.Data.Node                    (ExpressionNode (..),
+                                                          NodeId)
 import qualified LunaStudio.Data.Node                    as Node
 import           LunaStudio.Data.NodeLoc                 (NodeLoc (..))
 import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
@@ -100,11 +123,17 @@ import           LunaStudio.Data.NodeMeta                (NodeMeta)
 import qualified LunaStudio.Data.NodeMeta                as NodeMeta
 import qualified LunaStudio.Data.NodeSearcher            as NS
 import           LunaStudio.Data.NodeValue               (NodeValue (NodeValue))
-import           LunaStudio.Data.Port                    (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
-                                                          PortState (..), getPortNumber)
+import           LunaStudio.Data.Port                    (InPort (..),
+                                                          InPortIndex (..),
+                                                          OutPort (..),
+                                                          OutPortIndex (..),
+                                                          Port (..),
+                                                          PortState (..),
+                                                          getPortNumber)
 import qualified LunaStudio.Data.Port                    as Port
 import           LunaStudio.Data.PortDefault             (PortValue (..))
-import           LunaStudio.Data.PortRef                 (InPortRef (..), OutPortRef (..))
+import           LunaStudio.Data.PortRef                 (InPortRef (..),
+                                                          OutPortRef (..))
 import           LunaStudio.Data.PortRef                 as PortRef
 import           LunaStudio.Data.Position                (Position)
 import qualified LunaStudio.Data.Position                as Position
@@ -112,12 +141,16 @@ import           LunaStudio.Data.Project                 (LocationSettings)
 import qualified LunaStudio.Data.Project                 as Project
 import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
 import           LunaStudio.Data.Visualization           (VisualizationValue (..))
-import           Path                                    (fromAbsFile, fromRelFile, parseAbsFile)
+import           Path                                    (fromAbsFile,
+                                                          fromRelFile,
+                                                          parseAbsFile)
 import qualified Path
 import           Prologue                                hiding (Item, when)
 import qualified Safe
 import           System.Environment                      (getEnv)
-import           System.FilePath                         (dropFileName, replaceFileName, (</>))
+import           System.FilePath                         (dropFileName,
+                                                          replaceFileName,
+                                                          (</>))
 import qualified System.Log.MLogger                      as Logger
 import qualified ZMQ.Bus.Bus                             as Bus
 import qualified ZMQ.Bus.Config                          as Config
@@ -518,7 +551,7 @@ handleSetNodeExpression = modifyGraph inverse action replyResult where
 inverseSetNodesMeta :: GraphLocation -> Map NodeId NodeMeta
     -> Empire SetNodesMeta.Inverse
 inverseSetNodesMeta location updates = do
-    allNodes <- Graph.withGraph' location (runASTOp buildNodes)
+    allNodes <- Graph.withBreadcrumb location (runASTOp buildNodes)
         $ view GraphAPI.nodes <$> runASTOp buildClassGraph
     let prevMeta = Map.fromList . catMaybes . flip fmap allNodes $ \node ->
             justIf
@@ -597,9 +630,9 @@ handleGetBuffer = modifyGraph defInverse action replyResult where
 
 handleInterpreterControl :: Request Interpreter.Request -> StateT Env BusT ()
 handleInterpreterControl = modifyGraph defInverse action replyResult where
-    interpreterAction Interpreter.Start     = Graph.startInterpreter
-    interpreterAction Interpreter.Pause     = Graph.pauseInterpreter
-    interpreterAction Interpreter.Reload    = Graph.reloadInterpreter
+    interpreterAction Interpreter.Start  = Graph.startInterpreter
+    interpreterAction Interpreter.Pause  = Graph.pauseInterpreter
+    interpreterAction Interpreter.Reload = Graph.reloadInterpreter
     action (Interpreter.Request gl command) = interpreterAction command gl
 
 stdlibFunctions :: [String]

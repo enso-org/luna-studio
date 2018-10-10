@@ -1,9 +1,9 @@
 
 <configuration>
-  <id>s-ws-connector</id>
-  <name>Luna WebSocket Connector Service</name>
-  <description>WebSocket connector for Luna bus</description>
-  <executable>%BASE%\..\..\bin\private\ws-connector.exe</executable>
+  <id>s-luna-broker</id>
+  <name>Luna Broker Service</name>
+  <description>Communication bus for Luna backend</description>
+  <executable>%BASE%\..\..\bin\private\luna-broker.exe</executable>
   <startmode>manual</startmode>
 
   <onfailure action="restart" delay="1 sec"/>

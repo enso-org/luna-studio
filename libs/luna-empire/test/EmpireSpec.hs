@@ -42,7 +42,7 @@ import qualified Luna.Package.Structure.Name     as Project
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
 import           LunaStudio.Data.Connection      (Connection (Connection))
 import qualified LunaStudio.Data.Graph           as Graph
-import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..), (|>|))
 import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
 import qualified LunaStudio.Data.Node            as Node
 import           LunaStudio.Data.NodeId          (NodeId)
@@ -96,7 +96,7 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
                 topLevel <- graphIDs top
-                n1Level  <- Graph.getGraph (top |> u1)
+                n1Level  <- Graph.getGraph (top |>| u1)
                 return (topLevel, n1Level)
             withResult res $ \(topLevel, Graph.Graph n1LevelNodes _ i o _ _) -> do
                 length topLevel `shouldBe` 1
@@ -109,7 +109,7 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = (a: a)" def
                 topLevel <- graphIDs top
-                n1Level <- Graph.getGraph (top |> u1)
+                n1Level <- Graph.getGraph (top |>| u1)
                 return (topLevel, n1Level)
             withResult res $ \(topLevel, Graph.Graph n1LevelNodes _ i o _ _) -> do
                 length topLevel `shouldBe` 1
@@ -180,7 +180,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode loc' u2 "4" def
                 (_, out) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (outPortRef u2 [], inPortRef out [])
@@ -194,7 +194,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.disconnect loc' (inPortRef output [])
                 let referenceConnection = (outPortRef input [Port.Projection 0], inPortRef output [])
@@ -208,7 +208,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode loc' u2 "succ" def
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (outPortRef input [Port.Projection 0], inPortRef u2 [Port.Self])
@@ -222,7 +222,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode loc' u2 "succ" def
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -236,7 +236,7 @@ spec = around withChannels $ parallel $ do
         it "has proper connection inside `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode top u1 "foo = a: a" def
                 conns <- Graph.getConnections loc'
                 edges <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -248,7 +248,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode loc' u2 "4" def
                 Graph.addNode loc' u3 "succ" def
@@ -265,8 +265,8 @@ spec = around withChannels $ parallel $ do
             u3 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                Graph.addNode (top |> u1) u2 "bar = c: c" def
-                let loc = top |> u1 |> u2
+                Graph.addNode (top |>| u1) u2 "bar = c: c" def
+                let loc = top |>| u1 |>| u2
                 Graph.addNode loc u3 "4" def
                 graphIDs loc
             withResult res $ \ids -> do
@@ -288,14 +288,14 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                Graph.getNodes (top |> u1)
+                Graph.getNodes (top |>| u1)
             withResult res $ \ids -> do
                 ids `shouldSatisfy` null
         it "int literal has no nodes inside" $ \env -> do
             u1 <- mkUUID
             let res = evalEmp env $ do
                     Graph.addNode top u1 "4" def
-                    graphIDs $ top |> u1
+                    graphIDs $ top |>| u1
             let breadcrumbException :: Selector BreadcrumbDoesNotExistException
                 breadcrumbException = const True
             res `shouldThrow` breadcrumbException
@@ -309,7 +309,7 @@ spec = around withChannels $ parallel $ do
                 {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
                     {-Typecheck.run emptyGraphLocation-}
                 {-(res'', _) <- runEmp' env st g' $ do-}
-                    {-Graph.getNodes $ top |> u1-}
+                    {-Graph.getNodes $ top |>| u1-}
                 {-withResult res'' $ \nodes' -> do-}
                     {-let Just input = find ((== "inputEdge") . view Node.name) nodes'-}
                         {-ports' = toList $ input ^. Node.ports-}
@@ -325,7 +325,7 @@ spec = around withChannels $ parallel $ do
                 {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
                     {-Typecheck.run emptyGraphLocation-}
                 {-(res'',_) <- runEmp' env st g' $ do-}
-                    {-Graph.getNodes $ top |> u1-}
+                    {-Graph.getNodes $ top |>| u1-}
                 {-withResult res'' $ \nodes' -> do-}
                     {-let Just output' = find ((== "outputEdge") . view Node.name) nodes'-}
                         {-ports' = toList $ output' ^. Node.ports-}
@@ -341,7 +341,7 @@ spec = around withChannels $ parallel $ do
                 {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
                     {-Typecheck.run emptyGraphLocation-}
                 {-(res'',_) <- runEmp' env st g' $ do-}
-                    {-Graph.getNodes $ top |> u1-}
+                    {-Graph.getNodes $ top |>| u1-}
                 {-withResult res'' $ \nodes' -> do-}
                     {-let Just input' = find ((== "inputEdge") . view Node.name) nodes'-}
                         {-inPorts' = toList $ input' ^. Node.ports-}
@@ -395,7 +395,7 @@ spec = around withChannels $ parallel $ do
         it "puts + inside plus lambda" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode top u1 "a: b: a + b" def
                 Graph.getNodes loc'
             withResult res $ \nodes -> do
@@ -404,7 +404,7 @@ spec = around withChannels $ parallel $ do
         it "places connections between + node and output" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode top u1 "a: b: a + b" def
                 Graph.getConnections loc'
             withResult res $ \conns -> do
@@ -636,7 +636,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode loc' u2 "4" def
                 (_, out) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -727,7 +727,7 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
                 Graph.setNodeExpression top u1 "a: b: a + b"
-                Graph.getGraph (top |> u1)
+                Graph.getGraph (top |>| u1)
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ _ = graph
                 let [node] = nodes
@@ -954,7 +954,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' $ outPortRef input [Port.Projection 1]
                 inputEdge <- buildInputEdge' loc' input
@@ -977,7 +977,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPortWithConnections loc' (outPortRef input [Port.Projection 1]) (Just "zzz") []
                 inputEdge <- buildInputEdge' loc' input
@@ -1000,7 +1000,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' (outPortRef input [Port.Projection 0])
                 inputEdge <- buildInputEdge' loc' input
@@ -1023,7 +1023,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' $ outPortRef input [Port.Projection 1]
                 Graph.addPort loc' $ outPortRef input [Port.Projection 2]
@@ -1046,7 +1046,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "a: b: a + b" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' $ outPortRef input [Port.Projection 2]
                 inputEdge <- buildInputEdge' loc' input
@@ -1072,7 +1072,7 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode top u2 "func" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' $ outPortRef input [Port.Projection 1]
                 connectToInput top (outPortRef u2 []) (inPortRef u1 [Port.Arg 1])
@@ -1092,7 +1092,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "a: b: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.removePort loc' $ outPortRef input [Port.Projection 1]
                 inputEdge <- buildInputEdge' loc' input
@@ -1110,7 +1110,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "a: b: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.renamePort loc' (outPortRef input [Port.Projection 0]) "foo"
                 Graph.renamePort loc' (outPortRef input [Port.Projection 1]) "bar"
@@ -1125,7 +1125,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "a: b: c: d: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.movePort loc' (outPortRef input [Port.Projection 0]) 2
                 inputEdge <- buildInputEdge' loc' input
@@ -1142,7 +1142,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode loc' u2 "func" def
                 (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' (outPortRef input [Port.Projection 1])
@@ -1164,7 +1164,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             let res = evalEmp env $ do
                     Graph.addNode top u1 "foo = a: a" def
-                    let loc' = top |> u1
+                    let loc' = top |>| u1
                     (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                     Graph.removePort loc' (outPortRef input [])
             let cannotRemovePortException :: Selector CannotRemovePortException
@@ -1175,7 +1175,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 Graph.addNode loc' u2 "func" def
                 (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' (outPortRef input [Port.Projection 1])
@@ -1203,7 +1203,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
+                let loc' = top |>| u1
                 (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 Graph.addNode loc' u2 "succ" def
@@ -1281,7 +1281,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc = top |> u1
+                let loc = top |>| u1
                 Graph.addNode loc u2 "4" def
                 Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \idSeq -> do
@@ -1292,7 +1292,7 @@ spec = around withChannels $ parallel $ do
             u3 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
-                let loc = top |> u1
+                let loc = top |>| u1
                 Graph.addNode loc u2 "4" $ NodeMeta (Position.fromTuple (10, 10)) False def
                 Graph.addNode loc u3 "6" $ NodeMeta (Position.fromTuple (10, 20)) False def
                 Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence
@@ -1303,7 +1303,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "a: a" def
-                let loc = top |> u1
+                let loc = top |>| u1
                 Graph.addNode loc u2 "1" def
                 Graph.removeNodes loc [u2]
                 Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence

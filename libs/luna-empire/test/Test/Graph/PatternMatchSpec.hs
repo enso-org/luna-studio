@@ -11,6 +11,7 @@ import qualified LunaStudio.Data.Port         as Port
 import qualified LunaStudio.Data.PortRef      as PortRef
 
 import Empire.ASTOp                   (runASTOp)
+import LunaStudio.Data.GraphLocation  ((|>|))
 import LunaStudio.Data.Connection     (Connection (Connection))
 import LunaStudio.Data.LabeledTree    (LabeledTree (LabeledTree))
 import LunaStudio.Data.Port           (InPortIndex (Arg), InPorts (InPorts),
@@ -26,7 +27,7 @@ import Test.Hspec.Empire              (addNode, connectToInput,
                                        findNodeIdByName, inPortRef, mkAliasPort,
                                        mkAllPort, mkSelfPort, outPortRef,
                                        runTests, testCase, testCaseWithMarkers,
-                                       xitWithReason, (|>))
+                                       xitWithReason)
 import Test.Hspec.Expectations.Lifted (shouldBe, shouldMatchList)
 import Text.RawString.QQ              (r)
 
@@ -518,7 +519,7 @@ spec = runTests "pattern match tests" $ do
                 (inPortRef  outputId mempty) ]
             prepare gl = do
                 Just lambda1 <- findNodeByName gl "lambda1"
-                let lambda1Gl = gl |> (lambda1 ^. Node.nodeId)
+                let lambda1Gl = gl |>| (lambda1 ^. Node.nodeId)
                 Graph.withGraph lambda1Gl . runASTOp $ do
                     graph           <- GraphBuilder.buildGraph
                     (input, output) <- GraphBuilder.buildEdgeNodes
@@ -581,7 +582,7 @@ spec = runTests "pattern match tests" $ do
                 (inPortRef  outputId mempty) ]
             prepare gl = do
                 Just lambda1 <- findNodeByName gl "lambda1"
-                let lambda1Gl = gl |> (lambda1 ^. Node.nodeId)
+                let lambda1Gl = gl |>| (lambda1 ^. Node.nodeId)
                 Graph.withGraph lambda1Gl . runASTOp $ do
                     graph           <- GraphBuilder.buildGraph
                     (input, output) <- GraphBuilder.buildEdgeNodes

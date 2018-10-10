@@ -10,15 +10,12 @@ import qualified LunaStudio.Data.Node            as Node
 import qualified LunaStudio.Data.Position        as Position
 
 import Control.Lens                  (uses)
-import Data.Coerce                   (coerce)
 import Data.UUID                     (UUID)
 import Data.UUID.V4                  (nextRandom)
 import Empire.ASTOp                  (runASTOp)
 import Empire.Empire                 (Empire)
-import LunaStudio.Data.Breadcrumb    (Breadcrumb (Breadcrumb),
-                                      BreadcrumbItem (Arg, Definition, Lambda))
 import LunaStudio.Data.Connection    (Connection)
-import LunaStudio.Data.GraphLocation (GraphLocation (GraphLocation))
+import LunaStudio.Data.GraphLocation (GraphLocation)
 import LunaStudio.Data.Node          (ExpressionNode, NodeId)
 import LunaStudio.Data.NodeLoc       (NodeLoc (NodeLoc))
 import LunaStudio.Data.NodeMeta      (NodeMeta (NodeMeta))
@@ -29,31 +26,6 @@ import LunaStudio.Data.PortRef       (AnyPortRef (InPortRef'),
                                       InPortRef (InPortRef),
                                       OutPortRef (OutPortRef))
 import LunaStudio.Data.TypeRep       (TypeRep (TStar))
-
-
-infixl 5 |>
-(|>) :: GraphLocation -> NodeId -> GraphLocation
-(|>) = appendLambda
-
-appendLambda  :: GraphLocation -> NodeId -> GraphLocation
-appendLambda (GraphLocation file bc) nid = GraphLocation file
-    . coerce . (<> [Lambda nid]) $ coerce bc
-
-infixl 5 |>-
-(|>-) :: GraphLocation -> (NodeId, Int) -> GraphLocation
-(|>-) = appendArg
-
-appendArg :: GraphLocation -> (NodeId, Int) -> GraphLocation
-appendArg (GraphLocation file bc) it = GraphLocation file
-    . Breadcrumb . (<> [uncurry Arg it]) $ coerce bc    
-
-infixl 5 |>=
-(|>=) :: GraphLocation -> NodeId -> GraphLocation
-(|>=) = appendDefinition
-
-appendDefinition :: GraphLocation -> NodeId -> GraphLocation
-appendDefinition (GraphLocation file bc) it = GraphLocation file
-    . Breadcrumb . (<> [Definition it]) $ coerce bc
 
 
 mkUUID :: MonadIO m => m UUID

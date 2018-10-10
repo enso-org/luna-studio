@@ -1,19 +1,13 @@
 "*":
-  "advanced-open-file":
-    fuzzyMatch: true
-  "color-picker":
-    randomColor: false
   core:
     automaticallyUpdate: false
     destroyEmptyPanes: true
     disabledPackages: [
+      "deprecation-cop"
       "dev-live-reload"
       "hidpi"
       "linter-ui-default"
       "linter"
-      "platformio-ide-terminal"
-      "tool-bar-almighty"
-      "web-view"
       "welcome"
       "wrap-guide"
     ]
@@ -57,22 +51,10 @@
       "highlight-selected": true
       "highlight-selectedDecorationsZIndex": 0
     scrollAnimation: true
-  "minimap-codeglance":
-    numberOfLines: 20
   "one-dark-ui":
     fontSize: 20
   "package-generator":
     packageSyntax: "coffeescript"
-  "platformio-ide-terminal":
-    ansiColors:
-      normal:
-        green: "#5fea5f"
-    style:
-      animationSpeed: 0
-  "split-diff":
-    ignoreWhitespace: true
-    leftEditorColor: "red"
-    rightEditorColor: "green"
   "status-bar": {}
   "tool-bar":
     position: "Left"

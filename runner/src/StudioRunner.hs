@@ -296,7 +296,7 @@ testIfRunning :: MonadRun m => m Bool
 testIfRunning = do
     -- TODO[piotrMocz]: we'll need a more robust method eventually
     -- this merely check if there's any luna-related app running
-    let lunaApps = Set.fromList ["broker", "ws-connector", "luna-empire", "luna-atom", "undo-redo"] :: Set T.Text
+    let lunaApps = Set.fromList ["luna-broker", "luna-ws-connector", "luna-empire", "luna-atom", "luna-undo-redo"] :: Set T.Text
     runningApps <- Set.fromList . T.words <$> supervisorctl ["status", "all"]
     return . not . Set.null $ Set.intersection runningApps lunaApps
 

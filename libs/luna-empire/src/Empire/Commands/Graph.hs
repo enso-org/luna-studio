@@ -1,123 +1,119 @@
 {-# LANGUAGE PartialTypeSignatures #-}
-module Empire.Commands.Graph where
+module Empire.Commands.Graph (module Empire.Commands.Graph, module X) where
 
-import           Control.Arrow                    ((&&&), (***))
-import           Control.Exception.Safe           (tryAny)
-import           Control.Concurrent               (readMVar, swapMVar)
-import qualified Control.Concurrent.MVar.Lifted   as Lifted
-import           Control.Lens                     ((^..), uses, re, traverseOf_)
-import           Control.Monad                    (forM)
-import           Control.Monad.Catch              (handle, try)
-import           Control.Monad.State              hiding (forM_, void, when)
-import           Data.Aeson                       (FromJSON, ToJSON)
-import qualified Data.Aeson                       as Aeson
-import qualified Data.Aeson.Text                  as Aeson
-import qualified Data.Bimap                       as Bimap
-import           Data.Coerce                      (coerce)
-import           Data.Char                        (isSeparator, isSpace, isUpper)
-import           Data.Foldable                    (toList)
-import qualified Data.Graph.Data.Component.Vector as PtrList
-import qualified Data.Graph.Data.Layer.Class      as Layer
-import qualified Data.Graph.Store                 as Store
-import           Data.List                        ((++), elemIndex, find, group, partition, sortBy, sortOn, nub, head)
-import qualified Data.List                        as List
-import qualified Data.List.Split                  as Split
-import           Data.Map                         (Map)
-import qualified Data.Map                         as Map
-import           Data.Maybe                       (fromMaybe, maybeToList)
-import qualified Data.Mutable.Class               as Mutable
-import           Data.Set                         (Set)
-import qualified Data.Set                         as Set
-import           Data.Text                        (Text)
-import           Data.Text.Strict.Lens            (packed)
-import qualified Data.Text                        as Text
-import qualified Data.Text.Encoding               as Text
-import qualified Data.Text.Lazy                   as TL
-import qualified Data.Text.IO                     as Text
-import           Data.Text.Position               (Delta)
-import           Data.Text.Span                   (SpacedSpan (..), leftSpacedSpan)
-import qualified Data.Text.Span                   as Span
-import qualified Data.UUID.V4                     as UUID (nextRandom)
-import qualified Data.Vector.Storable.Foreign     as Foreign
-import           Debug
-import           Empire.ASTOp                     (ASTOp, ClassOp, GraphOp, runASTOp, runAliasAnalysis, liftScheduler)
-import qualified Empire.ASTOps.Builder            as ASTBuilder
-import           Empire.ASTOps.BreadcrumbHierarchy (getMarker, prepareChild, isNone)
-import qualified Empire.ASTOps.Modify             as ASTModify
-import           Empire.ASTOps.Parse              (FunctionParsing(..))
-import qualified Empire.ASTOps.Parse              as ASTParse
-import qualified Empire.ASTOps.Print              as ASTPrint
-import qualified Empire.ASTOps.Read               as ASTRead
-import qualified Empire.Commands.AST              as AST
-import qualified Empire.Commands.Autolayout       as Autolayout
-import           Empire.Commands.Breadcrumb       (makeGraph, makeGraphCls, withBreadcrumb)
-import           Empire.Commands.Code             (addExprMapping, getNextExprMarker, getExprMap, setExprMap)
-import qualified Empire.Commands.Code             as Code
-import qualified Empire.Commands.GraphBuilder     as GraphBuilder
-import qualified Empire.Commands.GraphUtils       as GraphUtils
-import qualified Empire.Commands.Library          as Library
-import qualified Empire.Commands.Publisher        as Publisher
-import qualified Empire.Commands.Typecheck        as Typecheck
-import           Empire.Data.AST                  (InvalidConnectionException (..), EdgeRef, NodeRef, NotInputEdgeException (..),
-                                                   NotUnifyException, PortDoesNotExistException(..), ConnectionException(..),
-                                                   SomeASTException, astExceptionFromException, astExceptionToException)
-import qualified Empire.Data.BreadcrumbHierarchy  as BH
-import           Empire.Data.Graph                (ClsGraph, Graph)
-import qualified Empire.Data.Graph                as Graph
-import           Empire.Data.Layers               (SpanLength, SpanOffset)
-import qualified Empire.Data.Library              as Library
-import           Empire.Empire
-import           Empire.Prelude                   hiding (head, toList)
-import           Luna.Pass.Data.Stage             (Stage)
-import qualified Luna.Pass.Scheduler              as Scheduler
-import qualified Luna.Pass.Sourcing.Data.Class    as Class
-import qualified Luna.Pass.Sourcing.Data.Def      as Def
-import qualified Luna.Pass.Sourcing.Data.Unit     as Unit
-import qualified Luna.Pass.Sourcing.UnitLoader    as ModLoader
-import qualified Luna.Pass.Sourcing.UnitMapper    as UnitMapper
-import qualified Luna.IR                          as IR
-import qualified Luna.IR.Term.Ast.Class           as Term
-import qualified Luna.Package                     as Package
-import qualified Luna.Std                         as Std
-import           Luna.Syntax.Text.Analysis.SpanTree (Spanned(..))
-import qualified Luna.Syntax.Text.Analysis.SpanTree as SpanTree
-import qualified Luna.Syntax.Text.Lexer           as Lexer
-import           Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
+import Empire.Commands.Graph.Autolayout as X
+import Empire.Commands.Graph.Breadcrumb as X
+import Empire.Commands.Graph.Code       as X
+import Empire.Commands.Graph.Context    as X
+import Empire.Commands.Graph.Metadata   as X
+import Empire.Commands.Graph.NodeMeta   as X
+
+import Empire.Prelude hiding (head, toList)
+
+import qualified Data.Bimap                           as Bimap
+import qualified Data.Graph.Data.Component.Vector     as PtrList
+import qualified Data.Graph.Data.Layer.Class          as Layer
+import qualified Data.Graph.Store                     as Store
+import qualified Data.List                            as List
+import qualified Data.Map                             as Map
+import qualified Data.Mutable.Class                   as Mutable
+import qualified Data.Set                             as Set
+import qualified Data.Text                            as Text
+import qualified Data.Text.IO                         as Text
+import qualified Data.Text.Span                       as Span
+import qualified Empire.ASTOps.Builder                as ASTBuilder
+import qualified Empire.ASTOps.Modify                 as ASTModify
+import qualified Empire.ASTOps.Parse                  as ASTParse
+import qualified Empire.ASTOps.Print                  as ASTPrint
+import qualified Empire.ASTOps.Read                   as ASTRead
+import qualified Empire.Commands.AST                  as AST
+import qualified Empire.Commands.Code                 as Code
+import qualified Empire.Commands.GraphBuilder         as GraphBuilder
+import qualified Empire.Commands.GraphUtils           as GraphUtils
+import qualified Empire.Commands.Library              as Library
+import qualified Empire.Commands.Publisher            as Publisher
+import qualified Empire.Data.BreadcrumbHierarchy      as BH
+import qualified Empire.Data.FileMetadata             as FileMetadata
+import qualified Empire.Data.Graph                    as Graph
+import qualified Luna.IR                              as IR
+import qualified Luna.IR.Term.Ast.Class               as Term
+import qualified Luna.Package                         as Package
+import qualified Luna.Pass.Scheduler                  as Scheduler
+import qualified Luna.Pass.Sourcing.Data.Class        as Class
+import qualified Luna.Pass.Sourcing.Data.Def          as Def
+import qualified Luna.Pass.Sourcing.Data.Unit         as Unit
+import qualified Luna.Pass.Sourcing.UnitLoader        as ModLoader
+import qualified Luna.Pass.Sourcing.UnitMapper        as UnitMapper
+import qualified Luna.Std                             as Std
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
-import           Luna.Syntax.Text.Parser.State.Marker (TermMap(..))
-import qualified LunaStudio.API.Control.Interpreter as Interpreter
-import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem, Named)
-import qualified LunaStudio.Data.Breadcrumb       as Breadcrumb
-import           LunaStudio.Data.Constants        (gapBetweenNodes)
-import           LunaStudio.Data.Connection       (Connection (..), ConnectionId)
-import qualified LunaStudio.Data.Error            as ErrorAPI
-import qualified LunaStudio.Data.Graph            as APIGraph
-import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
-import qualified LunaStudio.Data.GraphLocation    as GraphLocation
-import           LunaStudio.Data.Node             (ExpressionNode (..), NodeId)
-import qualified LunaStudio.Data.Node             as Node
-import           LunaStudio.Data.NodeCache        (NodeCache (..), nodeMetaMap, nodeIdMap)
-import           LunaStudio.Data.NodeLoc          (NodeLoc (..))
-import qualified LunaStudio.Data.NodeLoc          as NodeLoc
-import           LunaStudio.Data.NodeMeta         (NodeMeta)
-import qualified LunaStudio.Data.NodeMeta         as NodeMeta
-import           LunaStudio.Data.NodeSearcher     (ImportName, ImportsHints, ClassHints(..), ModuleHints(..))
-import           LunaStudio.Data.Point            (Point)
-import           LunaStudio.Data.Port             (InPortId, InPortIndex (..), getPortNumber)
-import qualified LunaStudio.Data.Port             as Port
-import           LunaStudio.Data.PortDefault      (PortDefault)
-import           LunaStudio.Data.PortRef          (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified LunaStudio.Data.PortRef          as PortRef
-import           LunaStudio.Data.Position         (Position)
-import qualified LunaStudio.Data.Position         as Position
-import           LunaStudio.Data.Range            (Range(..))
-import qualified LunaStudio.Data.Range            as Range
-import           LunaStudio.Data.TextDiff         (TextDiff (..))
+import qualified LunaStudio.Data.Breadcrumb           as Breadcrumb
+import qualified LunaStudio.Data.Error                as ErrorAPI
+import qualified LunaStudio.Data.Graph                as APIGraph
+import qualified LunaStudio.Data.GraphLocation        as GraphLocation
+import qualified LunaStudio.Data.Node                 as Node
+import qualified LunaStudio.Data.NodeMeta             as NodeMeta
+import qualified LunaStudio.Data.Port                 as Port
+import qualified LunaStudio.Data.PortRef              as PortRef
+import qualified LunaStudio.Data.Position             as Position
 import qualified Path
 import qualified Safe
-import           System.Directory                 (canonicalizePath)
-import           System.Environment               (getEnv)
-import           GHC.Stack                        (renderStack, whoCreated)
+
+import Control.Arrow                        ((***))
+import Control.Lens                         (re, traverseOf_, uses, (^..))
+import Control.Monad                        (forM)
+import Control.Monad.Catch                  (handle, try)
+import Control.Monad.State                  hiding (forM_, void, when)
+import Data.Char                            (isSeparator, isUpper)
+import Data.Coerce                          (coerce)
+import Data.Foldable                        (toList)
+import Data.List                            (find, nub, sortBy, sortOn, (++))
+import Data.Maybe                           (fromMaybe, maybeToList)
+import Data.Set                             (Set)
+import Data.Text                            (Text)
+import Data.Text.Position                   (Delta)
+import Data.Text.Span                       (SpacedSpan (..), leftSpacedSpan)
+import Data.Text.Strict.Lens                (packed)
+import Debug
+import Empire.ASTOp                         (ClassOp, GraphOp,
+                                             liftScheduler, runASTOp,
+                                             runAliasAnalysis)
+import Empire.ASTOps.BreadcrumbHierarchy    (isNone, prepareChild)
+import Empire.ASTOps.Parse                  (FunctionParsing (..))
+import Empire.Commands.Code                 (addExprMapping, getExprMap,
+                                             getNextExprMarker, setExprMap)
+import Empire.Data.AST                      (ConnectionException (..), EdgeRef,
+                                             InvalidConnectionException (..),
+                                             NodeRef,
+                                             NotInputEdgeException (..),
+                                             NotUnifyException,
+                                             PortDoesNotExistException (..),
+                                             SomeASTException,
+                                             astExceptionFromException,
+                                             astExceptionToException)
+import Empire.Data.FileMetadata             (MarkerNodeMeta (MarkerNodeMeta))
+import Empire.Data.Graph                    (ClsGraph, Graph)
+import Empire.Data.Layers                   (SpanLength, SpanOffset)
+import Empire.Empire
+import GHC.Stack                            (renderStack, whoCreated)
+import Luna.Pass.Data.Stage                 (Stage)
+import Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
+import LunaStudio.Data.Breadcrumb           (Breadcrumb (..), BreadcrumbItem,
+                                             Named)
+import LunaStudio.Data.Connection           (Connection (..))
+import LunaStudio.Data.GraphLocation        (GraphLocation (..))
+import LunaStudio.Data.Node                 (ExpressionNode (..), NodeId)
+import LunaStudio.Data.NodeLoc              (NodeLoc (..))
+import LunaStudio.Data.NodeMeta             (NodeMeta)
+import LunaStudio.Data.NodeSearcher         (ClassHints (..), ImportName,
+                                             ImportsHints, ModuleHints (..))
+import LunaStudio.Data.Port                 (InPortId, InPortIndex (..),
+                                             getPortNumber)
+import LunaStudio.Data.PortDefault          (PortDefault)
+import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
+                                             OutPortRef (..))
+import LunaStudio.Data.Position             (Position)
+import LunaStudio.Data.Range                (Range (..))
+
 
 addImports :: GraphLocation -> Set Text -> Empire ()
 addImports loc@(GraphLocation file _) modulesToImport = do
@@ -712,50 +708,8 @@ updateExprMap new old = do
     let updated = Map.map (\a -> if a == old then new else a) exprMap
     setExprMap updated
 
-resendCode :: GraphLocation -> Empire ()
-resendCode loc = resendCodeWithCursor loc Nothing
 
-resendCodeWithCursor :: GraphLocation -> Maybe Point -> Empire ()
-resendCodeWithCursor loc@(GraphLocation file _) cursor = do
-    code <- getCode loc
-    Publisher.notifyCodeUpdate file
-                               code
-                               cursor
 
-setNodeMetaGraph :: NodeId -> NodeMeta -> GraphOp ()
-setNodeMetaGraph nodeId newMeta = do
-    ref <- ASTRead.getASTRef nodeId
-    AST.writeMeta ref newMeta
-    return ()
-
-setNodeMetaFun :: NodeId -> NodeMeta -> Command ClsGraph ()
-setNodeMetaFun nodeId newMeta = runASTOp $ do
-    Just fun <- use $ Graph.clsFuns . at nodeId
-    f        <- ASTRead.getFunByNodeId nodeId
-    AST.writeMeta f newMeta
-    return ()
-
-setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
-setNodeMeta loc nodeId newMeta = withGraph' loc (runASTOp $ setNodeMetaGraph nodeId newMeta) (setNodeMetaFun nodeId newMeta)
-
-setNodePosition :: GraphLocation -> NodeId -> Position -> Empire ()
-setNodePosition loc nodeId newPos = do
-    oldMeta <- fromMaybe def <$> getNodeMeta loc nodeId
-    setNodeMeta loc nodeId $ oldMeta & NodeMeta.position .~ newPos
-    return ()
-
-setNodePositionAST :: NodeId -> Position -> GraphOp ()
-setNodePositionAST nodeId newPos = do
-    ref <- ASTRead.getASTRef nodeId
-    oldMeta <- fromMaybe def <$> AST.readMeta ref
-    AST.writeMeta ref $ oldMeta & NodeMeta.position .~ newPos
-
-setNodePositionCls :: NodeId -> Position -> ClassOp ()
-setNodePositionCls nodeId newPos = do
-    Just fun <- use $ Graph.clsFuns . at nodeId
-    f        <- ASTRead.getFunByNodeId nodeId
-    oldMeta <- fromMaybe def <$> AST.readMeta f
-    AST.writeMeta f $ oldMeta & NodeMeta.position .~ newPos
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
@@ -881,25 +835,19 @@ disconnect loc@(GraphLocation file _) port@(InPortRef (NodeLoc _ nid) _) = do
         runAliasAnalysis
     resendCode loc
 
-getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
-getNodeMeta loc = withGraph loc . runASTOp . AST.getNodeMeta
 
-getCode :: GraphLocation -> Empire Text
-getCode loc@(GraphLocation file _) = do
-    code <- withUnit (GraphLocation file (Breadcrumb [])) $ use Graph.code
-    return $ Code.removeMarkers code
 
 getBuffer :: FilePath -> Empire Text
 getBuffer file = getCode (GraphLocation file (Breadcrumb []))
 
 getGraphCondTC :: Bool -> GraphLocation -> Empire APIGraph.Graph
 getGraphCondTC tc loc = withImports getFullGraph where
-    getFullGraph = (if tc then withTC' loc True else withGraph' loc)
+    getFullGraph = (if tc then withTC' loc True else withBreadcrumb loc)
         (runASTOp buildGraph)
         (runASTOp buildClassGraph)
     unlessError action = maybe action throwM
     buildGraph = unlessError GraphBuilder.buildGraph =<< use Graph.parseError
-    buildClassGraph = unlessError GraphBuilder.buildClassGraph 
+    buildClassGraph = unlessError GraphBuilder.buildClassGraph
         =<< use Graph.clsParseError
     withImports graphGetter = getAvailableImports loc >>= \imports ->
         (& APIGraph.imports .~ imports) <$> graphGetter
@@ -977,21 +925,6 @@ renameNode loc nid name
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ return ()
 
-autolayoutNodesAST :: [NodeId] -> GraphOp ()
-autolayoutNodesAST nids = timeIt "autolayoutNodes" $ do
-    nodes <- GraphBuilder.buildNodesForAutolayout <!!> "buildNodesForAutolayout"
-    conns <- GraphBuilder.buildConnections        <!!> "buildConnections"
-    let autolayout = Autolayout.autolayoutNodes nids nodes conns
-    traverse_ (uncurry setNodePositionAST) autolayout <!!> "setNodePositionsAST"
-
-autolayoutNodesCls :: [NodeId] -> ClassOp ()
-autolayoutNodesCls nids = do
-    nodes <- GraphBuilder.buildNodesForAutolayoutCls
-    let autolayout = Autolayout.autolayoutNodes nids nodes []
-    traverse_ (uncurry setNodePositionCls) autolayout
-
-autolayoutNodes :: GraphLocation -> [NodeId] -> Empire ()
-autolayoutNodes loc nids = withGraph' loc (runASTOp $ autolayoutNodesAST nids) (runASTOp $ autolayoutNodesCls nids)
 
 openFile :: FilePath -> Empire ()
 openFile path = do
@@ -1009,85 +942,6 @@ openFile path = do
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withTC' loc False (return ()) (return ())
 
-breakDiffs :: [TextDiff] -> [TextDiff]
-breakDiffs diffs = go [] diffs
-    where
-        go acc [] = reverse acc
-        go acc (d@(TextDiff range code cursor):list) =
-            case Text.span isSpace code of
-                (prefix, suffix)
-                    | Text.null prefix -> go (d:acc) list
-                    | otherwise        -> let rangeEnd   = fromJust (fmap snd range)
-                                              newRange   = Just (rangeEnd, rangeEnd)
-                                              whitespace = TextDiff range prefix cursor
-                                              onlyCode   = TextDiff newRange suffix cursor
-                                          in go (onlyCode:whitespace:acc) list
-
-substituteCodeFromPoints :: FilePath -> [TextDiff] -> Empire ()
-substituteCodeFromPoints path (breakDiffs -> diffs) = do
-    let loc = GraphLocation path (Breadcrumb [])
-    changes <- withUnit loc $ do
-        oldCode   <- use Graph.code
-        let noMarkers    = Code.removeMarkers oldCode
-            deltas       = map (\(TextDiff range code cursor) -> case range of
-                Just (start, end) -> (Code.pointToDelta start noMarkers, Code.pointToDelta end noMarkers, code)
-                _                 -> (0, fromIntegral (Text.length noMarkers), code))
-                        diffs
-            viewToReal c = case Text.uncons c of
-                Nothing        -> Code.viewDeltasToRealBeforeMarker
-                Just (char, _) -> if isSpace char then Code.viewDeltasToRealBeforeMarker else Code.viewDeltasToReal
-            realDeltas   = map (\(a,b,c) -> let (a', b') = (viewToReal c) oldCode (a,b) in (a', b', c)) deltas
-        return realDeltas
-    substituteCode path changes
-
-substituteCode :: FilePath -> [(Delta, Delta, Text)] -> Empire ()
-substituteCode path changes = do
-    let loc = GraphLocation path (Breadcrumb [])
-    newCode <- withUnit loc $ Code.applyMany changes
-    handle (\(e :: SomeException) -> withUnit loc $ Graph.userState . Graph.clsParseError ?= e) $ do
-        withUnit loc $ do
-            Graph.code .= newCode
-        reloadCode loc newCode
-
-lamItemToMapping :: ((NodeId, Maybe Int), BH.LamItem) -> ((NodeId, Maybe Int), (NodeId, NodeId))
-lamItemToMapping (idArg, BH.LamItem portMapping _ _) = (idArg, portMapping)
-
-extractMarkedMetasAndIds :: NodeRef -> ASTOp g [(Word64, (Maybe NodeMeta, Maybe NodeId))]
-extractMarkedMetasAndIds root = matchExpr root $ \case
-    Marked m e -> do
-        meta   <- AST.readMeta root
-        marker <- getMarker =<< source m
-        expr   <- source e
-        rest   <- extractMarkedMetasAndIds expr
-        nid    <- ASTRead.getNodeId  expr
-        nid2   <- ASTRead.getNodeId  root
-        return $ (marker, (meta, nid <|> nid2)) : rest
-    _ -> concat <$> (mapM (extractMarkedMetasAndIds <=< source) =<< inputs root)
-
-prepareNodeCache :: GraphLocation -> Empire NodeCache
-prepareNodeCache loc@(GraphLocation file _) = do
-    (funs, topMarkers) <- withUnit (GraphLocation file (Breadcrumb [])) $ do
-        funs       <- use $ Graph.userState . Graph.clsFuns
-        topMarkers <- runASTOp $ extractMarkedMetasAndIds =<< use Graph.clsClass
-        return (Map.keys funs, Map.fromList topMarkers)
-    oldMetasAndIds <- forM funs $ \fun -> withGraph (GraphLocation file (Breadcrumb [Breadcrumb.Definition fun])) $ runASTOp $ do
-        root       <- ASTRead.getCurrentBody
-        oldMetas   <- extractMarkedMetasAndIds root
-        return $ Map.fromList oldMetas
-    previousPortMappings <- forM funs $ \fun -> withGraph (GraphLocation file (Breadcrumb [Breadcrumb.Definition fun])) $ runASTOp $ do
-        hierarchy <- use Graph.breadcrumbHierarchy
-        let lamItems = BH.getLamItems hierarchy
-            elems    = map lamItemToMapping lamItems
-        return $ Map.fromList elems
-    let previousNodeIds   = Map.unions $ (Map.mapMaybe snd topMarkers) : (Map.mapMaybe snd <$> oldMetasAndIds)
-        previousNodeMetas = Map.unions $ (Map.mapMaybe fst topMarkers) : (Map.mapMaybe fst <$> oldMetasAndIds)
-    return $ NodeCache previousNodeIds previousNodeMetas (Map.unions previousPortMappings)    
-
-reloadCode :: GraphLocation -> Text -> Empire ()
-reloadCode loc@(GraphLocation file _) code = do
-    nodeCache <- prepareNodeCache loc
-    withUnit (GraphLocation file (Breadcrumb [])) $ Graph.userState . Graph.nodeCache .= nodeCache
-    loadCode loc code
 
 putIntoHierarchy :: NodeId -> NodeRef -> GraphOp ()
 putIntoHierarchy nodeId marked = do
@@ -1111,141 +965,8 @@ markNode nodeId = do
     var <- ASTRead.getASTMarkerPosition nodeId
     ASTBuilder.attachNodeMarkers nodeId [] var
 
-stripMetadata :: Text -> Text
-stripMetadata text = if lexerStream == code then text else flip Text.append "\n" $ Text.stripEnd $ convert withoutMeta
-    where
-        lexerStream  = Lexer.evalDefLexer (convert text)
-        code         = takeWhile (\(Lexer.Token _ _ s) -> isNothing $ Lexer.matchMetadata s) lexerStream
-        textTree     = SpanTree.buildSpanTree (convert text) $ code ++ [Lexer.Token 0 0 Lexer.ETX]
-        withoutMeta  = SpanTree.foldlSpans (\t (Spanned _ t1) -> t <> t1) "" textTree
 
-removeMetadataNode :: ClassOp ()
-removeMetadataNode = do
-    unit   <- use Graph.clsClass
-    klass' <- ASTRead.classFromUnit unit
-    newLinks <- matchExpr klass' $ \case
-        ClsASG _ _ _ _ funs'' -> do
-            funs <- ptrListToList funs''
-            funs' <- mapM source funs
-            catMaybes <$> forM funs (\f -> do
-                f' <- source f
-                matchExpr f' $ \case
-                    Metadata{} -> return Nothing
-                    _             -> return (Just f))
-    Just (klass'' :: Expr (ClsASG)) <- narrowTerm klass'
-    l <- PtrList.fromList (coerce newLinks)
-    IR.UniTermRecord a <- Layer.read @IR.Model klass''
-    let a' = a & IR.decls_Record .~ l
-    Layer.write @IR.Model klass'' $ IR.UniTermRecord a'
-    return ()
 
-getNextTopLevelMarker :: ClassOp Word64
-getNextTopLevelMarker = do
-    globalMarkers <- use Graph.clsCodeMarkers
-    let highestIndex = Safe.maximumMay $ Map.keys globalMarkers
-        newMarker    = maybe 0 succ highestIndex
-    Code.invalidateMarker newMarker
-    return newMarker
-
-getASGRootedFunctionLink :: EdgeRef -> ClassOp EdgeRef
-getASGRootedFunctionLink link = do
-    ref <- source link
-    matchExpr ref $ \case
-        Documented _d e -> return $ coerce e
-        Marked     _m e -> return $ coerce e
-        _                  -> return link
-
-markFunctions :: NodeRef -> ClassOp ()
-markFunctions unit = do
-    klass' <- ASTRead.classFromUnit unit
-    matchExpr klass' $ \case
-        ClsASG _ _ _ _ funs' -> do
-            funs <- (map generalize) <$> ptrListToList funs'
-            forM_ funs $ \fun -> source fun >>= \asgFun -> ASTRead.cutThroughDoc asgFun >>= \f -> matchExpr f $ \case
-                Marked{}         -> return ()
-                ASGFunction{} -> do
-                    newMarker <- getNextTopLevelMarker
-                    funStart  <- Code.functionBlockStartRef f
-                    Code.insertAt funStart (Code.makeMarker newMarker)
-                    marker    <- IR.marker newMarker
-                    markedFun <- IR.marked' marker (generalize f)
-                    Graph.clsCodeMarkers . at newMarker ?= markedFun
-                    LeftSpacedSpan (SpacedSpan off prevLen) <- view CodeSpan.realSpan <$> getLayer @CodeSpan f
-                    let markerLength = convert $ Text.length $ Code.makeMarker newMarker
-                    putLayer @CodeSpan marker $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan 0 markerLength))
-                    putLayer @CodeSpan markedFun $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off prevLen))
-                    putLayer @CodeSpan f $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan 0 prevLen))
-                    asgLink <- getASGRootedFunctionLink fun
-                    replaceSource (coerce markedFun) (coerce asgLink)
-                    linkSrc <- source =<< getASGRootedFunctionLink fun
-                    Code.gossipLengthsChangedByCls markerLength markedFun
-                _ -> return ()
-
-loadCode :: GraphLocation -> Text -> Empire ()
-loadCode (GraphLocation file _) code = do
-    let loc = GraphLocation file def
-    (unit, grSt, scSt, exprMap) <- liftIO $ ASTParse.runProperParser code
-    Graph.pmState . Graph.pmScheduler .= scSt
-    Graph.pmState . Graph.pmStage .= grSt
-    Graph.userState . activeFiles . at file . traverse . Library.body . Graph.clsClass .= unit
-    Graph.userState . activeFiles . at file . traverse . Library.body . Graph.clsCodeMarkers .= (coerce exprMap)
-    Graph.userState . activeFiles . at file . traverse . Library.body . Graph.code .= code
-    Graph.userState . activeFiles . at file . traverse . Library.body . Graph.clsFuns .= Map.empty
-    (codeHadMeta, prevParseError) <- withUnit (GraphLocation file (Breadcrumb [])) $ do
-        prevParseError <- use $ Graph.userState . Graph.clsParseError
-        Graph.userState . Graph.clsParseError .= Nothing
-        FileMetadata fileMetadata <- runASTOp readMetadata'
-        let savedNodeMetas = Map.fromList $ map (\(MarkerNodeMeta m meta) -> (m, meta)) fileMetadata
-        Graph.userState . Graph.nodeCache . nodeMetaMap %= (\cache -> Map.union cache savedNodeMetas)
-        runASTOp $ do
-            let codeWithoutMeta = stripMetadata code
-            Graph.code .= codeWithoutMeta
-            metaRef  <- ASTRead.getMetadataRef unit
-            removeMetadataNode
-            forM_ metaRef deepDelete
-            return (codeWithoutMeta /= code, prevParseError)
-    when (codeHadMeta && isJust prevParseError) $ resendCode loc
-    functions <- withUnit loc $ do
-        klass <- use $ Graph.userState . Graph.clsClass
-        runASTOp $ do
-            markFunctions klass
-            funs <- ASTRead.classFunctions klass
-            forM funs $ \f -> ASTRead.cutThroughDoc f >>= \fun -> matchExpr fun $ \case
-                Marked m _e -> do
-                    funCodeSpan <- getLayer @CodeSpan fun
-                    fCodeSpan <- getLayer @CodeSpan f
-                    marker <- getMarker =<< source m
-                    uuid   <- use $ Graph.nodeCache . nodeIdMap . at marker
-                    return (uuid, f)
-                _ -> do
-                    funCodeSpan <- getLayer @CodeSpan fun
-                    fCodeSpan <- getLayer @CodeSpan f
-                    return (Nothing, f)
-    for_ functions $ \(lastUUID, fun) -> do
-        uuid <- Library.withLibrary file (fst <$> makeGraph fun lastUUID)
-        let loc' = GraphLocation file $ Breadcrumb [Breadcrumb.Definition uuid]
-        autolayout loc'
-        return ()
-    autolayoutTopLevel loc
-    return ()
-
-infixl 5 |>
-(|>) :: GraphLocation -> BreadcrumbItem -> GraphLocation
-(|>) (GraphLocation file bc) item = GraphLocation file $ coerce $ (<> [item]) $ coerce bc
-
-autolayout :: GraphLocation -> Empire ()
-autolayout loc = do
-    kids <- withGraph loc $ runASTOp $ do
-        kids <- uses Graph.breadcrumbHierarchy (view BH.children)
-        needLayout <- fmap catMaybes $ forM (Map.keys kids) $ \id -> do
-            meta <- AST.getNodeMeta id
-            return $ if meta /= def then Nothing else Just id
-        autolayoutNodesAST needLayout
-        return kids
-    let next = concatMap (\(k, v) -> case v of
-            BH.LambdaChild{}                -> [Breadcrumb.Lambda k]
-            BH.ExprChild (BH.ExprItem pc _) -> map (Breadcrumb.Arg k) (Map.keys pc)) $ Map.assocs kids
-    traverse_ (\a -> autolayout (loc |> a)) next
 
 getNodeMetas :: GraphLocation -> [NodeLoc] -> Empire [Maybe (NodeLoc, NodeMeta)]
 getNodeMetas loc nids
@@ -1264,21 +985,6 @@ getNodeMetas loc nids
                 Just nl -> do
                     fmap (nl,) <$> AST.getNodeMeta id
                 _       -> return Nothing
-
-autolayoutTopLevel :: GraphLocation -> Empire ()
-autolayoutTopLevel loc = do
-    withUnit loc $ runASTOp $ do
-        clsFuns    <- use Graph.clsFuns
-        needLayout <- fmap catMaybes $ forM (Map.assocs clsFuns) $ \(id, fun) -> do
-            f    <- ASTRead.getFunByNodeId id
-            meta <- AST.readMeta f
-            let fileOffset = fun ^. Graph.funGraph . Graph.fileOffset
-            return $ if meta /= def then Nothing else Just (id, fileOffset)
-
-        let sortedNeedLayout = sortOn snd needLayout
-            positions  = map (Position.fromTuple . (,0)) [0,gapBetweenNodes..]
-            autolayout = zipWith (\(id, _) pos -> (id,pos)) sortedNeedLayout positions
-        traverse_ (uncurry setNodePositionCls) autolayout
 
 printMarkedExpression :: NodeRef -> GraphOp Text
 printMarkedExpression ref = do
@@ -1371,59 +1077,6 @@ markerCodeSpan loc index = withGraph loc $ runASTOp $ do
         Just ref = Map.lookup (fromIntegral index) exprMap'
     readRange ref
 
-data MarkerNodeMeta = MarkerNodeMeta { marker :: Word64, meta :: NodeMeta }
-    deriving (Eq, Generic, Show)
-newtype FileMetadata = FileMetadata { metas :: [MarkerNodeMeta] }
-    deriving (Generic, Show)
-
-instance FromJSON MarkerNodeMeta
-instance ToJSON   MarkerNodeMeta
-instance FromJSON FileMetadata
-instance ToJSON   FileMetadata
-
-dumpMetadata :: FilePath -> Empire [MarkerNodeMeta]
-dumpMetadata file = do
-    funs <- withUnit (GraphLocation file (Breadcrumb [])) $ do
-        funs <- use $ Graph.userState . Graph.clsFuns
-        return $ Map.keys funs
-    metas <- forM funs $ \fun -> withGraph (GraphLocation file (Breadcrumb [Breadcrumb.Definition fun])) $ runASTOp $ do
-        root       <- ASTRead.getCurrentBody
-        oldMetas   <- extractMarkedMetasAndIds root
-        return [ MarkerNodeMeta marker meta | (marker, (Just meta, _)) <- oldMetas ]
-    return $ concat metas
-
-addMetadataToCode :: FilePath -> Empire Text
-addMetadataToCode file = do
-    metadata <- FileMetadata <$> dumpMetadata file
-    let metadataJSON           = (TL.toStrict . Aeson.encodeToLazyText . Aeson.toJSON) metadata
-        metadataJSONWithHeader = Lexer.mkMetadata (Text.cons ' ' metadataJSON)
-    withUnit (GraphLocation file (Breadcrumb [])) $ do
-        code <- use $ Graph.userState . Graph.code
-        let metadataJSONWithHeaderAndOffset = Text.cons '\n' metadataJSONWithHeader
-        return $ Text.concat [code, metadataJSONWithHeaderAndOffset]
-
-parseMetadata :: MonadIO m => Text -> m FileMetadata
-parseMetadata meta =
-    let json = Text.drop (Text.length "### META ") meta
-        metadata = Aeson.eitherDecodeStrict' $ Text.encodeUtf8 json
-    in case metadata of
-        Right fm  -> return fm
-        Left  err -> return (FileMetadata [])
-
-readMetadata' :: ClassOp FileMetadata
-readMetadata' = do
-    unit     <- use Graph.clsClass
-    metaRef  <- ASTRead.getMetadataRef unit
-    case metaRef of
-        Just meta' -> do
-            metaStart <- Code.functionBlockStartRef meta'
-            LeftSpacedSpan (SpacedSpan _off len) <- view CodeSpan.realSpan <$> getLayer @CodeSpan meta'
-            code <- Code.getAt metaStart (metaStart + len)
-            parseMetadata code
-        _ -> return $ FileMetadata []
-
-readMetadata :: FilePath -> Empire FileMetadata
-readMetadata file = withUnit (GraphLocation file (Breadcrumb [])) $ runASTOp readMetadata'
 
 unindent :: Int -> Text -> Text
 unindent offset code = Text.unlines $ map (Text.drop offset) $ Text.lines code
@@ -1588,7 +1241,7 @@ moveToOrigin metas' = map (\(MarkerNodeMeta m me) -> MarkerNodeMeta m (me & Node
     where
         leftTopCorner = fromMaybe (Position.fromTuple (0,0))
                       $ Position.leftTopPoint
-                      $ map (\mnm -> meta mnm ^. NodeMeta.position) metas'
+                      $ map (\mnm -> FileMetadata.meta mnm ^. NodeMeta.position) metas'
 
 indent :: Int -> Text -> Text
 indent offset (Text.lines -> header:rest) =
@@ -1703,9 +1356,9 @@ nativeModuleName = "Native"
 
 getImportsInFile :: ClassOp [Text]
 getImportsInFile = do
-    let matchUnit unit = matchExpr unit $ \(Unit imps _ _) -> 
+    let matchUnit unit = matchExpr unit $ \(Unit imps _ _) ->
             matchImports =<< source imps
-        matchImports imps = matchExpr imps $ \(ImportHub imps') -> 
+        matchImports imps = matchExpr imps $ \(ImportHub imps') ->
             mapM matchImport =<< mapM source =<< ptrListToList imps'
         matchImport imp = matchExpr imp $ \case
             Import absolute _ -> matchAbsolute =<< source absolute
@@ -1724,11 +1377,11 @@ getAvailableImports gl = withUnit pureGl mkImports where
     mkImports = fromList . (implicitImports <>) <$> runASTOp getImportsInFile
 
 classToHints :: Class.Class -> ClassHints
-classToHints (Class.Class constructors methods _) 
+classToHints (Class.Class constructors methods _)
     = ClassHints constructorsHints methodsHints where
         getDocumentation  = fromMaybe mempty . view Def.documentation
         constructorsHints = ((, mempty) . convert) <$> Map.keys constructors
-        methodsHints      = (convert *** getDocumentation) <$> 
+        methodsHints      = (convert *** getDocumentation) <$>
             filter (isPublicMethod . fst) (Map.toList $ unwrap methods)
 
 isPublicMethod :: IR.Name -> Bool
@@ -1810,7 +1463,7 @@ pauseInterpreter loc = do
 -- internal
 
 getName :: GraphLocation -> NodeId -> Empire (Maybe Text)
-getName loc nid = withGraph' loc (runASTOp $ GraphBuilder.getNodeName nid) $ use (Graph.userState . Graph.clsFuns . ix nid . Graph.funName . packed . re _Just)
+getName loc nid = withBreadcrumb loc (runASTOp $ GraphBuilder.getNodeName nid) $ use (Graph.userState . Graph.clsFuns . ix nid . Graph.funName . packed . re _Just)
 
 generateNodeName :: NodeRef -> GraphOp Text
 generateNodeName = ASTPrint.genNodeBaseName >=> generateNodeNameFromBase
@@ -1836,17 +1489,17 @@ runTC loc flush interpret recompute = do
 
 typecheckWithRecompute :: GraphLocation -> Empire ()
 typecheckWithRecompute loc@(GraphLocation file _) = do
-    withGraph' (GraphLocation file def) (return ()) (runTC loc True True True)
+    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc True True True)
 
 runInterpreter :: GraphLocation -> Empire ()
 runInterpreter loc@(GraphLocation file _) = do
-    withGraph' (GraphLocation file def) (return ()) (runTC loc True True False)
+    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc True True False)
 
 withTC' :: GraphLocation -> Bool -> Command Graph a -> Command ClsGraph a -> Empire a
 withTC' loc@(GraphLocation file bs) flush actG actC = do
-    res       <- withGraph' loc actG actC
+    res       <- withBreadcrumb loc actG actC
     interpret <- use $ Graph.userState . activeInterpreter
-    withGraph' (GraphLocation file def) (return ()) (runTC loc flush interpret False)
+    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc flush interpret False)
     return res
 
 withTCUnit :: GraphLocation -> Bool -> Command ClsGraph a -> Empire a
@@ -1855,21 +1508,6 @@ withTCUnit loc flush cmd = withTC' loc flush (throwM UnsupportedOperation) cmd
 withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
 withTC loc flush actG = withTC' loc flush actG (throwM UnsupportedOperation)
 
-data UnsupportedOperation = UnsupportedOperation
-    deriving Show
-
-instance Exception UnsupportedOperation where
-    fromException = astExceptionFromException
-    toException = astExceptionToException
-
-withGraph :: GraphLocation -> Command Graph a -> Empire a
-withGraph (GraphLocation file breadcrumb) act = withBreadcrumb file breadcrumb act (throwM UnsupportedOperation)
-
-withUnit :: GraphLocation -> Command ClsGraph a -> Empire a
-withUnit (GraphLocation file breadcrumb) act = withBreadcrumb file breadcrumb (throwM UnsupportedOperation) act
-
-withGraph' :: GraphLocation -> Command Graph a -> Command ClsGraph a -> Empire a
-withGraph' (GraphLocation file breadcrumb) actG actC = withBreadcrumb file breadcrumb actG actC
 
 getOutEdges :: NodeId -> GraphOp [InPortRef]
 getOutEdges nodeId = do

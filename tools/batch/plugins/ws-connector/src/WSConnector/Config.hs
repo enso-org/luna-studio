@@ -1,5 +1,5 @@
 module WSConnector.Config (
-    module Paths_ws_connector
+    module Paths_luna_ws_connector
 ) where
 
-import           Paths_ws_connector (version)
+import           Paths_luna_ws_connector (version)

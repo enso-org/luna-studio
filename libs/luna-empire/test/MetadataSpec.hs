@@ -30,13 +30,15 @@ import qualified Empire.Commands.GraphBuilder     as GraphBuilder
 import qualified Empire.Commands.Library          as Library
 import           Empire.Data.AST                  (SomeASTException)
 import qualified Empire.Data.BreadcrumbHierarchy  as BH
+import           Empire.Data.FileMetadata         (MarkerNodeMeta (MarkerNodeMeta))
+import qualified Empire.Data.FileMetadata         as FileMetadata
 import qualified Empire.Data.Graph                as Graph (breadcrumbHierarchy, clsClass, clsFuns, code, codeMarkers, fileOffset)
 import           Empire.Empire                    (CommunicationEnv (..), Empire)
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
 -- import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingChange (..), ReparsingStatus (..))
 import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem (Definition))
 import qualified LunaStudio.Data.Graph            as Graph
-import           LunaStudio.Data.GraphLocation    (GraphLocation (..))
+import           LunaStudio.Data.GraphLocation    (GraphLocation (..), (|>=))
 import qualified LunaStudio.Data.Node             as Node
 import           LunaStudio.Data.NodeLoc          (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta         (NodeMeta (..))
@@ -179,7 +181,7 @@ spec = around withChannels $ parallel $ do
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc codeWithMetadata
                 Graph.addMetadataToCode "TestPath"
-                Graph.FileMetadata meta <- Graph.readMetadata "TestPath"
+                meta <- FileMetadata.toList <$> Graph.readMetadata "TestPath"
                 code <- Graph.getCode loc
                 return (meta, code)
             meta `shouldMatchList` []
@@ -477,9 +479,9 @@ def bar:
     «16»node2 = primWaitForProcess node1
 |]
         it "moves positions to origin" $ \_ ->
-            let positions = map (\pos -> Graph.MarkerNodeMeta 0 $ set NodeMeta.position (Position.fromTuple pos) def) [(-10, 30), (40, 20), (999, 222), (40, -344)]
+            let positions = map (\pos -> MarkerNodeMeta 0 $ set NodeMeta.position (Position.fromTuple pos) def) [(-10, 30), (40, 20), (999, 222), (40, -344)]
                 moved     = Graph.moveToOrigin positions
-                newPositions = map (\(Graph.MarkerNodeMeta _ nm) -> nm ^. NodeMeta.position . to Position.toTuple) moved
+                newPositions = map (\(MarkerNodeMeta _ nm) -> nm ^. NodeMeta.position . to Position.toTuple) moved
             in  newPositions `shouldMatchList` [(0.0,374.0), (50.0,364.0), (1009.0,566.0), (50.0,0.0)]
         it "pastes lambda" $ \env -> do
             (nodes, code) <- evalEmp env $ do

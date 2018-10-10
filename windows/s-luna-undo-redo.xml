@@ -1,9 +1,9 @@
 
 <configuration>
-  <id>s-broker</id>
-  <name>Luna Broker Service</name>
-  <description>Communication bus for Luna backend</description>
-  <executable>%BASE%\..\..\bin\private\broker.exe</executable>
+  <id>s-luna-undo-redo</id>
+  <name>Luna Undo-Redo Service</name>
+  <description>Undo-Redo support for Luna</description>
+  <executable>%BASE%\..\..\bin\private\luna-undo-redo.exe</executable>
   <startmode>manual</startmode>
 
   <onfailure action="restart" delay="1 sec"/>

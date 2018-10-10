@@ -1,15 +1,18 @@
 module LunaStudio.Data.Breadcrumb where
 
-import           Control.DeepSeq        (NFData)
-import           Control.Lens           (toListOf, traversed)
-import qualified Control.Lens.Aeson     as Lens
-import           Data.Aeson.Types       (FromJSON (..), FromJSONKey, ToJSON (..), ToJSONKey)
-import           Data.Binary            (Binary)
-import           Data.Monoid            (Monoid (..))
-import           Data.Semigroup         (Semigroup (..))
-import qualified Data.Text              as Text
-import           LunaStudio.Data.NodeId (NodeId)
-import           Prologue               hiding (Monoid, mappend, mconcat, mempty, (<>))
+import Prologue hiding (Monoid, mappend, mconcat, mempty, (<>))
+
+import qualified Control.Lens.Aeson as Lens
+import qualified Data.Text          as Text
+
+import Control.DeepSeq        (NFData)
+import Control.Lens           (toListOf, traversed)
+import Data.Aeson.Types       (FromJSON (..), FromJSONKey, ToJSON (..),
+                               ToJSONKey)
+import Data.Binary            (Binary)
+import Data.Monoid            (Monoid (..))
+import Data.Semigroup         (Semigroup (..))
+import LunaStudio.Data.NodeId (NodeId)
 
 
 data BreadcrumbItem
@@ -25,7 +28,7 @@ data Named a = Named
 
 newtype Breadcrumb a = Breadcrumb
     { _items :: [a]
-    } deriving (Eq, Generic, Ord, Show)
+    } deriving (Eq, Foldable, Generic, Ord, Show)
 
 makeLenses ''BreadcrumbItem
 makeLenses ''Breadcrumb
@@ -64,7 +67,7 @@ instance {-# OVERLAPPABLE #-} ToJSON a => ToJSON (Breadcrumb a) where
     toEncoding = Lens.toEncoding
 
 instance ToJSON (Breadcrumb Text) where
-    toJSON     = toJSON . intercalate "." . unwrap
+    toJSON = toJSON . intercalate "." . unwrap
 
 instance FromJSON (Breadcrumb Text) where
     parseJSON = fmap (Breadcrumb . Text.split (== '.')) . parseJSON
