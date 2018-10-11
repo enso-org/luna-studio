@@ -5,6 +5,7 @@ import Empire.Prelude
 import qualified Empire.ASTOps.Read           as ASTRead
 import qualified Empire.Commands.Graph        as Graph
 import qualified Empire.Commands.GraphBuilder as GraphBuilder
+import qualified Empire.Data.Graph            as Graph
 import qualified LunaStudio.Data.Graph        as Graph
 import qualified LunaStudio.Data.Node         as Node
 import qualified LunaStudio.Data.Port         as Port
@@ -80,9 +81,14 @@ spec = runTests "graph building" $ do
                     foo.bar
                     None
                 |]
-            prepare gl = Graph.getNodes gl
+            prepare gl = do
+                nodes      <- Graph.getNodes gl
+                parseError <- Graph.withUnit (top gl) $
+                    use $ Graph.userState . Graph.clsParseError
+                return (nodes, parseError)
             in testCase code expectedCode $ \loc@(GraphLocation file _) -> do
                 Graph.substituteCodeFromPoints file
                     [TextDiff (Just (Point 7 4, Point 7 4)) ".bar" Nothing]
-                nodes <- prepare loc
+                (nodes, parseError) <- prepare loc
                 nodes `shouldSatisfy` (== 2) . length
+                parseError `shouldSatisfy` isNothing

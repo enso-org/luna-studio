@@ -4,6 +4,7 @@ import Empire.Prelude hiding (range)
 
 import qualified Data.Map                      as Map
 import qualified Data.Text                     as Text
+import qualified Data.Text.IO                  as Text
 import qualified Empire.ASTOps.Parse           as ASTParse
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.Code          as Code

@@ -414,6 +414,16 @@ isRecord expr = match expr $ \case
     ClsASG{} -> return True
     _     -> return False
 
+isNone :: NodeRef -> GraphOp Bool
+isNone = flip matchExpr $ \case
+    Cons n _ -> return $ n == "None"
+    _        -> return False
+
+isSeq :: NodeRef -> GraphOp Bool
+isSeq = flip matchExpr $ \case
+    Seq{} -> return True
+    _     -> return False
+
 isAnonymous :: NodeRef -> GraphOp Bool
 isAnonymous expr = match expr $ \case
     Marked _ e -> isAnonymous =<< source e

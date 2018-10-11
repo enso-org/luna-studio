@@ -94,13 +94,15 @@ extractMarkedMetasAndIds
     :: NodeRef -> ASTOp g [(Word64, (Maybe NodeMeta, Maybe NodeId))]
 extractMarkedMetasAndIds root = matchExpr root $ \case
     Marked m e -> do
-        meta   <- AST.readMeta root
-        marker <- getMarker =<< source m
-        expr   <- source e
-        rest   <- extractMarkedMetasAndIds expr
-        nid    <- ASTRead.getNodeId  expr
-        nid2   <- ASTRead.getNodeId  root
-        pure $ (marker, (meta, nid <|> nid2)) : rest
+        meta    <- AST.readMeta root
+        marker  <- getMarker =<< source m
+        expr    <- source e
+        rest    <- extractMarkedMetasAndIds expr
+        var     <- ASTRead.isVar expr
+        nidExpr <- ASTRead.getNodeId  expr
+        nidRoot <- ASTRead.getNodeId  root
+        let outId = if var then nidRoot else nidExpr <|> nidRoot
+        pure $ (marker, (meta, outId)) : rest
     _ -> concat <$> (mapM (extractMarkedMetasAndIds <=< source) =<< inputs root)
 
 stripMetadata :: Text -> Text

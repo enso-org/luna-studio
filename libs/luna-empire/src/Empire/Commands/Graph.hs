@@ -77,7 +77,7 @@ import Debug
 import Empire.ASTOp                         (ClassOp, GraphOp,
                                              liftScheduler, runASTOp,
                                              runAliasAnalysis)
-import Empire.ASTOps.BreadcrumbHierarchy    (isNone, prepareChild)
+import Empire.ASTOps.BreadcrumbHierarchy    (prepareChild)
 import Empire.ASTOps.Parse                  (FunctionParsing (..))
 import Empire.Commands.Code                 (addExprMapping, getExprMap,
                                              getNextExprMarker, setExprMap)
@@ -390,7 +390,7 @@ putInSequence ref code meta = do
     blockEnd           <- Code.getCurrentBlockEnd
     currentOutput      <- getCurrentFunctionOutput
     anonOutput         <- ASTRead.isAnonymous currentOutput
-    none               <- isNone currentOutput
+    none               <- ASTRead.isNone currentOutput
     insertAfterAndUpdate oldSeq nearestNode ref blockEnd code
     when (Just currentOutput == nearestNode && anonOutput && not none) $ do
         Just nid <- GraphBuilder.getNodeIdWhenMarked currentOutput
