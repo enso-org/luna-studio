@@ -12,22 +12,22 @@ class LunaToolbar extends View
             class: 'luna-toolbar'
             =>
                 @div
-                    class: 'luna-toolbar__container'
+                    class: 'luna-toolbar__logo-container'
                     outlet: 'logoContainer'
                     =>
                         @div
-                            class: 'luna-toolbar__button luna-toolbar__logo'
+                            class: 'luna-toolbar__logo'
                             outlet: 'buttonLogo'
                 @div
-                    class: 'luna-toolbar__container'
+                    class: 'luna-toolbar__buttons-container'
                     outlet: 'buttonContainer'
                     =>
                         @div
-                            class: 'luna-toolbar__button'
+                            class: 'luna-toolbar__button luna-toolbar__button-left'
                             outlet: 'buttonDocs'
                             'Documentation'
                         @div
-                            class: 'luna-toolbar__button'
+                            class: 'luna-toolbar__button luna-toolbar__button-right'
                             outlet: 'buttonSupport'
                             'Community support'
     initialize: =>
@@ -39,7 +39,7 @@ class LunaToolbar extends View
     attach: =>
         @panel ?= atom.workspace.addHeaderPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
-        @buttonLogo[0].innerHTML = logo.generateInAppLogo 48
+        @buttonLogo[0].innerHTML = logo.generateInAppLogo 24
         @panel.show()
 
     detach: =>
