@@ -100,7 +100,7 @@ import Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
 import LunaStudio.Data.Breadcrumb           (Breadcrumb (..), BreadcrumbItem,
                                              Named)
 import LunaStudio.Data.Connection           (Connection (..))
-import LunaStudio.Data.GraphLocation        (GraphLocation (..))
+import LunaStudio.Data.GraphLocation        (GraphLocation (..), (|>))
 import LunaStudio.Data.Node                 (ExpressionNode (..), NodeId)
 import LunaStudio.Data.NodeLoc              (NodeLoc (..))
 import LunaStudio.Data.NodeMeta             (NodeMeta)
@@ -144,11 +144,21 @@ addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire E
 addNodeCondTC tc loc@(GraphLocation f _) uuid expr meta
     | GraphLocation _ (Breadcrumb []) <- loc = do
         node <- addFunNode loc AppendNone uuid expr meta
+        when_ (node ^. Node.canEnter) $ do
+            withGraph (loc |> Breadcrumb.Definition (node ^. Node.nodeId)) $
+                let noIndent = 0
+                in runASTOp $ ASTBuilder.ensureFunctionIsValid noIndent
         resendCode loc
         return node
     | otherwise = do
         let runner = if tc then withTC loc False else withGraph loc
-        node <- runner $ addNodeNoTC loc uuid expr Nothing meta
+        (node, indent) <- runner $ do
+            node   <- addNodeNoTC loc uuid expr Nothing meta
+            indent <- runASTOp Code.getCurrentIndentationLength
+            return (node, indent)
+        when_ (node ^. Node.canEnter) $ do
+            withGraph (loc |> Breadcrumb.Lambda (node ^. Node.nodeId)) $
+                runASTOp $ ASTBuilder.ensureFunctionIsValid indent
         resendCode loc
         return node
 
@@ -260,7 +270,8 @@ addNodeNoTC loc uuid input name meta = do
     let propInput = Text.strip input
     parse <- ASTParse.parseExpr propInput
     expr <- runASTOp $ do
-        ASTBuilder.ensureFunctionIsValid
+        indent <- Code.getCurrentIndentationLength
+        ASTBuilder.ensureFunctionIsValid indent
         Code.propagateLengths parse
         (parsedNode, newName) <- AST.addNode uuid name (generateNodeName parse) parse
         index        <- getNextExprMarker
@@ -867,18 +878,21 @@ renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name
     | GraphLocation f (Breadcrumb []) <- loc = do
         let stripped = Text.strip name
-        withUnit loc $ do
+        oldLen <- withUnit loc $ do
             _ <- liftIO $ ASTParse.runProperVarParser stripped
             oldName <- use $ Graph.userState . Graph.clsFuns . ix nid . Graph.funName
             Graph.userState . Graph.clsFuns %= Map.adjust (Graph.funName .~ (Text.unpack stripped)) nid
             runASTOp $ do
                 fun     <- ASTRead.getFunByNodeId nid >>= ASTRead.cutThroughDocAndMarked
                 matchExpr fun $ \case
-                    ASGFunction n _ _ -> flip ASTModify.renameVar (convert stripped) =<< source n
+                    ASGFunction n _ _ -> do
+                        len <- getLayer @SpanLength =<< source n
+                        flip ASTModify.renameVar (convert stripped) =<< source n
+                        return len
         withGraph (GraphLocation f (Breadcrumb [Breadcrumb.Definition nid])) $ runASTOp $ do
-            self <- use $ Graph.breadcrumbHierarchy . BH.self
-            v    <- ASTRead.getVarNode self
-            Code.replaceAllUses v stripped
+            self   <- use $ Graph.breadcrumbHierarchy . BH.self
+            v      <- ASTRead.getVarNode self
+            Code.replaceAllUses v oldLen stripped
         resendCode loc
     | otherwise = do
         withTC loc False $ do
@@ -892,8 +906,9 @@ renameNode loc nid name
                 patIsVar <- ASTRead.isVar pat
                 varIsVar <- ASTRead.isVar v
                 if patIsVar && varIsVar then do
+                    oldLen <- getLayer @SpanLength v
                     ASTModify.renameVar v $ convert name
-                    Code.replaceAllUses v name
+                    Code.replaceAllUses v oldLen name
                     deleteSubtree pat
                 else do
                     ref      <- ASTRead.getASTPointer nid

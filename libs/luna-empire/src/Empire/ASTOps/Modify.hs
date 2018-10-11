@@ -6,10 +6,7 @@
 module Empire.ASTOps.Modify where
 
 import           Control.Monad (forM)
-import           Control.Lens  (folded, ifiltered)
 import           Data.List     (find)
-import qualified Data.Text.IO  as Text
-import qualified Safe
 
 import           Empire.Prelude hiding (substitute)
 import qualified Empire.Prelude as P
@@ -29,9 +26,9 @@ import           Empire.Data.AST                    (EdgeRef, NodeRef, NotLambda
 import           Empire.Data.Layers                 (SpanLength, SpanOffset)
 import qualified Empire.Data.BreadcrumbHierarchy    as BH
 import qualified Empire.Data.Graph                  as Graph
-import           Data.Text.Span          (SpacedSpan(..), leftSpacedSpan)
+import           Data.Text.Span                     (SpacedSpan(..))
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
-import           Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan, realSpan)
+import           Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
 import qualified Luna.IR                            as IR
 
 import qualified Data.List as L (take, head, drop, tail)
@@ -273,6 +270,12 @@ moveLambdaArg p@(Port.Projection port : []) newPosition lambda = match lambda $ 
             Code.applyDiff (newOffset     - ownOff) (newOffset - ownOff) code
     _ -> throwM $ NotLambdaException lambda
 
+renameVarAndReplaceInCode :: NodeRef -> String -> GraphOp ()
+renameVarAndReplaceInCode var newName = do
+    oldLen <- getLayer @SpanLength var
+    renameVar var newName
+    Code.replaceAllUses var oldLen $ convert newName
+
 renameLambdaArg :: Port.OutPortId -> String -> NodeRef -> GraphOp ()
 renameLambdaArg [] _ _ = throwM CannotRemovePortException
 renameLambdaArg p@(Port.Projection port : []) newName lam = match lam $ \case
@@ -280,14 +283,12 @@ renameLambdaArg p@(Port.Projection port : []) newName lam = match lam $ \case
     Lam _ _ -> do
         args <- ASTDeconstruct.extractArguments lam
         let arg = args !! port
-        renameVar arg newName
-        Code.replaceAllUses arg $ convert newName
+        renameVarAndReplaceInCode arg newName
     ASGFunction _ as' _ -> do
         as <- ptrListToList as'
         for_ (as ^? ix port) $ \alink -> do
             arg <- source alink
-            renameVar arg newName
-            Code.replaceAllUses arg $ convert newName
+            renameVarAndReplaceInCode arg newName
     _ -> throwM $ NotLambdaException lam
 
 redirectLambdaOutput :: NodeRef -> NodeRef -> GraphOp NodeRef

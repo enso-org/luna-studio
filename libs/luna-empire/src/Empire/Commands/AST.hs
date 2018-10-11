@@ -7,15 +7,13 @@ import           Empire.Prelude
 
 import           LunaStudio.Data.Node              (NodeId)
 import           LunaStudio.Data.NodeMeta          (NodeMeta)
-import qualified LunaStudio.Data.NodeMeta          as NodeMeta
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..))
-import           Empire.Data.Layers                (Meta, SpanOffset, SpanLength)
+import           Empire.Data.Layers                (Meta)
 
 import           Empire.ASTOp                      (ASTOp, GraphOp, match)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Read                as ASTRead
-import           Data.Text.Position                (Delta(..))
 
 import qualified Luna.IR as IR
 -- import qualified OCI.IR.Repr.Vis as Vis

@@ -53,12 +53,8 @@ import           Luna.Pass.Data.Stage (Stage)
 
 import qualified Empire.Pass.PatternTransformation            as PT
 import qualified Luna.Pass.Attr as Attr
-import qualified Luna.Syntax.Prettyprint as Prettyprint
 import qualified Luna.Syntax.Text.Parser.Ast           as Parsing
-import Luna.Syntax.Text.Scope (Scope)
 import qualified Luna.Syntax.Text.Source         as Source
-import qualified Luna.IR.Term.Literal            as Lit
-import Luna.Syntax.Text.Parser.State.Result (Result (Result))
 import qualified Luna.Syntax.Text.Parser.State.Marker      as Marker
 import qualified Luna.Syntax.Text.Parser.Lexer         as Lexer
 

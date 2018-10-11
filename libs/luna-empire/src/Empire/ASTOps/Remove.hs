@@ -11,7 +11,7 @@ import           Empire.Prelude
 import           Empire.ASTOp              (GraphOp, match)
 import           Empire.ASTOps.Deconstruct (deconstructApp)
 import           Empire.ASTOps.Read        (isBlank)
-import           Empire.Data.AST           (NodeRef, NotAppException (..))
+import           Empire.Data.AST           (NodeRef)
 
 import qualified Luna.IR                   as IR
 

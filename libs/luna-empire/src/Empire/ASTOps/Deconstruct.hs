@@ -9,8 +9,6 @@ import           Empire.Data.AST    (EdgeRef, NodeRef, NotAppException (..))
 import           Luna.Pass.Data.Layer.SpanLength (SpanLength)
 import           Luna.Pass.Data.Layer.SpanOffset (SpanOffset)
 
-import qualified Luna.IR            as IR
-
 
 deconstructApp :: NodeRef -> GraphOp (NodeRef, [NodeRef])
 deconstructApp app' = match app' $ \case
