@@ -1342,7 +1342,7 @@ pasteText loc ranges (Text.concat -> text) = do
             code' <- Code.applyDiff start end cleanText
             let endPosition = start + fromIntegral (Text.length cleanText)
                 cursorPos   = Code.deltaToPoint endPosition code'
-            return (code', cursorPos)
+            pure (code', cursorPos)
     case res of
         Just (newCode, cursorPos) -> do
             reloadCode topLoc newCode `catch`
@@ -1352,10 +1352,10 @@ pasteText loc ranges (Text.concat -> text) = do
                         Graph.userState . Graph.clsParseError ?= toException e
             typecheck loc `catch` \(e::BH.BreadcrumbDoesNotExistException) ->
                 -- if after reloading, our loc no longer exists, ignore error
-                return ()
+                pure ()
             resendCodeWithCursor topLoc (Just cursorPos)
-            return newCode
-        _ -> return ""
+            pure newCode
+        _ -> pure ""
 
 nativeModuleName :: Text
 nativeModuleName = "Native"
