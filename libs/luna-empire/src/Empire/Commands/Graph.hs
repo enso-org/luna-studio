@@ -1337,8 +1337,8 @@ pasteText loc ranges (Text.concat -> text) = do
     res <- withUnit topLoc $ do
         runASTOp $ forM (Safe.headMay ranges) $ \range -> do
             code <- use Graph.code
-            let (start, end)   = rangeToMarked code range
-            let cleanText = Code.removeMarkers text
+            let (start, end) = rangeToMarked code range
+                cleanText    = Code.removeMarkers text
             code' <- Code.applyDiff start end cleanText
             let endPosition = start + fromIntegral (Text.length cleanText)
                 cursorPos   = Code.deltaToPoint endPosition code'
@@ -1355,7 +1355,7 @@ pasteText loc ranges (Text.concat -> text) = do
                 pure ()
             resendCodeWithCursor topLoc (Just cursorPos)
             pure newCode
-        _ -> pure ""
+        _ -> pure mempty
 
 nativeModuleName :: Text
 nativeModuleName = "Native"
