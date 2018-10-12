@@ -416,13 +416,13 @@ isRecord expr = match expr $ \case
 
 isNone :: NodeRef -> GraphOp Bool
 isNone = flip matchExpr $ \case
-    Cons n _ -> return $ n == "None"
-    _        -> return False
+    Cons n _ -> pure $ n == "None"
+    _        -> pure False
 
 isSeq :: NodeRef -> GraphOp Bool
 isSeq = flip matchExpr $ \case
-    Seq{} -> return True
-    _     -> return False
+    Seq{} -> pure True
+    _     -> pure False
 
 isAnonymous :: NodeRef -> GraphOp Bool
 isAnonymous expr = match expr $ \case
