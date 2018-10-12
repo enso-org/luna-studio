@@ -90,5 +90,5 @@ spec = runTests "graph building" $ do
                 Graph.substituteCodeFromPoints file
                     [TextDiff (Just (Point 7 4, Point 7 4)) ".bar" Nothing]
                 (nodes, parseError) <- prepare loc
-                nodes `shouldSatisfy` (== 2) . length
+                nodes      `shouldSatisfy` (== 2) . length
                 parseError `shouldSatisfy` isNothing
