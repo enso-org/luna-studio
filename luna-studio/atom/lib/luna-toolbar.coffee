@@ -2,6 +2,10 @@
 logo   = require 'luna-logo'
 shell  = require 'shell'
 
+docsUrl = 'http://docs.luna-lang.org'
+chatUrl = 'http://chat.luna-lang.org'
+logoSize = 24
+
 module.exports =
 class LunaToolbar extends View
     constructor: (@codeEditor) ->
@@ -33,13 +37,13 @@ class LunaToolbar extends View
     initialize: =>
         target = atom.views.getView atom.workspace
         @buttonLogo.on    'click', -> atom.commands.dispatch target, 'luna-studio:welcome'
-        @buttonDocs.on    'click', -> shell.openExternal 'http://docs.luna-lang.org'
-        @buttonSupport.on 'click', -> shell.openExternal 'http://chat.luna-lang.org'
+        @buttonDocs.on    'click', -> shell.openExternal docsUrl
+        @buttonSupport.on 'click', -> shell.openExternal chatUrl
 
     attach: =>
         @panel ?= atom.workspace.addHeaderPanel({item: this, visible: false})
         @previouslyFocusedElement = document.activeElement
-        @buttonLogo[0].innerHTML = logo.generateInAppLogo 24
+        @buttonLogo[0].innerHTML = logo.generateInAppLogo logoSize
         @panel.show()
 
     detach: =>
