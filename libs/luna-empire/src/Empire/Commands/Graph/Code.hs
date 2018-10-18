@@ -87,7 +87,7 @@ cumulativeOffsetStream tokens = tokens' where
 -- | Takes a pair of consecutive tokens and determines if a marker
 --   is placed in a proper position. If the second token is not a marker
 --   or if it seems to be correctly placed, `Nothing` is returned.
---   If marker is determined to be incorrectly placed, Just offset
+--   If marker is determined to be incorrectly placed, `Just offset`
 --   is returned, where offset is taken from the second token.
 --   This function assumes that Tokens have cumulative offset inside
 --   them, so offset returned is offset from the beginning of the code.
