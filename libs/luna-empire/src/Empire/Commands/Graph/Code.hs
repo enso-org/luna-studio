@@ -61,40 +61,74 @@ substituteCodeFromPoints path (breakDiffs -> diffs) = do
         pure $ map (toRealDelta . toDelta) diffs
     substituteCode path changes
 
+-- | removeMarker removes marker at given position, assuming that marker
+--   consists of '«', non-zero number of digits, and '»'.
+removeMarker :: Text -> Int -> Text
+removeMarker code markerPos =
+    let (before, after) = Text.splitAt markerPos code
+        dropMarker t =
+            let Just (markerStart, rest) = Text.uncons t
+            in if markerStart == '«'
+                then
+                    let numberDropped = Text.dropWhile isDigit rest
+                        Just (markerEnd, rest') = Text.uncons numberDropped
+                    in if markerEnd == '»'
+                        then rest'
+                        else after
+                else error $ "marker start is wrong: " <> [markerStart]
+    in Text.concat [before, dropMarker after]
+
+-- | This function computes offsets of each token from the beginning
+--   of the file and stores them in _offset field of Token
+cumulativeOffsetStream :: [Lexer.Token a] -> [Lexer.Token a]
+cumulativeOffsetStream []     = []
+cumulativeOffsetStream tokens = tokens' where
+    tokens'    = scanl1 f tokens
+    f (Lexer.Token prevSpan accOffset _) (Lexer.Token span offset lexeme)
+        = Lexer.Token (span+offset) (accOffset + prevSpan) lexeme
+
+-- | Takes a pair of consecutive tokens and determines if a marker
+--   is placed in a proper position. If the second token is not a marker
+--   or if it seems to be correctly placed, Nothing is returned.
+--   If marker is determined to be incorrectly placed, Just offset
+--   is returned, where offset is taken from the second token.
+--   This function assumes that Tokens have cumulative offset inside
+--   them, so offset returned is offset from the beginning of the code.
+--
+--   Marker is thought to be wrongly placed if it's directly preceded
+--   by anything else than:
+--       - beginning of code
+--       - end of line
+--       - block start (:)
+isWrongMarker
+    :: (Lexer.Token Lexer.Symbol, Lexer.Token Lexer.Symbol)
+    -> Maybe Delta
+isWrongMarker tokens
+    | (Lexer.Token _ _ preceding,
+       Lexer.Token _ offset (Lexer.Marker _)) <- tokens =
+        case preceding of
+            Lexer.STX        -> Nothing
+            Lexer.EOL        -> Nothing
+            Lexer.BlockStart -> Nothing
+            _                -> Just offset
+    | otherwise = Nothing
+
 sanitizeMarkers :: Text -> Text
 sanitizeMarkers text = if null erroneousMarkers
     then text
     else removeErroneousMarkers (coerce erroneousMarkers) text where
-        lexerStream  = Lexer.evalDefLexer (convert text)
-        f (Lexer.Token accS accO _) (Lexer.Token s o a) = Lexer.Token (s+o) (accO + accS) a
-        cumulativeStream = scanl f (Lexer.Token 0 0 Lexer.STX) lexerStream
-        markersIndices = findIndices (== '«') $ toList text
-        tokensForMarkers = map (\a -> (a, findToken cumulativeStream a)) $ coerce markersIndices
-        erroneousMarkers = [ a | (a, Nothing) <- tokensForMarkers] <> wrongMarkers
+        removeErroneousMarkers markers code
+            = foldl' removeMarker code (reverse $ sort markers)
+        lexerStream      = Lexer.evalDefLexer (convert text)
+        cumulativeStream = cumulativeOffsetStream lexerStream
+        markersIndices   = findIndices (== '«') $ toList text
+        tokensForMarkers = map (\a -> (a, findToken cumulativeStream a))
+            $ coerce markersIndices
+        findToken stream index = find (\t -> t ^. Lexer.offset == index) stream
+        erroneousMarkers =
+            [ a | (a, Nothing) <- tokensForMarkers] <> wrongMarkers
         precedingTokens  = zip cumulativeStream (tail cumulativeStream)
-        filterWrongMarkers a
-            | (preceding, Lexer.Token _ offset (Lexer.Marker _)) <- a = case preceding of
-                Lexer.Token _ _ Lexer.EOL        -> Nothing
-                Lexer.Token _ _ Lexer.BlockStart -> Nothing
-                Lexer.Token _ _ Lexer.STX        -> Nothing
-                _ -> Just offset
-            | otherwise = Nothing
-        wrongMarkers = catMaybes $ map filterWrongMarkers precedingTokens
-        findToken stream index = find (\(Lexer.Token _ offset _) -> offset == index) stream
-        removeErroneousMarkers markers code = foldl' removeMarker code (reverse $ sort markers)
-        removeMarker code markerPos =
-            let (before, after) = Text.splitAt markerPos code
-                dropMarker t =
-                    let Just (markerStart, rest) = Text.uncons t
-                    in if markerStart == '«'
-                        then
-                            let numberDropped = Text.dropWhile isDigit rest
-                                Just (markerEnd, rest') = Text.uncons numberDropped
-                            in if markerEnd == '»'
-                                then rest'
-                                else error $ "marker end is wrong: " <> [markerEnd]
-                        else error $ "marker start is wrong: " <> [markerStart]
-            in Text.concat [before, dropMarker after]
+        wrongMarkers     = catMaybes $ map isWrongMarker precedingTokens
 
 substituteCode :: FilePath -> [(Delta, Delta, Text)] -> Empire ()
 substituteCode path changes = do

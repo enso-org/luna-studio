@@ -2,20 +2,14 @@ module Test.Code.MarkerSanitizerSpec (spec) where
 
 import Empire.Prelude
 
-import qualified Empire.Commands.Graph        as Graph
-
 import Empire.Commands.Graph.Code     (sanitizeMarkers)
-import LunaStudio.Data.GraphLocation  (filePath, top)
-import LunaStudio.Data.Point          (Point (Point))
-import LunaStudio.Data.TextDiff       (TextDiff (TextDiff))
-import Test.Hspec                     (Spec, describe, it, shouldBe)
-import Test.Hspec.Empire              (normalizeLunaCode, testCaseWithMarkers)
--- import Test.Hspec.Expectations.Lifted (shouldBe)
+import Test.Hspec                     (Spec, describe, it, parallel, shouldBe)
+import Test.Hspec.Empire              (normalizeLunaCode)
 import Text.RawString.QQ              (r)
 
 
 spec :: Spec
-spec = describe "sanitization" $ do
+spec = parallel $ describe "sanitization" $ do
     it "removes marker from accessor without spaces" $ let
         initialCode = normalizeLunaCode [r|
             import Std.Base
@@ -62,6 +56,22 @@ spec = describe "sanitization" $ do
                 None
             |]
         in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "removes marker at the end of the line" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»foo = 1«10»
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»foo = 1
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
     it "removes marker from accessor with spaces" $ let
         initialCode = normalizeLunaCode [r|
             import Std.Base
@@ -78,17 +88,47 @@ spec = describe "sanitization" $ do
                 None
             |]
         in sanitizeMarkers initialCode `shouldBe` expectedCode
-        -- it "removes markers inside expressions" $ let
-        --     code = [r|
-        --         import Std.Base
+    it "removes two consecutive markers" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
 
-        --         «0»def main:
-        --             «1»node = foobar
-        --             None
-        --         |]
-        --     in testCaseWithMarkers code code $ \(view filePath -> file) -> do
-        --         Graph.substituteCodeFromPoints file
-        --             [TextDiff (Just (Point 14 3, Point 14 3)) "\n    " Nothing]
-        --         Graph.substituteCodeFromPoints file
-        --             [TextDiff (Just (Point 14 3, Point 4 4)) "" Nothing]
-        -- 
+            «0»def main:
+                «1»«2»node = foo . bar
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = foo . bar
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "removes three consecutive markers" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»«2»«3»node = foo . bar
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = foo . bar
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "leaves marker inside lambda" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x: y: «2»x + y
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` initialCode
+    it "works on empty string"  $ sanitizeMarkers ""       `shouldBe` ""
+    it "works on single marker" $ sanitizeMarkers "«2»"    `shouldBe` "«2»"
+    it "works on double marker" $ sanitizeMarkers "«2»«3»" `shouldBe` "«2»"
