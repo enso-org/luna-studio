@@ -1,6 +1,6 @@
 module Empire.Commands.Graph.Code where
 
-import Empire.Prelude hiding (range)
+import Empire.Prelude hiding (range, span)
 
 import qualified Data.Map                           as Map
 import qualified Data.Text                          as Text
@@ -13,7 +13,6 @@ import qualified Empire.Data.Library                as Library
 import qualified Empire.Data.FileMetadata           as FileMetadata
 import qualified Empire.Empire                      as Empire
 import qualified LunaStudio.Data.GraphLocation      as GraphLocation
-import qualified Luna.Syntax.Text.Analysis.SpanTree as SpanTree
 import qualified Luna.Syntax.Text.Lexer             as Lexer
 
 import Control.Monad.Catch                  (handle)
@@ -29,7 +28,6 @@ import Empire.Commands.Graph.Metadata       (markFunctions, prepareNodeCache,
                                              readMetadata', removeMetadataNode,
                                              stripMetadata)
 import Empire.Empire                        (Empire)
-import Luna.Syntax.Text.Analysis.SpanTree   (Spanned (Spanned))
 import Luna.Syntax.Text.Parser.State.Marker (TermMap (TermMap))
 import LunaStudio.Data.Breadcrumb           (Breadcrumb (Breadcrumb),
                                              BreadcrumbItem (Definition))
@@ -37,7 +35,6 @@ import LunaStudio.Data.GraphLocation        (GraphLocation)
 import LunaStudio.Data.NodeCache            (nodeIdMap, nodeMetaMap)
 import LunaStudio.Data.Point                (Point)
 import LunaStudio.Data.TextDiff             (TextDiff (TextDiff))
-import Debug.Trace
 
 substituteCodeFromPoints :: FilePath -> [TextDiff] -> Empire ()
 substituteCodeFromPoints path (breakDiffs -> diffs) = do
