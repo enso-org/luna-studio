@@ -2,18 +2,18 @@ module Empire.Commands.Graph.Code where
 
 import Empire.Prelude hiding (range, span)
 
-import qualified Data.Map                           as Map
-import qualified Data.Text                          as Text
-import qualified Empire.ASTOps.Parse                as ASTParse
-import qualified Empire.ASTOps.Read                 as ASTRead
-import qualified Empire.Commands.Code               as Code
-import qualified Empire.Commands.Publisher          as Publisher
-import qualified Empire.Data.Graph                  as Graph
-import qualified Empire.Data.Library                as Library
-import qualified Empire.Data.FileMetadata           as FileMetadata
-import qualified Empire.Empire                      as Empire
-import qualified LunaStudio.Data.GraphLocation      as GraphLocation
-import qualified Luna.Syntax.Text.Lexer             as Lexer
+import qualified Data.Map                      as Map
+import qualified Data.Text                     as Text
+import qualified Empire.ASTOps.Parse           as ASTParse
+import qualified Empire.ASTOps.Read            as ASTRead
+import qualified Empire.Commands.Code          as Code
+import qualified Empire.Commands.Publisher     as Publisher
+import qualified Empire.Data.Graph             as Graph
+import qualified Empire.Data.Library           as Library
+import qualified Empire.Data.FileMetadata      as FileMetadata
+import qualified Empire.Empire                 as Empire
+import qualified LunaStudio.Data.GraphLocation as GraphLocation
+import qualified Luna.Syntax.Text.Lexer        as Lexer
 
 import Control.Monad.Catch                  (handle)
 import Data.Char                            (isDigit, isSpace)
@@ -78,9 +78,7 @@ removeMarker code markerPos =
 -- | This function computes offsets of each token from the beginning
 --   of the file and stores them in _offset field of Token
 cumulativeOffsetStream :: [Lexer.Token a] -> [Lexer.Token a]
-cumulativeOffsetStream []     = []
-cumulativeOffsetStream tokens = tokens' where
-    tokens'    = scanl1 f tokens
+cumulativeOffsetStream tokens = scanl1 f tokens where
     f (Lexer.Token prevSpan accOffset _) (Lexer.Token span offset lexeme)
         = Lexer.Token (span+offset) (accOffset + prevSpan) lexeme
 
@@ -111,21 +109,23 @@ isWrongMarker tokens
     | otherwise = Nothing
 
 sanitizeMarkers :: Text -> Text
-sanitizeMarkers text = if null erroneousMarkers
-    then text
-    else removeErroneousMarkers (coerce erroneousMarkers) text where
-        removeErroneousMarkers markers code
-            = foldl' removeMarker code (reverse $ sort markers)
-        lexerStream      = Lexer.evalDefLexer (convert text)
-        cumulativeStream = cumulativeOffsetStream lexerStream
-        markersIndices   = findIndices (== '«') $ toList text
-        tokensForMarkers = map (\a -> (a, findToken cumulativeStream a))
-            $ coerce markersIndices
-        findToken stream index = find (\t -> t ^. Lexer.offset == index) stream
-        erroneousMarkers =
-            [ a | (a, Nothing) <- tokensForMarkers] <> wrongMarkers
-        precedingTokens  = zip cumulativeStream (tail cumulativeStream)
-        wrongMarkers     = catMaybes $ map isWrongMarker precedingTokens
+sanitizeMarkers text = let
+    removeErroneousMarkers markers code
+        = foldl' removeMarker code (reverse $ sort markers)
+    lexerStream      = Lexer.evalDefLexer (convert text)
+    cumulativeStream = cumulativeOffsetStream lexerStream
+    markersIndices   = findIndices (== '«') $ toList text
+    tokensForMarkers = fmap (\a -> (a, findToken cumulativeStream a))
+        $ coerce markersIndices
+    findToken stream index = find (\t -> t ^. Lexer.offset == index) stream
+    erroneousMarkers =
+        [ a | (a, Nothing) <- tokensForMarkers] <> wrongMarkers
+    precedingTokens  = zip cumulativeStream $ tail cumulativeStream
+    wrongMarkers     = catMaybes $ fmap isWrongMarker precedingTokens
+    in if null erroneousMarkers
+        then text
+        else removeErroneousMarkers (coerce erroneousMarkers) text
+
 
 substituteCode :: FilePath -> [(Delta, Delta, Text)] -> Empire ()
 substituteCode path changes = do
