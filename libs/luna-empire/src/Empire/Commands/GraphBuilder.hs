@@ -57,7 +57,7 @@ import LunaStudio.Data.Port                 (InPort, InPortId,
 import LunaStudio.Data.PortDefault          (PortDefault (Constant, Expression), PortValue (BoolValue, IntValue, RealValue, TextValue),
                                              _Constant)
 import LunaStudio.Data.PortRef              (InPortRef (InPortRef), OutPortRef,
-                                             srcNodeId)
+                                             srcNodeId, dstPortId)
 import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.TypeRep              (TypeRep (TCons, TStar))
 
@@ -632,7 +632,7 @@ resolveInput n = traverse fromPortMarker =<< getLayer @Marker n
 
 deepResolveInputs ::
     NodeId -> NodeRef -> InPortRef -> GraphOp [(OutPortRef, InPortRef)]
-deepResolveInputs nid ref' portRef@(InPortRef loc portId) = do
+deepResolveInputs nid ref' portRef = do
     ref                   <- ASTRead.cutThroughGroups ref'
     currentPortResolution <- toList <$> resolveInput ref
     varsInsideLambda      <- do
@@ -646,15 +646,16 @@ deepResolveInputs nid ref' portRef@(InPortRef loc portId) = do
         else
             pure mempty
     inputsLam <- mapM resolveInput varsInsideLambda
-    let connsInLam         = map (, portRef) $ catMaybes inputsLam
-        currentPortConn    = (, portRef)
-            <$> (filter ((/= nid) . view srcNodeId) currentPortResolution)
-        unfilteredPortConn = (, portRef) <$> currentPortResolution
+    let connsInLam          = map (, portRef) $ catMaybes inputsLam
+        notCurrentNode port = port ^. srcNodeId /= nid
+        currentPortConn     = (, portRef)
+            <$> filter notCurrentNode currentPortResolution
+        unfilteredPortConn  = (, portRef) <$> currentPortResolution
     args               <- ASTDeconstruct.extractAppPorts ref
     startingPortNumber <- match ref $ \case
         LeftSection{} -> pure 1
         _             -> pure 0
-    let appendPortId pid = InPortRef loc (portId <> [pid])
+    let appendPortId pid = portRef & dstPortId %~ (<> [pid])
     argsConns <- forM (zip args [startingPortNumber..]) $ \(arg, i)
         -> deepResolveInputs nid arg $ appendPortId (Arg i)
     funHead   <- ASTDeconstruct.extractFun  ref
