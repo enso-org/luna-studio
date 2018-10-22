@@ -27,7 +27,7 @@ import qualified LunaStudio.Data.NodeMeta             as NodeMeta
 import qualified LunaStudio.Data.Port                 as Port
 
 import Control.Lens                         (uses)
-import Control.Monad.State                  hiding (when)
+import Control.Monad.State                  hiding (void, when)
 import Data.Char                            (intToDigit)
 import Data.Foldable                        (toList)
 import Data.Maybe                           (catMaybes, maybeToList)
@@ -439,24 +439,25 @@ extractListPorts n = match n $ \case
                 argTp <- source edge >>= getLayer @TypeLayer >>= source
                 t     <- Print.getTypeRep argTp
                 ps    <- getPortState =<< source edge
-                return $ (t,ps) : rest
+                pure $ (t,ps) : rest
         source a >>= flip match (\case
-            Var _      -> addPort a
+            Var{}      -> addPort a
             IRNumber{} -> addPort a
             IRString{} -> addPort a
+            Lam{}      -> addPort a
             _ -> do
-                foo <- extractListPorts =<< source a
-                return $ foo <> rest)
+                portsInside <- extractListPorts =<< source a
+                pure $ portsInside <> rest)
     Lam i o -> do
         foo <- extractListPorts =<< source i
         bar <- extractListPorts =<< source o
-        return $ foo <> bar
+        pure $ foo <> bar
     ResolvedCons "Std.Base" "List" "Prepend" args -> do
         args' <- ptrListToList args
         as <- mapM (source >=> extractListPorts) args'
-        return $ concat as
+        pure $ concat as
     _ -> do
-        return []
+        pure []
 
 extractPortInfo :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractPortInfo n = do
@@ -489,7 +490,7 @@ buildArgPorts currentPort ref resolveFun = do
     typed <- extractPortInfo ref
     tp    <- getLayer @TypeLayer ref >>= source
     names <- match tp $ \case
-        ResolvedCons "Std.Base" "List" "List" _ -> return []
+        ResolvedCons "Std.Base" "List" "List" _ -> pure []
         _                                       -> getPortsNames ref resolveFun
     let portsTypes = fmap fst typed
             <> List.replicate (length names - length typed) TStar
