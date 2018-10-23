@@ -18,7 +18,6 @@ data PortView = PortView
         , _name     :: String
         , _typeName :: String
         , _mode     :: String
-        , _controls :: [PortControlView]
         } deriving (Eq, Generic, Show)
 
 makeLenses ''PortView
@@ -36,7 +35,6 @@ instance Convertible InPort PortView where
         {- name     -} (p ^. Port.name . to convert)
         {- typeName -} (p ^. Port.valueType . to toString)
         {- mode     -} (if p ^. Port.portId == [Port.Self] then "self" else "in")
-        {- controls -} (PortControl.fromPort p)
 
 instance Convertible OutPort PortView where
     convert p = PortView
@@ -45,4 +43,3 @@ instance Convertible OutPort PortView where
         {- name     -} (p ^. Port.name . to convert)
         {- typeName -} (p ^. Port.valueType . to toString)
         {- mode     -} def
-        {- controls -} def

@@ -11,6 +11,7 @@ import qualified NodeEditor.React.Model.Port as Port
 import           LunaStudio.Data.TypeRep     (TypeRep (TCons))
 import qualified LunaStudio.Data.PortDefault as PortDefault
 import           LunaStudio.Data.PortDefault (PortDefault)
+import           NodeEditor.View.Key         (Key)
 
 
 data Value
@@ -25,8 +26,20 @@ data PortControlView = PortControlView
     , _value :: Maybe Value
     } deriving (Eq, Generic, Show)
 
-makeLenses ''PortControlView
+data PortControlsView = PortControlsView
+    { _key :: Key
+    , _controls :: [PortControlView]
+    }  deriving (Eq, Generic, Show)
+
 makeLenses ''Value
+makeLenses ''PortControlView
+makeLenses ''PortControlsView
+
+instance NFData   PortControlsView
+instance FromJSON PortControlsView
+instance ToJSON   PortControlsView where
+    toEncoding = Lens.toEncoding
+    toJSON = Lens.toJSON
 
 instance NFData   PortControlView
 
@@ -86,3 +99,8 @@ instance Convertible PortControlView PortDefault where
         Just (IntValue  v) -> PortDefault.Constant $ PortDefault.IntValue  v
         Just (RealValue v) -> PortDefault.Constant $ PortDefault.RealValue v
         Just (TextValue v) -> PortDefault.Constant $ PortDefault.TextValue $ convert v
+
+instance Convertible InPort PortControlsView where
+    convert port = PortControlsView
+        {- key      -} (port ^. Port.portId . to convert)
+        {- controls -} (fromPort port)

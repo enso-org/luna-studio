@@ -13,6 +13,8 @@ import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import           NodeEditor.View.Diff                       (DiffT, diffApply, diffConvert, diffHashMap)
 import           NodeEditor.View.Port                       (PortView (PortView))
 import           NodeEditor.View.Key                        (Key)
+import           NodeEditor.View.PortControl                (PortControlsView)
+
 
 data ValueContent
     = Visualization
@@ -31,6 +33,7 @@ data ExpressionNodeView = ExpressionNodeView
     , _value      :: ValueView
     , _inPorts    :: [PortView]
     , _outPorts   :: [PortView]
+    , _controls   :: [PortControlsView]
     , _newPortKey :: Key
     , _position   :: (Double, Double)
     , _expanded   :: Bool
@@ -80,6 +83,9 @@ instance Convertible ExpressionNode ExpressionNodeView where
         {- value      -} (convert n)
         {- inPorts    -} (n ^. to ExpressionNode.inPortsList . to convert)
         {- outPorts   -} (n ^. to ExpressionNode.outPortsList . to convert)
+        {- controls   -} (convert $ if ExpressionNode.isExpanded n && null (ExpressionNode.inPortsList n)
+            then maybeToList $ n ^? ExpressionNode.inPortAt []
+            else ExpressionNode.inPortsList n)
         {- newPortKey -} (n ^. to ExpressionNode.argumentConstructorRef . dstPortId . to convert)
         {- position   -} (n ^. ExpressionNode.position . to toTuple)
         {- expanded   -} (n ^. ExpressionNode.mode == ExpressionNode.Expanded ExpressionNode.Controls)
