@@ -134,9 +134,10 @@ determineIndentation (blockIndent, _) tokens
             _         ->
                 let eolSpan = 1
                     indent = nextOffset - precOffset - eolSpan
-                in if indent > blockIndent
-                    then (blockIndent, tokens)
-                    else (indent, tokens)
+                in if indent == 0 then (blockIndent, tokens)
+                    else if indent > blockIndent
+                        then (blockIndent, tokens)
+                        else (indent, tokens)
     | otherwise = (blockIndent, tokens)
 
 

@@ -197,6 +197,28 @@ spec = parallel $ describe "sanitization" $ do
                 None
             |]
         in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "leaves marker after unindented expression" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 1
+            «2»foo = 1
+                «3»bar = 1
+                «4»baz = 1
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 1
+            «2»foo = 1
+                «3»bar = 1
+                «4»baz = 1
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
     it "leaves marker on two-line lambda" $ let
         initialCode = normalizeLunaCode [r|
             import Std.Base
