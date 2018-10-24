@@ -457,7 +457,7 @@ extractListPorts n = match n $ \case
         as <- mapM (source >=> extractListPorts) args'
         pure $ concat as
     _ -> do
-        pure []
+        pure mempty
 
 extractPortInfo :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractPortInfo n = do
@@ -490,7 +490,7 @@ buildArgPorts currentPort ref resolveFun = do
     typed <- extractPortInfo ref
     tp    <- getLayer @TypeLayer ref >>= source
     names <- match tp $ \case
-        ResolvedCons "Std.Base" "List" "List" _ -> pure []
+        ResolvedCons "Std.Base" "List" "List" _ -> pure mempty
         _                                       -> getPortsNames ref resolveFun
     let portsTypes = fmap fst typed
             <> List.replicate (length names - length typed) TStar
