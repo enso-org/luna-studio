@@ -254,7 +254,6 @@ spec = around withChannels $ parallel $ do
                     mapM Graph.getNodeIdForMarker [2,3]
                 Graph.prepareCopy (loc |>= main ^. Node.nodeId) [c, bar]
             code `shouldStartWith` [r|c = 4.0
-
 bar = foo 8.0 c|]
         it "copies lambda with metadata" $ \env -> do
             code <- evalEmp env $ do
@@ -425,8 +424,7 @@ def bar:
                 nodes <- Graph.getNodes loc
                 let Just main = find (\n -> n ^. Node.name == Just "main") nodes
                 Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (200,0)) [r|c = 4.0
-    bar = foo 8.0 c|]
-                Graph.substituteCode "TestPath" [(30, 30, "    ")]
+bar = foo 8.0 c|]
                 nodes <- Graph.getNodes (loc |>= main ^. Node.nodeId)
                 code  <- Graph.withUnit loc $ use Graph.code
                 return (nodes, Text.unpack code)
@@ -434,7 +432,7 @@ def bar:
                 bar = find (\n -> n ^. Node.name == Just "bar") nodes
             c `shouldSatisfy` isJust
             bar `shouldSatisfy` isJust
-            code `shouldStartWith` [r|«1»def main:
+            code `shouldBe` [r|«1»def main:
     «0»pi = 3.14
     «2»c = 4.0
     «3»bar = foo 8.0 c
@@ -451,15 +449,13 @@ def bar:
                     (,) <$> Graph.getNodeIdForMarker 2 <*> Graph.getNodeIdForMarker 14
                 copy  <- Graph.prepareCopy (loc |>= main ^. Node.nodeId) [c, bar]
                 Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (400,0)) copy
-                Graph.substituteCode "TestPath" [(225, 225, "    ")]
-                Graph.substituteCode "TestPath" [(242, 242, "    ")]
                 code  <- Graph.withUnit loc $ use Graph.code
                 (newC, newBar) <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
                     (Just c, Just bar) <- (,) <$> Graph.getNodeIdForMarker 19 <*> Graph.getNodeIdForMarker 20
                     (,) <$> GraphBuilder.buildNode c <*> GraphBuilder.buildNode bar
                 return (nodes, Text.unpack code, newC, newBar)
             newC ^. Node.nodeMeta . NodeMeta.position `shouldNotBe` newBar ^. Node.nodeMeta . NodeMeta.position
-            code `shouldStartWith` [r|«18»def main:
+            code `shouldBe` [r|«18»def main:
     «0»pi = 3.14
     «1»foo = a: b:
         «5»lala = 17.0
@@ -471,7 +467,6 @@ def bar:
         «11»m + n
     «2»c = 4.0
     «19»c = 4.0
-
     «20»bar = foo 8.0 c
 
     «14»bar = foo 8.0 c
@@ -499,21 +494,12 @@ def bar:
     «7»m = buzz b pi
     «8»m + n
 |]
-                Graph.substituteCode "TestPath" [ (141, 141, "    ")
-                                                , (123, 123, "    ")
-                                                , (103, 103, "    ")
-                                                , (89, 89, "    ")
-                                                , (75, 75, "    ")
-                                                , (58, 58, "    ")
-                                                , (42, 42, "    ")
-                                                , (30, 30, "    ")
-                                                ]
                 nodes <- Graph.getNodes (loc |>= main ^. Node.nodeId)
                 code  <- Graph.withUnit loc $ use Graph.code
                 return (nodes, Text.unpack code)
             let foo = find (\n -> n ^. Node.name == Just "foo") nodes
             foo `shouldSatisfy` isJust
-            code `shouldStartWith` [r|«1»def main:
+            code `shouldBe` [r|«1»def main:
     «0»pi = 3.14
     «2»foo = a: b:
         «3»lala = 17.0
@@ -523,7 +509,6 @@ def bar:
         «7»n = buzz a lala
         «8»m = buzz b pi
         «9»m + n
-
     None
 |]
         it "substitutes function body" $ \env -> do

@@ -161,6 +161,112 @@ spec = parallel $ describe "sanitization" $ do
                 None
             |]
         in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "removes marker on two-line broken expression" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 3
+                    «2».+ 2
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 3
+                    .+ 2
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "leaves marker on one-line lambda" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x: «2»x.+ 2
+                «3»foo = 1
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x: «2»x.+ 2
+                «3»foo = 1
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "leaves marker on two-line lambda" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x:
+                    «2»x.+ 2
+                «3»foo = 1
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x:
+                    «2»x.+ 2
+                «3»foo = 1
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "leaves marker on multi-line lambda" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x:
+                    «2»c = x.+ 2
+                    «3»d = x.* 3
+                    «4»c + d
+                «5»foo = 1
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x:
+                    «2»c = x.+ 2
+                    «3»d = x.* 3
+                    «4»c + d
+                «5»foo = 1
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "removes marker on broken expression in multi-line lambda" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x:
+                    «2»c = x.+ 2
+                    «3»d = x
+                        «5».* 3
+                    «4»c + d
+                «5»foo = 1
+                None
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = x:
+                    «2»c = x.+ 2
+                    «3»d = x
+                        .* 3
+                    «4»c + d
+                «5»foo = 1
+                None
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
     it "works on empty string"  $ sanitizeMarkers ""       `shouldBe` ""
     it "works on single marker" $ sanitizeMarkers "«2»"    `shouldBe` "«2»"
     it "works on double marker" $ sanitizeMarkers "«2»«3»" `shouldBe` "«2»"
