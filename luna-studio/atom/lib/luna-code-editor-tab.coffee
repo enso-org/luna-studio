@@ -107,8 +107,7 @@ module.exports =
                 'core:paste': (e) => @handlePaste e
                 'core:save':  (e) => @handleSave  e
 
-        spans: (markWholeLines) =>
-            buffer = @getBuffer()
+        __spans: (markWholeLines) =>
             for s in @getSelections()
                 head = s.marker.oldHeadBufferPosition
                 tail = s.marker.oldTailBufferPosition
@@ -116,8 +115,18 @@ module.exports =
                     head.column = 0
                     tail.column = 0
                     tail.row += 1
+                [head, tail]
+
+        __convertSpans: (spans) =>
+            buffer = @getBuffer()
+            for s in spans
+                head = s[0]
+                tail = s[1]
                 [buffer.characterIndexForPosition(head),
                  buffer.characterIndexForPosition(tail)].sort((a,b) -> a - b)
+
+        spans: (markWholeLines) =>
+            @__convertSpans @__spans markWholeLines
 
         handleDidStopChanging: (event) =>
                 diffs = []
@@ -153,8 +162,13 @@ module.exports =
                 @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans(true))
 
         handleCut: (e) =>
+            e.preventDefault()
+            e.stopImmediatePropagation()
             @forceStopChanging =>
-                @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans(true))
+                spans = @__spans true
+                @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @__convertSpans spans)
+                spans.reverse().forEach (span) =>
+                    @getBuffer().delete span
 
         handlePaste: (e) =>
             e.preventDefault()
