@@ -27,7 +27,7 @@ data PortControlView = PortControlView
     } deriving (Eq, Generic, Show)
 
 data PortControlsView = PortControlsView
-    { _key :: Key
+    { _key      :: Key
     , _controls :: [PortControlView]
     }  deriving (Eq, Generic, Show)
 
@@ -39,7 +39,7 @@ instance NFData   PortControlsView
 instance FromJSON PortControlsView
 instance ToJSON   PortControlsView where
     toEncoding = Lens.toEncoding
-    toJSON = Lens.toJSON
+    toJSON     = Lens.toJSON
 
 instance NFData   PortControlView
 
@@ -78,8 +78,8 @@ fromPortDefault = \case
         PortDefault.TextValue val -> TextValue $ convert val
         PortDefault.BoolValue val -> BoolValue val
 
-fromPort :: InPort -> [PortControlView]
-fromPort port =  case port ^. Port.portId of
+mkControls :: InPort -> [PortControlView]
+mkControls port =  case port ^. Port.portId of
     [Port.Arg _] -> create
     []           -> create
     _            -> []
@@ -103,4 +103,4 @@ instance Convertible PortControlView PortDefault where
 instance Convertible InPort PortControlsView where
     convert port = PortControlsView
         {- key      -} (port ^. Port.portId . to convert)
-        {- controls -} (fromPort port)
+        {- controls -} (mkControls port)

@@ -83,9 +83,11 @@ instance Convertible ExpressionNode ExpressionNodeView where
         {- value      -} (convert n)
         {- inPorts    -} (n ^. to ExpressionNode.inPortsList . to convert)
         {- outPorts   -} (n ^. to ExpressionNode.outPortsList . to convert)
-        {- controls   -} (convert $ if ExpressionNode.isExpanded n && null (ExpressionNode.inPortsList n)
-            then maybeToList $ n ^? ExpressionNode.inPortAt []
-            else ExpressionNode.inPortsList n)
+        {- controls   -} (convert $
+            if ExpressionNode.isExpanded n
+            && null (ExpressionNode.inPortsList n)
+                then maybeToList $ n ^? ExpressionNode.inPortAt []
+                else ExpressionNode.inPortsList n)
         {- newPortKey -} (n ^. to ExpressionNode.argumentConstructorRef . dstPortId . to convert)
         {- position   -} (n ^. ExpressionNode.position . to toTuple)
         {- expanded   -} (n ^. ExpressionNode.mode == ExpressionNode.Expanded ExpressionNode.Controls)
