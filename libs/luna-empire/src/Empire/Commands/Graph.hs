@@ -113,7 +113,7 @@ import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
                                              OutPortRef (..))
 import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.Range                (Range (..))
-
+import qualified System.IO as IO
 
 addImports :: GraphLocation -> Set Text -> Empire ()
 addImports loc@(GraphLocation file _) modulesToImport = do
@@ -689,18 +689,32 @@ getPortName loc portRef = do
             then maybe (throwM $ PortDoesNotExistException portId) (return . convert) $ Safe.atMay portsNames arg
             else throwM NotInputEdgeException
 
-setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
+setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node.Node
 setNodeExpression loc@(GraphLocation file _) nodeId expr' = do
     let expression = Text.strip expr'
-    newCode <- withGraph loc $ runASTOp $ do
-        oldExpr   <- ASTRead.getASTTarget nodeId
-        oldBegin  <- Code.getASTTargetBeginning nodeId
-        oldLen    <- getLayer @SpanLength oldExpr
+    (newCode, sidebar) <- withGraph loc $ runASTOp $ do
+        (_, output) <- GraphBuilder.getEdgePortMapping
+        (oldExpr, oldBegin) <- if nodeId == output
+            then do
+                oldExpr       <- ASTRead.getCurrentASTRef
+                Just oldBegin <- Code.getOffsetRelativeToFile oldExpr
+                pure (oldExpr, oldBegin)
+            else do
+                oldExpr  <- ASTRead.getASTTarget nodeId
+                oldBegin <- Code.getASTTargetBeginning nodeId
+                pure (oldExpr, oldBegin)
+        oldLen <- getLayer @SpanLength oldExpr
         let oldEnd = oldBegin + oldLen
-        Code.applyDiff oldBegin oldEnd expression
+        code <- Code.applyDiff oldBegin oldEnd expression
+        pure (code, nodeId == output)
     reloadCode loc newCode
     resendCode loc
-    withGraph loc $ runASTOp $ GraphBuilder.buildNode nodeId
+    withGraph loc $ runASTOp $ do
+        (_, output) <- GraphBuilder.getEdgePortMapping
+        if sidebar
+        then Node.OutputSidebar'  <$> GraphBuilder.buildOutputSidebar output
+        else Node.ExpressionNode' <$> GraphBuilder.buildNode nodeId
+
 
 updateExprMap :: NodeRef -> NodeRef -> GraphOp ()
 updateExprMap new old = do

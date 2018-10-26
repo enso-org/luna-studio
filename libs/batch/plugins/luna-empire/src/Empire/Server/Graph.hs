@@ -37,15 +37,17 @@ import qualified Data.UUID.Types                         as UUID
 import qualified Data.UUID.V4                            as UUID
 import           Empire.ASTOp                            (runASTOp)
 import qualified Empire.ASTOps.Print                     as Print
+import qualified Empire.ASTOps.Read                      as ASTRead
 import           Empire.Commands.Autolayout              (autolayoutNodes)
+import qualified Empire.Commands.Code                    as Code
 import qualified Empire.Commands.Graph                   as Graph
+import qualified Empire.Commands.GraphBuilder            as GraphBuilder
 import           Empire.Commands.GraphBuilder            (buildClassGraph,
                                                           buildConnections,
                                                           buildGraph,
                                                           buildNodes,
                                                           getNodeCode,
                                                           getNodeName)
-import qualified Empire.Commands.GraphUtils              as GraphUtils
 import           Empire.Data.AST                         (SomeASTException, astExceptionFromException,
                                                           astExceptionToException)
 import qualified Empire.Data.Graph                       as Graph (code,
@@ -543,8 +545,8 @@ handleSetNodeExpression :: Request SetNodeExpression.Request
 handleSetNodeExpression = modifyGraph inverse action replyResult where
     inverse (SetNodeExpression.Request location nodeId _) = do
         oldExpr <- Graph.withGraph location . runASTOp $
-            GraphUtils.getASTTarget nodeId >>= Print.printExpression
-        pure $ SetNodeExpression.Inverse (Text.pack oldExpr)
+            GraphBuilder.getNodeCode nodeId
+        pure $ SetNodeExpression.Inverse oldExpr
     action (SetNodeExpression.Request location nodeId expression)
         = withDefaultResultTC location $
             Graph.setNodeExpression location nodeId expression

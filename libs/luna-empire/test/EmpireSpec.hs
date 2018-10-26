@@ -4,7 +4,7 @@
 module EmpireSpec (spec) where
 
 import           Control.Exception.Safe          (finally)
-import           Control.Lens                    ((^..))
+import           Control.Lens                    ((^..), (^?!))
 import           Data.Char                       (isSpace)
 import           Data.Foldable                   (toList)
 import qualified Data.Graph.Store                as Store
@@ -693,7 +693,8 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "123" def
-                node  <- Graph.setNodeExpression top u1 "456"
+                node  <- (^?! Node._ExpressionNode') <$>
+                    Graph.setNodeExpression top u1 "456"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
@@ -704,7 +705,8 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                node  <- Graph.setNodeExpression top u1 "a: a"
+                node  <- (^?! Node._ExpressionNode') <$>
+                    Graph.setNodeExpression top u1 "a: a"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do

@@ -4,6 +4,7 @@ module LunaStudio.Data.Node
     ) where
 
 import           Control.Arrow             ((&&&))
+import           Control.Lens              (makePrisms)
 import           Data.Aeson.Types          (FromJSON, ToJSON)
 import           Data.Binary               (Binary)
 import           Data.Map                  (Map)
@@ -58,6 +59,7 @@ data NodeTypecheckerUpdate
     | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree OutPort] }
     deriving (Eq, Generic, Show, Typeable)
 
+makePrisms ''Node
 makeLenses ''ExpressionNode
 makeLenses ''InputSidebar
 makeLenses ''OutputSidebar
