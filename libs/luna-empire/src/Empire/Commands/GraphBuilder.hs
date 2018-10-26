@@ -344,7 +344,7 @@ resolvedDefNames mod function resolver = do
 
 resolveNames :: Target.Target -> Maybe TCFunResolver -> GraphOp [Maybe String]
 resolveNames target resolver = do
-    let functionRef = (\f -> f target) =<< resolver
+    let functionRef = ($ target) =<< resolver
     case functionRef of
         Just f -> extractArgNames (generalize f) resolver
         _      -> pure []
