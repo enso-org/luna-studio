@@ -289,6 +289,70 @@ spec = parallel $ describe "sanitization" $ do
                 None
             |]
         in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "works on multiple functions with unindented expression" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 1
+            «2»foo = 1
+                «3»bar = 1
+                «4»baz = 1
+                None
+
+            «5»def quux:
+                «6»node = 1
+                «7»n = node + 4
+                n
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 1
+            «2»foo = 1
+                «3»bar = 1
+                «4»baz = 1
+                None
+
+            «5»def quux:
+                «6»node = 1
+                «7»n = node + 4
+                n
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
+    it "works on multiple functions with overindented expression" $ let
+        initialCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 1
+                    «2».+ 1
+                «3»bar = 1
+                «4»baz = 1
+                None
+
+            «5»def quux:
+                «6»node = 1
+                «7»n = node + 4
+                n
+            |]
+        expectedCode = normalizeLunaCode [r|
+            import Std.Base
+
+            «0»def main:
+                «1»node = 1
+                    .+ 1
+                «3»bar = 1
+                «4»baz = 1
+                None
+
+            «5»def quux:
+                «6»node = 1
+                «7»n = node + 4
+                n
+            |]
+        in sanitizeMarkers initialCode `shouldBe` expectedCode
     it "works on empty string"  $ sanitizeMarkers ""       `shouldBe` ""
     it "works on single marker" $ sanitizeMarkers "«2»"    `shouldBe` "«2»"
     it "works on double marker" $ sanitizeMarkers "«2»«3»" `shouldBe` "«2»"

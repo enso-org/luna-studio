@@ -85,6 +85,11 @@ cumulativeOffsetStream tokens = scanl1 f tokens where
     f (Lexer.Token prevSpan accOffset _) (Lexer.Token span offset lexeme)
         = Lexer.Token (span+offset) (accOffset + prevSpan) lexeme
 
+indentFromOffsets :: Delta -> Delta -> Delta
+indentFromOffsets prevOffset nextOffset =
+    let eolSpan = 1
+    in nextOffset - prevOffset - eolSpan
+
 -- | Takes a pair of consecutive tokens and determines if a marker
 --   is placed in a proper position. If the second token is not a marker
 --   or if it seems to be correctly placed, `Nothing` is returned.
@@ -105,13 +110,12 @@ isWrongMarker tokens
     | (blockIndent, (Lexer.Token _ precOffset preceding,
        Lexer.Token _ currOffset (Lexer.Marker _))) <- tokens =
         case preceding of
-            Lexer.STX        -> Nothing
             Lexer.EOL        ->
-                let eolSpan = 1
-                    indent  = currOffset - precOffset - eolSpan
+                let indent  = indentFromOffsets precOffset currOffset
                 in  if indent > blockIndent
                     then Just currOffset
                     else Nothing
+            Lexer.STX        -> Nothing
             Lexer.BlockStart -> Nothing
             _                -> Just currOffset
     | otherwise = Nothing
@@ -132,12 +136,10 @@ determineIndentation (blockIndent, _) tokens
         case next of
             Lexer.EOL -> (blockIndent, tokens)
             _         ->
-                let eolSpan = 1
-                    indent = nextOffset - precOffset - eolSpan
-                in if indent == 0 then (blockIndent, tokens)
-                    else if indent > blockIndent
-                        then (blockIndent, tokens)
-                        else (indent, tokens)
+                let indent = indentFromOffsets precOffset nextOffset
+                in  if indent == 0 || indent > blockIndent
+                    then (blockIndent, tokens)
+                    else (indent, tokens)
     | otherwise = (blockIndent, tokens)
 
 
