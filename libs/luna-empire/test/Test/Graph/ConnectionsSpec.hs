@@ -4,14 +4,17 @@ import Empire.Prelude
 
 import qualified Empire.Commands.Graph        as Graph
 import qualified Empire.Commands.GraphBuilder as GraphBuilder
+import qualified LunaStudio.Data.Graph        as Graph
 import qualified LunaStudio.Data.Node         as Node
 
 import Empire.ASTOp                   (runASTOp)
+import LunaStudio.Data.GraphLocation  ((|>|))
 import LunaStudio.Data.Port           (InPortIndex (Arg, Self), InPorts (InPorts),
-                                       LabeledTree (LabeledTree), Port (Port),
-                                       PortState (WithDefault))
-import LunaStudio.Data.TypeRep        (TypeRep (TCons, TLam, TVar))
+                                       LabeledTree (LabeledTree),
+                                       Port (Port), PortState (WithDefault))
 import LunaStudio.Data.PortDefault    (PortDefault (Expression))
+import LunaStudio.Data.PortRef        (AnyPortRef (InPortRef'))
+import LunaStudio.Data.TypeRep        (TypeRep (TCons, TLam, TVar))
 import Test.Hspec                     (Spec, it)
 import Test.Hspec.Empire              (findNodeByName, findNodeIdByName,
                                        inPortRef, noAction, outPortRef,
@@ -114,3 +117,46 @@ spec = runTests "connections tests" $ do
         in testCaseWithTC code code noAction $ \gl -> do
             inPorts <- prepare gl
             inPorts `shouldBe` expectedOutPorts
+    it "connects to output port of toplevel function" $ let
+        initialCode = [r|
+            def main:
+                number1 = 4
+                None
+            |]
+        expectedCode = [r|
+            def main:
+                number1 = 4
+                number1
+            |]
+        action gl = do
+            Just number1       <- findNodeIdByName gl "number1"
+            Just outputSidebar <- view Graph.outputSidebar <$> Graph.getGraph gl
+            Graph.connect gl (outPortRef number1 [])
+                (InPortRef' $ inPortRef (outputSidebar ^. Node.nodeId) [])
+        in testCase initialCode expectedCode $ \gl -> do
+            action gl
+    it "connects to output port of lambda" $ let
+        initialCode = [r|
+            def main:
+                foo = x:
+                    number1 = 4
+                    x
+                None
+            |]
+        expectedCode = [r|
+            def main:
+                foo = x:
+                    number1 = 4
+                    number1
+                None
+            |]
+        action gl = do
+            Just foo           <- findNodeIdByName gl "foo"
+            let fooGL = gl |>| foo
+            Just number1       <- findNodeIdByName fooGL "number1"
+            Just outputSidebar <- view Graph.outputSidebar
+                <$> Graph.getGraph fooGL
+            Graph.connect fooGL (outPortRef number1 [])
+                (InPortRef' $ inPortRef (outputSidebar ^. Node.nodeId) [])
+        in testCase initialCode expectedCode $ \gl -> do
+            action gl
