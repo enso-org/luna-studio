@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 module Empire.Commands.GraphBuilder where
 
 import Empire.Prelude hiding (read, toList)
@@ -17,6 +19,7 @@ import qualified Empire.Commands.GraphUtils           as GraphUtils
 import qualified Empire.Data.BreadcrumbHierarchy      as BH
 import qualified Empire.Data.Graph                    as Graph
 import qualified Luna.IR                              as IR
+import qualified Luna.Pass.Typing.Data.Target         as Target
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
 import qualified Luna.Syntax.Text.Parser.Lexer.Names  as Parser (uminus)
 import qualified LunaStudio.Data.Breadcrumb           as Breadcrumb
@@ -25,9 +28,10 @@ import qualified LunaStudio.Data.Graph                as API
 import qualified LunaStudio.Data.Node                 as API
 import qualified LunaStudio.Data.NodeMeta             as NodeMeta
 import qualified LunaStudio.Data.Port                 as Port
+import qualified Safe
 
 import Control.Lens                         (uses)
-import Control.Monad.State                  hiding (when)
+import Control.Monad.State                  hiding (void, when)
 import Data.Char                            (intToDigit)
 import Data.Foldable                        (toList)
 import Data.Maybe                           (catMaybes, maybeToList)
@@ -240,7 +244,7 @@ buildNode nid = do
     pure $ API.ExpressionNode
         nid expr False name code inports outports meta canEnter
 
-type TCFunResolver = IR.Qualified -> IR.Name -> Maybe (IR.Term IR.Function)
+type TCFunResolver = Target.Target -> Maybe (IR.Term IR.Function)
 
 buildNodeTypecheckUpdate
     :: TCFunResolver
@@ -332,50 +336,67 @@ safeGetVarName node = do
         (\(e :: ASTRead.NoNameException) -> pure Nothing)
     pure name
 
+resolvedDefNames :: IR.Qualified -> IR.Name -> Maybe TCFunResolver
+    -> GraphOp [Maybe String]
+resolvedDefNames mod function resolver = do
+    let target = Target.Function mod function
+    resolveNames target resolver
+
+resolveNames :: Target.Target -> Maybe TCFunResolver -> GraphOp [Maybe String]
+resolveNames target resolver = do
+    let functionRef = ($ target) =<< resolver
+    case functionRef of
+        Just f -> extractArgNames (generalize f) resolver
+        _      -> pure []
+
 extractArgNames :: NodeRef -> Maybe TCFunResolver -> GraphOp [Maybe String]
-extractArgNames node funResolve = do
-    match node $ \case
-        Grouped g -> source g >>= \a -> extractArgNames a funResolve
-        Lam{}  -> do
-            insideLam  <- insideThisNode node
-            args       <- ASTDeconstruct.extractArguments node
-            vars       <- concat <$> mapM ASTRead.getVarsInside args
-            let ports = if insideLam then vars else args
-            mapM safeGetVarName ports
-        -- App is Lam that has some args applied
-        App{}  -> extractAppArgNames node funResolve
-        Cons{} -> do
-            vars  <- ASTRead.getVarsInside node
-            names <- mapM ASTRead.getVarName vars
-            pure $ map Just names
-        ASGFunction _ a _ -> do
-            args <- mapM source =<< ptrListToList a
-            mapM safeGetVarName args
-        ResolvedDef mod n -> do
-            let fun = (\f -> f mod n) =<< funResolve
-            case fun of
-                Just f -> extractArgNames (generalize f) funResolve
-                _      -> pure []
-        _ -> pure []
+extractArgNames node funResolve = match node $ \case
+    Grouped g -> source g >>= \a -> extractArgNames a funResolve
+    Lam{}     -> do
+        insideLam  <- insideThisNode node
+        args       <- ASTDeconstruct.extractArguments node
+        vars       <- concat <$> mapM ASTRead.getVarsInside args
+        let ports = if insideLam then vars else args
+        mapM safeGetVarName ports
+    -- App is Lam that has some args applied
+    App{}     -> extractAppArgNames node funResolve
+    Acc{}     -> extractAppArgNames node funResolve
+    Cons{}    -> do
+        vars  <- ASTRead.getVarsInside node
+        names <- mapM ASTRead.getVarName vars
+        pure $ map Just names
+    ASGFunction _ a _ -> do
+        args <- mapM source =<< ptrListToList a
+        mapM safeGetVarName args
+    ResolvedDef mod n -> resolvedDefNames mod n funResolve
+    _ -> pure []
+
+targetForType :: NodeRef -> IR.Name -> GraphOp Target.Target
+targetForType t method = match t $ \case
+    Lam i o                    -> do
+        inputType <- source o >>= getLayer @TypeLayer >>= source
+        targetForType inputType method
+    ResolvedCons mod klass _ _ -> pure $ Target.Method mod klass method
+    _                          -> pure Target.Unknown
 
 extractAppArgNames :: NodeRef -> Maybe TCFunResolver -> GraphOp [Maybe String]
-extractAppArgNames node funResolve = go [] node
-    where
-        go :: [Maybe String] -> NodeRef -> GraphOp [Maybe String]
-        go vars node = match node $ \case
-            ResolvedDef mod n -> do
-                let fun = (\f -> f mod n) =<< funResolve
-                case fun of
-                    Just f -> extractArgNames (generalize f) funResolve
-                    _      -> pure []
-            App f a -> do
-                varName <- safeGetVarName =<< source a
-                go (varName : vars) =<< source f
-            Lam{}   -> extractArgNames node funResolve
-            Cons{}  -> pure vars
-            Var{}   -> pure vars
-            Acc{}   -> pure vars
-            _       -> pure []
+extractAppArgNames node funResolve = go [] node where
+    go :: [Maybe String] -> NodeRef -> GraphOp [Maybe String]
+    go vars node = match node $ \case
+        ResolvedDef mod n -> resolvedDefNames mod n funResolve
+        App f a -> do
+            varName <- safeGetVarName =<< source a
+            go (varName : vars) =<< source f
+        Lam{}   -> extractArgNames node funResolve
+        Cons{}  -> pure vars
+        Var{}   -> pure vars
+        Acc t a -> do
+            argTp  <- source t >>= getLayer @TypeLayer >>= source
+            method <- source a >>= ASTRead.getVarName'
+            target <- targetForType argTp method
+            names  <- resolveNames target funResolve
+            pure $ Safe.tailSafe names
+        _       -> pure []
 
 insideThisNode :: NodeRef -> GraphOp Bool
 insideThisNode node = (== node) <$> ASTRead.getCurrentASTTarget
@@ -439,32 +460,33 @@ extractListPorts n = match n $ \case
                 argTp <- source edge >>= getLayer @TypeLayer >>= source
                 t     <- Print.getTypeRep argTp
                 ps    <- getPortState =<< source edge
-                return $ (t,ps) : rest
+                pure $ (t,ps) : rest
         source a >>= flip match (\case
-            Var _      -> addPort a
+            Var{}      -> addPort a
             IRNumber{} -> addPort a
             IRString{} -> addPort a
+            Lam{}      -> addPort a
             _ -> do
-                foo <- extractListPorts =<< source a
-                return $ foo <> rest)
+                portsInside <- extractListPorts =<< source a
+                pure $ portsInside <> rest)
     Lam i o -> do
         foo <- extractListPorts =<< source i
         bar <- extractListPorts =<< source o
-        return $ foo <> bar
-    ResolvedCons "Std.Base" "List" "Prepend" args -> do
+        pure $ foo <> bar
+    ResolvedList Prepend args -> do
         args' <- ptrListToList args
         as <- mapM (source >=> extractListPorts) args'
-        return $ concat as
+        pure $ concat as
     _ -> do
-        return []
+        pure mempty
 
 extractPortInfo :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractPortInfo n = do
     tp       <- getLayer @TypeLayer n >>= source
     match tp $ \case
-        ResolvedCons "Std.Base" "List" "List" args -> do
+        ResolvedList "List" args -> do
             a <- extractListPorts n
-            return a
+            return $ reverse a
         _ -> do
             applied  <- reverse <$> extractAppliedPorts False False [] n
             fromType <- extractArgTypes tp
@@ -484,13 +506,34 @@ isNegativeLiteral ref = match ref $ \case
         return $ minus && number
     _ -> return False
 
+pattern ResolvedList cons args <- ResolvedCons "Std.Base" "List" cons args
+pattern Prepend                <- "Prepend"
+pattern Empty                  <- "Empty"
+
+isPrepend :: NodeRef -> GraphOp Bool
+isPrepend ref = match ref $ \case
+    ResolvedList Prepend _ -> pure True
+    App f _                -> source f >>= isPrepend
+    Lam _ o                -> source o >>= isPrepend
+    _                      -> pure False
+
+isListLiteral :: NodeRef -> GraphOp Bool
+isListLiteral ref = match ref $ \case
+    ResolvedList Empty _ -> pure True
+    App f a              -> do
+        prepend <- source f >>= isPrepend
+        literal <- source a >>= isListLiteral
+        pure $ prepend && literal
+    _                    -> pure False
+
 buildArgPorts :: InPortId -> NodeRef -> Maybe TCFunResolver -> GraphOp [InPort]
 buildArgPorts currentPort ref resolveFun = do
-    typed <- extractPortInfo ref
-    tp    <- getLayer @TypeLayer ref >>= source
-    names <- match tp $ \case
-        ResolvedCons "Std.Base" "List" "List" _ -> return []
-        _                                       -> getPortsNames ref resolveFun
+    typed     <- extractPortInfo ref
+    tp        <- getLayer @TypeLayer ref >>= source
+    isLiteral <- isListLiteral ref
+    names     <- if isLiteral
+        then pure mempty
+        else getPortsNames ref resolveFun
     let portsTypes = fmap fst typed
             <> List.replicate (length names - length typed) TStar
         psCons = zipWith3 Port

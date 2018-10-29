@@ -40,7 +40,7 @@ spec = runTests "typechecker pattern match tests" $ do
                     , LabeledTree def $ Port [Projection 1] "b" (TCons "Int" mempty) NotConnected
                     , LabeledTree def $ Port [Projection 2] "c" (TCons "Int" mempty) NotConnected ])
                 (Port mempty "TestProject.Main.Vector.Vector a b c" (TCons "Vector" mempty) NotConnected)
-            in testCaseWithTC code code noAction $ \gl -> do
+            in testCaseWithTC code code noAction $ \gl _ -> do
                 patternMatch <- prepare gl
                 let patternMatchOutPorts = patternMatch ^. Node.outPorts
                 patternMatchOutPorts `shouldBe` expectedPatternMatchOutPorts
