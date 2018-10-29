@@ -87,7 +87,7 @@ cumulativeOffsetStream tokens = scanl1 f tokens where
 
 indentFromOffsets :: Delta -> Delta -> Delta
 indentFromOffsets prevOffset nextOffset =
-    let eolSpan = 1
+    let eolSpan = length "\n"
     in nextOffset - prevOffset - eolSpan
 
 -- | Takes a pair of consecutive tokens and determines if a marker
