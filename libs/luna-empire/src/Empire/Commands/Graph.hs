@@ -113,7 +113,7 @@ import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
                                              OutPortRef (..))
 import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.Range                (Range (..))
-import qualified System.IO as IO
+
 
 addImports :: GraphLocation -> Set Text -> Empire ()
 addImports loc@(GraphLocation file _) modulesToImport = do
