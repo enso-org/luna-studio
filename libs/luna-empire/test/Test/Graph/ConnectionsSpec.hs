@@ -132,8 +132,8 @@ spec = runTests "connections tests" $ do
             Just number1       <- findNodeIdByName gl "number1"
             Just outputSidebar <- view Graph.outputSidebar <$> Graph.getGraph gl
             let outputSidebarNodeId = outputSidebar ^. Node.nodeId
-            Graph.connect gl (outPortRef number1 [])
-                (InPortRef' $ inPortRef outputSidebarNodeId [])
+            Graph.connect gl (outPortRef number1 mempty)
+                (InPortRef' $ inPortRef outputSidebarNodeId mempty)
         in testCase initialCode expectedCode $ \gl -> do
             action gl
     it "connects to output port of toplevel function and undos" $ let
@@ -149,8 +149,8 @@ spec = runTests "connections tests" $ do
 
             preparedUndo       <- Graph.withGraph gl . runASTOp $
                 GraphBuilder.getNodeCode outputSidebarNodeId
-            Graph.connect gl (outPortRef number1 [])
-                (InPortRef' $ inPortRef outputSidebarNodeId [])
+            Graph.connect gl (outPortRef number1 mempty)
+                (InPortRef' $ inPortRef outputSidebarNodeId mempty)
             Graph.setNodeExpression gl outputSidebarNodeId preparedUndo
         in testCase initialCode initialCode $ \gl -> do
             action gl
@@ -177,8 +177,8 @@ spec = runTests "connections tests" $ do
                 <$> Graph.getGraph fooGL
             let outputSidebarNodeId = outputSidebar ^. Node.nodeId
 
-            Graph.connect fooGL (outPortRef number1 [])
-                (InPortRef' $ inPortRef outputSidebarNodeId [])
+            Graph.connect fooGL (outPortRef number1 mempty)
+                (InPortRef' $ inPortRef outputSidebarNodeId mempty)
         in testCase initialCode expectedCode $ \gl -> do
             action gl
     it "connects to output port of lambda and undos" $ let
@@ -199,8 +199,8 @@ spec = runTests "connections tests" $ do
 
             preparedUndo       <- Graph.withGraph fooGL . runASTOp $
                 GraphBuilder.getNodeCode outputSidebarNodeId
-            Graph.connect fooGL (outPortRef number1 [])
-                (InPortRef' $ inPortRef outputSidebarNodeId [])
+            Graph.connect fooGL (outPortRef number1 mempty)
+                (InPortRef' $ inPortRef outputSidebarNodeId mempty)
             Graph.setNodeExpression fooGL outputSidebarNodeId preparedUndo
         in testCase initialCode initialCode $ \gl -> do
             action gl
