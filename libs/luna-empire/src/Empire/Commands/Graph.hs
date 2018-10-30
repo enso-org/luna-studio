@@ -1227,7 +1227,7 @@ prepareCopy loc@(GraphLocation _ (Breadcrumb [])) nodeIds = withUnit loc $ do
         codes <- mapM
             (\(start, len) -> Code.removeMarkers <$> Code.getAt start (start + len)) $
             zip starts lengths
-        return $ Text.intercalate "\n" codes
+        pure $ Text.intercalate "\n" codes
     return $ Text.unpack clipboard
 prepareCopy loc nodeIds = withGraph loc $ do
     codes <- runASTOp $ forM nodeIds $ \nid -> do
