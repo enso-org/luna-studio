@@ -1223,18 +1223,18 @@ prepareCopy loc@(GraphLocation _ (Breadcrumb [])) nodeIds = withUnit loc $ do
             refs <- mapM ASTRead.getFunByNodeId [ nid | (nid, Just (view Graph.funName -> _name)) <- names]
             forM refs $ \ref -> do
                 LeftSpacedSpan (SpacedSpan _off len) <- view CodeSpan.realSpan <$> getLayer @CodeSpan ref
-                return $ fromIntegral len
+                pure $ fromIntegral len
         codes <- mapM
             (\(start, len) -> Code.removeMarkers <$> Code.getAt start (start + len)) $
             zip starts lengths
         pure $ Text.intercalate "\n" codes
-    return $ Text.unpack clipboard
+    pure $ Text.unpack clipboard
 prepareCopy loc nodeIds = withGraph loc $ do
     codes <- runASTOp $ forM nodeIds $ \nid -> do
         ref     <- ASTRead.getASTPointer nid
         code    <- Code.removeMarkers <$> Code.getCodeOf ref
-        return code
-    return $ Text.unpack $ Text.intercalate "\n" codes
+        pure code
+    pure $ Text.unpack $ Text.intercalate "\n" codes
 
 moveToOrigin :: [MarkerNodeMeta] -> [MarkerNodeMeta]
 moveToOrigin metas' = map (\(MarkerNodeMeta m me) -> MarkerNodeMeta m (me & NodeMeta.position %~ Position.move (coerce (Position.rescale leftTopCorner (-1))))) metas'

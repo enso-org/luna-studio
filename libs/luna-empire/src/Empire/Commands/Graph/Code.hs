@@ -87,8 +87,7 @@ cumulativeOffsetStream tokens = scanl1 f tokens where
 
 indentFromOffsets :: Delta -> Delta -> Delta
 indentFromOffsets prevOffset nextOffset =
-    let eol     = "\n" :: String
-        eolSpan = fromIntegral $ length eol
+    let eolSpan = fromIntegral $ length ("\n" :: String)
     in nextOffset - prevOffset - eolSpan
 
 -- | Takes a pair of consecutive tokens and determines if a marker
@@ -109,7 +108,7 @@ isWrongMarker
     -> Maybe Delta
 isWrongMarker tokens
     | (blockIndent, (Lexer.Token _ precOffset preceding,
-       Lexer.Token _ currOffset (Lexer.Marker _))) <- tokens =
+       Lexer.Token _ currOffset (Lexer.Marker{}))) <- tokens =
         case preceding of
             Lexer.EOL        ->
                 let indent  = indentFromOffsets precOffset currOffset
