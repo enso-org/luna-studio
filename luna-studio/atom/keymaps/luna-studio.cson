@@ -36,8 +36,6 @@
   'h'               : 'native!'
   'l'               : 'native!'
   'left'            : 'native!'
-  'left'            : 'native!'
-  'right'           : 'native!'
   'right'           : 'native!'
   'shift-backspace' : 'native!'
   'shift-down'      : 'native!'
@@ -48,6 +46,24 @@
   'up'              : 'native!'
   'enter'           : 'core:accept'
   'escape'          : 'core:cancel'
+
+'.luna-visualization--active':
+  'down'            : 'native!'
+  'left'            : 'native!'
+  'right'           : 'native!'
+  'up'              : 'native!'
+  'shift-down'      : 'native!'
+  'shift-left'      : 'native!'
+  'shift-right'     : 'native!'
+  'shift-up'        : 'native!'
+  'cmd-a'           : 'native!'
+  'cmd-c'           : 'native!'
+  'cmd-x'           : 'native!'
+  'cmd-v'           : 'native!'
+  'ctrl-a'          : 'native!'
+  'ctrl-c'          : 'native!'
+  'ctrl-x'          : 'native!'
+  'ctrl-v'          : 'native!'
 
 '.luna-searcher__input':
   'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher HintShortcut 0

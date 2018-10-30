@@ -307,11 +307,6 @@ getSelfNodeRef' seenAcc node = match node $ \case
     App t _ -> source t >>= getSelfNodeRef' seenAcc
     _       -> return $ if seenAcc then Just node else Nothing
 
-getLambdaBodyRef :: NodeRef -> GraphOp (Maybe NodeRef)
-getLambdaBodyRef lam = match lam $ \case
-    Lam _ o -> getLambdaBodyRef =<< source o
-    _       -> return $ Just lam
-
 getLambdaSeqRef :: NodeRef -> GraphOp (Maybe NodeRef)
 getLambdaSeqRef = getLambdaSeqRef' False
 

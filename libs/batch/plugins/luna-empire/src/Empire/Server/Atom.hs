@@ -35,6 +35,7 @@ import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..))
 import qualified LunaStudio.Data.Error          as Error
 import           LunaStudio.Data.GraphLocation  (GraphLocation(..))
 import qualified LunaStudio.Data.GraphLocation  as GraphLocation
+import qualified Luna.Package                   as Package
 import qualified Luna.Package.Structure.Generate as PackageGen
 
 import           Debug
@@ -88,22 +89,10 @@ partitionM f (x:xs) = do
 
 handleMoveProject :: Request MoveProject.Request -> StateT Env BusT ()
 handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
-    result <- liftIO $ do
-        r <- try $ do
-            let listDirRecursively d = do
-                    contents      <- map (d </>) <$> Dir.listDirectory d
-                    (files, dirs) <- partitionM Dir.doesFileExist contents
-                    (recFiles, recDirs) <- fmap unzip $ mapM listDirRecursively dirs
-                    return (files ++ concat recFiles, dirs ++ concat recDirs)
-            (filesToCopy, dirsToCreate) <- listDirRecursively oldPath
-            forM_ dirsToCreate $ \d -> do 
-                let relPath = makeRelative oldPath d 
-                Dir.createDirectoryIfMissing True $ newPath </> relPath
-            forM_ filesToCopy $ \f -> do
-                let relPath = makeRelative oldPath f
-                Dir.copyFile f (newPath </> relPath)
-        Dir.removeDirectoryRecursive oldPath `catchAny` (\e -> logger Logger.error $ "couldn't remove directory" <> oldPath)
-        return r
+    result <- liftIO $ try $ do
+        src    <- Path.parseAbsDir oldPath
+        target <- Path.parseAbsDir newPath
+        Package.rename src target
     case result of
         Left (e :: SomeException) -> do
             err <- liftIO $ Graph.prepareLunaError e

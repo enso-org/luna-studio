@@ -1,6 +1,6 @@
 module Empire.Commands.Graph.Code where
 
-import Empire.Prelude hiding (range)
+import Empire.Prelude hiding (range, span)
 
 import qualified Data.Map                      as Map
 import qualified Data.Text                     as Text
@@ -13,10 +13,12 @@ import qualified Empire.Data.Library           as Library
 import qualified Empire.Data.FileMetadata      as FileMetadata
 import qualified Empire.Empire                 as Empire
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
+import qualified Luna.Syntax.Text.Lexer        as Lexer
 
 import Control.Monad.Catch                  (handle)
-import Data.Char                            (isSpace)
-import Data.Text.Position                   (Delta)
+import Data.Char                            (isDigit, isSpace)
+import Data.List                            (find, findIndices)
+import Data.Text.Position                   (Delta (Delta))
 import Empire.ASTOp                         (runASTOp)
 import Empire.ASTOps.BreadcrumbHierarchy    (getMarker)
 import Empire.Commands.Graph.Autolayout     (autolayout, autolayoutTopLevel)
@@ -33,7 +35,6 @@ import LunaStudio.Data.GraphLocation        (GraphLocation)
 import LunaStudio.Data.NodeCache            (nodeIdMap, nodeMetaMap)
 import LunaStudio.Data.Point                (Point)
 import LunaStudio.Data.TextDiff             (TextDiff (TextDiff))
-
 
 substituteCodeFromPoints :: FilePath -> [TextDiff] -> Empire ()
 substituteCodeFromPoints path (breakDiffs -> diffs) = do
@@ -57,10 +58,81 @@ substituteCodeFromPoints path (breakDiffs -> diffs) = do
         pure $ map (toRealDelta . toDelta) diffs
     substituteCode path changes
 
+-- | removeMarker removes marker at given position, assuming that marker
+--   consists of '«', non-zero number of digits, and '»'.
+removeMarker :: Text -> Int -> Text
+removeMarker code markerPos =
+    let (before, after) = Text.splitAt markerPos code
+        dropMarker t =
+            let (markerStart, rest) =
+                    fromMaybe (Lexer.markerBegin, after) $ Text.uncons t
+            in if markerStart == Lexer.markerBegin
+                then
+                    let numberDropped      = Text.dropWhile isDigit rest
+                        (markerEnd, rest') = fromMaybe (Lexer.markerEnd, after)
+                            $ Text.uncons numberDropped
+                    in if markerEnd == Lexer.markerEnd
+                        then rest'
+                        else after
+                else error $ "marker start is wrong: " <> [markerStart]
+    in Text.concat [before, dropMarker after]
+
+-- | This function computes offsets of each token from the beginning
+--   of the file and stores them in _offset field of Token
+cumulativeOffsetStream :: [Lexer.Token a] -> [Lexer.Token a]
+cumulativeOffsetStream tokens = scanl1 f tokens where
+    f (Lexer.Token prevSpan accOffset _) (Lexer.Token span offset lexeme)
+        = Lexer.Token (span+offset) (accOffset + prevSpan) lexeme
+
+-- | Takes a pair of consecutive tokens and determines if a marker
+--   is placed in a proper position. If the second token is not a marker
+--   or if it seems to be correctly placed, `Nothing` is returned.
+--   If marker is determined to be incorrectly placed, `Just offset`
+--   is returned, where offset is taken from the second token.
+--   This function assumes that Tokens have cumulative offset inside
+--   them, so offset returned is offset from the beginning of the code.
+--
+--   Marker is thought to be wrongly placed if it's directly preceded
+--   by anything else than:
+--       - beginning of code
+--       - end of line
+--       - block start (:)
+isWrongMarker
+    :: (Lexer.Token Lexer.Symbol, Lexer.Token Lexer.Symbol)
+    -> Maybe Delta
+isWrongMarker tokens
+    | (Lexer.Token _ _ preceding,
+       Lexer.Token _ offset (Lexer.Marker _)) <- tokens =
+        case preceding of
+            Lexer.STX        -> Nothing
+            Lexer.EOL        -> Nothing
+            Lexer.BlockStart -> Nothing
+            _                -> Just offset
+    | otherwise = Nothing
+
+sanitizeMarkers :: Text -> Text
+sanitizeMarkers text = let
+    removeErroneousMarkers markers code
+        = foldl' removeMarker code (reverse $ sort markers)
+    lexerStream      = Lexer.evalDefLexer (convert text)
+    cumulativeStream = cumulativeOffsetStream lexerStream
+    markersIndices   = findIndices (== Lexer.markerBegin) $ toList text
+    tokensForMarkers = fmap (\a -> (a, findToken cumulativeStream a))
+        $ coerce markersIndices
+    findToken stream index = find (\t -> t ^. Lexer.offset == index) stream
+    erroneousMarkers =
+        [ a | (a, Nothing) <- tokensForMarkers] <> wrongMarkers
+    precedingTokens  = zip cumulativeStream $ tail cumulativeStream
+    wrongMarkers     = catMaybes $ fmap isWrongMarker precedingTokens
+    in if null erroneousMarkers
+        then text
+        else removeErroneousMarkers (coerce erroneousMarkers) text
+
+
 substituteCode :: FilePath -> [(Delta, Delta, Text)] -> Empire ()
 substituteCode path changes = do
     let gl = GraphLocation.top path
-    newCode <- withUnit gl $ Code.applyMany changes
+    newCode <- sanitizeMarkers <$> withUnit gl (Code.applyMany changes)
     handle
         (\(e :: SomeException)
             -> withUnit gl $ Graph.userState . Graph.clsParseError ?= e)

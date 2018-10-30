@@ -39,12 +39,14 @@ currentPath = do
     currentDirectory <- Shelly.pwd
     return $ fromMaybe currentDirectory (Shelly.fromText <$> path)
 
-toolsPath, pythonPath, pyenvPath, appsPath, studioPath :: (MonadSh m, MonadIO m) => m Shelly.FilePath
-toolsPath  = (</> "tools")       <$> currentPath
-pythonPath = (</> "python")      <$> toolsPath
-pyenvPath  = (</> "pyenv")       <$> pythonPath
-appsPath   = (</> "apps")        <$> currentPath
-studioPath = (</> "luna-studio") <$> appsPath
+toolsPath, pythonPath, pyenvPath, nodePath, appsPath, studioPath, lunaShellPath :: (MonadSh m, MonadIO m) => m Shelly.FilePath
+toolsPath     = (</> "tools")       <$> currentPath
+pythonPath    = (</> "python")      <$> toolsPath
+pyenvPath     = (</> "pyenv")       <$> pythonPath
+nodePath      = (</> "node")        <$> toolsPath
+appsPath      = (</> "apps")        <$> currentPath
+studioPath    = (</> "luna-studio") <$> appsPath
+lunaShellPath = (</> lunaShell)     <$> studioPath
 
 chdir_pM, chdirM :: MonadShControl m => m Shelly.FilePath -> m a -> m ()
 chdir_pM pM act = pM >>= \p -> void $ Shelly.chdir_p p act
@@ -132,9 +134,8 @@ _installPythonDeps = chdirM studioPath $
 installNode :: (MonadIO m, MonadSh m, MonadShControl m) => m ()
 installNode = do
     Shelly.echo "installing node locally"
-    current <- currentPath
-    let nodeFolder = current </> tools </> "node"
-        arch       = if currentHost == Darwin then "darwin" else "linux" :: Text
+    nodeFolder <- nodePath
+    let arch       = if currentHost == Darwin then "darwin" else "linux" :: Text
         nodeVer    = Shelly.toTextIgnore supportedNodeVersion
         nodeTar    = "node-v" <> nodeVer <> "-" <> arch <> "-x64.tar.gz"
         nodeUrl    = "https://nodejs.org/dist/v" <> nodeVer <> "/" <> nodeTar
@@ -152,8 +153,8 @@ nodeModules = ["less"]
 installNodeModules :: (MonadIO m, MonadSh m, MonadShControl m) => m ()
 installNodeModules = do
     Shelly.echo "installing node modules"
-    current <- currentPath
-    let nodeBinPath = current </> tools </> "node" </> supportedNodeVersion </> "bin"
+    nodeFolder <- nodePath
+    let nodeBinPath = nodeFolder </> supportedNodeVersion </> "bin"
     Shelly.prependToPath nodeBinPath
     Shelly.cmd (nodeBinPath </> "npm") $ "install" : nodeModules
 
@@ -175,9 +176,9 @@ installHaskellBins = do
 stackSetupForLunaStudio :: (MonadIO m, MonadSh m, MonadShControl m) => m ()
 stackSetupForLunaStudio = do
     current <- currentPath
-    Shelly.chdir (current </>"luna-studio") $ do
+    chdirM studioPath $ do
         Shelly.echo "install GHCJS"
-        Shelly.cmd (current </>stack) "setup"
+        Shelly.cmd (current </> stack) "setup"
 
 
 -- === Other utils === --
@@ -225,10 +226,10 @@ generateLunaShellScript = do
         addPath            = "export PATH=" <> paths <> ":" <> T.strip stackPaths <> ":$PATH"
         initPyenv          = "eval \"$(pyenv init -)\""
         loadPython         = "pyenv" <>  " local " <> Shelly.toTextIgnore supportedPythonVersion
-        lunaShellPath      = current </> lunaShell
         fullCode           = T.unlines [addLdLibraryPath, addPath, pyenvEnviromentVar, initPyenv, loadPython]
-    liftIO $ Data.Text.IO.writeFile (encodeString lunaShellPath) fullCode
 
+    lunaShellP <- lunaShellPath
+    liftIO $ Data.Text.IO.writeFile (encodeString lunaShellP) fullCode
 
 
 main :: IO ()

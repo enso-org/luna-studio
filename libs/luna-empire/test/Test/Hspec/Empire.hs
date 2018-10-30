@@ -8,6 +8,7 @@ import Empire.Prelude
 import qualified Data.Graph.Store              as Store
 import qualified Data.Text                     as Text
 import qualified Empire.Commands.Graph         as Graph
+import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import qualified Empire.Commands.Typecheck     as Typecheck
 import qualified Empire.Data.Graph             as Graph
 import qualified Empire.Data.Library           as Library
@@ -113,7 +114,7 @@ testCaseWithTC
     :: Text
     -> Text
     -> (GraphLocation -> Empire a)
-    -> (GraphLocation -> Empire b)
+    -> (GraphLocation -> GraphBuilder.TCFunResolver -> Empire b)
     -> CommunicationEnv
     -> Expectation
 testCaseWithTC initialCode expectedCode action tcResultCheck env = let
@@ -141,10 +142,12 @@ testCaseWithTC initialCode expectedCode action tcResultCheck env = let
             Typecheck.runNoCleanUp gl clsGraph rooted False False
         let updatedClsGraph
                 = updatedState ^. Graph.userState . Empire.clsGraph
+            mappedUnits = updatedState ^. Graph.userState . Empire.mappedUnits
+            resolveFun  = Typecheck.resolveSymbol mappedUnits
         void . evalEmpire env state $ do
             withLibrary (gl ^. GraphLocation.filePath)
                 $ Graph.userState . Library.body .= updatedClsGraph
-            tcResultCheck gl
+            tcResultCheck gl resolveFun
 
 prepareTestEnvironment :: Text -> Empire GraphLocation
 prepareTestEnvironment = prepareTestEnvironmentWithCustomPath defProjectPath where

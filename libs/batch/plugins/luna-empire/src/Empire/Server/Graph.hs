@@ -43,6 +43,7 @@ import           Empire.Commands.GraphBuilder            (buildClassGraph,
                                                           buildConnections,
                                                           buildGraph,
                                                           buildNodes,
+                                                          getNodeCode,
                                                           getNodeName)
 import qualified Empire.Commands.GraphUtils              as GraphUtils
 import           Empire.Data.AST                         (SomeASTException, astExceptionFromException,
@@ -328,10 +329,10 @@ handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph inverse action replyResult where
     getSrcPort = either id getSrcPortByNodeId
     getDstPort = either id getDstPortByNodeLoc
-    inverse (AddConnection.Request _ _ dst') = pure . AddConnection.Inverse $
-        case getDstPort dst' of
-            InPortRef'  portRef -> portRef
-            OutPortRef' portRef -> InPortRef (portRef ^. PortRef.nodeLoc) []
+    inverse (AddConnection.Request location _ dst') = do
+        let dstNodeId = either (view PortRef.nodeId) (view NodeLoc.nodeId) dst'
+        prevExpr <- Graph.withGraph location . runASTOp $ getNodeCode dstNodeId
+        pure $ AddConnection.Inverse prevExpr
     action  (AddConnection.Request location src' dst')
         = withDefaultResult location $ Graph.connectCondTC
             True location (getSrcPort src') (getDstPort dst')

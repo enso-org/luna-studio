@@ -46,8 +46,10 @@ import           LunaStudio.Data.Diff                    (Diff (Diff))
 import qualified LunaStudio.Data.Diff                    as Diff
 import qualified LunaStudio.Data.Graph                   as Graph
 import qualified LunaStudio.Data.Node                    as Node
+import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
 import           LunaStudio.Data.Port                    (OutPortIndex (Projection))
 import           LunaStudio.Data.PortRef                 (AnyPortRef (InPortRef'), OutPortRef (..))
+import qualified LunaStudio.Data.PortRef                 as PortRef
 import qualified System.Log.MLogger                      as Logger
 import           Prologue                                hiding (throwM)
 
@@ -82,7 +84,7 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoResponseRequest t where
-    UndoResponseRequest AddConnection.Response        = RemoveConnection.Request
+    UndoResponseRequest AddConnection.Response        = SetNodeExpression.Request
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
     UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
@@ -200,13 +202,15 @@ handleAddSubgraphUndo (Response.Response _ _ req _ status) = case status of
 
 
 getUndoAddConnection :: AddConnection.Request -> AddConnection.Inverse
-    -> RemoveConnection.Request
+    -> SetNodeExpression.Request
 getUndoAddConnection
-    (AddConnection.Request location _ _)
-    (AddConnection.Inverse connId) = RemoveConnection.Request location connId
+    (AddConnection.Request location _ dstPort)
+    (AddConnection.Inverse prevExpr) =
+        let nid = either (view PortRef.nodeId) (view NodeLoc.nodeId) dstPort
+        in SetNodeExpression.Request location nid prevExpr
 
 handleAddConnectionUndo :: AddConnection.Response
-    -> Maybe (RemoveConnection.Request, AddConnection.Request)
+    -> Maybe (SetNodeExpression.Request, AddConnection.Request)
 handleAddConnectionUndo (Response.Response _ _ req invStatus status)
     = case (invStatus, status) of
         (Response.Ok inv, Response.Ok _)

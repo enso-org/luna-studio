@@ -112,7 +112,6 @@ localUpdateExpressionNode mods node
                 defVis          = if preventNodeMeta
                     then prevNode ^. ExpressionNode.defaultVisualizer
                     else node ^. ExpressionNode.defaultVisualizer
-                value = prevNode ^. ExpressionNode.value
                 n = node
                     & isSelected                       .~ selected
                     & ExpressionNode.mode              .~ mode'
@@ -122,7 +121,6 @@ localUpdateExpressionNode mods node
                     & ExpressionNode.visEnabled        .~ visEnabled
                     & ExpressionNode.defaultVisualizer .~ defVis
                     & ExpressionNode.errorVisEnabled   .~ errVis
-                    & ExpressionNode.value             .~ value
 
                 mayPortSelfId = find isSelf . map (view portId) $ inPortsList n
                 updatePortSelfMode n' selfPid m
@@ -155,7 +153,8 @@ localUpdateNodeTypecheck path update = do
                     & ExpressionNode.inPorts  .~ convert `fmap` inPorts
                     & ExpressionNode.outPorts .~ convert `fmap` outPorts
                     & ExpressionNode.value    %~ (\value ->
-                        if value == ExpressionNode.AwaitingTypecheck
+                        if  value == ExpressionNode.AwaitingTypecheck
+                            || ExpressionNode.returnsError node
                             then ExpressionNode.AwaitingData else value)
         API.OutputSidebarUpdate _ inPorts -> NodeEditor.modifyOutputNode nl $
             SidebarNode.outputSidebarPorts .= convert `fmap` inPorts

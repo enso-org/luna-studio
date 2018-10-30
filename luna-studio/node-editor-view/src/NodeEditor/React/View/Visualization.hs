@@ -66,7 +66,7 @@ nodeVisualization = React.defineView objNameVis $ \(ref, visLibPaths, visProp, i
     withJust mayVisLibPath $ \visLibPath -> div_
         [ "key"       $= visKey vis
         , "id"        $= (nodePrefix <> fromString (show nid))
-        , "className" $= Style.prefixFromList (classes <> activeClass <> nSelectedClass )
+        , "className" $= ("native-key-bindings " <> Style.prefixFromList (classes <> activeClass <> nSelectedClass ))
         , "style"     @= Aeson.object [ "transform" Aeson..= ("translate(-150px," <> visShift <> "rem)"::String) ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $
@@ -88,7 +88,7 @@ docVisualization = React.defineView docViewName $ \(ref, docPresent, visLibPath,
         classes      = "searcher__doc" : visibleClass <> fsModeClass <> activeClass
     div_
         [ "key"       $= "doc"
-        , "className" $= Style.prefixFromList classes
+        , "className" $= ("native-key-bindings " <> Style.prefixFromList classes)
         ] $ visualization_ ref visLibPath Searcher vis docPresent
 
 

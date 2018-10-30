@@ -21,7 +21,9 @@ data Request = Request
     , _dst      :: Either AnyPortRef NodeLoc
     } deriving (Eq, Generic, Show)
 
-data Inverse = Inverse { _connId :: ConnectionId } deriving (Eq, Generic, Show)
+data Inverse = Inverse
+    { _previousDestinationExpression :: Text
+    } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Inverse

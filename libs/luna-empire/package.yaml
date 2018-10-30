@@ -73,8 +73,8 @@ dependencies:
     - luna-syntax-definition
     - luna-syntax-text-lexer
     - luna-syntax-text-model
-    - luna-syntax-text-parser2
-    - luna-syntax-text-parser3
+    - luna-syntax-text-parser
+    - luna-syntax-text-builder
     - luna-syntax-text-prettyprint
     - luna-text-processing
     - m-logger
