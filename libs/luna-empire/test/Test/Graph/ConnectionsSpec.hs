@@ -131,9 +131,28 @@ spec = runTests "connections tests" $ do
         action gl = do
             Just number1       <- findNodeIdByName gl "number1"
             Just outputSidebar <- view Graph.outputSidebar <$> Graph.getGraph gl
+            let outputSidebarNodeId = outputSidebar ^. Node.nodeId
             Graph.connect gl (outPortRef number1 [])
-                (InPortRef' $ inPortRef (outputSidebar ^. Node.nodeId) [])
+                (InPortRef' $ inPortRef outputSidebarNodeId [])
         in testCase initialCode expectedCode $ \gl -> do
+            action gl
+    it "connects to output port of toplevel function and undos" $ let
+        initialCode = [r|
+            def main:
+                number1 = 4
+                None
+            |]
+        action gl = do
+            Just number1       <- findNodeIdByName gl "number1"
+            Just outputSidebar <- view Graph.outputSidebar <$> Graph.getGraph gl
+            let outputSidebarNodeId = outputSidebar ^. Node.nodeId
+
+            preparedUndo       <- Graph.withGraph gl . runASTOp $
+                GraphBuilder.getNodeCode outputSidebarNodeId
+            Graph.connect gl (outPortRef number1 [])
+                (InPortRef' $ inPortRef outputSidebarNodeId [])
+            Graph.setNodeExpression gl outputSidebarNodeId preparedUndo
+        in testCase initialCode initialCode $ \gl -> do
             action gl
     it "connects to output port of lambda" $ let
         initialCode = [r|
@@ -156,7 +175,32 @@ spec = runTests "connections tests" $ do
             Just number1       <- findNodeIdByName fooGL "number1"
             Just outputSidebar <- view Graph.outputSidebar
                 <$> Graph.getGraph fooGL
+            let outputSidebarNodeId = outputSidebar ^. Node.nodeId
+
             Graph.connect fooGL (outPortRef number1 [])
-                (InPortRef' $ inPortRef (outputSidebar ^. Node.nodeId) [])
+                (InPortRef' $ inPortRef outputSidebarNodeId [])
         in testCase initialCode expectedCode $ \gl -> do
+            action gl
+    it "connects to output port of lambda and undos" $ let
+        initialCode = [r|
+            def main:
+                foo = x:
+                    number1 = 4
+                    x
+                None
+            |]
+        action gl = do
+            Just foo           <- findNodeIdByName gl "foo"
+            let fooGL = gl |>| foo
+            Just number1       <- findNodeIdByName fooGL "number1"
+            Just outputSidebar <- view Graph.outputSidebar
+                <$> Graph.getGraph fooGL
+            let outputSidebarNodeId = outputSidebar ^. Node.nodeId
+
+            preparedUndo       <- Graph.withGraph fooGL . runASTOp $
+                GraphBuilder.getNodeCode outputSidebarNodeId
+            Graph.connect fooGL (outPortRef number1 [])
+                (InPortRef' $ inPortRef outputSidebarNodeId [])
+            Graph.setNodeExpression fooGL outputSidebarNodeId preparedUndo
+        in testCase initialCode initialCode $ \gl -> do
             action gl
