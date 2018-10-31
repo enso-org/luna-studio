@@ -1,4 +1,4 @@
-resolver: lts-12.2
+resolver: lts-12.16
 ghc-options:
   '*': -threaded -fconstraint-solver-iterations=100 -O2 -fsimpl-tick-factor=200
 local-bin-path:
@@ -46,7 +46,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 0bf744fff51e02f8045cd181d715f86ecfa8b4af, git: 'git@github.com:luna/luna.git'}
+  location: {commit: 2a1873efaba381aab352407fe8915c2804fce136, git: 'git@github.com:luna/luna.git'}
   subdirs:
     - core
     - syntax/text/parser
