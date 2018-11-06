@@ -11,8 +11,10 @@ import qualified Luna.Package.Structure.Generate as Generator
 prepareLunaError :: GeneratorError -> Error LunaError
 prepareLunaError = \case
     Generator.InvalidPackageLocation msg ->
-        Luna.Error (Luna.PackageGenerator Luna.InvalidPackageLocation) (convert msg)
+        Luna.Error (Luna.PackageGenerator Luna.InvalidPackageLocation)
+            (convert msg)
     Generator.InvalidPackageName     msg ->
-        Luna.Error (Luna.PackageGenerator Luna.InvalidPackageName)     msg
-    Generator.SystemError            msg ->
-        Luna.Error (Luna.PackageGenerator Luna.SystemError)            msg
+        Luna.Error (Luna.PackageGenerator Luna.InvalidPackageName) msg
+    Generator.SystemError            ex  ->
+        Luna.Error (Luna.PackageGenerator Luna.SystemError) . convert
+            $ displayException ex
