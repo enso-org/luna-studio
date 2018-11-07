@@ -28,7 +28,7 @@ tools = "tools"
 libs = "libs"
 supportedNodeVersion = "6.11.3"
 supportedPythonVersion = "3.6.2"
-lunaShell = "./luna-shell.sh"
+lunaShell = "./dist/shell.sh"
 
 pyenvRepoUrl :: Text
 pyenvRepoUrl = "https://github.com/pyenv/pyenv.git"
@@ -169,7 +169,7 @@ installHaskellBins = do
     current <- currentPath
     home    <- liftIO $ System.getHomeDirectory
     Shelly.appendToPath $ home </> ".local/bin"
-    mapM (Shelly.cmd (current </> stack) "--resolver" "lts-8.2" "install" "--install-ghc") haskellBins
+    mapM (Shelly.cmd (current </> stack) "--resolver" "lts-11.22" "install" "--install-ghc") haskellBins
     sanityCheck "happy" ["--version"]
     sanityCheck "hsc2hs" ["--version"]
 
