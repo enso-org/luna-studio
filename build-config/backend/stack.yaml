@@ -84,3 +84,5 @@ packages:
   location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'git@github.com:luna/visualization-api.git'}
 - extra-dep: true
   location: {commit: 1fe94d4d8b106b2ab37c65de9200b3f0404ac2ca, git: 'git@github.com:luna/fuzzy-text.git'}
+- extra-dep: true
+  location: {commit: 4c71b554d738021b51723dbec6d1f1c823e73579, git: 'git@github.com:TomMD/entropy.git'}
