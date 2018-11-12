@@ -4,6 +4,7 @@ import           Data.Aeson.Types (ToJSON)
 import           Data.Binary      (Binary)
 import           Data.UUID.Types  (UUID)
 import           Prologue
+import           LunaStudio.API.Graph.Request (GraphRequest, location)
 
 
 data Request a = Request
@@ -15,3 +16,6 @@ data Request a = Request
 makeLenses ''Request
 instance Binary a => Binary (Request a)
 instance ToJSON a => ToJSON (Request a)
+
+instance GraphRequest a => GraphRequest (Request a) where
+    location = request . location

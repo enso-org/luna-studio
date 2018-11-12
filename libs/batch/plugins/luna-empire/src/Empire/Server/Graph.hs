@@ -11,6 +11,7 @@ import qualified Data.Set                                as Set
 import qualified Data.Text                               as Text
 import qualified Data.UUID.Types                         as UUID
 import qualified Data.UUID.V4                            as UUID
+import qualified Empire.ApiHandlers                      as Api
 import qualified Empire.ASTOps.Print                     as Print
 import qualified Empire.Commands.Graph                   as Graph
 import qualified Empire.Commands.GraphBuilder            as GraphBuilder
@@ -47,6 +48,7 @@ import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
 import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
+import qualified LunaStudio.API.Request                  as Request
 import qualified LunaStudio.API.Response                 as Response
 import qualified LunaStudio.API.Topic                    as Topic
 import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
@@ -179,12 +181,6 @@ getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
 getNodeById location nid
     = find (\n -> n ^. Node.nodeId == nid) <$> getAllNodes location
 
-getSrcPortByNodeId :: NodeId -> OutPortRef
-getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
-
-getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
-getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
-
 getProjectPathAndRelativeModulePath :: MonadIO m
     => FilePath -> m (Maybe (FilePath, FilePath))
 getProjectPathAndRelativeModulePath modulePath = do
@@ -314,172 +310,69 @@ handleGetProgram = modifyGraph defInverse action replyResult where
         pure . GetProgram.Result location $ guiStateDiff guiState
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
-handleAddConnection = modifyGraph inverse action replyResult where
-    getSrcPort = either id getSrcPortByNodeId
-    getDstPort = either id getDstPortByNodeLoc
-    inverse (AddConnection.Request location _ dst') = do
-        let dstNodeId = either (view PortRef.nodeId) (view NodeLoc.nodeId) dst'
-        prevExpr <- Graph.withGraph location . runASTOp $ getNodeCode dstNodeId
-        pure $ AddConnection.Inverse prevExpr
-    action  (AddConnection.Request location src' dst')
-        = withDefaultResult location $ Graph.connectCondTC
-            True location (getSrcPort src') (getDstPort dst')
+handleAddConnection req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleAddImports :: Request AddImports.Request -> StateT Env BusT ()
-handleAddImports = modifyGraph defInverse action replyResult where
-    action (AddImports.Request location modules) = withDefaultResult location $
-        Graph.addImports location modules
+handleAddImports req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
-handleAddNode = modifyGraph defInverse action replyResult where
-    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta
-            connectTo) = withDefaultResult location $
-        Graph.addNodeWithConnection location nl expression nodeMeta connectTo
+handleAddNode req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
-handleAddPort = modifyGraph defInverse action replyResult where
-    action (AddPort.Request location portRef connsDst name)
-        = withDefaultResult location $
-            Graph.addPortWithConnections location portRef name connsDst
+handleAddPort req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
-handleAddSubgraph = modifyGraph defInverse action replyResult where
-    action (AddSubgraph.Request location nodes connections)
-        = withDefaultResult location $
-            Graph.addSubgraph location nodes connections
+handleAddSubgraph req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
-handleAutolayoutNodes = modifyGraph inverse action replyResult where
-    inverse (AutolayoutNodes.Request location nodeLocs _) = do
-        positions <- Graph.getNodeMetas location nodeLocs
-        pure $ AutolayoutNodes.Inverse $ catMaybes positions
-    action (AutolayoutNodes.Request location nodeLocs _)
-        = withDefaultResult location $
-            Graph.autolayoutNodes location (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
+handleAutolayoutNodes req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleCollapseToFunction :: Request CollapseToFunction.Request -> StateT Env BusT ()
-handleCollapseToFunction = modifyGraph inverse action replyResult where
-    inverse (CollapseToFunction.Request location@(GraphLocation file _) _) = do
-        code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
-        cache <- Graph.prepareNodeCache (GraphLocation file def)
-        pure $ CollapseToFunction.Inverse code cache
-    action (CollapseToFunction.Request location locs)
-        = withDefaultResult location $ do
-            let ids = convert <$> locs
-            Graph.collapseToFunction location ids
+handleCollapseToFunction req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleCopy :: Request Copy.Request -> StateT Env BusT ()
-handleCopy = modifyGraph defInverse action replyResult where
-    action (Copy.Request location nodeLocs) = do
-        r <- Graph.prepareCopy location (convert nodeLocs)
-        pure $ Copy.Result r r --FIXME
+handleCopy = modifyGraph Api.buildInverse Api.perform replyResult
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
-handleDumpGraphViz = modifyGraphOk defInverse action where
-    action (DumpGraphViz.Request location) = Graph.dumpGraphViz location
+handleDumpGraphViz = modifyGraphOk Api.buildInverse Api.perform
 
 handleGetSubgraphs :: Request GetSubgraphs.Request -> StateT Env BusT ()
-handleGetSubgraphs = modifyGraph defInverse action replyResult where
-    action (GetSubgraphs.Request location) = do
-        graph <- Graph.getGraph location
-        let bc = location ^.
-                GraphLocation.breadcrumb . Breadcrumb.items . to unsafeLast
-        pure . GetSubgraphs.Result $ Map.singleton bc graph --FIXME: should return multiple graphs
+handleGetSubgraphs = modifyGraph Api.buildInverse Api.perform replyResult
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
-handleMovePort = modifyGraph defInverse action replyResult where
-    action (MovePort.Request location portRef newPortPos)
-        = withDefaultResult location $
-            Graph.movePort location portRef newPortPos
+handleMovePort req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handlePaste :: Request Paste.Request -> StateT Env BusT ()
-handlePaste = modifyGraph defInverse action replyResult where
-    action (Paste.Request location position string)
-        = withDefaultResult location $ Graph.paste location position string
-
-data ConnectionDoesNotExistException
-    = ConnectionDoesNotExistException InPortRef
-    deriving (Show)
-
-instance Exception ConnectionDoesNotExistException where
-    fromException = astExceptionFromException
-    toException   = astExceptionToException
-
-data DestinationDoesNotExistException
-    = DestinationDoesNotExistException InPortRef
-    deriving (Show)
-
-instance Exception DestinationDoesNotExistException where
-    fromException = astExceptionFromException
-    toException   = astExceptionToException
+handlePaste req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
-handleRemoveConnection = modifyGraph inverse action replyResult where
-    inverse (RemoveConnection.Request location dst) = do
-        connections <- Graph.withGraph location $ runASTOp buildConnections
-        case find (\conn -> snd conn == dst) connections of
-            Nothing       -> throwM $ ConnectionDoesNotExistException dst
-            Just (src, _) -> pure $ RemoveConnection.Inverse src
-    action (RemoveConnection.Request location dst)
-        = withDefaultResult location $ do
-            mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
-            when (isNothing mayDstNode)
-                $ throwM $ DestinationDoesNotExistException dst
-            Graph.disconnect location dst
+handleRemoveConnection req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
-handleRemoveNodes = modifyGraph inverse action replyResult where
-    inverse (RemoveNodes.Request location nodeLocs) = do
-        let nodeIds = convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
-        Graph allNodes allConnections _ _ monads _ <- Graph.getGraph location
-        let isNodeRelevant n = Set.member (n ^. Node.nodeId) idSet
-            isConnRelevant c
-                =  Set.member (c ^. Connection.src . PortRef.srcNodeId) idSet
-                || Set.member (c ^. Connection.dst . PortRef.dstNodeId) idSet
-            idSet = Set.fromList nodeIds
-            nodes = filter isNodeRelevant allNodes
-            conns = filter isConnRelevant allConnections
-        pure $ RemoveNodes.Inverse nodes conns
-    action (RemoveNodes.Request location nodeLocs)
-        = withDefaultResult location $
-            Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
-
-data SidebarDoesNotExistException = SidebarDoesNotExistException
-    deriving (Show)
-
-instance Exception SidebarDoesNotExistException where
-    fromException = astExceptionFromException
-    toException = astExceptionToException
+handleRemoveNodes req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
-handleRemovePort = modifyGraph inverse action replyResult where
-    inverse (RemovePort.Request location portRef) = do
-        connections <- Graph.withGraph location $ runASTOp buildConnections
-        oldName     <- Graph.getPortName location portRef
-        let conns = flip filter connections $ (== portRef) . fst
-        pure $ RemovePort.Inverse oldName $ fmap (uncurry Connection) conns
-    action (RemovePort.Request location portRef)
-        = withDefaultResult location $ do
-            maySidebar <-
-                view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
-            when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
-            Graph.removePort location portRef
+handleRemovePort req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
-handleRenameNode = modifyGraph inverse action replyResult where
-    inverse (RenameNode.Request location nodeId name) = do
-        prevName <- Graph.getName location nodeId
-        pure $ RenameNode.Inverse $ fromMaybe "" prevName
-    action (RenameNode.Request location nodeId name)
-        = withDefaultResult location $ Graph.renameNode location nodeId name
+handleRenameNode req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
-handleRenamePort = modifyGraph inverse action replyResult where
-    inverse (RenamePort.Request location portRef name) = do
-        oldName <- Graph.getPortName location portRef
-        pure $ RenamePort.Inverse oldName
-    action (RenamePort.Request location portRef name)
-        = withDefaultResult location $ Graph.renamePort location portRef name
+handleRenamePort req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleSaveSettings :: Request SaveSettings.Request -> StateT Env BusT ()
 handleSaveSettings = modifyGraphOk defInverse action where
@@ -513,19 +406,10 @@ handleSearchNodes origReq@(Request uuid guiID
                             . Compress.pack $ Bin.encode msg
 
 handleSetCode :: Request SetCode.Request -> StateT Env BusT ()
-handleSetCode = modifyGraph inverse action replyResult where
-    inverse (SetCode.Request location@(GraphLocation file _) _ _) = do
-        cache <- Graph.prepareNodeCache location
-        code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
-        pure $ SetCode.Inverse code cache
-    action (SetCode.Request location@(GraphLocation file _) code cache)
-        = withDefaultResultTC location $ do
-            Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
-            Graph.loadCode location code
-            Graph.resendCode location
+handleSetCode req = modifyGraph Api.buildInverse
+    (withDefaultResultTC (req ^. G.location) . Api.perform) replyResult req
 
-handleSetNodeExpression :: Request SetNodeExpression.Request
-    -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
+handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()
 handleSetNodeExpression = modifyGraph inverse action replyResult where
     inverse (SetNodeExpression.Request location nodeId _) = do
         oldExpr <- Graph.withGraph location . runASTOp $
@@ -570,12 +454,8 @@ handleSetNodesMetaUpdate (SetNodesMeta.Update location updates) = do
         Right (result, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
-handleSetPortDefault = modifyGraph inverse action replyResult where
-    inverse (SetPortDefault.Request location portRef _)
-        = SetPortDefault.Inverse <$> Graph.getPortDefault location portRef
-    action  (SetPortDefault.Request location portRef defaultValue)
-        = withDefaultResult location $
-            Graph.setPortDefault location portRef defaultValue
+handleSetPortDefault req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do
