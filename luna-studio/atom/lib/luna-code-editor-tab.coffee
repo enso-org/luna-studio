@@ -49,8 +49,6 @@ TextBuffer::subscribeToFileOverride = (codeEditor) ->
         @emitter.emit 'did-delete'
         if modified
             @updateCachedDiskContents()
-        else
-            @destroy()
 
     @fileSubscriptions.add @file.onDidRename =>
         @emitter.emit 'did-change-path', @getPath()
