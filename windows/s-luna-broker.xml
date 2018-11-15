@@ -6,6 +6,8 @@
   <executable>%BASE%\..\..\bin\private\luna-broker.exe</executable>
   <startmode>manual</startmode>
 
+  <arguments>-v5</arguments>
+
   <onfailure action="restart" delay="1 sec"/>
   <onfailure action="restart" delay="1 sec"/>
   <onfailure action="restart" delay="1 sec"/>
@@ -16,7 +18,7 @@
   <env name="LUNA_LIBS_PATH" value="%BASE%\..\env" />
   <env name="LUNA_STUDIO_LOG_PATH" value="%BASE%\..\logs" />
 
-  <logpath>%LUNA_STUDIO_LOG_PATH%</logpath>
+  <logpath>%BASE%\..\logs</logpath>
   <log mode="roll-by-size">
   </log>
 </configuration>
