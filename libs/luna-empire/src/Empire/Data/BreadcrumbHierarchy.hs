@@ -3,7 +3,8 @@
 
 module Empire.Data.BreadcrumbHierarchy where
 
-import           Empire.Prelude             hiding (children)
+import           Empire.Prelude             hiding (id)
+import qualified Empire.Prelude             as P
 
 import           LunaStudio.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
 import           LunaStudio.Data.NodeId     (NodeId)
@@ -46,41 +47,42 @@ instance HasSelf ExprItem where
     self = selfRef
 
 instance HasSelf BChild where
-    self = lens get set where
-        get (ExprChild   a)   = a ^. self
-        get (LambdaChild a)   = a ^. self
-        set (ExprChild   a) s = ExprChild   $ a & self .~ s
-        set (LambdaChild a) s = LambdaChild $ a & self .~ s
+    self = lens getter setter where
+        getter (ExprChild   a)   = a ^. self
+        getter (LambdaChild a)   = a ^. self
+        setter (ExprChild   a) s = ExprChild   $ a & self .~ s
+        setter (LambdaChild a) s = LambdaChild $ a & self .~ s
 
 class HasRefs a where
     refs :: Traversal' a NodeRef
 
 instance HasRefs NodeRef where
-    refs = id
+    refs = P.id
 
 instance {-# OVERLAPPABLE #-} (Traversable t, HasRefs a) => HasRefs (t a) where
     refs = traverse . refs
 
 instance HasRefs LamItem where
-    refs f (LamItem pm ref children) = LamItem pm <$> refs f ref <*> refs f children
+    refs f (LamItem pm ref children') = LamItem pm <$> refs f ref <*> refs f children'
 
 instance HasRefs ExprItem where
-    refs f (ExprItem children ref) = ExprItem <$> refs f children <*> refs f ref
+    refs f (ExprItem children' ref) = ExprItem <$> refs f children' <*> refs f ref
 
 instance HasRefs BChild where
     refs f (ExprChild   it) = ExprChild   <$> refs f it
     refs f (LambdaChild it) = LambdaChild <$> refs f it
 
 getBreadcrumbItems :: LamItem -> Breadcrumb BreadcrumbItem -> [BChild]
-getBreadcrumbItems b (Breadcrumb crumbs) = go crumbs b where
+getBreadcrumbItems item (Breadcrumb bc) = go bc item where
     go [] _ = []
     go (Lambda id : crumbs) b = case b ^? children . ix id of
         Just (LambdaChild c) -> LambdaChild c : go crumbs c
         Just (ExprChild   c) -> ExprChild   c : []
         Nothing              -> []
+    go (a : _) _ = error $ "internal error: unexpected breadcrumb " <> show a
 
 navigateTo :: LamItem -> Breadcrumb BreadcrumbItem -> Maybe LamItem
-navigateTo b (Breadcrumb crumbs) = go crumbs b where
+navigateTo item (Breadcrumb bc) = go bc item where
     go [] b = pure b
     go (Lambda id : crumbs) b = do
         child <- b ^? children . ix id . _LambdaChild
@@ -88,9 +90,10 @@ navigateTo b (Breadcrumb crumbs) = go crumbs b where
     go (Arg id pos : crumbs) b = do
         child <- b ^? children . ix id . _ExprChild . portChildren . ix pos
         go crumbs child
+    go (a : _) _ = error $ "internal error: unexpected breadcrumb " <> show a
 
 replaceAt :: Breadcrumb BreadcrumbItem -> LamItem -> LamItem -> Maybe LamItem
-replaceAt (Breadcrumb crumbs) par child = go crumbs par child where
+replaceAt (Breadcrumb bc) parent child = go bc parent child where
     go [] par child = pure child
     go (Lambda id : crumbs) par child = do
         lowerPar <- par ^? children . ix id . _LambdaChild
@@ -100,6 +103,7 @@ replaceAt (Breadcrumb crumbs) par child = go crumbs par child where
         lowerPar <- par ^? children . ix id . _ExprChild . portChildren . ix pos
         replaced <- go crumbs lowerPar child
         return $ par & children . ix id . _ExprChild . portChildren . ix pos .~ replaced
+    go (a : _) _ _ = error $ "internal error: unexpected breadcrumb " <> show a
 
 topLevelIDs :: LamItem -> [NodeId]
 topLevelIDs = Map.keys . view children
@@ -118,4 +122,4 @@ getLamItems hierarchy = goParent hierarchy
                     Just a -> [(a, lamItem)]
                     _      -> []
 
-        goExprItem nodeId (ExprItem children _) = map (\(a,b) -> ((nodeId, Just a), b)) $ Map.assocs children
+        goExprItem nodeId (ExprItem children' _) = map (\(a,b) -> ((nodeId, Just a), b)) $ Map.assocs children'

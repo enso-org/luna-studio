@@ -9,60 +9,42 @@
 
 module MetadataSpec (spec) where
 
-import           Control.Lens                     ((^..))
-import           Control.Monad                    (forM)
-import           Data.Coerce
 import           Data.List                        (find)
-import qualified Data.Map                         as Map
-import           Data.Reflection                  (Given (..), give)
 import qualified Data.Set                         as Set
 import qualified Data.Text                        as Text
-import qualified Data.Text.IO                     as Text
-import           Data.Text.Span                   (LeftSpacedSpan (..), SpacedSpan (..))
 import           Empire.ASTOp                     (runASTOp)
-import qualified Empire.ASTOps.Parse              as ASTParse
-import qualified Empire.ASTOps.Print              as ASTPrint
 import qualified Empire.ASTOps.Read               as ASTRead
 import qualified Empire.Commands.AST              as AST
 import qualified Empire.Commands.Code             as Code
 import qualified Empire.Commands.Graph            as Graph
 import qualified Empire.Commands.GraphBuilder     as GraphBuilder
 import qualified Empire.Commands.Library          as Library
-import           Empire.Data.AST                  (SomeASTException)
-import qualified Empire.Data.BreadcrumbHierarchy  as BH
 import           Empire.Data.FileMetadata         (MarkerNodeMeta (MarkerNodeMeta))
 import qualified Empire.Data.FileMetadata         as FileMetadata
-import qualified Empire.Data.Graph                as Graph (breadcrumbHierarchy, clsClass, clsFuns, code, codeMarkers, fileOffset)
-import           Empire.Empire                    (CommunicationEnv (..), Empire)
-import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
--- import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingChange (..), ReparsingStatus (..))
-import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem (Definition))
-import qualified LunaStudio.Data.Graph            as Graph
+import qualified Empire.Data.Graph                as Graph (clsClass, code, codeMarkers)
+import           LunaStudio.Data.Breadcrumb       (Breadcrumb (..))
 import           LunaStudio.Data.GraphLocation    (GraphLocation (..), (|>=))
 import qualified LunaStudio.Data.Node             as Node
-import           LunaStudio.Data.NodeLoc          (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta         (NodeMeta (..))
 import qualified LunaStudio.Data.NodeMeta         as NodeMeta
 import           LunaStudio.Data.Point            (Point (Point))
-import qualified LunaStudio.Data.Port             as Port
-import           LunaStudio.Data.PortRef          (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified LunaStudio.Data.Position         as Position
 import           LunaStudio.Data.TextDiff         (TextDiff (..))
-import           LunaStudio.Data.TypeRep          (TypeRep (TStar))
-import           LunaStudio.Data.Vector2          (Vector2 (..))
 
-import           Empire.Prelude
+import           Empire.Prelude                   hiding (pi)
 
-import           Test.Hspec                       (Expectation, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
-                                                   shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, xit)
+import           Test.Hspec                       (Spec, around, describe, it,
+                                                   parallel, shouldBe,
+                                                   shouldMatchList, shouldNotBe,
+                                                   shouldSatisfy, shouldStartWith)
 
 import           EmpireUtils
 
 import           Text.RawString.QQ                (r)
 
-import qualified Luna.IR                          as IR
 
 
+codeWithMetadata :: Text
 codeWithMetadata = [r|def foo:
     «10»pi = 3.14
 
@@ -82,6 +64,7 @@ def main:
 ### META {"metas":[]}
 |]
 
+withoutMetadata :: Text
 withoutMetadata = [r|def foo:
     «1»pi = 3.14
 
@@ -89,6 +72,7 @@ def main:
     «0»c = 4.0
 |]
 
+oneNode :: Text
 oneNode = [r|def main:
     «0»pi = 3.14
     None
@@ -96,6 +80,7 @@ oneNode = [r|def main:
 ### META {"metas":[]}
 |]
 
+simpleCodeWithMetadata :: Text
 simpleCodeWithMetadata = [r|def foo:
     «1»pi = 3.14
 
@@ -105,6 +90,7 @@ def main:
 ### META {"metas":[{"marker":0,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":33,"_vector2_x":66}}}},{"marker":1,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":-33,"_vector2_x":-66}}}}]}
 |]
 
+testLuna :: Text
 testLuna = [r|def main:
     «0»pi = 3.14
     «1»foo = a: b:
@@ -124,7 +110,7 @@ testLuna = [r|def main:
 ### META {"metas":[]}
 |]
 
-
+crypto :: Text
 crypto = [r|def getCurrentPrices crypto fiat:
     «0»baseUri = "https://min-api.cryptocompare.com/data/price?"
     «3»withFsym = baseUri + "fsym=" + crypto
@@ -136,6 +122,7 @@ def main:
     «2»node1 = every 500.miliseconds (getCurrentPrices "BTC" "USD")
 |]
 
+metaWithImports :: Text
 metaWithImports = [r|import Std.Base
 
 def bar:
@@ -145,7 +132,6 @@ def bar:
 
 ### META {"metas":[{"marker":37,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":0,"_vector2_x":0}}}},{"marker":38,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":0,"_vector2_x":176}}}},{"marker":39,"meta":{"_displayResult":false,"_selectedVisualizer":null,"_position":{"fromPosition":{"_vector2_y":176,"_vector2_x":176}}}}]}|]
 
-atXPos = ($ def) . (NodeMeta.position . Position.x .~)
 
 spec :: Spec
 spec = around withChannels $ parallel $ do
@@ -370,13 +356,12 @@ bar = foo 8.0 c|]
 def bar:
     "bar"|]
                 nodes <- Graph.getNodes loc
-                funIds <- (map (view Node.nodeId)) <$> Graph.getNodes loc
                 let Just foo = find (\n -> n ^. Node.name == Just "foo") nodes
                     Just bar = find (\n -> n ^. Node.name == Just "bar") nodes
                 Graph.removeNodes loc [foo ^. Node.nodeId, bar ^. Node.nodeId]
-                nodes <- Graph.getNodes loc
+                nodesAfter <- Graph.getNodes loc
                 code  <- Graph.withUnit loc $ use Graph.code
-                return (nodes, Text.unpack code)
+                return (nodesAfter, Text.unpack code)
             map (view Node.name) nodes `shouldMatchList` [Just "main"]
             code `shouldStartWith` [r|
 «1»def main:
@@ -402,9 +387,9 @@ def bar:
 
 def bar:
     "bar"|]
-                nodes <- Graph.getNodes loc
+                nodesAfter <- Graph.getNodes loc
                 code  <- Graph.withUnit loc $ use Graph.code
-                return (nodes, Text.unpack code)
+                return (nodesAfter, Text.unpack code)
             map (view Node.name) nodes `shouldMatchList` [Just "foo", Just "bar", Just "main"]
             code `shouldStartWith` [r|
 «2»def foo:
@@ -425,9 +410,9 @@ def bar:
                 let Just main = find (\n -> n ^. Node.name == Just "main") nodes
                 Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (200,0)) [r|c = 4.0
 bar = foo 8.0 c|]
-                nodes <- Graph.getNodes (loc |>= main ^. Node.nodeId)
+                nodesAfter <- Graph.getNodes (loc |>= main ^. Node.nodeId)
                 code  <- Graph.withUnit loc $ use Graph.code
-                return (nodes, Text.unpack code)
+                return (nodesAfter, Text.unpack code)
             let c   = find (\n -> n ^. Node.name == Just "c") nodes
                 bar = find (\n -> n ^. Node.name == Just "bar") nodes
             c `shouldSatisfy` isJust
@@ -439,7 +424,7 @@ bar = foo 8.0 c|]
     None
 |]
         it "pastes two nodes with metadata" $ \env -> do
-            (nodes, code, newC, newBar) <- evalEmp env $ do
+            (code, newC, newBar) <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc testLuna
@@ -451,9 +436,9 @@ bar = foo 8.0 c|]
                 Graph.paste (loc |>= main ^. Node.nodeId) (Position.fromTuple (400,0)) copy
                 code  <- Graph.withUnit loc $ use Graph.code
                 (newC, newBar) <- Graph.withGraph (loc |>= main ^. Node.nodeId) $ runASTOp $ do
-                    (Just c, Just bar) <- (,) <$> Graph.getNodeIdForMarker 19 <*> Graph.getNodeIdForMarker 20
-                    (,) <$> GraphBuilder.buildNode c <*> GraphBuilder.buildNode bar
-                return (nodes, Text.unpack code, newC, newBar)
+                    (Just newC, Just newBar) <- (,) <$> Graph.getNodeIdForMarker 19 <*> Graph.getNodeIdForMarker 20
+                    (,) <$> GraphBuilder.buildNode newC <*> GraphBuilder.buildNode newBar
+                return (Text.unpack code, newC, newBar)
             newC ^. Node.nodeMeta . NodeMeta.position `shouldNotBe` newBar ^. Node.nodeMeta . NodeMeta.position
             code `shouldBe` [r|«18»def main:
     «0»pi = 3.14
@@ -494,9 +479,9 @@ bar = foo 8.0 c|]
     «7»m = buzz b pi
     «8»m + n
 |]
-                nodes <- Graph.getNodes (loc |>= main ^. Node.nodeId)
+                nodesAfter <- Graph.getNodes (loc |>= main ^. Node.nodeId)
                 code  <- Graph.withUnit loc $ use Graph.code
-                return (nodes, Text.unpack code)
+                return (nodesAfter, Text.unpack code)
             let foo = find (\n -> n ^. Node.name == Just "foo") nodes
             foo `shouldSatisfy` isJust
             code `shouldBe` [r|«1»def main:

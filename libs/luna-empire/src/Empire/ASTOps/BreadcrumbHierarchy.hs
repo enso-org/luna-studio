@@ -5,7 +5,7 @@
 
 module Empire.ASTOps.BreadcrumbHierarchy where
 
-import Empire.Prelude
+import Empire.Prelude hiding (seq)
 
 import           Control.Arrow                 ((&&&))
 import           Control.Monad                 (forM)
@@ -60,7 +60,7 @@ childrenFromSeq currentFun tgtBeg edge = do
                 Unify l r -> do
                     ASTBuilder.attachNodeMarkers uid [] =<< source l
                     source r
-                ASGFunction n _ b -> do
+                ASGFunction n _ _ -> do
                     ASTBuilder.attachNodeMarkers uid [] =<< source n
                     pure expr'
                 _ -> do
@@ -73,7 +73,7 @@ childrenFromSeq currentFun tgtBeg edge = do
             pure $ Map.singleton uid child
         Invalid{} -> pure def
         _ -> do
-            Code.addCodeMarker beg edge
+            void $ Code.addCodeMarker beg edge
             childrenFromSeq currentFun tgtBeg edge
 
 lambdaChildren :: NodeRef -> Delta -> EdgeRef -> GraphOp (Map NodeId BH.BChild)
@@ -123,25 +123,22 @@ prepareLambdaChild :: NodeRef -> NodeRef -> GraphOp BH.LamItem
 prepareLambdaChild marked ref = do
     portMapping <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
     Just lambdaBodyLink <- ASTRead.getFirstNonLambdaLink ref
-    lambdaBody          <- source lambdaBodyLink
     Just lambdaCodeBeg  <- Code.getOffsetRelativeToFile =<< target lambdaBodyLink
     ASTBuilder.attachNodeMarkersForArgs (fst portMapping) [] ref
     children            <- lambdaChildren ref lambdaCodeBeg lambdaBodyLink
-    newBody             <- ASTRead.getFirstNonLambdaRef ref
     return $ BH.LamItem portMapping marked children
 
 prepareFunctionChild :: NodeRef -> NodeRef -> GraphOp BH.LamItem
 prepareFunctionChild marked ref = do
     portMapping      <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
     (args, bodyLink) <- matchExpr ref $ \case
-        ASGFunction n as b -> do
+        ASGFunction _ as b -> do
             args <- mapM source =<< ptrListToList as
             return (args, coerce b)
-    body         <- source bodyLink
     Just codeBeg <- Code.getOffsetRelativeToFile ref
-    for_ (zip args [0..]) $ \(a, i) -> ASTBuilder.attachNodeMarkers (fst portMapping) [Port.Projection i] a
+    for_ (zip args [0..]) $ \(a, i) ->
+        ASTBuilder.attachNodeMarkers (fst portMapping) [Port.Projection i] a
     children <- lambdaChildren marked codeBeg bodyLink
-    newBody  <- ASTRead.getFirstNonLambdaRef ref
     return $ BH.LamItem portMapping marked children
 
 prepareExprChild :: NodeRef -> NodeRef -> GraphOp BH.BChild

@@ -8,93 +8,68 @@
 
 module FileLoadSpec (spec) where
 
-import           Control.Concurrent.MVar
 import           Control.Concurrent.STM          (atomically)
 import           Control.Concurrent.STM.TChan    (tryReadTChan)
-import           Control.Exception.Safe          (finally)
-import           Control.Lens                    ((^..), uses, prism)
+import           Control.Lens                    ((^..), prism)
 import           Control.Monad                   (forM)
 import           Control.Monad.Loops             (unfoldM)
-import           Control.Monad.Reader            (ask)
-import           Data.Coerce
-import           Data.Char                       (isSpace)
 import qualified Data.Graph.Data.Component.Set   as MutableSet
 import qualified Data.Graph.Store                as Store
-import           Data.List                       (dropWhileEnd, find, minimum, maximum)
-import qualified Data.Map                        as Map
+import           Data.List                       (find, maximum)
 import           Data.Maybe                      (fromJust)
-import           Data.Reflection                 (Given (..), give)
 import qualified Data.Set                        as Set
 import qualified Data.Text                       as Text
-import qualified Data.Text.IO                    as Text
-import           Data.Text.Span                  (LeftSpacedSpan (..), SpacedSpan (..))
 import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Modify            as ASTModify
-import qualified Empire.ASTOps.Parse             as ASTParse
-import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Read              as ASTRead
-import qualified Empire.Commands.AST             as AST
 import qualified Empire.Commands.Code            as Code
 import qualified Empire.Commands.Graph           as Graph
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Typecheck       as Typecheck
-import           Empire.Data.AST                 (SomeASTException)
-import qualified Empire.Data.BreadcrumbHierarchy as BH
 import qualified Empire.Data.Graph               as Graph (CommandState(..),
-                                                           breadcrumbHierarchy,
-                                                           clsClass,
-                                                           code, codeMarkers,
+                                                           clsClass, code,
                                                            defaultPMState,
                                                            nodeCache, userState)
-import qualified Empire.Data.Library             as Library (body)
-import           Empire.Empire                   (CommunicationEnv (..), InterpreterEnv(..), Empire) -- , modules)
-import qualified Language.Haskell.TH             as TH
+import           Empire.Empire                   (CommunicationEnv (..), InterpreterEnv(..))
 import qualified Luna.Package.Structure.Generate as Package
-import qualified Luna.Package.Structure.Name     as Project
--- import qualified Luna.Syntax.Text.Parser.Parser  as Parser (ReparsingChange (..), ReparsingStatus (..))
 import           LunaStudio.API.AsyncUpdate      (AsyncUpdate(ResultUpdate))
 import qualified LunaStudio.API.Graph.NodeResultUpdate as NodeResult
 import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
 import qualified LunaStudio.Data.Connection      as Connection
 import           LunaStudio.Data.Connection      (Connection (..))
-import           LunaStudio.Data.Diff            (Diff (..))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..), (|>|), (|>=))
-import qualified LunaStudio.Data.GraphLocation   as GraphLocation
 import qualified LunaStudio.Data.Node            as Node
-import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
 import qualified LunaStudio.Data.NodeMeta        as NodeMeta
 import           LunaStudio.Data.Point           (Point (Point))
 import qualified LunaStudio.Data.Port            as Port
 import qualified LunaStudio.Data.PortDefault     as PortDefault
-import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           LunaStudio.Data.PortRef         (AnyPortRef (..))
 import qualified LunaStudio.Data.PortRef         as PortRef
 import qualified LunaStudio.Data.Position        as Position
 import           LunaStudio.Data.Range           (Range (..))
 import           LunaStudio.Data.TextDiff        (TextDiff (..))
-import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
 import           LunaStudio.Data.NodeValue
 import           LunaStudio.Data.Vector2               (Vector2 (..))
 import           LunaStudio.Data.Visualization         (VisualizationValue (Value))
 import qualified LunaStudio.Data.LabeledTree           as LabeledTree
-import           System.Directory                      (canonicalizePath, getCurrentDirectory)
-import           System.FilePath                       ((</>), takeDirectory)
+import           System.FilePath                       ((</>))
 import qualified System.IO.Temp                        as Temp
 
-import           Empire.Prelude                        hiding (fromJust, minimum, maximum)
+import           Empire.Prelude                        hiding (fromJust, minimum, maximum, pi)
 
-import           Test.Hspec                            (Expectation, Selector, Spec, around, describe, expectationFailure, it, parallel, shouldBe,
-                                                        shouldMatchList, shouldNotBe, shouldSatisfy, shouldStartWith, shouldThrow, xit)
+import           Test.Hspec                            (Selector, Spec, around, describe, it, parallel, shouldBe,
+                                                        shouldMatchList, shouldSatisfy, shouldThrow)
 
 import           EmpireUtils
 
 import           Text.RawString.QQ                     (r)
 
-import qualified Luna.IR                               as IR
 
+mainCondensed :: Text
 mainCondensed = [r|def main:
     «0»pi = 3.14
     «1»foo = a: b: «4»a + b
@@ -102,6 +77,7 @@ mainCondensed = [r|def main:
     «3»bar = foo 8 c
 |]
 
+mainFile :: Text
 mainFile = [r|def main:
     «0»pi = 3.14
 
@@ -111,6 +87,7 @@ mainFile = [r|def main:
     «3»bar = foo 8 c
 |]
 
+testLuna :: Text
 testLuna = [r|def main:
     «0»pi = 3.14
     «1»foo = a: b:
@@ -125,6 +102,7 @@ testLuna = [r|def main:
     «3»bar = foo 8.0 c
 |]
 
+testLuna' :: Text
 testLuna' = [r|def main:
     «1»foo = a: b:
         «7»n = a + 5
@@ -132,13 +110,14 @@ testLuna' = [r|def main:
         «11»m + n
 |]
 
+atXPos :: Double -> NodeMeta
 atXPos = ($ def) . (NodeMeta.position . Position.x .~)
 
 
 spec :: Spec
 spec = around withChannels $ parallel $ do
     describe "text coordinates translation" $ do
-        it "translates points to deltas and back" $ \env -> do
+        it "translates points to deltas and back" $ \_ -> do
             let code = Text.unlines [ "  "
                                     , "foo   "
                                     , " barbaz"
@@ -168,7 +147,7 @@ spec = around withChannels $ parallel $ do
 |]
             Graph.stripMetadata code `shouldBe` expectedCode
     describe "code marker removal" $ do
-        it "removes markers" $ \env -> do
+        it "removes markers" $ \_ -> do
             let code = Text.unlines [ "def main:"
                                     , "    «0»foo = bar"
                                     , ""
@@ -239,7 +218,7 @@ def main:
                 let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
                 return graph
-            withResult res $ \(Graph.Graph nodes connections i _ _ _) -> do
+            withResult res $ \(Graph.Graph nodes _ _ _ _ _) -> do
                 let Just pi = find (\node -> node ^. Node.name == Just "pi") nodes
                 pi ^. Node.code `shouldBe` "3.14"
                 pi ^. Node.canEnter `shouldBe` False
@@ -344,7 +323,7 @@ def main:
                     hello = "Hello"
                     None
                 |]
-            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
+            in specifyCodeChange initialCode expectedCode $ \(GraphLocation file _) -> do
                 Graph.substituteCodeFromPoints file [TextDiff (Just ((Point 19 3), (Point 19 3))) "\n    " (Just (Point 4 4))]
                 Graph.substituteCodeFromPoints file [TextDiff (Just ((Point 4 4), (Point 4 4))) "No" (Just (Point 6 4))]
                 Graph.substituteCodeFromPoints file [TextDiff (Just ((Point 6 4), (Point 6 4))) "ne" (Just (Point 8 4))]
@@ -361,7 +340,7 @@ def main:
                 def main:
                     hello = "Hello"
                 |]
-            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
+            in specifyCodeChange initialCode expectedCode $ \(GraphLocation file _) -> do
                 Graph.substituteCodeFromPoints file [TextDiff (Just ((Point 21 3), (Point 21 3))) "\n    " (Just (Point 4 4))]
                 Graph.substituteCodeFromPoints file [TextDiff (Just ((Point 4 4), (Point 4 4))) "No" (Just (Point 6 4))]
                 Graph.substituteCodeFromPoints file [TextDiff (Just ((Point 6 4), (Point 6 4))) "ne" (Just (Point 8 4))]
@@ -402,10 +381,9 @@ def main:
                 loc = GraphLocation "TestPath" $ Breadcrumb []
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
-                let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.loadCode loc code
                 [main] <- Graph.getNodes loc
-                let loc' = GraphLocation "TestPath" $ Breadcrumb [Definition (main ^. Node.nodeId)]
+                let loc' = loc |>= main ^. Node.nodeId
                 Just foo <- Graph.withGraph loc' $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.withGraph (loc' |>| foo) $ runASTOp $ GraphBuilder.buildGraph
             withResult res $ \graph -> do
@@ -495,7 +473,7 @@ def main:
                 [main] <- Graph.getNodes loc
                 let loc' = loc |>= main ^. Node.nodeId
                 Just foo <- Graph.withGraph loc' $ runASTOp (Graph.getNodeIdForMarker 1)
-                before@(Graph.Graph _ _ (Just input) _ _ _) <- Graph.getGraph $ loc' |>| foo
+                (Graph.Graph _ _ (Just input) _ _ _) <- Graph.getGraph $ loc' |>| foo
                 Graph.movePort (loc' |>| foo) (outPortRef (input ^. Node.nodeId) [Port.Projection 0]) 1
                 code <- Graph.withUnit loc $ use Graph.code
                 return code
@@ -621,8 +599,6 @@ def main:
         it "adds one node to code" $ \env -> do
             u1 <- mkUUID
             code <- evalEmp env $ do
-                [main] <- Graph.getNodes (GraphLocation "/TestFile" (Breadcrumb []))
-                let loc' = GraphLocation "/TestFile" $ Breadcrumb [Definition (main ^. Node.nodeId)]
                 Graph.addNode top u1 "4" (atXPos (-20.0))
                 Graph.getCode top
             code `shouldBe` "def main:\n    number1 = 4\n    None"
@@ -642,7 +618,7 @@ def main:
                     bar = foo 8
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
-                [Just c, Just bar] <- Graph.withGraph loc $ runASTOp $ mapM (Graph.getNodeIdForMarker) [2,3]
+                [Just bar] <- Graph.withGraph loc $ runASTOp $ mapM (Graph.getNodeIdForMarker) [3]
                 Graph.disconnect loc (inPortRef bar [Port.Arg 1])
         it "disconnect/connect updates code at proper range" $ let
             expectedCode = [r|
@@ -665,9 +641,9 @@ def main:
                     bar = foo 8 c
                     number1 = 4
                 |]
-            in specifyCodeChange mainCondensed expectedCode $ \top -> do
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
-                Graph.addNode top u1 "4" (NodeMeta (Position.fromTuple (0, 5)) False def)
+                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (0, 5)) False def)
         it "adds one node to the beginning of the file via node editor" $ let
             expectedCode = [r|
                 def main:
@@ -677,9 +653,9 @@ def main:
                     c = 4
                     bar = foo 8 c
                 |]
-            in specifyCodeChange mainCondensed expectedCode $ \top -> do
+            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
                 u1 <- mkUUID
-                Graph.addNode top u1 "4" (NodeMeta (Position.fromTuple (-10, 0)) False def)
+                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (-10, 0)) False def)
         it "adds one named node to existing file via node editor" $ let
             expectedCode = [r|
                 def main:
@@ -751,8 +727,8 @@ def main:
                     None
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                Just id <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
-                Graph.removeNodes loc [id]
+                Just nodeId <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.removeNodes loc [nodeId]
         it "removes all nodes from a file, then adds some" $ let
             initialCode = [r|
                 def main:
@@ -786,8 +762,8 @@ def main:
                     bar = foo 8 c
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
-                Just id <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 1
-                let loc' = loc |>| id
+                Just nodeId <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 1
+                let loc' = loc |>| nodeId
                 u1 <- mkUUID
                 Graph.addNode loc' u1 "x = 2 + 3 +    5" (atXPos 0)
                 u2 <- mkUUID
@@ -802,7 +778,6 @@ def main:
                     bar = foo 8 c
                 |]
             in specifyCodeChange mainCondensed expectedCode $ \loc -> do
-                u1     <- mkUUID
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 Graph.setNodeExpression loc c "123456789"
         it "renames unused node in code" $ let
@@ -828,7 +803,7 @@ def main:
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 Graph.renameNode loc c "ddd"
         it "renames used node in code to pattern" $ let
-            mainCondensed = [r|
+            initialCode = [r|
                 def main:
                     «2»c = 4
                     «3»bar = foo 8 c
@@ -838,13 +813,13 @@ def main:
                     Just a = 4
                     bar = foo 7 c
                 |]
-            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 Graph.renameNode loc c "Just a"
                 Just bar <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 3
                 Graph.setNodeExpression loc bar "foo 7 c"
         it "renames used node in code to pattern with already used var name" $ let
-            mainCondensed = [r|
+            initialCode = [r|
                 def main:
                     «2»c = 4
                     «3»bar = foo 8 c
@@ -854,7 +829,7 @@ def main:
                     (b,c) = 4
                     bar = foo 8 c
                 |]
-            in specifyCodeChange mainCondensed expectedCode $ \loc -> do
+            in specifyCodeChange initialCode expectedCode $ \loc -> do
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 Graph.renameNode loc c "(b,c)"
                 succs <- Graph.withGraph loc $ runASTOp $ do
@@ -901,7 +876,7 @@ def main:
                 u1 <- mkUUID
                 Graph.addNode loc u1 "(foo +  baz)" (NodeMeta (Position.fromTuple (10, 60)) False def)
                 u2 <- mkUUID
-                Graph.addNode loc u1 "add here" (NodeMeta (Position.fromTuple (10, 50)) False def)
+                Graph.addNode loc u2 "add here" (NodeMeta (Position.fromTuple (10, 50)) False def)
         it "combines adding and renaming nodes" $ let
             initialCode = [r|
                 def main:
@@ -1451,9 +1426,9 @@ def main:
                     Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
                 Just bazMeta <- Graph.getNodeMeta loc baz
                 Graph.collapseToFunction loc [ab, baz]
-                nodes <- Graph.getNodes loc
-                let Just baz = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodes
-                Just newBazMeta <- Graph.getNodeMeta loc baz
+                nodesAfter <- Graph.getNodes loc
+                let Just bazAfter = view Node.nodeId <$> find (\n -> n ^. Node.name == Just "baz") nodesAfter
+                Just newBazMeta <- Graph.getNodeMeta loc bazAfter
                 liftIO $ newBazMeta ^. NodeMeta.position `shouldBe` bazMeta ^. NodeMeta.position
         it "handles collapsing nodes into functions two times" $ let
             initialCode = [r|
@@ -1580,7 +1555,7 @@ def main:
                     prices = every 1.seconds (getCurrencyPrice crypto fiat)
                     None
                 |]
-            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
+            in specifyCodeChange initialCode expectedCode $ \(GraphLocation file _) -> do
                 funs <- Graph.getNodes (GraphLocation file def)
                 liftIO $ map (view Node.name) funs `shouldMatchList` [Just "getCurrencyPrice", Just "main"]
         it "sorts arguments by position when collapsing to function" $ let
@@ -2134,11 +2109,11 @@ def main:
                     s = b + c
                     a
                 |]
-            in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
-                let top = GraphLocation file def
-                funs <- Graph.getNodes top
+            in specifyCodeChange initialCode expectedCode $ \(GraphLocation file _) -> do
+                let loc = GraphLocation file def
+                funs <- Graph.getNodes loc
                 let Just foo = find (\n -> n ^. Node.name == Just "foo") funs
-                    fooLoc = (top |>= foo ^. Node.nodeId)
+                    fooLoc = (loc |>= foo ^. Node.nodeId)
                 Just s <- (find (\n -> n ^. Node.name == Just "s")) <$> Graph.getNodes fooLoc
                 (i, _) <- Graph.withGraph fooLoc $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.addPortWithConnections fooLoc (outPortRef i [Port.Projection 0]) Nothing [InPortRef' $ inPortRef (s ^. Node.nodeId) [Port.Arg 1]]
@@ -2405,8 +2380,8 @@ def main:
                 Graph.setPortDefault loc (inPortRef k []) (Just $ PortDefault.Constant (PortDefault.IntValue (-2)))
                 Graph.setPortDefault loc (inPortRef k []) (Just $ PortDefault.Constant (PortDefault.IntValue (-3)))
                 negativeIsApp <- Graph.withGraph loc $ runASTOp $ do
-                    target <- ASTRead.getASTTarget k
-                    ASTRead.isApp target
+                    negativeLit <- ASTRead.getASTTarget k
+                    ASTRead.isApp negativeLit
                 liftIO $ negativeIsApp `shouldBe` True
         it "unary minus behaves as a literal" $ let
             initialCode = [r|
@@ -2422,10 +2397,10 @@ def main:
                 let portsBefore = k ^. Node.inPorts
                     valueBefore = portsBefore ^? LabeledTree.value . Port.state . Port._WithDefault
                 liftIO $ valueBefore `shouldBe` (Just $ PortDefault.Constant (PortDefault.IntValue (-1)))
-                Just k <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
-                Graph.setPortDefault loc (inPortRef k []) (Just $ PortDefault.Constant (PortDefault.IntValue (-1)))
-                [k] <- Graph.getNodes loc
-                let portsAfter = k ^. Node.inPorts
+                Graph.setPortDefault loc (inPortRef (k ^. Node.nodeId) [])
+                    (Just $ PortDefault.Constant (PortDefault.IntValue (-1)))
+                [kAfter] <- Graph.getNodes loc
+                let portsAfter = kAfter ^. Node.inPorts
                 liftIO $ portsBefore `shouldBe` portsAfter
         it "reads port name" $ let
             initialCode = [r|
@@ -2458,7 +2433,7 @@ def main:
                     d = 1000
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                [Connection outRef inRef] <- Graph.getConnections loc
+                [Connection _outRef inRef] <- Graph.getConnections loc
                 Graph.disconnect loc inRef
                 Just c <- find (\n -> n ^. Node.name == Just "c") <$> Graph.getNodes loc
                 Graph.renameNode loc (c ^. Node.nodeId) "d"
@@ -2476,11 +2451,10 @@ def main:
                     y = x
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
-                Just x <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
                 Just y <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 1
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 connsBefore <- Graph.getConnections loc
-                Connection outRef inRef <- Graph.connect loc (outPortRef c []) (InPortRef' $ inPortRef y [Port.Self])
+                Connection _outRef inRef <- Graph.connect loc (outPortRef c []) (InPortRef' $ inPortRef y [Port.Self])
                 Graph.disconnect loc inRef
                 connsAfter <- Graph.getConnections loc
                 liftIO $ connsAfter `shouldBe` connsBefore
@@ -2548,7 +2522,7 @@ def main:
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc -> do
                 u1 <- mkUUID
-                node <- Graph.addNode loc u1 "map +1 . map +2" (atXPos 300)
+                Graph.addNode loc u1 "map +1 . map +2" (atXPos 300)
                 Just l <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.connect loc (outPortRef l []) (InPortRef' $ inPortRef u1 [Port.Self, Port.Self])
         it "undos add port with connections" $ let
@@ -2613,7 +2587,7 @@ def main:
                 Graph.addNode loc u1 "first" (atXPos 300)
         it "interprets Fibonacci program" $ \env -> do
             Temp.withSystemTempDirectory "luna-fileloadspec" $ \path -> do
-                (res, st) <- runEmp env $ do
+                (res, _st) <- runEmp env $ do
                     let initialCode = [r|
                             import Std.Base
                             def fib n:
@@ -2630,8 +2604,6 @@ def main:
                     Graph.loadCode loc $ normalizeLunaCode initialCode
                     [main] <- filter (\n -> n ^. Node.name == Just "main") <$> Graph.getNodes loc
                     let loc' = GraphLocation mainLuna $ Breadcrumb [Definition (main ^. Node.nodeId)]
-                    [fib] <- filter (\n -> n ^. Node.name == Just "fib") <$> Graph.getNodes loc
-                    let loc'' = GraphLocation mainLuna $ Breadcrumb [Definition (fib ^. Node.nodeId)]
                     Graph.withUnit loc $ do
                         g <- use Graph.userState
                         let root = g ^. Graph.clsClass
@@ -2654,7 +2626,7 @@ def main:
                     4
             |]
             in specifyCodeChange initialCode initialCode $ \loc -> do
-                [node] <- Graph.getNodes loc
+                [_node] <- Graph.getNodes loc
                 selfConn <- filter (\c -> c ^. Connection.src . PortRef.srcNodeId == c ^. Connection.dst . PortRef.dstNodeId) <$> Graph.getConnections loc
                 liftIO $ selfConn `shouldBe` mempty
         it "moves lines in a file" $ let
@@ -2672,7 +2644,7 @@ def main:
     foo = a: b: a + b
     bar = foo 8 c
                 |]
-            in specifyCodeChange initialCode expectedCode $ \loc -> do
+            in specifyCodeChange initialCode expectedCode $ \_ -> do
                 Graph.substituteCodeFromPoints "/TestProject" [ TextDiff (Just (Point 0 2, Point 0 3)) "" Nothing
                                                               , TextDiff (Just (Point 0 4, Point 0 4)) "    foo = a: b: a + b\n" Nothing
                                                               ]
@@ -2749,18 +2721,18 @@ def main:
                 let Just bar = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "bar") nodes
                 let loc' = loc |>| foo
                 (_, output) <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.getEdgePortMapping
-                nodes <- Graph.getNodes loc'
-                let Just c = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "c") nodes
+                nodesFoo <- Graph.getNodes loc'
+                let Just c = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "c") nodesFoo
                 Graph.connect loc' (outPortRef c []) (InPortRef' $ inPortRef output [])
                 Graph.renameNode loc bar "pppppp"
-                let top = GraphLocation file def
-                nodes <- Graph.getNodes top
-                let Just quux = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "quux") nodes
-                nodes <- Graph.getNodes (top |>= quux)
-                let Just c = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "c") nodes
-                let Just b = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "b") nodes
-                Graph.renameNode (top |>= quux) b "baz"
-                Graph.setNodeExpression (top |>= quux) c "400"
+                let top' = GraphLocation file def
+                nodesTop <- Graph.getNodes top'
+                let Just quux = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "quux") nodesTop
+                nodesQuux <- Graph.getNodes (top' |>= quux)
+                let Just cQuux = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "c") nodesQuux
+                let Just b = (view Node.nodeId) <$> find (\n -> n ^. Node.name == Just "b") nodesQuux
+                Graph.renameNode (top' |>= quux) b "baz"
+                Graph.setNodeExpression (top' |>= quux) cQuux "400"
         it "does not autoconnect to tuple literal" $ let
             initialCode = [r|
                 def main:
@@ -2867,7 +2839,7 @@ def main:
                 u1 <- mkUUID
                 u2 <- mkUUID
                 Graph.addNode loc u1 "a=[((Just 1), \"foo\")]" def
-                node <- Graph.addNode loc u2 "[((Just i), j)]=a" def
+                Graph.addNode loc u2 "[((Just i), j)]=a" def
                 (_, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.connect loc (outPortRef u2 [Port.Projection 0, Port.Projection 0, Port.Projection 0]) (InPortRef' $ inPortRef output [])
         it "connects nested patternmatch to output 2" $ let
@@ -2885,7 +2857,7 @@ def main:
                 u1 <- mkUUID
                 u2 <- mkUUID
                 Graph.addNode loc u1 "a= Just [  (1  , Foo 9)]" def
-                node <- Graph.addNode loc u2 "Just [(i,  Foo  b) ] =a" def
+                Graph.addNode loc u2 "Just [(i,  Foo  b) ] =a" def
                 (_, output) <- Graph.withGraph loc $ runASTOp $ GraphBuilder.getEdgePortMapping
                 Graph.connect loc (outPortRef u2 [Port.Projection 0, Port.Projection 0, Port.Projection 1, Port.Projection 0]) (InPortRef' $ inPortRef output [])
         it "sets tuple port defaults" $ let
@@ -2990,19 +2962,19 @@ def main:
                     None
                 |]
             in specifyCodeChange initialCode expectedCode $ \loc@(GraphLocation file _) -> do
-                let top = GraphLocation file def
-                funs <- Graph.getNodes top
+                let top' = GraphLocation file def
+                funs <- Graph.getNodes top'
                 let Just bar = find (\n -> n ^. Node.name == Just "bar") funs
                     bar' = GraphLocation file (Breadcrumb [Definition (bar ^. Node.nodeId)])
                 ids <- Graph.withGraph bar' $ runASTOp $ mapM (Graph.getNodeIdForMarker) [1..2]
                 nodes <- Graph.getNodes bar'
-                (undoCode, undoCache) <- (,) <$> Graph.withUnit top (use Graph.code) <*> Graph.prepareNodeCache top
+                (undoCode, undoCache) <- (,) <$> Graph.withUnit top' (use Graph.code) <*> Graph.prepareNodeCache top'
                 Graph.collapseToFunction bar' $ map fromJust ids
-                code <- Graph.getCode top
+                code <- Graph.getCode top'
                 liftIO $ code `shouldBe` normalizeLunaCode expectedCode
-                Graph.withUnit top $ Graph.nodeCache .= undoCache
+                Graph.withUnit top' $ Graph.nodeCache .= undoCache
                 Graph.loadCode loc undoCode
-                code' <- Graph.withUnit top $ use Graph.code
+                code' <- Graph.withUnit top' $ use Graph.code
                 liftIO $ code' `shouldBe` normalizeLunaCode initialCode
                 nodes' <- Graph.getNodes bar'
                 liftIO $ nodes `shouldBe` nodes'

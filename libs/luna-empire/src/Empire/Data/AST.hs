@@ -2,7 +2,7 @@
 
 module Empire.Data.AST where
 
-import           Empire.Prelude         hiding (cast)
+import           Empire.Prelude
 
 import           Data.Text              (Text)
 import qualified Data.Text              as Text

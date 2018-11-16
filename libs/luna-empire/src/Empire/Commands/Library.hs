@@ -7,13 +7,9 @@ module Empire.Commands.Library
     -- , getBuffer
     ) where
 
-import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader    hiding (liftIO)
 import           Control.Monad.State     hiding (liftIO)
 import qualified Data.Map                as Map
-import           Data.Text               (Text)
-import qualified Data.Text               as Text
-import           Data.Text.IO            as Text
 import           Empire.Prelude
 
 import           Empire.Data.AST         (astExceptionFromException, astExceptionToException)
@@ -21,15 +17,9 @@ import           Empire.Data.Graph       (CommandState(..), userState)
 import           Empire.ASTOp            (defaultClsGraph)
 import           Empire.Data.Library     (Library)
 import qualified Empire.Data.Library     as Library
-import           Empire.Data.Project     (Project)
-import qualified Empire.Data.Project     as Project
-
-import           LunaStudio.Data.Library (LibraryId)
-import           LunaStudio.Data.Project (ProjectId)
 
 import           Empire.Empire           (Command, Empire, zoomCommand)
 import qualified Empire.Empire           as Empire
-import qualified Empire.Utils.IdGen      as IdGen
 
 createLibrary :: Maybe String -> FilePath -> Empire Library
 createLibrary name path = do

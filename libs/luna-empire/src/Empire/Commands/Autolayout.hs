@@ -2,21 +2,19 @@
 {-# LANGUAGE TupleSections #-}
 module Empire.Commands.Autolayout where
 
-import           Control.Arrow             ((&&&))
-import           Control.Monad.State.Lazy  (evalState, get, gets, modify)
+import           Control.Monad.State.Lazy  (evalState)
 import qualified Control.Monad.State.Lazy  as S
 import           Data.Foldable             (find)
 import qualified Data.List                 as List
 import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy             as Map
-import           Data.Maybe                (listToMaybe)
 import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 import           Data.Traversable          (forM)
 import           Empire.Prelude
 import           LunaStudio.Data.Constants (gapBetweenNodes)
 import           LunaStudio.Data.Geometry  (snap)
-import           LunaStudio.Data.Node      (ExpressionNode, NodeId, exprNodeId, position)
+import           LunaStudio.Data.Node      (NodeId)
 import           LunaStudio.Data.Port      (isSelf)
 import           LunaStudio.Data.PortRef   (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
 import           LunaStudio.Data.Position  (Position, fromDoubles, leftTopPoint, move, vector, x, y)
@@ -204,7 +202,7 @@ sortOutConns conns = do
 
 sortInConns :: [Connection] -> [Connection]
 sortInConns conns = do
-    let sortFunction (src1, dst1) (src2, dst2) = compare (dst1 ^. dstPortId) (dst2 ^. dstPortId)
+    let sortFunction (_src1, dst1) (_src2, dst2) = compare (dst1 ^. dstPortId) (dst2 ^. dstPortId)
     List.sortBy sortFunction conns
 
 maxMaybe :: Ord a => Maybe a -> Maybe a -> Maybe a
@@ -215,7 +213,7 @@ maxMaybe (Just a) (Just b) = Just $ max a b
 
 yMinMaxAtX :: [(NodeId, Position)] -> Map Double (Double, Double)
 yMinMaxAtX nodes = foldl updateMap def nodes where
-    updateValue (miny, maxy) (y, _) = (min miny y, max maxy y)
+    updateValue (miny, maxy) (y', _) = (min miny y', max maxy y')
     updateMap minMaxMap (_, npos) = Map.insertWith updateValue (npos ^. x) (npos ^. y, npos ^. y) minMaxMap
 
 
@@ -275,15 +273,15 @@ findHigherNode n = if n ^. dfsState == InProcess then return Nothing else do
 
 findSubgraph :: SubgraphId -> NodeId -> S.State AutolayoutState ()
 findSubgraph sid nid = withJustM (lookupNode nid) $ \n -> do
-    let addToSubgraph n = do
-            y' <- maybe (n ^. actPos . y) id <$> findYPosition n sid
+    let addToSubgraph node = do
+            y' <- maybe (node ^. actPos . y) id <$> findYPosition node sid
             varPosNodes . ix nid %= \n' -> n' & actPos . y .~ y'
                                               & subgraph   ?~ sid
                                               & dfsState   .~ Processed
             subgraphs . ix sid . members %= Set.insert nid
             subgraphs . ix sid . firstAppearanceInCode %= min (n ^. positionInCode)
-            mapM_ (findSubgraph sid) $ (map (view $ _1 . srcNodeId) . sortInConns  $ n ^. inConns)
-                                    <> (map (view $ _2 . dstNodeId) . sortOutConns $ n ^. outConns)
+            mapM_ (findSubgraph sid) $ (map (view $ _1 . srcNodeId) . sortInConns  $ node ^. inConns)
+                                    <> (map (view $ _2 . dstNodeId) . sortOutConns $ node ^. outConns)
 
     varPosNodes . ix nid . dfsState .= InProcess
     unless (isJust $ n ^. subgraph) $ findHigherNode n >>= maybe (addToSubgraph n) (findSubgraph sid . view nodeId)
@@ -322,7 +320,7 @@ alignNodesY pos = do
         makeSubgraph nid = do
             subgraphs . at nid ?= Subgraph nid maxBound def
             findSubgraph nid nid
-    forM nids $ \nid -> withJustM (lookupNode nid) $ \n ->
+    for_ nids $ \nid -> withJustM (lookupNode nid) $ \n ->
         when (isNothing $ n ^. subgraph) $ makeSubgraph nid
     use (subgraphs . to Map.keys) >>= void . foldlM alignSubgraph pos
 
@@ -407,18 +405,18 @@ meetTheConstraints sid = do
     let constYMinMaxAtX :: Map Double (Double, Double)
         constYMinMaxAtX = yMinMaxAtX $ Map.toList constPNMap
         checkNodeConstraints :: Map Double (Double, Double) -> (NodeId, Position) -> Bool
-        checkNodeConstraints minMaxMap (nid, pos) = do
+        checkNodeConstraints minMaxMap (_nid, pos) = do
             let meetsConstraint (miny, maxy) = pos ^. y <= miny - gapBetweenNodes || pos ^. y >= maxy + gapBetweenNodes
             all meetsConstraint . Map.elems $ Map.filterWithKey (\mx _ -> abs (pos ^. x - mx) < gapBetweenNodes) minMaxMap
         neededShiftY' :: Map Double (Double, Double) -> (NodeId, Position) -> Double
-        neededShiftY' minMaxMap (nid, pos) = do
+        neededShiftY' minMaxMap (_nid, pos) = do
             let minimalShiftY :: (Double, Double) -> Double
                 minimalShiftY (_, maxy) = maxy + gapBetweenNodes - pos ^. y
                 neededShifts :: [Double]
                 neededShifts = map minimalShiftY . Map.elems $ Map.filterWithKey (\mx _ -> abs (pos ^. x - mx) < gapBetweenNodes) minMaxMap
             foldl max 0 neededShifts
         neededShiftY :: Map Double (Double, Double) -> [(NodeId, Position)] -> Double
-        neededShiftY minMaxMap nodes = foldl (\res -> max res . neededShiftY' minMaxMap) 0 nodes
+        neededShiftY minMaxMap nodes' = foldl (\res -> max res . neededShiftY' minMaxMap) 0 nodes'
         alignDownIfNeeded :: S.State AutolayoutState ()
         alignDownIfNeeded = if all (checkNodeConstraints constYMinMaxAtX) nodes then return ()
                             else let shift = Vector2 0 $ neededShiftY constYMinMaxAtX nodes in

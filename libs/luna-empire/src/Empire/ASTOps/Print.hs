@@ -66,7 +66,7 @@ genOperatorName op = operatorNamesMap ^. at op . non "operator" where
 
 genNodeBaseName :: NodeRef -> GraphOp Text
 genNodeBaseName ref = match ref $ \case
-    App f a           -> recurOn $ generalize f
+    App f _           -> recurOn $ generalize f
     Grouped g         -> recurOn $ generalize g
     -- LeftSection  op _ -> recurOn $ generalize op
     -- RightSection op _ -> recurOn $ generalize op
@@ -78,7 +78,7 @@ genNodeBaseName ref = match ref $ \case
     List{}            -> return "list"
     Cons n _          -> return $ Text.toLower $ nameToText n
     Var n             -> return $ genOp n
-    Acc t n           -> recurOn $ generalize n
+    Acc _ n           -> recurOn $ generalize n
     _                 -> return $ "expr"
     where recurOn :: EdgeRef -> GraphOp Text
           recurOn a = genNodeBaseName =<< source a

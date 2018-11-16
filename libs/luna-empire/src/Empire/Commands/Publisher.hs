@@ -8,12 +8,10 @@ import qualified Data.Graph.Store                           as Store
 import           Data.Text                                  (Text)
 import           Empire.ASTOp                               (defaultClsGraph)
 import           Empire.Data.AST                            (NodeRef)
-import           Empire.Data.Graph                          (ClsGraph, Graph)
-import           Empire.Empire
+import           Empire.Data.Graph                          (ClsGraph)
+import           Empire.Empire                              hiding (rooted)
 import           Empire.Prelude
-import qualified Luna.IR                                    as IR
 import           LunaStudio.API.AsyncUpdate                 (AsyncUpdate (..))
-import           LunaStudio.Data.Diff                       (Diff (..))
 import           LunaStudio.Data.GraphLocation              (GraphLocation (..))
 import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (NodeId, NodeTypecheckerUpdate)

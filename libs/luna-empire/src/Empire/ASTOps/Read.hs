@@ -40,7 +40,7 @@ cutThroughGroups r = match r $ \case
 
 cutThroughMarked :: NodeRef -> ClassOp NodeRef
 cutThroughMarked r = match r $ \case
-    Marked m expr -> cutThroughMarked =<< source expr
+    Marked _ expr -> cutThroughMarked =<< source expr
     _             -> return r
 
 cutThroughDoc :: NodeRef -> ClassOp NodeRef
@@ -67,7 +67,7 @@ getASTOutForPort nodeId port = do
       else getOutputForPort      port =<< getASTVar nodeId
 
 getLambdaInputForPort :: OutPortId -> NodeRef -> GraphOp NodeRef
-getLambdaInputForPort []                           lam = throwM $ PortDoesNotExistException []
+getLambdaInputForPort []                           _   = throwM $ PortDoesNotExistException []
 getLambdaInputForPort portId@(Projection 0 : rest) lam = cutThroughGroups lam >>= flip match `id` \case
     Lam i _             -> getOutputForPort rest =<< source i
     ASGFunction _ as' _ -> do
@@ -231,8 +231,8 @@ getTargetFromMarked marked = match marked $ \case
     Marked _m expr -> do
         expr' <- source expr
         match expr' $ \case
-            Unify l r -> source r
-            _            -> return expr'
+            Unify _ r -> source r
+            _         -> return expr'
     _ -> return marked
 
 
@@ -243,8 +243,8 @@ getVarEdge nid = do
         Marked _m expr -> do
             expr' <- source expr
             match expr' $ \case
-                Unify l r -> return $ generalize l
-                _            -> throwM $ NotUnifyException expr'
+                Unify l _ -> return $ generalize l
+                _         -> throwM $ NotUnifyException expr'
         _ -> throwM $ MalformedASTRef ref
 
 getTargetEdge :: NodeId -> GraphOp EdgeRef
@@ -254,8 +254,8 @@ getTargetEdge nid = do
         Marked _m expr -> do
             expr' <- source expr
             match expr' $ \case
-                Unify l r -> return $ generalize r
-                _            -> return $ generalize expr
+                Unify _ r -> return $ generalize r
+                _         -> return $ generalize expr
         _ -> throwM $ MalformedASTRef ref
 
 getNameOf :: NodeRef -> GraphOp (Maybe Text)
@@ -269,8 +269,8 @@ getASTMarkerPosition :: NodeId -> GraphOp NodeRef
 getASTMarkerPosition nodeId = do
     ref <- getASTPointer nodeId
     match ref $ \case
-        Unify l r -> source l
-        _            -> return ref
+        Unify l _ -> source l
+        _         -> return ref
 
 getMarkerNode :: NodeRef -> GraphOp (Maybe NodeRef)
 getMarkerNode ref = match ref $ \case
@@ -330,8 +330,8 @@ getLambdaOutputRef node = match node $ \case
 
 getFirstNonLambdaRef :: NodeRef -> GraphOp NodeRef
 getFirstNonLambdaRef ref = do
-    link <- getFirstNonLambdaLink ref
-    maybe (return ref) (source) link
+    link' <- getFirstNonLambdaLink ref
+    maybe (return ref) (source) link'
 
 getFirstNonLambdaLink :: NodeRef -> GraphOp (Maybe EdgeRef)
 getFirstNonLambdaLink node = match node $ \case
@@ -433,8 +433,8 @@ nodeIsPatternMatch :: NodeId -> GraphOp Bool
 nodeIsPatternMatch nid = (do
     root <- getASTPointer nid
     varIsPatternMatch root) `catches` [
-          Handler (\(e :: NotUnifyException)         -> return False)
-        , Handler (\(e :: NodeDoesNotExistException) -> return False)
+          Handler (\(_ :: NotUnifyException)         -> return False)
+        , Handler (\(_ :: NodeDoesNotExistException) -> return False)
         ]
 
 varIsPatternMatch :: NodeRef -> GraphOp Bool

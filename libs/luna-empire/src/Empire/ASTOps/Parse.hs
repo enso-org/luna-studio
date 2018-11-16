@@ -62,16 +62,13 @@ instance Exception SomeParserException where
     fromException = astExceptionFromException
     displayException exc = case exc of SomeParserException e -> "SomeParserException (" <> displayException e <> ")"
 
-
-parseExpr' :: Text -> IO NodeRef
-parseExpr' s = error "parseExpr'" -- view _1 <$> runParser Parsing.expr s `catchAll` (\e -> throwM $ SomeParserException e)
-
 parsePattern :: Text -> Command g NodeRef
 parsePattern s = view _1 <$> parse3 Macro.expr s `catchAll` (\e -> throwM $ SomeParserException e)
 
 passConverter :: (stage1 ~ stage2) => Pass.Pass stage1 pass1 a -> Pass.Pass stage2 pass2 a
 passConverter = unsafeCoerce
 
+parseExpr :: Text -> Command g NodeRef
 parseExpr s = view _1 <$> parse3 Macro.expr s
 
 parse3 :: Macro.Parser (Parsing.Spanned Parsing.Ast) -> Text -> Command g (NodeRef, MarkedExprMap)
@@ -102,7 +99,7 @@ runWith = \p src -> let
 run :: Parser3.ParserPass (Pass.Pass stage Parser3.Parser)
     => Macro.Parser (Parsing.Spanned Parsing.Ast) -> Lexer.Source -> Pass.Pass stage Parser3.Parser (IR.SomeTerm, Marker.TermMap)
 run parser src = do
-    ((ref, unmarked), gidMap) <- State.runDefT @Marker.TermMap
+    ((ref, _unmarked), gidMap) <- State.runDefT @Marker.TermMap
                                $ State.runDefT @Marker.TermOrphanList
                                $ Parser3.buildIR $ runWith parser src
     pure (ref, gidMap)
@@ -140,23 +137,10 @@ runProperPatternParser code = do
         True -> return ()
         _    -> error ("incorrect pattern " <> convert code)) `catchAll` (\e -> throwM $ SomeParserException e)
 
-
-prepareInput :: Text.Text -> FunctionParsing -> Text.Text
-prepareInput expr parsing = Text.concat $ header : case parsing of
-    AppendNone -> [":\n    None"]
-    ParseAsIs  -> []
-    where
-        stripped = Text.strip expr
-        header   = case Text.splitOn " " stripped of
-            (def:var:args) -> Text.intercalate " " (def:var:args)
-            i              -> Text.concat i
-
-
 data FunctionParsing = AppendNone | ParseAsIs
 
 runFunHackParser :: Text.Text -> FunctionParsing -> Command g (NodeRef, Text.Text)
-runFunHackParser expr parsing = do
-    -- let input = prepareInput expr parsing
+runFunHackParser expr _ = do
     parse <- runFunParser expr
     return (view _1 parse, expr)
 
@@ -216,12 +200,12 @@ parsePortDefault (Expression expr) = do
 parsePortDefault (Constant (IntValue  i))
     | i >= 0     = runASTOp $ do
         intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show i
-        empty   <- Mutable.new
-        generalize <$> IR.number 10 intPart empty `withLength` (length $ show i)
+        empty'   <- Mutable.new
+        generalize <$> IR.number 10 intPart empty' `withLength` (length $ show i)
     | otherwise = runASTOp $ do
         intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show (abs i)
-        empty   <- Mutable.new
-        number <- generalize <$> IR.number 10 intPart empty `withLength` (length $ show $ abs i)
+        empty'   <- Mutable.new
+        number <- generalize <$> IR.number 10 intPart empty' `withLength` (length $ show $ abs i)
         minus  <- generalize <$> IR.var Parser.uminus `withLength` 1
         app    <- generalize <$> IR.app minus number `withLength` (1 + length (show (abs i)))
         return app
@@ -251,4 +235,3 @@ parsePortDefault (Constant (RealValue d)) = runASTOp $ do
                 return number
         _ -> throwM $ PortDefaultNotConstructibleException (Constant (RealValue d))
 parsePortDefault (Constant (BoolValue b)) = runASTOp $ generalize <$> IR.cons (convert $ show b) []  `withLength` (length $ show b)
-parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

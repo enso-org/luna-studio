@@ -2,7 +2,7 @@
 
 module Empire.Commands.GraphBuilder where
 
-import Empire.Prelude hiding (read, toList)
+import Empire.Prelude hiding (mod, fromType, read, toList)
 import Prelude        (read)
 
 import qualified Data.List                            as List
@@ -31,7 +31,7 @@ import qualified LunaStudio.Data.Port                 as Port
 import qualified Safe
 
 import Control.Lens                         (uses)
-import Control.Monad.State                  hiding (void, when)
+import Control.Monad.State                  hiding (state, void, when)
 import Data.Char                            (intToDigit)
 import Data.Foldable                        (toList)
 import Data.Maybe                           (catMaybes, maybeToList)
@@ -67,12 +67,12 @@ import LunaStudio.Data.TypeRep              (TypeRep (TCons, TStar))
 
 
 isDefinition :: BreadcrumbItem -> Bool
-isDefinition def | Breadcrumb.Definition{} <- def = True
-                 | otherwise                      = False
+isDefinition bc | Breadcrumb.Definition{} <- bc = True
+                | otherwise                     = False
 
 decodeBreadcrumbs :: Map.Map NodeId String -> Breadcrumb BreadcrumbItem
     -> Command Graph (Breadcrumb (Named BreadcrumbItem))
-decodeBreadcrumbs definitionsIDs bs@(Breadcrumb items) = runASTOp $ do
+decodeBreadcrumbs definitionsIDs (Breadcrumb items) = runASTOp $ do
     bh    <- use Graph.breadcrumbHierarchy
     let toFun = fmap Text.pack
             . flip Map.lookup definitionsIDs
@@ -122,19 +122,20 @@ buildClassNode uuid name = do
             LeftSpacedSpan (SpacedSpan _ len)
                 <- view CodeSpan.realSpan <$> (getLayer @CodeSpan =<< source n)
             return (off + nlen, off + fromIntegral len)
-        a -> error (show a <> name)
+        uni -> error ("unexpected constructor as function: " <> show uni <> " " <> name)
     meta <- fromMaybe def <$> AST.readMeta f
     LeftSpacedSpan (SpacedSpan _ len)
         <- view CodeSpan.realSpan <$> getLayer @CodeSpan f
     fileCode <- use Graph.code
-    let name = Text.take (fromIntegral nameLen) $ Text.drop (fromIntegral nameOff) fileCode
-    let code = Code.removeMarkers $ Text.take (fromIntegral len)
+    let apiName = Text.take (fromIntegral nameLen)
+            $ Text.drop (fromIntegral nameOff) fileCode
+    let code    = Code.removeMarkers $ Text.take (fromIntegral len)
             $ Text.drop (fromIntegral codeStart) fileCode
     pure $ API.ExpressionNode
             uuid
             ""
             True
-            (Just name)
+            (Just apiName)
             code
             (LabeledTree def (Port [] "base" TStar NotConnected))
             (LabeledTree (OutPorts []) (Port [] "base" TStar NotConnected))
@@ -223,7 +224,6 @@ buildNodesForAutolayoutCls = do
 
 buildNodeForAutolayoutCls :: NodeId -> ClassOp (NodeId, Int, Position)
 buildNodeForAutolayoutCls nid = do
-    name    <- use $ Graph.clsFuns . ix nid . Graph.funName
     marked  <- ASTRead.getFunByNodeId nid
     codePos <- Code.functionBlockStartRef marked
     meta    <- fromMaybe def <$> AST.readMeta marked
@@ -279,7 +279,7 @@ getNodeCode nid = do
 getDefault :: NodeRef -> GraphOp (Maybe PortDefault)
 getDefault arg = match arg $ \case
         IRString s       -> Just . Constant . TextValue <$> Mutable.toList s
-        IRNumber b i f   -> do
+        IRNumber _ i f   -> do
             fracPart <- map (intToDigit . fromIntegral) <$> Mutable.toList f
             intPart  <- map (intToDigit . fromIntegral) <$> Mutable.toList i
             pure $ Just $ Constant $ if fracPart == "" then IntValue $ read intPart else RealValue $ read intPart + read fracPart
@@ -300,7 +300,7 @@ getPortState node = do
     isConnected <- ASTRead.isGraphNode node
     if isConnected then pure Connected else match node $ \case
         IRString s     -> WithDefault . Constant . TextValue <$> Mutable.toList s
-        IRNumber b i f   -> do
+        IRNumber _ i f   -> do
             fracPart <- map (intToDigit . fromIntegral) <$> Mutable.toList f
             intPart  <- map (intToDigit . fromIntegral) <$> Mutable.toList i
             pure $ WithDefault $ Constant $ if fracPart == "" then IntValue $ read intPart else RealValue $ read intPart + read fracPart
@@ -313,12 +313,14 @@ getPortState node = do
                     <$> Print.printFullExpression node
         Blank   -> pure NotConnected
         Missing -> pure NotConnected
-        App f a -> do
+        App _ a -> do
             negLit <- isNegativeLiteral node
             if negLit then do
                 posLit <- getPortState =<< source a
                 let negate' (IntValue i)  = IntValue (negate i)
                     negate' (RealValue v) = RealValue (negate v)
+                    negate' v             = error $
+                        "getPortState: invalid negative literal: " <> show v
                 let negated = posLit & Port._WithDefault . _Constant %~ negate'
                 return negated
             else WithDefault . Expression . Text.unpack
@@ -336,18 +338,18 @@ extractArgTypes node = do
 safeGetVarName :: NodeRef -> GraphOp (Maybe String)
 safeGetVarName node = do
     name <- (Just <$> ASTRead.getVarName node) `catch`
-        (\(e :: ASTRead.NoNameException) -> pure Nothing)
+        (\(_ :: ASTRead.NoNameException) -> pure Nothing)
     pure name
 
 resolvedDefNames :: IR.Qualified -> IR.Name -> Maybe TCFunResolver
     -> GraphOp [Maybe String]
 resolvedDefNames mod function resolver = do
-    let target = Target.Function mod function
-    resolveNames target resolver
+    let tgt = Target.Function mod function
+    resolveNames tgt resolver
 
 resolveNames :: Target.Target -> Maybe TCFunResolver -> GraphOp [Maybe String]
-resolveNames target resolver = do
-    let functionRef = ($ target) =<< resolver
+resolveNames tgt resolver = do
+    let functionRef = ($ tgt) =<< resolver
     case functionRef of
         Just f -> extractArgNames (generalize f) resolver
         _      -> pure []
@@ -376,7 +378,7 @@ extractArgNames node funResolve = match node $ \case
 
 targetForType :: NodeRef -> IR.Name -> GraphOp Target.Target
 targetForType t method = match t $ \case
-    Lam i o                    -> do
+    Lam _i o                   -> do
         inputType <- source o >>= getLayer @TypeLayer >>= source
         targetForType inputType method
     ResolvedCons mod klass _ _ -> pure $ Target.Method mod klass method
@@ -385,19 +387,19 @@ targetForType t method = match t $ \case
 extractAppArgNames :: NodeRef -> Maybe TCFunResolver -> GraphOp [Maybe String]
 extractAppArgNames node funResolve = go [] node where
     go :: [Maybe String] -> NodeRef -> GraphOp [Maybe String]
-    go vars node = match node $ \case
+    go vars node' = match node' $ \case
         ResolvedDef mod n -> resolvedDefNames mod n funResolve
         App f a -> do
             varName <- safeGetVarName =<< source a
             go (varName : vars) =<< source f
-        Lam{}   -> extractArgNames node funResolve
+        Lam{}   -> extractArgNames node' funResolve
         Cons{}  -> pure vars
         Var{}   -> pure vars
         Acc t a -> do
             argTp  <- source t >>= getLayer @TypeLayer >>= source
             method <- source a >>= ASTRead.getVarName'
-            target <- targetForType argTp method
-            names  <- resolveNames target funResolve
+            tgt    <- targetForType argTp method
+            names  <- resolveNames tgt funResolve
             pure $ Safe.tailSafe names
         _       -> pure []
 
@@ -487,7 +489,7 @@ extractPortInfo :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractPortInfo n = do
     tp       <- getLayer @TypeLayer n >>= source
     match tp $ \case
-        ResolvedList "List" args -> do
+        ResolvedList "List" _ -> do
             a <- extractListPorts n
             return $ reverse a
         _ -> do
@@ -497,19 +499,20 @@ extractPortInfo n = do
 
 isNegativeLiteral :: NodeRef -> GraphOp Bool
 isNegativeLiteral ref = match ref $ \case
-    App f n -> do
+    App f a -> do
         minus <- do
             source f >>= (flip match $ \case
                 Var n -> return $ n == Parser.uminus
                 _     -> return False)
         number <- do
-            source n >>= (flip match $ \case
+            source a >>= (flip match $ \case
                 IRNumber{} -> return True
                 _        -> return False)
         return $ minus && number
     _ -> return False
 
 pattern ResolvedList cons args <- ResolvedCons "Std.Base" "List" cons args
+pattern Prepend, Empty :: (Eq a, IsString a) => a
 pattern Prepend                <- "Prepend"
 pattern Empty                  <- "Empty"
 
@@ -532,7 +535,6 @@ isListLiteral ref = match ref $ \case
 buildArgPorts :: InPortId -> NodeRef -> Maybe TCFunResolver -> GraphOp [InPort]
 buildArgPorts currentPort ref resolveFun = do
     typed     <- extractPortInfo ref
-    tp        <- getLayer @TypeLayer ref >>= source
     isLiteral <- isListLiteral ref
     names     <- if isLiteral
         then pure mempty
@@ -541,7 +543,7 @@ buildArgPorts currentPort ref resolveFun = do
             <> List.replicate (length names - length typed) TStar
         psCons = zipWith3 Port
             ((currentPort <>) . pure . Arg <$> [(0::Int)..])
-            (map Text.pack $ names <> (("arg" <>) . show <$> [0..]))
+            (map Text.pack $ names <> (("arg" <>) . show <$> [(0::Int)..]))
             portsTypes
     pure $ zipWith ($) psCons (fmap snd typed <> repeat NotConnected)
 
@@ -551,8 +553,8 @@ buildSelfPort nid currentPort node = do
     let potentialSelf = Port currentPort selfPortName TStar NotConnected
     match node $ \case
         Acc t _ -> do
-            target <- source t
-            tree   <- buildInPorts nid target currentPort selfPortName Nothing
+            tgt  <- source t
+            tree <- buildInPorts nid tgt currentPort selfPortName Nothing
             pure $ Just tree
         Var _     -> pure $ Just $ LabeledTree def potentialSelf
         App f _   -> buildSelfPort nid currentPort =<< source f
@@ -617,8 +619,8 @@ buildOutPortTree portId ref' = do
 
 buildOutPorts :: NodeRef -> GraphOp (OutPortTree OutPort)
 buildOutPorts ref = match ref $ \case
-    Unify l r -> buildOutPortTree [] =<< source l
-    _         -> buildDummyOutPort ref
+    Unify l _r -> buildOutPortTree [] =<< source l
+    _          -> buildDummyOutPort ref
 
 
 buildConnections :: GraphOp [(OutPortRef, InPortRef)]
@@ -632,8 +634,8 @@ buildConnections = do
 buildInputSidebarTypecheckUpdate ::
     NodeId -> GraphOp API.NodeTypecheckerUpdate
 buildInputSidebarTypecheckUpdate nid = do
-    API.InputSidebar nid ps _ <- buildInputSidebar nid
-    pure $ API.InputSidebarUpdate nid ps
+    API.InputSidebar nid' ps _ <- buildInputSidebar nid
+    pure $ API.InputSidebarUpdate nid' ps
 
 
 buildInputSidebar :: NodeId -> GraphOp API.InputSidebar
@@ -646,8 +648,8 @@ buildInputSidebar nid = do
 
 buildOutputSidebarTypecheckUpdate :: NodeId -> GraphOp API.NodeTypecheckerUpdate
 buildOutputSidebarTypecheckUpdate nid = do
-    API.OutputSidebar nid m <- buildOutputSidebar nid
-    pure $ API.OutputSidebarUpdate nid m
+    API.OutputSidebar nid' m <- buildOutputSidebar nid
+    pure $ API.OutputSidebarUpdate nid' m
 
 buildOutputSidebar :: NodeId -> GraphOp API.OutputSidebar
 buildOutputSidebar nid = do
@@ -668,7 +670,7 @@ getOutputSidebarInputs outputEdge = do
 nodeConnectedToOutput :: GraphOp (Maybe NodeId)
 nodeConnectedToOutput = do
     edges  <- fmap Just $ use $ Graph.breadcrumbHierarchy . BH.portMapping
-    fmap join $ forM edges $ \(i, o) -> do
+    fmap join $ forM edges $ \(_i, o) -> do
         connection <- getOutputSidebarInputs o
         let a = (view srcNodeId . fst) <$> connection
         return a

@@ -3,18 +3,10 @@
 
 module EmpireSpec (spec) where
 
-import           Control.Exception.Safe          (finally)
 import           Control.Lens                    ((^..), (^?!))
-import           Data.Char                       (isSpace)
-import           Data.Foldable                   (toList)
 import qualified Data.Graph.Store                as Store
-import           Data.List                       (find, stripPrefix)
-import           Data.List                       (dropWhileEnd, find, maximum,
-                                                  minimum)
-import qualified Data.Map                        as Map
-import qualified Data.Text                       as Text
+import           Data.List                       (find)
 import           Empire.ASTOp                    (runASTOp)
-import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import           Empire.ASTOps.Modify            (CannotRemovePortException)
 import qualified Empire.ASTOps.Parse             as Parser
@@ -36,7 +28,7 @@ import qualified Empire.Commands.Graph           as Graph (addNode, addPort, add
                                                            setNodeMeta,
                                                            withGraph, withUnit)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
-import           Empire.Commands.Library         (createLibrary, withLibrary)
+import           Empire.Commands.Library         (createLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
 import qualified Empire.Data.AST                 as AST
 import           Empire.Data.BreadcrumbHierarchy (BreadcrumbDoesNotExistException)
@@ -44,42 +36,31 @@ import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (breadcrumbHierarchy,
                                                   userState)
 import qualified Empire.Data.Graph               as Graph hiding (Graph)
-import qualified Empire.Data.Library             as Library (body)
--- import qualified Luna.Builtin.Data.Class         as Class
--- import qualified Luna.Builtin.Data.Function      as Function
 import           Empire.Empire                   (InterpreterEnv (..))
-import qualified Language.Haskell.TH             as TH
 import qualified Luna.Package.Structure.Generate as Package
-import qualified Luna.Package.Structure.Name     as Project
-import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..),
-                                                  BreadcrumbItem (Definition))
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
 import           LunaStudio.Data.Connection      (Connection (Connection))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..), (|>|))
 import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
 import qualified LunaStudio.Data.Node            as Node
-import           LunaStudio.Data.NodeId          (NodeId)
-import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta        (NodeMeta (..), position)
-import           LunaStudio.Data.Port            (InPorts (..), OutPorts (..))
 import qualified LunaStudio.Data.Port            as Port
 import           LunaStudio.Data.PortDefault     (PortDefault (Expression))
-import           LunaStudio.Data.PortRef         (AnyPortRef (..),
-                                                  InPortRef (..),
-                                                  OutPortRef (..))
-import qualified LunaStudio.Data.PortRef         as PortRef
+import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified LunaStudio.Data.Position        as Position
-import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
--- import           OCI.IR.Class                    (exprs, links)
-import           Empire.Prelude    hiding (mapping, toList, (|>))
-import           System.Directory  (canonicalizePath, getCurrentDirectory)
-import           System.FilePath   (takeDirectory, (</>))
-import qualified System.IO.Temp    as Temp
-import           Text.RawString.QQ (r)
+import           LunaStudio.Data.TypeRep         (TypeRep (TStar))
+import           Empire.Prelude                  hiding (toList, seq)
+import           Text.RawString.QQ               (r)
+import           System.FilePath                 ((</>))
+import qualified System.IO.Temp                  as Temp
 
-import Test.Hspec (Selector, Spec, around, describe, it, parallel, shouldBe,
-                   shouldContain, shouldMatchList, shouldSatisfy,
-                   shouldStartWith, shouldThrow, xdescribe, xit)
+import           Test.Hspec                      (Selector, Spec, around,
+                                                  describe, it, parallel,
+                                                  shouldBe, shouldContain,
+                                                  shouldMatchList,
+                                                  shouldSatisfy, shouldThrow,
+                                                  xit)
 
 import EmpireUtils
 
@@ -391,13 +372,13 @@ spec = around withChannels $ parallel $ do
                         let root = g ^. Graph.clsClass
                         rooted <- runASTOp $ Store.serializeWithRedirectMap root
                         return (loc', g, rooted)
-                withResult res $ \(top, g, rooted) -> do
+                withResult res $ \(loc, g, rooted) -> do
                     pmState <- Graph.defaultPMState
                     let interpreterEnv = InterpreterEnv (return ()) g [] def def def def
                     (_, (extractGraph -> g')) <- runEmpire env (Graph.CommandState pmState interpreterEnv) $
-                        Typecheck.run top g rooted False False
-                    (res'',_) <- runEmp' env st g' $ do
-                        Graph.withGraph top $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
+                        Typecheck.run loc g rooted False False
+                    (_res'',_) <- runEmp' env st g' $ do
+                        Graph.withGraph loc $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
                     -- withResult res'' $ \(n1, n2) -> do
                     --     view Node.inPorts n2 `shouldMatchList` [
                     --           Port.Port [Port.Arg 0] "in" (TLam (TVar "a") (TVar "a")) Port.Connected
@@ -438,7 +419,6 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             u4 <- mkUUID
-            u5 <- mkUUID
             u6 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "2" def
@@ -446,8 +426,8 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u3 "2" def
                 Graph.addNode top u4 "2" def
                 Graph.addNode top u6 "    [   number1  , number2   ,   number3 ,number4   ]" def
-                (,) <$> Graph.withGraph top (runASTOp (GraphBuilder.buildNode u6)) <*> Graph.getConnections top
-            withResult res $ \(list, conns) -> do
+                Graph.getConnections top
+            withResult res $ \conns -> do
                 conns `shouldSatisfy` ((== 4) . length)
         it "connects elements to a list" $ \env -> do
             u1 <- mkUUID
@@ -627,7 +607,6 @@ spec = around withChannels $ parallel $ do
         it "disallows connecting past last + 1 list element" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
-            u3 <- mkUUID
             let res = evalEmp env $ do
                     Graph.addNode top u1 "[]" def
                     Graph.addNode top u2 "2" def
@@ -638,7 +617,6 @@ spec = around withChannels $ parallel $ do
         it "disallows connecting negative list element" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
-            u3 <- mkUUID
             let res = evalEmp env $ do
                     Graph.addNode top u1 "[]" def
                     Graph.addNode top u2 "2" def
@@ -693,8 +671,8 @@ spec = around withChannels $ parallel $ do
                 Graph.renameNode top u1 "node5"
                 graph <- Graph.getGraph top
                 expression <- Graph.withGraph top $ runASTOp $ do
-                    target <- ASTRead.getASTTarget u2
-                    printExpression target
+                    u2Target <- ASTRead.getASTTarget u2
+                    printExpression u2Target
                 return (graph, expression)
             withResult res $ \(graph, expression) -> do
                 let nodes = graph ^. Graph.nodes
@@ -1203,7 +1181,7 @@ spec = around withChannels $ parallel $ do
                 nodeIds <- (map (^. Node.nodeId)) <$> (Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildNodes)
                 let referenceConnections = [Connection (outPortRef input [Port.Projection 0]) (inPortRef output [])]
                 return (inputEdge, defFoo, connections, referenceConnections, nodeIds)
-            withResult res $ \(inputEdge, node, connections, referenceConnections, nodeIds) -> do
+            withResult res $ \(inputEdge, _node, connections, referenceConnections, nodeIds) -> do
                 inputEdge ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
                       Port.Port [Port.Projection 0] "a" TStar Port.NotConnected
                     ]

@@ -1,13 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Empire.Data.Library where
 
-import           Data.Map                       (Map)
-import           Data.Text                      (Text)
 import qualified LunaStudio.Data.Graph          as API (Graph)
 import qualified LunaStudio.Data.Library        as API
-import qualified LunaStudio.Data.Node           as API (NodeId)
 import qualified LunaStudio.API.Persistence.Library as Persistence
-import           Empire.Data.Graph              (Graph, ClsGraph)
+import           Empire.Data.Graph              (ClsGraph)
 import           Empire.Prelude
 
 

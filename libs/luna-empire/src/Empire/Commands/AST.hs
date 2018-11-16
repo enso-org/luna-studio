@@ -58,24 +58,24 @@ readSeq node = match node $ \case
 
 getSeqs' :: NodeRef -> GraphOp [NodeRef]
 getSeqs' node = match node $ \case
-    Seq l r -> do
+    Seq l _ -> do
         previous <- source l >>= getSeqs'
         pure $ previous <> [node]
     _ -> pure []
 
 getSeqs :: NodeRef -> GraphOp [NodeRef]
 getSeqs node = match node $ \case
-    Seq l r -> do
+    Seq l _ -> do
         previous <- source l >>= getSeqs'
         pure $ previous <> [node]
     _ -> pure [node]
 
 previousNodeForSeq :: NodeRef -> GraphOp (Maybe NodeRef)
 previousNodeForSeq node = match node $ \case
-    Seq l r -> do
+    Seq l _ -> do
         previousNode <- source l
         match previousNode $ \case
-            Seq l r -> Just <$> source r
+            Seq _ r -> Just <$> source r
             _       -> pure $ Just previousNode
     _ -> pure Nothing
 

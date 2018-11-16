@@ -5,27 +5,19 @@ module Empire.Pass.PatternTransformation where
 import           Luna.Pass        (Pass)
 import qualified Luna.Pass        as Pass
 
-import Empire.Prelude hiding (Type, String, s, new, cons)
-import qualified Prologue as P hiding (List)
-import qualified Data.Graph.Data.Graph.Class as Graph
+import Empire.Prelude hiding (Type, String)
+import qualified Prologue as P
 import qualified Luna.Pass.Attr         as Attr
-import Luna.IR (Draft, Type, Users, Terms, Model, Name, Source, Target, list, cons, tuple)
+import Luna.IR (Draft, Type, Users, Model, Name, Source, Target, list, cons, tuple)
 import           Luna.Pass.Data.Stage (Stage)
-import qualified OCI.Pass.State.Cache as Pass
-import qualified OCI.Pass.Definition.Declaration as Pass
-import           Empire.Data.Layers      (TypeLayer)
-import           Data.Text.Position      (Delta)
-import           Data.Text.Span          (SpacedSpan(..), leftSpacedSpan)
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
-import           Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan, realSpan)
+import           Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
 import Luna.Pass.Data.Layer.NodeMeta   (Meta)
 import Luna.Pass.Data.Layer.PortMarker (PortMarker)
 import Luna.Pass.Data.Layer.SpanLength (SpanLength)
 import Luna.Pass.Data.Layer.SpanOffset (SpanOffset)
+import           Data.Text.Span        (SpacedSpan(..))
 
-import qualified Data.Map   as Map
-import qualified Data.Set   as Set
-import           Data.Map   (Map)
 
 
 newtype ExprRoots = ExprRoots [Expr Draft]
@@ -114,9 +106,9 @@ transformPatterns expr = matchExpr expr $ \case
         res  <- flattenPattern left
         replace res left
         transformPatterns . coerce =<< source r
-    ASGFunction n links b -> do
+    ASGFunction _n links b -> do
         as <- ptrListToList links
-        forM_ as $ \a' -> do
+        for_ as $ \a' -> do
             a   <- coerce <$> source a'
             res <- flattenPattern a
             replace res a

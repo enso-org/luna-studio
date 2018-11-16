@@ -14,21 +14,15 @@ module Empire.ASTOp (
   , match
   ) where
 
-import           Empire.Prelude              hiding (Type, mempty, toList)
-import           Prologue                    (mempty)
+import           Empire.Prelude              hiding (Type, toList)
 
 import           Control.Monad.Catch         (MonadCatch(..))
-import           Control.Monad.State         (MonadState, StateT(..), runStateT,
-                                              get, put)
+import           Control.Monad.State         (MonadState, StateT(..), runStateT)
 import qualified Control.Monad.State.Layered as Layered
 import qualified Data.TypeMap.MultiState     as MultiState
 import           Data.IORef
-import qualified Data.Map                    as Map
-import qualified Data.Set                    as Set
-import           Data.Graph.Component.Edge.Class (Edge, Edges)
-import           Data.Graph.Component.Node.Class (Node, Nodes)
-import qualified Data.Graph.Component.Node.Destruction as Destruct
-import qualified Data.Graph.Component.Node.Layer as Layer
+import           Data.Graph.Component.Edge.Class (Edges)
+import           Data.Graph.Component.Node.Class (Nodes)
 import           Luna.Pass.Data.Layer.NodeMeta   (Meta)
 import           Luna.Pass.Data.Layer.PortMarker (PortMarker)
 import           Luna.Pass.Data.Layer.SpanLength (SpanLength)
@@ -38,27 +32,23 @@ import qualified Data.Graph.Data.Component.Class as Component
 import qualified Data.Graph.Data.Graph.Class as LunaGraph
 import qualified Data.Graph.Data.Layer.Class as Layer
 import           Empire.Data.Graph           (ClsGraph, Graph, pmState,
-                                              pmScheduler, pmStage, userState,
-                                              withVis)
+                                              pmScheduler, pmStage, userState)
 import qualified Empire.Data.Graph           as Graph
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Layers          ()
-import           Empire.Empire               (Command, CommandStack)
-import qualified Empire.Pass.PatternTransformation            as PatternTransformation
+import           Empire.Empire               (Command)
+import qualified Empire.Pass.PatternTransformation as PatternTransformation
 import           Foreign.Info.ByteSize       (ByteSize)
 import           Foreign.Memory.Pool         (MemPool)
-import           Luna.IR                     as IR hiding (Unit, String, Marker,
+import           Luna.IR                     as IR hiding (Unit, Marker,
                                              match, source)
 import qualified Luna.Pass                   as Pass
-import qualified Luna.Pass.Attr              as Attr
 import qualified Luna.Pass.Data.Stage        as TC
 import           Luna.Pass.Data.Root         (Root(..))
 import qualified Luna.Pass.Resolve.AliasAnalysis as AliasAnalysis
 import           Luna.Pass.Resolve.Data.UnresolvedVariables (UnresolvedVariables(..))
-import           Luna.Syntax.Text.Parser.State.Invalid (Invalids)
 import           Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
 import           OCI.Pass.Definition.Class   (Pass(..))
-import qualified OCI.Pass.Definition.Declaration as Pass
 import qualified OCI.Pass.Management.Scheduler as Scheduler
 
 
@@ -132,7 +122,7 @@ defaultClsAST = do
 
 defaultClsGraph :: IO ClsGraph
 defaultClsGraph = do
-    (ast, scSt, grSt) <- defaultClsAST
+    (ast, _scSt, _grSt) <- defaultClsAST
     let cls = Graph.ClsGraph ast def def def def def
     return cls
 

@@ -40,3 +40,4 @@ removeTrailingBlanks expr = match expr $ \case
         if argBlank then removeTrailingBlanks =<< source a
                     else return expr
     _ -> return expr
+

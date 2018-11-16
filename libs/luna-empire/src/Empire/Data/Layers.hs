@@ -15,10 +15,9 @@ module Empire.Data.Layers (
   , SpanOffset
   ) where
 
-import Empire.Prelude
+import Empire.Prelude ()
 
 import qualified Data.Graph.Component.Node.Layer  as Layer
-import qualified Data.Graph.Data.Layer.Class      as Layer
 import Luna.Pass.Data.Layer.PortMarker (PortMarker)
 import Luna.Pass.Data.Layer.NodeMeta   (Meta)
 import Luna.Pass.Data.Layer.SpanLength (SpanLength)

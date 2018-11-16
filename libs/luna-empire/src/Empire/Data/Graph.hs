@@ -14,25 +14,18 @@ module Empire.Data.Graph where
 import           Empire.Data.BreadcrumbHierarchy   (HasRefs(..), LamItem)
 import           Empire.Prelude
 
-import           Control.Monad.State               (MonadState(..), StateT,
-                                                    evalStateT, lift)
+import           Control.Monad.State               (MonadState(..), lift)
 import qualified Data.Graph.Data.Graph.Class       as LunaGraph
 import           Data.Map                          (Map)
-import qualified Data.Map                          as Map
 import           Data.Text.Position                (Delta)
-import           Empire.Data.AST                   (NodeRef, SomeASTException)
+import           Empire.Data.AST                   (NodeRef)
 
 import qualified Control.Monad.State.Layered       as DepState
-import qualified Luna.IR                           as IR
-import qualified Luna.Pass                         as Pass
-import qualified Luna.Pass.Attr                    as Attr
 import           Luna.Pass.Data.Stage              (Stage)
 import           Luna.Syntax.Text.Parser.State.Marker (ID)
-import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
 
 import           LunaStudio.Data.Node              (NodeId)
 import           LunaStudio.Data.NodeCache
-import           LunaStudio.Data.NodeMeta          (NodeMeta)
 import qualified OCI.Pass.Management.Scheduler     as Scheduler
 
 -- import qualified OCI.IR.Repr.Vis            as Vis
@@ -123,6 +116,7 @@ makeLenses ''ClsGraph
 --         showVis <- liftIO $ lookupEnv "DEBUGVIS"
 --         if isJust showVis then void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> cfg else return ()
 --     return p
+withVis :: a -> a
 withVis = id
 
 snapshot :: IO ()

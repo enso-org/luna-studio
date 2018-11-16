@@ -13,10 +13,10 @@ import           Luna.Pass.Data.Layer.SpanOffset (SpanOffset)
 deconstructApp :: NodeRef -> GraphOp (NodeRef, [NodeRef])
 deconstructApp app' = match app' $ \case
     Grouped g -> deconstructApp =<< source g
-    App a _   -> do
+    App{}     -> do
         unpackedArgs <- extractArguments app'
-        target       <- extractFun app'
-        return (target, unpackedArgs)
+        tgt          <- extractFun app'
+        return (tgt, unpackedArgs)
     _ -> throwM $ NotAppException app'
 
 extractFun :: NodeRef -> GraphOp NodeRef
@@ -27,7 +27,7 @@ extractFun app = match app $ \case
 
 extractSelf :: NodeRef -> GraphOp (Maybe NodeRef)
 extractSelf ref = match ref $ \case
-    Acc s n   -> Just <$> source s
+    Acc s _   -> Just <$> source s
     Grouped g -> extractSelf =<< source g
     _         -> return Nothing
 
@@ -68,7 +68,7 @@ extractArguments' FApp expr = match expr $ \case
         arg'    <- source b
         return $ arg' : args
     Grouped g -> source g >>= extractArguments' FApp
-    Acc t n -> source n >>= extractArguments' FApp
+    Acc _ n -> source n >>= extractArguments' FApp
     RightSection _op n -> source n >>= \a -> pure [a]
     LeftSection  _op n -> source n >>= \a -> pure [a]
     _       -> return []
@@ -99,20 +99,20 @@ dumpAccessors :: NodeRef -> GraphOp (Maybe NodeRef, [String])
 dumpAccessors = dumpAccessors' True
 
 dumpAccessors' :: Bool -> NodeRef -> GraphOp (Maybe NodeRef, [String])
-dumpAccessors' firstApp node = do
+dumpAccessors' _firstApp node = do
     match node $ \case
-        Var n -> do
+        Var{}  -> do
             isNode <- Read.isGraphNode node
             name <- Read.getVarName node
             if isNode
                 then return (Just node, [])
                 else return (Nothing, [name])
-        App t a -> do
-            target <- source t
-            dumpAccessors' False target
+        App t _ -> do
+            tgt <- source t
+            dumpAccessors' False tgt
         Acc t n -> do
-            target <- source t
+            tgt <- source t
             name <- Read.getVarName =<< source n
-            (tgt, names) <- dumpAccessors' False target
-            return (tgt, names <> [name])
+            (tgt', names) <- dumpAccessors' False tgt
+            return (tgt', names <> [name])
         _ -> return (Just node, [])
