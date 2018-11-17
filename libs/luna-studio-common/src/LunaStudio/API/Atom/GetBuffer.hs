@@ -1,11 +1,16 @@
 module LunaStudio.API.Atom.GetBuffer where
 
-import           Data.Aeson.Types        (ToJSON)
-import           Data.Binary             (Binary)
-import qualified LunaStudio.API.Request  as R
-import qualified LunaStudio.API.Response as Response
-import qualified LunaStudio.API.Topic    as T
-import           Prologue
+import Prologue
+
+import qualified LunaStudio.API.Graph.Request  as G
+import qualified LunaStudio.API.Request        as R
+import qualified LunaStudio.API.Response       as Response
+import qualified LunaStudio.API.Topic          as T
+import qualified LunaStudio.Data.GraphLocation as GraphLocation
+
+import Data.Aeson.Types           (ToJSON)
+import Data.Binary                (Binary)
+import LunaStudio.Data.Breadcrumb (Breadcrumb (..))
 
 
 data Request = Request { _filePath :: FilePath } deriving (Eq, Generic, Show)
@@ -31,3 +36,11 @@ instance T.MessageTopic (R.Request Request) where
     topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response            where
     topic _ = topicPrefix <> T.response
+
+instance G.GraphRequest Request where
+    location = lens getter setter where
+        getter (Request file)
+            = GraphLocation.GraphLocation file (Breadcrumb [])
+        setter (Request _   ) (GraphLocation.GraphLocation file _)
+            = Request file
+

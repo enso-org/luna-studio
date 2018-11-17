@@ -267,10 +267,6 @@ handleRequest logMsg topic content = do
 handleUpdate :: String -> String -> ByteString -> StateT Env BusT ()
 handleUpdate logMsg topic content = do
     logger Logger.info logMsg
-    let update = if topic == "empire.graph.node.updateMeta.update"
-                      then Just (Bin.decode content :: SetNodesMeta.Update)
-                      else Nothing
-    forM_ update $ Graph.handleSetNodesMetaUpdate
 
 handleStatus :: String -> String -> ByteString -> StateT Env BusT ()
 handleStatus logMsg _ content = logger Logger.info logMsg

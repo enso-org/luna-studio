@@ -4,9 +4,13 @@ import Prologue
 
 import qualified Data.Map                                as Map
 import qualified Data.Set                         as Set
+import qualified Data.UUID.V4                            as UUID
 import qualified Empire.Commands.Graph            as Graph
 import qualified Empire.Data.Graph                       as Graph (code,
                                                                    nodeCache)
+import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
+import qualified LunaStudio.API.Atom.Substitute          as Substitute
+import qualified LunaStudio.API.Control.Interpreter      as Interpreter
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 import qualified LunaStudio.API.Graph.AddImports         as AddImports
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
@@ -35,16 +39,32 @@ import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
 import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
 import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
 import qualified LunaStudio.Data.Connection       as Connection
+import qualified LunaStudio.Data.Graph                   as GraphAPI
 import qualified LunaStudio.Data.GraphLocation           as GraphLocation
 import qualified LunaStudio.Data.Node             as Node
 import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
 import qualified LunaStudio.Data.PortRef          as PortRef
+import qualified LunaStudio.Data.Project                 as Project
+import qualified Path
+import qualified System.Log.MLogger                      as Logger
 
 import Control.Lens                  (to, traversed, use, (.=), (^..))
+import Control.Monad.Catch           (handle, try)
+import Data.List                     (break, find, partition, sortBy)
+import Data.Maybe                    (isJust, isNothing, listToMaybe,
+                                      maybeToList)
 import Empire.ASTOp                  (runASTOp)
 import Empire.Commands.GraphBuilder  (buildClassGraph, buildConnections,
                                       buildGraph, buildNodes, getNodeCode,
                                       getNodeName)
+import Empire.Data.AST               (SomeASTException,
+                                      astExceptionFromException,
+                                      astExceptionToException)
+import Luna.Package                  (findPackageFileForFile,
+                                      findPackageRootForFile,
+                                      getRelativePathForModule, includedLibs)
+import LunaStudio.Data.Breadcrumb    (Breadcrumb (..))
+import LunaStudio.Data.Connection    (Connection (..))
 import LunaStudio.Data.GraphLocation (GraphLocation (..))
 import LunaStudio.Data.NodeLoc       (NodeLoc (..))
 import LunaStudio.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef (..))
@@ -52,6 +72,7 @@ import LunaStudio.Data.Node          (ExpressionNode (..), NodeId)
 import LunaStudio.Data.Port          (InPort (..), InPortIndex (..),
                                       OutPort (..), OutPortIndex (..),
                                       Port (..), PortState (..), getPortNumber)
+import LunaStudio.Data.Project       (LocationSettings)
 
 import Empire.Empire         (Empire)
 import LunaStudio.Data.Graph (Graph (Graph))
@@ -235,9 +256,9 @@ instance Exception DestinationDoesNotExistException where
 type instance InverseOf    RemoveConnection.Request = RemoveConnection.Inverse
 type instance ResultOf     RemoveConnection.Request = ()
 instance      Modification RemoveConnection.Request where
-    perform (RemoveConnection.Request location dst) do
+    perform (RemoveConnection.Request location dst) = do
         mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
-        when (isNothing mayDstNode)
+        () <- when (isNothing mayDstNode)
             $ throwM $ DestinationDoesNotExistException dst
         Graph.disconnect location dst
     buildInverse (RemoveConnection.Request location dst) = do
@@ -263,7 +284,7 @@ instance      Modification RemovePort.Request where
         pure $ RemovePort.Inverse oldName $ fmap (uncurry Connection) conns
     perform (RemovePort.Request location portRef) = do
         maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
-        when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
+        () <- when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
         Graph.removePort location portRef
 
 type instance InverseOf    SetCode.Request = SetCode.Inverse
@@ -278,14 +299,143 @@ instance      Modification SetCode.Request where
         Graph.loadCode location code
         Graph.resendCode location
 
-type instance InverseOf    SetCode.Request = SetCode.Inverse
-type instance ResultOf     SetCode.Request = ()
-instance      Modification SetCode.Request where
-    buildInverse (SetCode.Request location@(GraphLocation file _) _ _) = do
-        cache <- Graph.prepareNodeCache location
-        code  <- Graph.withUnit (GraphLocation file def) $ use Graph.code
-        pure $ SetCode.Inverse code cache
-    perform (SetCode.Request location@(GraphLocation file _) code cache) = do
-        Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
-        Graph.loadCode location code
-        Graph.resendCode location
+type instance InverseOf    SaveSettings.Request = ()
+type instance ResultOf     SaveSettings.Request = ()
+instance      Modification SaveSettings.Request where
+    perform (SaveSettings.Request gl settings) = saveSettings gl settings gl
+
+type instance InverseOf    SetNodeExpression.Request = SetNodeExpression.Inverse
+type instance ResultOf     SetNodeExpression.Request = ()
+instance      Modification SetNodeExpression.Request where
+    buildInverse (SetNodeExpression.Request location nodeId _) = do
+        oldExpr <- Graph.withGraph location . runASTOp $
+            getNodeCode nodeId
+        pure $ SetNodeExpression.Inverse oldExpr
+    perform (SetNodeExpression.Request location nodeId expression)
+        = void $ Graph.setNodeExpression location nodeId expression
+
+type instance InverseOf    SetNodesMeta.Request = SetNodesMeta.Inverse
+type instance ResultOf     SetNodesMeta.Request = ()
+instance      Modification SetNodesMeta.Request where
+    buildInverse (SetNodesMeta.Request location updates) = do
+        allNodes <- Graph.withBreadcrumb location (runASTOp buildNodes)
+            $ view GraphAPI.nodes <$> runASTOp buildClassGraph
+        let prevMeta = Map.fromList . catMaybes . flip fmap allNodes $ \node ->
+                justIf
+                    (Map.member (node ^. Node.nodeId) updates)
+                    (node ^. Node.nodeId, node ^. Node.nodeMeta)
+        pure $ SetNodesMeta.Inverse prevMeta
+    perform (SetNodesMeta.Request location updates) = do
+        for_ (toList updates) $ uncurry $ Graph.setNodeMeta location
+
+type instance InverseOf    Substitute.Request = ()
+type instance ResultOf     Substitute.Request = ()
+instance      Modification Substitute.Request where
+    perform (Substitute.Request location diffs) = do
+        let file = location ^. GraphLocation.filePath
+        Graph.substituteCodeFromPoints file diffs
+
+type instance InverseOf    GetBuffer.Request = ()
+type instance ResultOf     GetBuffer.Request = GetBuffer.Result
+instance      Modification GetBuffer.Request where
+    perform (GetBuffer.Request file) = do
+        code <- Graph.getBuffer file
+        pure $ GetBuffer.Result code
+
+type instance InverseOf    Interpreter.Request = ()
+type instance ResultOf     Interpreter.Request = ()
+instance      Modification Interpreter.Request where
+    perform (Interpreter.Request gl command)
+        = interpreterAction command gl where
+        interpreterAction Interpreter.Start  = Graph.startInterpreter
+        interpreterAction Interpreter.Pause  = Graph.pauseInterpreter
+        interpreterAction Interpreter.Reload = Graph.reloadInterpreter
+
+-- === Utils -> ToRefactor === --
+
+logger :: Logger.Logger
+logger = Logger.getLogger $(Logger.moduleName)
+
+logProjectPathNotFound :: MonadIO m => m ()
+logProjectPathNotFound
+    = Project.logProjectSettingsError "Could not find project path."
+
+generateNodeId :: IO NodeId
+generateNodeId = UUID.nextRandom
+
+getAllNodes :: GraphLocation -> Empire [Node.Node]
+getAllNodes location = do
+    graph <- Graph.getGraph location
+    let inputSidebarList  = maybeToList $ graph ^. GraphAPI.inputSidebar
+        outputSidebarList = maybeToList $ graph ^. GraphAPI.outputSidebar
+    pure $ fmap Node.ExpressionNode' (graph ^. GraphAPI.nodes)
+        <> fmap Node.InputSidebar'   inputSidebarList
+        <> fmap Node.OutputSidebar'  outputSidebarList
+
+getNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.Node]
+getNodesByIds location nids = filterRelevantNodes <$> getAllNodes location where
+    filterRelevantNodes
+        = filter (flip Set.member requestedIDs . view Node.nodeId)
+    requestedIDs = fromList nids
+
+getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire [ExpressionNode]
+getExpressionNodesByIds location nids
+    = filterRelevantNodes <$> Graph.getNodes location where
+        filterRelevantNodes
+            = filter (flip Set.member requestedIDs . view Node.nodeId)
+        requestedIDs = fromList nids
+
+getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
+getNodeById location nid
+    = find (\n -> n ^. Node.nodeId == nid) <$> getAllNodes location
+
+getProjectPathAndRelativeModulePath :: MonadIO m
+    => FilePath -> m (Maybe (FilePath, FilePath))
+getProjectPathAndRelativeModulePath modulePath = do
+    let eitherToMaybe :: MonadIO m
+            => Either Path.PathException (Path.Path Path.Abs Path.File)
+            -> m (Maybe (Path.Path Path.Abs Path.File))
+        eitherToMaybe (Left  e) = Project.logProjectSettingsError e >> pure def
+        eitherToMaybe (Right a) = pure $ Just a
+    mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
+        absModulePath  <- MaybeT $
+            eitherToMaybe =<< try (Path.parseAbsFile modulePath)
+        absProjectPath <- MaybeT $ findPackageFileForFile absModulePath
+        relModulePath  <- MaybeT $
+            getRelativePathForModule absProjectPath absModulePath
+        pure (Path.fromAbsFile absProjectPath, Path.fromRelFile relModulePath)
+    when (isNothing mayProjectPathAndRelModulePath) logProjectPathNotFound
+    pure mayProjectPathAndRelModulePath
+
+saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
+saveSettings gl settings newGl = handle logError action where
+    logError :: MonadIO m => SomeException -> m ()
+    logError e = Project.logProjectSettingsError e
+    action     = do
+        bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
+        newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
+        let filePath        = gl    ^. GraphLocation.filePath
+            newFilePath     = newGl ^. GraphLocation.filePath
+            lastBcInOldFile = if filePath == newFilePath then newBc else bc
+        withJustM (getProjectPathAndRelativeModulePath filePath) $ \(cp, fp) ->
+            Project.updateLocationSettings cp fp bc settings lastBcInOldFile
+        when (filePath /= newFilePath)
+            $ withJustM (getProjectPathAndRelativeModulePath newFilePath)
+                $ \(cp, fp) ->
+                    Project.updateCurrentBreadcrumbSettings cp fp newBc
+
+getClosestBcLocation :: GraphLocation -> Breadcrumb Text -> Empire GraphLocation
+getClosestBcLocation gl (Breadcrumb []) = pure gl
+getClosestBcLocation gl (Breadcrumb (nodeName:newBcItems)) = do
+    g <- Graph.getGraph gl
+    let mayN = find ((Just nodeName ==) . view Node.name) (g ^. GraphAPI.nodes)
+        processLocation n = do
+            let nid = n ^. Node.nodeId
+                bci = if n ^. Node.isDefinition
+                    then Breadcrumb.Definition nid
+                    else Breadcrumb.Lambda nid
+                nextLocation = gl & GraphLocation.breadcrumb . Breadcrumb.items
+                    %~ (<>[bci])
+            getClosestBcLocation nextLocation $ Breadcrumb newBcItems
+    maybe (pure gl) processLocation mayN
+

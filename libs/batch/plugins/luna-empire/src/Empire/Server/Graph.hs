@@ -143,95 +143,6 @@ import System.FilePath               (dropFileName, replaceFileName, (</>))
 import ZMQ.Bus.Trans                 (BusT (..))
 
 
-logger :: Logger.Logger
-logger = Logger.getLogger $(Logger.moduleName)
-
-logProjectPathNotFound :: MonadIO m => m ()
-logProjectPathNotFound
-    = Project.logProjectSettingsError "Could not find project path."
--- helpers
-
-
-generateNodeId :: IO NodeId
-generateNodeId = UUID.nextRandom
-
-getAllNodes :: GraphLocation -> Empire [Node.Node]
-getAllNodes location = do
-    graph <- Graph.getGraph location
-    let inputSidebarList  = maybeToList $ graph ^. GraphAPI.inputSidebar
-        outputSidebarList = maybeToList $ graph ^. GraphAPI.outputSidebar
-    pure $ fmap Node.ExpressionNode' (graph ^. GraphAPI.nodes)
-        <> fmap Node.InputSidebar'   inputSidebarList
-        <> fmap Node.OutputSidebar'  outputSidebarList
-
-getNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.Node]
-getNodesByIds location nids = filterRelevantNodes <$> getAllNodes location where
-    filterRelevantNodes
-        = filter (flip Set.member requestedIDs . view Node.nodeId)
-    requestedIDs = fromList nids
-
-getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire [ExpressionNode]
-getExpressionNodesByIds location nids
-    = filterRelevantNodes <$> Graph.getNodes location where
-        filterRelevantNodes
-            = filter (flip Set.member requestedIDs . view Node.nodeId)
-        requestedIDs = fromList nids
-
-getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
-getNodeById location nid
-    = find (\n -> n ^. Node.nodeId == nid) <$> getAllNodes location
-
-getProjectPathAndRelativeModulePath :: MonadIO m
-    => FilePath -> m (Maybe (FilePath, FilePath))
-getProjectPathAndRelativeModulePath modulePath = do
-    let eitherToMaybe :: MonadIO m
-            => Either Path.PathException (Path.Path Path.Abs Path.File)
-            -> m (Maybe (Path.Path Path.Abs Path.File))
-        eitherToMaybe (Left  e) = Project.logProjectSettingsError e >> pure def
-        eitherToMaybe (Right a) = pure $ Just a
-    mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
-        absModulePath  <- MaybeT $
-            eitherToMaybe =<< try (parseAbsFile modulePath)
-        absProjectPath <- MaybeT $ findPackageFileForFile absModulePath
-        relModulePath  <- MaybeT $
-            getRelativePathForModule absProjectPath absModulePath
-        pure (fromAbsFile absProjectPath, fromRelFile relModulePath)
-    when (isNothing mayProjectPathAndRelModulePath) logProjectPathNotFound
-    pure mayProjectPathAndRelModulePath
-
-saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
-saveSettings gl settings newGl = handle logError action where
-    logError :: MonadIO m => SomeException -> m ()
-    logError e = Project.logProjectSettingsError e
-    action     = do
-        bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
-        newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
-        let filePath        = gl    ^. GraphLocation.filePath
-            newFilePath     = newGl ^. GraphLocation.filePath
-            lastBcInOldFile = if filePath == newFilePath then newBc else bc
-        withJustM (getProjectPathAndRelativeModulePath filePath) $ \(cp, fp) ->
-            Project.updateLocationSettings cp fp bc settings lastBcInOldFile
-        when (filePath /= newFilePath)
-            $ withJustM (getProjectPathAndRelativeModulePath newFilePath)
-                $ \(cp, fp) ->
-                    Project.updateCurrentBreadcrumbSettings cp fp newBc
-
-getClosestBcLocation :: GraphLocation -> Breadcrumb Text -> Empire GraphLocation
-getClosestBcLocation gl (Breadcrumb []) = pure gl
-getClosestBcLocation gl (Breadcrumb (nodeName:newBcItems)) = do
-    g <- Graph.getGraph gl
-    let mayN = find ((Just nodeName ==) . view Node.name) (g ^. GraphAPI.nodes)
-        processLocation n = do
-            let nid = n ^. Node.nodeId
-                bci = if n ^. Node.isDefinition
-                    then Breadcrumb.Definition nid
-                    else Breadcrumb.Lambda nid
-                nextLocation = gl & GraphLocation.breadcrumb . Breadcrumb.items
-                    %~ (<>[bci])
-            getClosestBcLocation nextLocation $ Breadcrumb newBcItems
-    maybe (pure gl) processLocation mayN
-
-
 -- Handlers
 
 
@@ -251,10 +162,10 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 . Left . Graph.prepareGraphError $ toException e)
         (location, guiState) <- handle makeError $ do
             let filePath      = location' ^. GraphLocation.filePath
-                closestBc loc = getClosestBcLocation
+                closestBc loc = Api.getClosestBcLocation
                     (GraphLocation.GraphLocation filePath def)
             mayProjectPathAndRelModulePath <- liftIO
-                $ getProjectPathAndRelativeModulePath filePath
+                $ Api.getProjectPathAndRelativeModulePath filePath
             mayPackageRoot <- findPackageRootForFile
                 =<< Path.parseAbsFile filePath
             mayModuleSettings <- liftIO $ maybe
@@ -263,7 +174,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 mayProjectPathAndRelModulePath
             location <- if not retrieveLocation
                 then pure location'
-                else getClosestBcLocation
+                else Api.getClosestBcLocation
                     (GraphLocation.GraphLocation filePath def)
                     $ maybe
                         (Breadcrumb ["main"])
@@ -306,7 +217,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 code
                 $ Right graph)
         withJust mayPrevSettings
-            $ \(gl, locSettings) -> saveSettings gl locSettings location
+            $ \(gl, locSettings) -> Api.saveSettings gl locSettings location
         pure . GetProgram.Result location $ guiStateDiff guiState
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
@@ -375,8 +286,7 @@ handleRenamePort req = modifyGraph Api.buildInverse
     (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleSaveSettings :: Request SaveSettings.Request -> StateT Env BusT ()
-handleSaveSettings = modifyGraphOk defInverse action where
-    action (SaveSettings.Request gl settings) = saveSettings gl settings gl
+handleSaveSettings = modifyGraphOk Api.buildInverse Api.perform
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes origReq@(Request uuid guiID
@@ -410,48 +320,12 @@ handleSetCode req = modifyGraph Api.buildInverse
     (withDefaultResultTC (req ^. G.location) . Api.perform) replyResult req
 
 handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()
-handleSetNodeExpression = modifyGraph inverse action replyResult where
-    inverse (SetNodeExpression.Request location nodeId _) = do
-        oldExpr <- Graph.withGraph location . runASTOp $
-            GraphBuilder.getNodeCode nodeId
-        pure $ SetNodeExpression.Inverse oldExpr
-    action (SetNodeExpression.Request location nodeId expression)
-        = withDefaultResultTC location $
-            Graph.setNodeExpression location nodeId expression
-
-inverseSetNodesMeta :: GraphLocation -> Map NodeId NodeMeta
-    -> Empire SetNodesMeta.Inverse
-inverseSetNodesMeta location updates = do
-    allNodes <- Graph.withBreadcrumb location (runASTOp buildNodes)
-        $ view GraphAPI.nodes <$> runASTOp buildClassGraph
-    let prevMeta = Map.fromList . catMaybes . flip fmap allNodes $ \node ->
-            justIf
-                (Map.member (node ^. Node.nodeId) updates)
-                (node ^. Node.nodeId, node ^. Node.nodeMeta)
-    pure $ SetNodesMeta.Inverse prevMeta
-
-actionSetNodesMeta :: GraphLocation -> Map NodeId NodeMeta -> Empire Diff
-actionSetNodesMeta location updates = withDefaultResult location $
-    for_ (toList updates) $ uncurry $ Graph.setNodeMeta location
+handleSetNodeExpression req = modifyGraph Api.buildInverse
+    (withDefaultResultTC (req ^. G.location) . Api.perform) replyResult req
 
 handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
-handleSetNodesMeta = modifyGraph inverse action replyResult where
-    inverse (SetNodesMeta.Request location updates)
-        = inverseSetNodesMeta location updates
-    action  (SetNodesMeta.Request location updates)
-        = actionSetNodesMeta location updates
-
-handleSetNodesMetaUpdate :: SetNodesMeta.Update -> StateT Env BusT ()
-handleSetNodesMetaUpdate (SetNodesMeta.Update location updates) = do
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    result <- liftIO . try . Empire.runEmpire empireNotifEnv currentEmpireEnv
-        $ actionSetNodesMeta location updates
-    case result of
-        Left (exc :: SomeASTException) -> do
-            err <- liftIO $ prettyException exc
-            logger Logger.error err
-        Right (result, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
+handleSetNodesMeta req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
 handleSetPortDefault req = modifyGraph Api.buildInverse
@@ -468,39 +342,19 @@ handleTypecheck req@(Request _ _ request) = do
     case result of
         Left (exc :: SomeASTException) -> do
             err <- liftIO $ Graph.prepareLunaError $ toException exc
-            replyFail logger err req (Response.Error err)
+            replyFail Api.logger err req (Response.Error err)
         Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     pure ()
 
-instance G.GraphRequest GetBuffer.Request where
-    location = lens getter setter where
-        getter (GetBuffer.Request file)
-            = GraphLocation.GraphLocation file (Breadcrumb [])
-        setter (GetBuffer.Request _   ) (GraphLocation.GraphLocation file _)
-            = GetBuffer.Request file
-
 handleSubstitute :: Request Substitute.Request -> StateT Env BusT ()
-handleSubstitute = modifyGraph defInverse action replyResult where
-    action req@(Substitute.Request location diffs) = do
-        let file = location ^. GraphLocation.filePath
-        graphDiff <- withDefaultResult location
-            $ Graph.substituteCodeFromPoints file diffs
-        Graph.typecheckWithRecompute location
-        pure graphDiff
-
+handleSubstitute req = modifyGraph Api.buildInverse
+    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
 
 handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
-handleGetBuffer = modifyGraph defInverse action replyResult where
-    action (GetBuffer.Request file) = do
-        code <- Graph.getBuffer file
-        pure $ GetBuffer.Result code
+handleGetBuffer = modifyGraph Api.buildInverse Api.perform replyResult
 
 handleInterpreterControl :: Request Interpreter.Request -> StateT Env BusT ()
-handleInterpreterControl = modifyGraph defInverse action replyResult where
-    interpreterAction Interpreter.Start  = Graph.startInterpreter
-    interpreterAction Interpreter.Pause  = Graph.pauseInterpreter
-    interpreterAction Interpreter.Reload = Graph.reloadInterpreter
-    action (Interpreter.Request gl command) = interpreterAction command gl
+handleInterpreterControl = modifyGraph Api.buildInverse Api.perform replyResult
 
 stdlibFunctions :: [String]
 stdlibFunctions = ["mockFunction"]
