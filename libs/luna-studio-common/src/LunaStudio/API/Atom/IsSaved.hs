@@ -31,9 +31,5 @@ type Response = Response.Response Request () Result
 type instance Response.InverseOf Request = ()
 type instance Response.ResultOf  Request = Result
 
-topicPrefix :: T.Topic
-topicPrefix = "empire.atom.file.issaved"
-instance T.MessageTopic (R.Request Request) where
-    topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where
-    topic _ = topicPrefix <> T.response
+instance T.MessageTopic Request where
+    topic = "empire.atom.file.issaved"

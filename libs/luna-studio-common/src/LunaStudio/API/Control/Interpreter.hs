@@ -44,12 +44,7 @@ type Response = Response.Response Request () ()
 type instance Response.InverseOf Request = ()
 type instance Response.ResultOf  Request = ()
 
-topicPrefix :: T.Topic
-topicPrefix = "empire.control.interpreter"
-
-instance T.MessageTopic (R.Request Request) where
-    topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where
-    topic _ = topicPrefix <> T.response
-instance T.MessageTopic Update              where
-    topic _ = topicPrefix <> T.update
+instance T.MessageTopic Request where
+    topic = "empire.control.interpreter"
+instance T.MessageTopic Update  where
+    topic = T.topic @Request <> T.update

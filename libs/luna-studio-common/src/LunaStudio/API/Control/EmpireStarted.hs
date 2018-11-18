@@ -15,4 +15,4 @@ instance NFData Status
 instance ToJSON Status
 
 
-instance T.MessageTopic Status where topic _ = "empire.control.started.status"
+instance T.MessageTopic Status where topic = "empire.control.started.status"

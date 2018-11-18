@@ -23,9 +23,5 @@ type Response = Response.SimpleResponse Request ()
 type instance Response.InverseOf Request = ()
 type instance Response.ResultOf  Request = ()
 
-topicPrefix :: T.Topic
-topicPrefix = "empire.atom.project.move"
-instance T.MessageTopic (R.Request Request) where
-    topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where
-    topic _ = topicPrefix <> T.response
+instance T.MessageTopic Request where
+    topic = "empire.atom.project.move"

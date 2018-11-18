@@ -29,9 +29,5 @@ type Response = Response.Response Request () Diff
 type instance Response.InverseOf Request = ()
 type instance Response.ResultOf  Request = Diff
 
-topicPrefix :: T.Topic
-topicPrefix = "empire.atom.file.paste"
-instance T.MessageTopic (R.Request Request) where
-    topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where
-    topic _ = topicPrefix <> T.response
+instance T.MessageTopic Request where
+    topic = "empire.atom.file.paste"

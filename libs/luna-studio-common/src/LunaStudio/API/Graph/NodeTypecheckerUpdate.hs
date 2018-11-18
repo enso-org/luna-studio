@@ -22,4 +22,4 @@ instance ToJSON Update
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.node"
-instance T.MessageTopic Update where topic _ = topicPrefix <> T.typecheck
+instance T.MessageTopic Update where topic = topicPrefix <> T.typecheck

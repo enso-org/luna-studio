@@ -47,11 +47,7 @@ type Response = Response.Response Request Inverse Diff
 type instance Response.InverseOf Request = Inverse
 type instance Response.ResultOf  Request = Diff
 
-topicPrefix :: T.Topic
-topicPrefix = "empire.graph.node.updateMeta"
-instance T.MessageTopic (R.Request Request) where
-    topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response            where
-    topic _ = topicPrefix <> T.response
-instance T.MessageTopic Update              where
-    topic _ = topicPrefix <> T.update
+instance T.MessageTopic Request where
+    topic = "empire.graph.node.updateMeta"
+instance T.MessageTopic Update  where
+    topic = T.topic @Request <> T.update

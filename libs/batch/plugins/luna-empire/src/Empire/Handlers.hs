@@ -94,5 +94,5 @@ handlersMap = Map.fromList
     ]
 
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)
-makeHandler h = (Topic.topic (undefined :: a), process) where
+makeHandler h = (Topic.topic @a, process) where
    process content = h request where request = Bin.decode content

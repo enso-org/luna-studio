@@ -138,10 +138,7 @@ makeHandler :: forall req inv res.
     , Show res
     ) => (Response req inv res -> Maybe (UndoRequests (Response req inv res)))
     -> (String, Handler)
-makeHandler h = (Topic.topic notDefined, process) where
-    -- FIXME[WD]: do not use undefined, never
-    notDefined :: Response.Response req inv res
-    notDefined = undefined
+makeHandler h = (Topic.topic @(Response.Response req inv res), process) where
     process content = do
         let response   = decode content
             maybeGuiID = response ^. Response.guiID
@@ -151,9 +148,9 @@ makeHandler h = (Topic.topic notDefined, process) where
             Just (r, q) -> handle $ UndoMessage
                 guiId
                 reqUUID
-                (Topic.topic (Request.Request UUID.nil Nothing r))
+                (Topic.topic' (Request.Request UUID.nil Nothing r))
                 r
-                (Topic.topic (Request.Request UUID.nil Nothing q))
+                (Topic.topic' (Request.Request UUID.nil Nothing q))
                 q
 
 compareMsgByUserId :: UndoMessage -> UndoMessage -> Bool

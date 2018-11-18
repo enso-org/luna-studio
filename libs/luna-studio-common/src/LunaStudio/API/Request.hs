@@ -1,10 +1,13 @@
 module LunaStudio.API.Request where
 
-import           Data.Aeson.Types (ToJSON)
-import           Data.Binary      (Binary)
-import           Data.UUID.Types  (UUID)
-import           Prologue
-import           LunaStudio.API.Graph.Request (GraphRequest, location)
+import Prologue
+
+import qualified LunaStudio.API.Topic as Topic
+
+import Data.Aeson.Types             (ToJSON)
+import Data.Binary                  (Binary)
+import Data.UUID.Types              (UUID)
+import LunaStudio.API.Graph.Request (GraphRequest, location)
 
 
 data Request a = Request
@@ -19,3 +22,6 @@ instance ToJSON a => ToJSON (Request a)
 
 instance GraphRequest a => GraphRequest (Request a) where
     location = request . location
+
+instance Topic.MessageTopic req => Topic.MessageTopic (Request req) where
+    topic = Topic.topic @req <> Topic.request

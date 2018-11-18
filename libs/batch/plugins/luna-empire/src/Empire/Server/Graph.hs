@@ -239,12 +239,12 @@ handleSearchNodes origReq@(Request uuid guiID
                     err <- liftIO $ Graph.prepareLunaError exc
                     let msg = Response.error origReq invStatus err
                     atomically . writeTChan toBusChan
-                        . Message.Message (Topic.topic msg)
+                        . Message.Message (Topic.topic' msg)
                             . Compress.pack $ Bin.encode msg
                 Right (result, _) -> do
                     let msg = Response.result origReq () result
                     atomically . writeTChan toBusChan
-                        . Message.Message (Topic.topic msg)
+                        . Message.Message (Topic.topic' msg)
                             . Compress.pack $ Bin.encode msg
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()

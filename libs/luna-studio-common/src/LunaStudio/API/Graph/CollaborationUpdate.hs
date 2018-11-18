@@ -37,4 +37,4 @@ instance ToJSON Event
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.collaboration"
-instance T.MessageTopic Update where topic _ = topicPrefix <> T.update
+instance T.MessageTopic Update where topic = topicPrefix <> T.update

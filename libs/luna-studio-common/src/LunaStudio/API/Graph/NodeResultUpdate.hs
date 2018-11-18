@@ -25,4 +25,4 @@ instance ToJSON Update
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.result"
-instance T.MessageTopic Update where topic _ = topicPrefix <> T.update
+instance T.MessageTopic Update where topic = topicPrefix <> T.update

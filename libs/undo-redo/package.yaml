@@ -32,6 +32,7 @@ default-extensions:
   - MultiParamTypeClasses
   - NoImplicitPrelude
   - TemplateHaskell
+  - TypeApplications
 
 library:
     source-dirs: src
