@@ -30,7 +30,8 @@ instance ToJSON Result
 
 
 type Response = Response.Response Request () Result
-instance Response.ResponseResult Request () Result
+type instance Response.InverseOf Request = ()
+type instance Response.ResultOf  Request = Result
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.library.list"

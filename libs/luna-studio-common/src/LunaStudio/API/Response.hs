@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module LunaStudio.API.Response where
 
 import           Control.Lens           (makePrisms)
@@ -32,23 +34,27 @@ data Response req inv res = Response
 
 type SimpleResponse req inv = Response req inv ()
 
+type family InverseOf a
+type family ResultOf  a
 
-class
+type ResponseResult req inv res =
     ( MessageTopic (Request req)
     , MessageTopic (Response req inv res)
     , Binary req
     , Binary inv
     , Binary res
-    ) => ResponseResult req inv res | req -> inv res where
-      
-        result :: Request req -> inv -> res -> Response req inv res
-        result (Request uuid guiID req) inv payload
-            = Response uuid guiID req (Ok inv) (Ok payload)
+    , res ~ ResultOf req
+    , inv ~ InverseOf req
+    )
 
-        error :: Request req -> Status inv -> Error LunaError
-            -> Response req inv res
-        error  (Request uuid guiID req) inv err
-            = Response uuid guiID req inv (Error err)
+result :: ResponseResult req inv res => Request req -> inv -> res -> Response req inv res
+result (Request uuid guiID req) inv payload
+    = Response uuid guiID req (Ok inv) (Ok payload)
+
+error :: ResponseResult req inv res => Request req -> Status inv -> Error LunaError
+    -> Response req inv res
+error  (Request uuid guiID req) inv err
+    = Response uuid guiID req inv (Error err)
 
 ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) 
    => Request req -> inv -> Response req inv ()

@@ -18,7 +18,8 @@ instance ToJSON Request
 
 
 type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
+type instance Response.InverseOf Request = ()
+type instance Response.ResultOf  Request = ()
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.atom.file.close"

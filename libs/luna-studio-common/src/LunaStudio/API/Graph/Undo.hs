@@ -23,7 +23,8 @@ instance ToJSON Request
 
 
 type Response = Response.Response Request () ()
-instance Response.ResponseResult Request () ()
+type instance Response.InverseOf Request = ()
+type instance Response.ResultOf  Request = ()
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.undo"

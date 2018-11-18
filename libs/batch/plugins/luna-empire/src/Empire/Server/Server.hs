@@ -149,14 +149,14 @@ modifyGraphOk inverse action = modifyGraph inverse action reply where
 handle :: forall req inv res. (
     Show req, Show res, Bin.Binary req, G.GraphRequest req,
     Response.ResponseResult req inv res, Api.Modification req,
-    Api.InverseOf req ~ inv, Api.ResultOf req ~ res
+    Response.InverseOf req ~ inv, Response.ResultOf req ~ res
     ) => Request req -> StateT Env BusT ()
 handle = modifyGraph Api.buildInverse Api.perform replyResult
 
 handleOk :: forall req inv. (
     Show req, Bin.Binary req, G.GraphRequest req,
     Response.ResponseResult req inv (), Api.Modification req,
-    Api.InverseOf req ~ inv, Api.ResultOf req ~ ()
+    Response.InverseOf req ~ inv, Response.ResultOf req ~ ()
     ) => Request req -> StateT Env BusT ()
 handleOk = modifyGraph Api.buildInverse Api.perform replyResult
 

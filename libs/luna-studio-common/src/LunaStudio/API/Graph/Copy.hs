@@ -34,7 +34,8 @@ instance G.GraphRequest Request where location = location
 
 
 type Response = Response.Response Request () Result
-instance Response.ResponseResult Request () Result
+type instance Response.InverseOf Request = ()
+type instance Response.ResultOf  Request = Result
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.copy"

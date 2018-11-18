@@ -33,7 +33,8 @@ instance G.GraphRequest Request where location = location
 
 
 type Response = Response.Response Request Inverse Diff
-instance Response.ResponseResult Request Inverse Diff
+type instance Response.InverseOf Request = Inverse
+type instance Response.ResultOf  Request = Diff
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.node.renamePort"

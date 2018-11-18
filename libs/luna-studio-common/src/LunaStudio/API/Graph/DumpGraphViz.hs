@@ -23,7 +23,8 @@ instance G.GraphRequest Request where location = location
 
 
 type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
+type instance Response.InverseOf Request = ()
+type instance Response.ResultOf  Request = ()
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.environment.debug.graphviz"

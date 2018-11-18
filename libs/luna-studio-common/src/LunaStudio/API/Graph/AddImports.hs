@@ -27,7 +27,8 @@ instance G.GraphRequest Request where location = location
 
 
 type Response = Response.Response Request () Diff
-instance Response.ResponseResult Request () Diff
+type instance Response.InverseOf Request = ()
+type instance Response.ResultOf  Request = Diff
 
 topicPrefix :: T.Topic
 topicPrefix = "empire.graph.imports.add"
