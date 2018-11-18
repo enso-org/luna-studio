@@ -19,6 +19,7 @@ import           Prologue
 import           System.Environment            (getEnv)
 import           System.FilePath               (replaceFileName, (</>))
 
+import qualified Empire.ApiHandlers            as Api
 import qualified Empire.Commands.Graph         as Graph
 import           Empire.Data.AST               (SomeASTException)
 import           Empire.Empire                 (Empire, runEmpire)
@@ -31,7 +32,6 @@ import           LunaStudio.API.Request        (Request (..))
 import qualified LunaStudio.API.Response       as Response
 import           LunaStudio.API.Topic          (MessageTopic)
 import qualified LunaStudio.API.Topic          as Topic
-import           LunaStudio.Data.Diff          (Diff, diff)
 import           LunaStudio.Data.Error         (Error, LunaError, errorContent)
 import           LunaStudio.Data.Graph         (Graph (..))
 import qualified LunaStudio.Data.Graph         as GraphAPI
@@ -146,24 +146,20 @@ modifyGraphOk :: forall req inv res .
 modifyGraphOk inverse action = modifyGraph inverse action reply where
     reply req inv _ = replyOk req inv
 
+handle :: forall req inv res. (
+    Show req, Show res, Bin.Binary req, G.GraphRequest req,
+    Response.ResponseResult req inv res, Api.Modification req,
+    Api.InverseOf req ~ inv, Api.ResultOf req ~ res
+    ) => Request req -> StateT Env BusT ()
+handle = modifyGraph Api.buildInverse Api.perform replyResult
+
+handleOk :: forall req inv. (
+    Show req, Bin.Binary req, G.GraphRequest req,
+    Response.ResponseResult req inv (), Api.Modification req,
+    Api.InverseOf req ~ inv, Api.ResultOf req ~ ()
+    ) => Request req -> StateT Env BusT ()
+handleOk = modifyGraph Api.buildInverse Api.perform replyResult
+
 defInverse :: a -> Empire ()
 defInverse = const $ pure ()
 
-catchAllExceptions :: Empire a -> Empire (Either SomeException a)
-catchAllExceptions act = try act
-
-withDefaultResult' :: (GraphLocation -> Empire Graph) -> GraphLocation
-    -> Empire a -> Empire Diff
-withDefaultResult' getFinalGraph location action = do
-    oldGraph <- (_Left %~ Graph.prepareGraphError)
-        <$> catchAllExceptions (Graph.getGraphNoTC location)
-    void action
-    newGraph <- (_Left %~ Graph.prepareGraphError)
-        <$> catchAllExceptions (getFinalGraph location)
-    pure $ diff oldGraph newGraph
-
-withDefaultResult :: GraphLocation -> Empire a -> Empire Diff
-withDefaultResult = withDefaultResult' Graph.getGraphNoTC
-
-withDefaultResultTC :: GraphLocation -> Empire a -> Empire Diff
-withDefaultResultTC = withDefaultResult' Graph.getGraph

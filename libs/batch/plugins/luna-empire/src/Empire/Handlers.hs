@@ -4,6 +4,37 @@ module Empire.Handlers where
 import           Prelude               (undefined)
 import           Prologue
 
+import qualified Empire.Server.Server                    as Server
+import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
+import qualified LunaStudio.API.Atom.Substitute          as Substitute
+import qualified LunaStudio.API.Control.Interpreter      as Interpreter
+import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
+import qualified LunaStudio.API.Graph.AddImports         as AddImports
+import qualified LunaStudio.API.Graph.AddNode            as AddNode
+import qualified LunaStudio.API.Graph.AddPort            as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
+import qualified LunaStudio.API.Graph.Copy               as Copy
+import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram         as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs
+import qualified LunaStudio.API.Graph.MovePort           as MovePort
+import qualified LunaStudio.API.Graph.Paste              as Paste
+import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
+import qualified LunaStudio.API.Graph.Request            as G
+import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings
+import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes
+import qualified LunaStudio.API.Graph.SetCode            as SetCode
+import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
+
 import           Control.Monad.State   (StateT)
 import qualified Data.Binary           as Bin
 import           Data.ByteString       (ByteString)
@@ -21,31 +52,31 @@ type Handler = BSL.ByteString -> StateT Env BusT ()
 
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
-    [ makeHandler Graph.handleAddConnection
-    , makeHandler Graph.handleAddImports
-    , makeHandler Graph.handleAddNode
-    , makeHandler Graph.handleAddPort
-    , makeHandler Graph.handleAddSubgraph
-    , makeHandler Graph.handleAutolayoutNodes
-    , makeHandler Graph.handleCollapseToFunction
-    , makeHandler Graph.handleCopy
-    , makeHandler Graph.handleDumpGraphViz
+    [ makeHandler $ Server.handle @AddConnection.Request
+    , makeHandler $ Server.handle @AddImports.Request
+    , makeHandler $ Server.handle @AddNode.Request
+    , makeHandler $ Server.handle @AddPort.Request
+    , makeHandler $ Server.handle @AddSubgraph.Request
+    , makeHandler $ Server.handle @AutolayoutNodes.Request
+    , makeHandler $ Server.handle @CollapseToFunction.Request
+    , makeHandler $ Server.handle @Copy.Request
+    , makeHandler $ Server.handleOk @DumpGraphViz.Request
     , makeHandler Graph.handleGetProgram
-    , makeHandler Graph.handleGetSubgraphs
-    , makeHandler Graph.handleMovePort
-    , makeHandler Graph.handlePaste
-    , makeHandler Graph.handleRemoveConnection
-    , makeHandler Graph.handleRemoveNodes
-    , makeHandler Graph.handleRemovePort
-    , makeHandler Graph.handleRenameNode
-    , makeHandler Graph.handleRenamePort
+    , makeHandler $ Server.handle @GetSubgraphs.Request
+    , makeHandler $ Server.handle @MovePort.Request
+    , makeHandler $ Server.handle @Paste.Request
+    , makeHandler $ Server.handle @RemoveConnection.Request
+    , makeHandler $ Server.handle @RemoveNodes.Request
+    , makeHandler $ Server.handle @RemovePort.Request
+    , makeHandler $ Server.handle @RenameNode.Request
+    , makeHandler $ Server.handle @RenamePort.Request
     , makeHandler Graph.handleSearchNodes
-    , makeHandler Graph.handleSetCode
-    , makeHandler Graph.handleSetNodeExpression
-    , makeHandler Graph.handleSetNodesMeta
-    , makeHandler Graph.handleSetPortDefault
+    , makeHandler $ Server.handle @SetCode.Request
+    , makeHandler $ Server.handle @SetNodeExpression.Request
+    , makeHandler $ Server.handle @SetNodesMeta.Request
+    , makeHandler $ Server.handle @SetPortDefault.Request
     , makeHandler Graph.handleTypecheck
-    , makeHandler Graph.handleInterpreterControl
+    , makeHandler $ Server.handle @Interpreter.Request
     , makeHandler Library.handleCreateLibrary
     , makeHandler Library.handleListLibraries
     , makeHandler Atom.handleIsSaved
@@ -57,9 +88,9 @@ handlersMap = Map.fromList
     , makeHandler Atom.handleCloseFile
     , makeHandler Atom.handleCopyText
     , makeHandler Atom.handlePasteText
-    , makeHandler Graph.handleGetBuffer
-    , makeHandler Graph.handleSubstitute
-    , makeHandler Graph.handleSaveSettings
+    , makeHandler $ Server.handle @GetBuffer.Request
+    , makeHandler $ Server.handle @Substitute.Request
+    , makeHandler $ Server.handleOk @SaveSettings.Request
     ]
 
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)

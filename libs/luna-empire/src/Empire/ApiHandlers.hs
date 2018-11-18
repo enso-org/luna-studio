@@ -48,7 +48,7 @@ import qualified LunaStudio.Data.Project                 as Project
 import qualified Path
 import qualified System.Log.MLogger                      as Logger
 
-import Control.Lens                  (to, traversed, use, (.=), (^..))
+import Control.Lens                  (to, traversed, use, (.=), (^..), _Left)
 import Control.Monad.Catch           (handle, try)
 import Data.List                     (break, find, partition, sortBy)
 import Data.Maybe                    (isJust, isNothing, listToMaybe,
@@ -65,6 +65,7 @@ import Luna.Package                  (findPackageFileForFile,
                                       getRelativePathForModule, includedLibs)
 import LunaStudio.Data.Breadcrumb    (Breadcrumb (..))
 import LunaStudio.Data.Connection    (Connection (..))
+import LunaStudio.Data.Diff          (Diff, diff)
 import LunaStudio.Data.GraphLocation (GraphLocation (..))
 import LunaStudio.Data.NodeLoc       (NodeLoc (..))
 import LunaStudio.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef (..))
@@ -97,16 +98,17 @@ instance Modification () where
     perform       _ = pure ()
 
 type instance InverseOf    AddNode.Request = ()
-type instance ResultOf     AddNode.Request = ()
+type instance ResultOf     AddNode.Request = Diff
 instance      Modification AddNode.Request where
     perform (AddNode.Request loc nl expression nodeMeta connectTo) =
-        void $ Graph.addNodeWithConnection loc nl expression nodeMeta connectTo
+        withDiff loc
+            $ Graph.addNodeWithConnection loc nl expression nodeMeta connectTo
 
 type instance InverseOf    RemoveNodes.Request = RemoveNodes.Inverse
-type instance ResultOf     RemoveNodes.Request = ()
+type instance ResultOf     RemoveNodes.Request = Diff
 instance      Modification RemoveNodes.Request where
     perform (RemoveNodes.Request location nodeLocs) =
-        Graph.removeNodes location $ convert <$> nodeLocs
+        withDiff location $ Graph.removeNodes location $ convert <$> nodeLocs
     buildInverse (RemoveNodes.Request location nodeLocs) = do
         let nodeIds = convert <$> nodeLocs
         Graph allNodes allConnections _ _ monads _ <- Graph.getGraph location
@@ -127,9 +129,9 @@ getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
 
 type instance InverseOf    AddConnection.Request = AddConnection.Inverse
-type instance ResultOf     AddConnection.Request = ()
+type instance ResultOf     AddConnection.Request = Diff
 instance      Modification AddConnection.Request where
-    perform (AddConnection.Request location src' dst') = do
+    perform (AddConnection.Request location src' dst') = withDiff location $ do
         let getSrcPort = either id getSrcPortByNodeId
             getDstPort = either id getDstPortByNodeLoc
         void $ Graph.connectCondTC True location (getSrcPort src')
@@ -140,62 +142,64 @@ instance      Modification AddConnection.Request where
         pure $ AddConnection.Inverse prevExpr
 
 type instance InverseOf    RenamePort.Request = RenamePort.Inverse
-type instance ResultOf     RenamePort.Request = ()
+type instance ResultOf     RenamePort.Request = Diff
 instance      Modification RenamePort.Request where
     perform (RenamePort.Request location portRef name)
-        = Graph.renamePort location portRef name
+        = withDiff location $ Graph.renamePort location portRef name
     buildInverse (RenamePort.Request location portRef name) = do
         oldName <- Graph.getPortName location portRef
         pure $ RenamePort.Inverse oldName
 
 type instance InverseOf    RenameNode.Request = RenameNode.Inverse
-type instance ResultOf     RenameNode.Request = ()
+type instance ResultOf     RenameNode.Request = Diff
 instance      Modification RenameNode.Request where
     perform (RenameNode.Request location nodeId name)
-        = Graph.renameNode location nodeId name
+        = withDiff location $ Graph.renameNode location nodeId name
     buildInverse (RenameNode.Request location nodeId name) = do
         prevName <- Graph.getName location nodeId
         pure $ RenameNode.Inverse $ fromMaybe "" prevName
 
 type instance InverseOf    SetPortDefault.Request = SetPortDefault.Inverse
-type instance ResultOf     SetPortDefault.Request = ()
+type instance ResultOf     SetPortDefault.Request = Diff
 instance      Modification SetPortDefault.Request where
     perform (SetPortDefault.Request location portRef defaultValue)
-        = Graph.setPortDefault location portRef defaultValue
+        = withDiff location $ Graph.setPortDefault location portRef defaultValue
     buildInverse (SetPortDefault.Request location portRef _)
         = SetPortDefault.Inverse <$> Graph.getPortDefault location portRef
 
 type instance InverseOf    AddImports.Request = ()
-type instance ResultOf     AddImports.Request = ()
+type instance ResultOf     AddImports.Request = Diff
 instance      Modification AddImports.Request where
     perform (AddImports.Request location modules)
-        = Graph.addImports location modules
+        = withDiff location $ Graph.addImports location modules
 
 type instance InverseOf    AddPort.Request = ()
-type instance ResultOf     AddPort.Request = ()
+type instance ResultOf     AddPort.Request = Diff
 instance      Modification AddPort.Request where
     perform (AddPort.Request location portRef connsDst name)
-        = Graph.addPortWithConnections location portRef name connsDst
+        = withDiff location
+            $ Graph.addPortWithConnections location portRef name connsDst
 
 type instance InverseOf    AddSubgraph.Request = ()
-type instance ResultOf     AddSubgraph.Request = ()
+type instance ResultOf     AddSubgraph.Request = Diff
 instance      Modification AddSubgraph.Request where
     perform (AddSubgraph.Request location nodes connections)
-        = void $ Graph.addSubgraph location nodes connections
+        = withDiff location $ Graph.addSubgraph location nodes connections
 
 type instance InverseOf    AutolayoutNodes.Request = AutolayoutNodes.Inverse
-type instance ResultOf     AutolayoutNodes.Request = ()
+type instance ResultOf     AutolayoutNodes.Request = Diff
 instance      Modification AutolayoutNodes.Request where
     perform (AutolayoutNodes.Request location nodeLocs _)
-        = Graph.autolayoutNodes location (convert <$> nodeLocs)
+        = withDiff location
+            $ Graph.autolayoutNodes location (convert <$> nodeLocs)
     buildInverse (AutolayoutNodes.Request location nodeLocs _) = do
         positions <- Graph.getNodeMetas location nodeLocs
         pure $ AutolayoutNodes.Inverse $ catMaybes positions
 
 type instance InverseOf    CollapseToFunction.Request = CollapseToFunction.Inverse
-type instance ResultOf     CollapseToFunction.Request = ()
+type instance ResultOf     CollapseToFunction.Request = Diff
 instance      Modification CollapseToFunction.Request where
-    perform (CollapseToFunction.Request location locs) = do
+    perform (CollapseToFunction.Request location locs) = withDiff location $ do
         let ids = convert <$> locs
         Graph.collapseToFunction location ids
     buildInverse (CollapseToFunction.Request (GraphLocation file _) _) = do
@@ -223,19 +227,19 @@ instance      Modification GetSubgraphs.Request where
         graph <- Graph.getGraph location
         let bc = location ^.
                 GraphLocation.breadcrumb . Breadcrumb.items . to unsafeLast
-        pure . GetSubgraphs.Result $ Map.singleton bc graph --FIXME: should return multiple graphs
+        pure . GetSubgraphs.Result $ Map.singleton bc graph
 
 type instance InverseOf    MovePort.Request = ()
-type instance ResultOf     MovePort.Request = ()
+type instance ResultOf     MovePort.Request = Diff
 instance      Modification MovePort.Request where
     perform (MovePort.Request location portRef newPortPos)
-        = Graph.movePort location portRef newPortPos
+        = withDiff location $ Graph.movePort location portRef newPortPos
 
 type instance InverseOf    Paste.Request = ()
-type instance ResultOf     Paste.Request = ()
+type instance ResultOf     Paste.Request = Diff
 instance      Modification Paste.Request where
     perform (Paste.Request location position string)
-        = Graph.paste location position string
+        = withDiff location $ Graph.paste location position string
 
 data ConnectionDoesNotExistException
     = ConnectionDoesNotExistException InPortRef
@@ -254,9 +258,9 @@ instance Exception DestinationDoesNotExistException where
     toException   = astExceptionToException
 
 type instance InverseOf    RemoveConnection.Request = RemoveConnection.Inverse
-type instance ResultOf     RemoveConnection.Request = ()
+type instance ResultOf     RemoveConnection.Request = Diff
 instance      Modification RemoveConnection.Request where
-    perform (RemoveConnection.Request location dst) = do
+    perform (RemoveConnection.Request location dst) = withDiff location $ do
         mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
         () <- when (isNothing mayDstNode)
             $ throwM $ DestinationDoesNotExistException dst
@@ -275,29 +279,31 @@ instance Exception SidebarDoesNotExistException where
     toException = astExceptionToException
 
 type instance InverseOf    RemovePort.Request = RemovePort.Inverse
-type instance ResultOf     RemovePort.Request = ()
+type instance ResultOf     RemovePort.Request = Diff
 instance      Modification RemovePort.Request where
     buildInverse (RemovePort.Request location portRef) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         oldName     <- Graph.getPortName location portRef
         let conns = flip filter connections $ (== portRef) . fst
         pure $ RemovePort.Inverse oldName $ fmap (uncurry Connection) conns
-    perform (RemovePort.Request location portRef) = do
+    perform (RemovePort.Request location portRef) = withDiff location $ do
         maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
         () <- when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
         Graph.removePort location portRef
 
 type instance InverseOf    SetCode.Request = SetCode.Inverse
-type instance ResultOf     SetCode.Request = ()
+type instance ResultOf     SetCode.Request = Diff
 instance      Modification SetCode.Request where
     buildInverse (SetCode.Request location@(GraphLocation file _) _ _) = do
         cache <- Graph.prepareNodeCache location
         code  <- Graph.withUnit (GraphLocation file def) $ use Graph.code
         pure $ SetCode.Inverse code cache
-    perform (SetCode.Request location@(GraphLocation file _) code cache) = do
-        Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
-        Graph.loadCode location code
-        Graph.resendCode location
+    perform (SetCode.Request location@(GraphLocation file _) code cache)
+        = withDiff location $ do
+            Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
+            Graph.loadCode location code
+            Graph.resendCode location
+            Graph.typecheck location
 
 type instance InverseOf    SaveSettings.Request = ()
 type instance ResultOf     SaveSettings.Request = ()
@@ -305,17 +311,19 @@ instance      Modification SaveSettings.Request where
     perform (SaveSettings.Request gl settings) = saveSettings gl settings gl
 
 type instance InverseOf    SetNodeExpression.Request = SetNodeExpression.Inverse
-type instance ResultOf     SetNodeExpression.Request = ()
+type instance ResultOf     SetNodeExpression.Request = Diff
 instance      Modification SetNodeExpression.Request where
     buildInverse (SetNodeExpression.Request location nodeId _) = do
         oldExpr <- Graph.withGraph location . runASTOp $
             getNodeCode nodeId
         pure $ SetNodeExpression.Inverse oldExpr
     perform (SetNodeExpression.Request location nodeId expression)
-        = void $ Graph.setNodeExpression location nodeId expression
+        = withDiff location $ do
+            Graph.setNodeExpression location nodeId expression
+            Graph.typecheck location
 
 type instance InverseOf    SetNodesMeta.Request = SetNodesMeta.Inverse
-type instance ResultOf     SetNodesMeta.Request = ()
+type instance ResultOf     SetNodesMeta.Request = Diff
 instance      Modification SetNodesMeta.Request where
     buildInverse (SetNodesMeta.Request location updates) = do
         allNodes <- Graph.withBreadcrumb location (runASTOp buildNodes)
@@ -325,15 +333,15 @@ instance      Modification SetNodesMeta.Request where
                     (Map.member (node ^. Node.nodeId) updates)
                     (node ^. Node.nodeId, node ^. Node.nodeMeta)
         pure $ SetNodesMeta.Inverse prevMeta
-    perform (SetNodesMeta.Request location updates) = do
+    perform (SetNodesMeta.Request location updates) = withDiff location $ do
         for_ (toList updates) $ uncurry $ Graph.setNodeMeta location
 
 type instance InverseOf    Substitute.Request = ()
-type instance ResultOf     Substitute.Request = ()
+type instance ResultOf     Substitute.Request = Diff
 instance      Modification Substitute.Request where
     perform (Substitute.Request location diffs) = do
         let file = location ^. GraphLocation.filePath
-        Graph.substituteCodeFromPoints file diffs
+        withDiff location $ Graph.substituteCodeFromPoints file diffs
 
 type instance InverseOf    GetBuffer.Request = ()
 type instance ResultOf     GetBuffer.Request = GetBuffer.Result
@@ -352,6 +360,18 @@ instance      Modification Interpreter.Request where
         interpreterAction Interpreter.Reload = Graph.reloadInterpreter
 
 -- === Utils -> ToRefactor === --
+
+catchAllExceptions :: Empire a -> Empire (Either SomeException a)
+catchAllExceptions act = try act
+
+withDiff ::  GraphLocation -> Empire a -> Empire Diff
+withDiff location action = do
+    oldGraph <- (_Left %~ Graph.prepareGraphError)
+        <$> catchAllExceptions (Graph.getGraphNoTC location)
+    void action
+    newGraph <- (_Left %~ Graph.prepareGraphError)
+        <$> catchAllExceptions (Graph.getGraphNoTC location)
+    pure $ diff oldGraph newGraph
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

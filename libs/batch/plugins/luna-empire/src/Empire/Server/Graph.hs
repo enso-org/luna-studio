@@ -19,6 +19,7 @@ import qualified Empire.Data.Graph                       as Graph (code,
                                                                    nodeCache)
 import qualified Empire.Empire                           as Empire
 import qualified Empire.Env                              as Env
+import qualified Empire.Server.Server                    as Server
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Control.Interpreter      as Interpreter
@@ -108,8 +109,7 @@ import Empire.Env                    (Env)
 import Empire.Server.Server          (defInverse, errorMessage, modifyGraph,
                                       modifyGraphOk, prettyException, replyFail,
                                       replyOk, replyResult, sendToBus',
-                                      webGUIHack, withDefaultResult,
-                                      withDefaultResultTC)
+                                      webGUIHack)
 import Luna.Package                  (findPackageFileForFile,
                                       findPackageRootForFile,
                                       getRelativePathForModule, includedLibs)
@@ -220,74 +220,6 @@ handleGetProgram = modifyGraph defInverse action replyResult where
             $ \(gl, locSettings) -> Api.saveSettings gl locSettings location
         pure . GetProgram.Result location $ guiStateDiff guiState
 
-handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
-handleAddConnection req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleAddImports :: Request AddImports.Request -> StateT Env BusT ()
-handleAddImports req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
-handleAddNode req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
-handleAddPort req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
-handleAddSubgraph req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
-handleAutolayoutNodes req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleCollapseToFunction :: Request CollapseToFunction.Request -> StateT Env BusT ()
-handleCollapseToFunction req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleCopy :: Request Copy.Request -> StateT Env BusT ()
-handleCopy = modifyGraph Api.buildInverse Api.perform replyResult
-
-handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
-handleDumpGraphViz = modifyGraphOk Api.buildInverse Api.perform
-
-handleGetSubgraphs :: Request GetSubgraphs.Request -> StateT Env BusT ()
-handleGetSubgraphs = modifyGraph Api.buildInverse Api.perform replyResult
-
-handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
-handleMovePort req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handlePaste :: Request Paste.Request -> StateT Env BusT ()
-handlePaste req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
-handleRemoveConnection req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
-handleRemoveNodes req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
-handleRemovePort req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
-handleRenameNode req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
-handleRenamePort req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleSaveSettings :: Request SaveSettings.Request -> StateT Env BusT ()
-handleSaveSettings = modifyGraphOk Api.buildInverse Api.perform
-
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes origReq@(Request uuid guiID
     request'@(SearchNodes.Request location missingImps)) = do
@@ -315,22 +247,6 @@ handleSearchNodes origReq@(Request uuid guiID
                         . Message.Message (Topic.topic msg)
                             . Compress.pack $ Bin.encode msg
 
-handleSetCode :: Request SetCode.Request -> StateT Env BusT ()
-handleSetCode req = modifyGraph Api.buildInverse
-    (withDefaultResultTC (req ^. G.location) . Api.perform) replyResult req
-
-handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()
-handleSetNodeExpression req = modifyGraph Api.buildInverse
-    (withDefaultResultTC (req ^. G.location) . Api.perform) replyResult req
-
-handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
-handleSetNodesMeta req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
-handleSetPortDefault req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do
     let location = request ^. TypeCheck.location
@@ -345,16 +261,6 @@ handleTypecheck req@(Request _ _ request) = do
             replyFail Api.logger err req (Response.Error err)
         Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     pure ()
-
-handleSubstitute :: Request Substitute.Request -> StateT Env BusT ()
-handleSubstitute req = modifyGraph Api.buildInverse
-    (withDefaultResult (req ^. G.location) . Api.perform) replyResult req
-
-handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
-handleGetBuffer = modifyGraph Api.buildInverse Api.perform replyResult
-
-handleInterpreterControl :: Request Interpreter.Request -> StateT Env BusT ()
-handleInterpreterControl = modifyGraph Api.buildInverse Api.perform replyResult
 
 stdlibFunctions :: [String]
 stdlibFunctions = ["mockFunction"]

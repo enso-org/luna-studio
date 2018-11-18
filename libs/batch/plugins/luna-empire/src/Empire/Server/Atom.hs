@@ -39,6 +39,7 @@ import qualified Luna.Package                   as Package
 import qualified Luna.Package.Structure.Generate as PackageGen
 
 import           Debug
+import qualified Empire.ApiHandlers             as Api
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.Package        as Package
 import qualified Empire.Commands.Publisher      as Publisher
@@ -48,7 +49,7 @@ import qualified Empire.Data.Library            as Library
 import           Empire.Empire                  (Empire)
 import qualified Empire.Empire                  as Empire
 import           Empire.Server.Server           (errorMessage, defInverse, modifyGraph, replyFail,
-                                                replyOk, replyResult, withDefaultResult)
+                                                replyOk, replyResult)
 import qualified System.Log.MLogger             as Logger
 import qualified ZMQ.Bus.EndPoint               as EP
 import           ZMQ.Bus.Trans                  (BusT (..))
@@ -169,7 +170,7 @@ handleIsSaved (Request _ _ _) = $_NOT_IMPLEMENTED
 
 handlePasteText :: Request Paste.Request -> StateT Env BusT ()
 handlePasteText = modifyGraph defInverse action replyResult where
-    action (Paste.Request loc spans text) = withDefaultResult loc $ do
+    action (Paste.Request loc spans text) = Api.withDiff loc $ do
         Graph.pasteText loc spans text
 
 instance G.GraphRequest Copy.Request where
