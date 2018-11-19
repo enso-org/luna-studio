@@ -27,9 +27,10 @@ import LunaStudio.Data.TypeRep            (ConstructorRep (ConstructorRep))
 import NodeEditor.Action.Batch            (searchNodes)
 import NodeEditor.Action.State.NodeEditor (getLocalFunctions, getSearcher,
                                            inTopLevelBreadcrumb, modifySearcher)
-import NodeEditor.React.Model.Searcher    (ClassName, LibrariesHintsMap, LibraryName,
-                                           Match, NodeSearcherData, Searcher,
-                                           Symbol, TypePreference, allCommands,
+import NodeEditor.React.Model.Searcher    (ClassName, LibrariesHintsMap,
+                                           LibraryName, Match, NodeSearcherData,
+                                           Searcher, Symbol, TypePreference,
+                                           allCommands,
                                            localFunctionsLibraryName)
 import NodeEditor.State.Global            (State)
 
@@ -113,7 +114,10 @@ localUpdateSearcherHints' = unlessM inTopLevelBreadcrumb $ do
             updateNodeSearcher s = do
                 let mayClassName = s ^? Searcher.modeData
                         . Searcher._ExpressionMode . Searcher.className . _Just
-                    hints input = search input nsData mayClassName
+                    hints input
+                        = if has (Searcher.modeData . Searcher._ExpressionMode) s
+                            then search input nsData mayClassName
+                            else mempty
                 s & Searcher.nodes .~ maybe mempty hints mayQuery
             updateMode (Searcher.CommandSearcher s)
                 = Searcher.CommandSearcher $ updateCommands s
