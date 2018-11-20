@@ -44,7 +44,7 @@ import qualified Memory                             as Memory
 import qualified Path
 
 import Control.Concurrent.Async         (Async)
-import Control.Exception.Safe           (mask_)
+import Control.Exception.Safe           (mask_, tryAny)
 import Control.Lens                     (uses)
 import Control.Monad.Reader             (ask, runReaderT)
 import Data.Graph.Component.Node.Class  (Nodes)
@@ -264,36 +264,34 @@ primStdModuleName = "Std.Primitive"
 makePrimStdIfMissing :: Command InterpreterEnv ()
 makePrimStdIfMissing = do
     existingStd <- use $ Graph.userState . Empire.resolvers . at primStdModuleName
-    case existingStd of
-        Just _ -> return ()
-        Nothing -> do
-            (mods, finalizer, typed, computed, ress, units) <- liftScheduler $ do
-                (fin, stdUnitRef) <- Std.stdlib @Stage
-                lunaroot <- liftIO $ canonicalizePath =<< getEnv Package.lunaRootEnv
-                stdPath <- Path.parseAbsDir $ lunaroot <> "/Std/"
-                srcs    <- fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources stdPath
-                UnitLoader.init
-                Scheduler.registerAttr @Unit.UnitRefsMap
-                Scheduler.setAttr $ Unit.UnitRefsMap $ Map.singleton "Std.Primitive" stdUnitRef
-                for Std.stdlibImports $ UnitLoader.loadUnit def srcs []
-                Unit.UnitRefsMap mods <- Scheduler.getAttr
-                units <- flip Map.traverseWithKey mods $ \n u -> case u ^. Unit.root of
-                    Unit.Graph r       -> UnitMapper.mapUnit n r
-                    Unit.Precompiled p -> pure p
-                let unitResolvers   = Map.mapWithKey Resolution.resolverFromUnit units
-                    importResolvers = Map.mapWithKey (Resolution.resolverForUnit unitResolvers) $ over wrapped (essentialImports <>)
-                                                                                                . view Unit.imports <$> mods
-                    unitsWithResolvers = Map.mapWithKey (\n u -> (importResolvers Map.! n, u)) units
-                (typed, evald) <- ProcessUnits.processUnits def def unitsWithResolvers
-                return (mods, fin, typed, evald, unitResolvers, units)
-            zoomCommand Empire.clsGraph $ runASTOp $ for mods $ \u -> case u ^. Unit.root of
-                Unit.Graph r -> IR.deleteSubtree r
-                _            -> return ()
-            Graph.userState . Empire.cleanUp      .= finalizer
-            Graph.userState . Empire.typedUnits   .= typed
-            Graph.userState . Empire.mappedUnits  .= units
-            Graph.userState . Empire.runtimeUnits .= computed
-            Graph.userState . Empire.resolvers    .= ress
+    when_ (isNothing existingStd) $ tryAny $ do
+        (mods, finalizer, typed, computed, ress, units) <- liftScheduler $ do
+            (fin, stdUnitRef) <- Std.stdlib @Stage
+            lunaroot <- liftIO $ canonicalizePath =<< getEnv Package.lunaRootEnv
+            stdPath <- Path.parseAbsDir $ lunaroot <> "/Std/"
+            srcs    <- fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources stdPath
+            UnitLoader.init
+            Scheduler.registerAttr @Unit.UnitRefsMap
+            Scheduler.setAttr $ Unit.UnitRefsMap $ Map.singleton "Std.Primitive" stdUnitRef
+            for Std.stdlibImports $ UnitLoader.loadUnit def srcs []
+            Unit.UnitRefsMap mods <- Scheduler.getAttr
+            units <- flip Map.traverseWithKey mods $ \n u -> case u ^. Unit.root of
+                Unit.Graph r       -> UnitMapper.mapUnit n r
+                Unit.Precompiled p -> pure p
+            let unitResolvers   = Map.mapWithKey Resolution.resolverFromUnit units
+                importResolvers = Map.mapWithKey (Resolution.resolverForUnit unitResolvers) $ over wrapped (essentialImports <>)
+                                                                                            . view Unit.imports <$> mods
+                unitsWithResolvers = Map.mapWithKey (\n u -> (importResolvers Map.! n, u)) units
+            (typed, evald) <- ProcessUnits.processUnits def def unitsWithResolvers
+            return (mods, fin, typed, evald, unitResolvers, units)
+        zoomCommand Empire.clsGraph $ runASTOp $ for mods $ \u -> case u ^. Unit.root of
+            Unit.Graph r -> IR.deleteSubtree r
+            _            -> return ()
+        Graph.userState . Empire.cleanUp      .= finalizer
+        Graph.userState . Empire.typedUnits   .= typed
+        Graph.userState . Empire.mappedUnits  .= units
+        Graph.userState . Empire.runtimeUnits .= computed
+        Graph.userState . Empire.resolvers    .= ress
 
 ensureCurrentScope :: Bool -> IR.Qualified -> FilePath -> NodeRef -> Command InterpreterEnv ()
 ensureCurrentScope recompute modName path root = do
