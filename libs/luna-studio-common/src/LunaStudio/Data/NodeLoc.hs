@@ -1,16 +1,22 @@
-module LunaStudio.Data.NodeLoc where
+module LunaStudio.Data.NodeLoc
+    ( module LunaStudio.Data.NodeLoc
+    , module X
+    ) where
 
-import           Control.Lens                  (to)
-import           Data.Aeson.Types              (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
-import           Data.Binary                   (Binary)
-import           Data.Convert                  (Convertible (convert))
+import LunaStudio.Data.NodeId as X (NodeId)
+
+import Prologue
+
 import qualified Data.Set                      as Set
-import           LunaStudio.Data.Breadcrumb    (Breadcrumb (Breadcrumb), BreadcrumbItem)
 import qualified LunaStudio.Data.Breadcrumb    as Breadcrumb
-import           LunaStudio.Data.GraphLocation (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
-import           LunaStudio.Data.NodeId        (NodeId)
-import           Prologue
+
+import Control.Lens                  (to)
+import Data.Aeson.Types              (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
+import Data.Binary                   (Binary)
+import Data.Convert                  (Convertible (convert))
+import LunaStudio.Data.Breadcrumb    (Breadcrumb (Breadcrumb), BreadcrumbItem)
+import LunaStudio.Data.GraphLocation (GraphLocation)
 
 
 data NodePath = NodePath

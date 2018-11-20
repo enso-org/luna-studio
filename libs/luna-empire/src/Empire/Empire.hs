@@ -21,7 +21,7 @@ import Empire.Data.Graph             (ClsGraph, CommandState (CommandState))
 import Empire.Data.Library           (Library)
 import LunaStudio.API.AsyncUpdate    (AsyncUpdate)
 import LunaStudio.Data.GraphLocation (GraphLocation)
-import LunaStudio.Data.NodeSearcher  (ImportsHints)
+import LunaStudio.Data.Searcher.Node (LibrariesHintsMap)
 
 
 type Error = String
@@ -60,7 +60,7 @@ makeLenses ''TCRequest
 data CommunicationEnv = CommunicationEnv
     { _updatesChan   :: TChan AsyncUpdate
     , _typecheckChan :: MVar TCRequest
-    , _searcherHints :: MVar ImportsHints
+    , _searcherHints :: MVar LibrariesHintsMap
     } deriving Generic
 makeLenses ''CommunicationEnv
 

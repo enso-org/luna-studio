@@ -61,7 +61,6 @@ import qualified LunaStudio.Data.GUIState                as GUIState
 import qualified LunaStudio.Data.Node                    as Node
 import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
 import qualified LunaStudio.Data.NodeMeta                as NodeMeta
-import qualified LunaStudio.Data.NodeSearcher            as NS
 import qualified LunaStudio.Data.Port                    as Port
 import qualified LunaStudio.Data.Position                as Position
 import qualified LunaStudio.Data.Project                 as Project

@@ -67,6 +67,7 @@ import Data.Char                            (isSeparator, isUpper)
 import Data.Coerce                          (coerce)
 import Data.Foldable                        (toList)
 import Data.List                            (find, nub, sortBy, sortOn, (++))
+import Data.Map                             (Map)
 import Data.Maybe                           (fromMaybe, maybeToList)
 import Data.Set                             (Set)
 import Data.Text                            (Text)
@@ -74,9 +75,8 @@ import Data.Text.Position                   (Delta)
 import Data.Text.Span                       (SpacedSpan (..), leftSpacedSpan)
 import Data.Text.Strict.Lens                (packed)
 import Debug
-import Empire.ASTOp                         (ClassOp, GraphOp,
-                                             liftScheduler, runASTOp,
-                                             runAliasAnalysis)
+import Empire.ASTOp                         (ClassOp, GraphOp, liftScheduler,
+                                             runASTOp, runAliasAnalysis)
 import Empire.ASTOps.BreadcrumbHierarchy    (prepareChild)
 import Empire.ASTOps.Parse                  (FunctionParsing (..))
 import Empire.Commands.Code                 (addExprMapping, getExprMap,
@@ -104,8 +104,6 @@ import LunaStudio.Data.GraphLocation        (GraphLocation (..), (|>))
 import LunaStudio.Data.Node                 (ExpressionNode (..), NodeId)
 import LunaStudio.Data.NodeLoc              (NodeLoc (..))
 import LunaStudio.Data.NodeMeta             (NodeMeta)
-import LunaStudio.Data.NodeSearcher         (ClassHints (..), ImportName,
-                                             ImportsHints, ModuleHints (..))
 import LunaStudio.Data.Port                 (InPortId, InPortIndex (..),
                                              getPortNumber)
 import LunaStudio.Data.PortDefault          (PortDefault)
@@ -113,6 +111,9 @@ import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
                                              OutPortRef (..))
 import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.Range                (Range (..))
+import LunaStudio.Data.Searcher.Node        (ClassHints (..), LibrariesHintsMap,
+                                             LibraryHints (LibraryHints),
+                                             LibraryName)
 
 
 addImports :: GraphLocation -> Set Text -> Empire ()
@@ -1390,7 +1391,7 @@ getImportsInFile = do
     imports <- matchUnit unit
     return $ catMaybes imports
 
-getAvailableImports :: GraphLocation -> Empire (Set ImportName)
+getAvailableImports :: GraphLocation -> Empire (Set LibraryName)
 getAvailableImports gl = withUnit pureGl mkImports where
     pureGl = GraphLocation (gl ^. GraphLocation.filePath) mempty
     implicitImports = [nativeModuleName, "Std.Base"]
@@ -1407,10 +1408,11 @@ classToHints (Class.Class constructors methods _)
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (nameToString -> n) = Safe.headMay n /= Just '_'
 
-importsToHints :: Unit.Unit -> ModuleHints
-importsToHints (Unit.Unit definitions classes) = ModuleHints funHints (Map.mapKeys convert classHints)
-    where
-        funHints   = (convert *** (fromMaybe "" . view Def.documentation)) <$> Map.toList (unwrap definitions)
+importsToHints :: Unit.Unit -> LibraryHints
+importsToHints (Unit.Unit definitions classes)
+    = LibraryHints funHints $ Map.mapKeys convert classHints where
+        funHints   = (convert *** (fromMaybe "" . view Def.documentation))
+            <$> Map.toList (unwrap definitions)
         classHints = (classToHints . view Def.documented) <$> classes
 
 data ModuleCompilationException = ModuleCompilationException ModLoader.UnitLoadingError
@@ -1436,7 +1438,7 @@ getImportPaths (GraphLocation file _) = do
     importPaths     <- Package.packageImportPaths currentProjPath
     return $ map (view _2) importPaths
 
-getSearcherHints :: GraphLocation -> Empire ImportsHints
+getSearcherHints :: GraphLocation -> Empire LibrariesHintsMap
 getSearcherHints loc = do
     importPaths     <- liftIO $ getImportPaths loc
     availableSource <- liftIO $ forM importPaths $ \path -> do

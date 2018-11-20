@@ -14,7 +14,6 @@ import LunaStudio.Data.CameraTransformation (CameraTransformation)
 import LunaStudio.Data.Code                 (Code)
 import LunaStudio.Data.Error                (Error, GraphError)
 import LunaStudio.Data.Graph                (Graph)
-import LunaStudio.Data.NodeSearcher         (ImportName)
 import LunaStudio.Data.TypeRep              (TypeRep)
 import LunaStudio.Data.Visualizer           (ExternalVisualizers, Visualizer)
 

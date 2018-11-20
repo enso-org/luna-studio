@@ -4,20 +4,22 @@ import Common.Prelude
 import React.Flux
 
 import qualified Data.Text                                 as Text
-import qualified LunaStudio.Data.NodeSearcher              as NS
 import qualified NodeEditor.Event.Keys                     as Keys
 import qualified NodeEditor.Event.UI                       as UI
 import qualified NodeEditor.React.Event.App                as App
 import qualified NodeEditor.React.Model.NodeEditor         as NE
+import qualified NodeEditor.React.Model.Searcher.Mode.Node as NodeSearcher
 import qualified NodeEditor.React.Model.SearcherProperties as Searcher
 import qualified NodeEditor.React.View.Style               as Style
 import qualified React.Flux                                as React
+import qualified Searcher.Engine.Data.Match                as Match
+import qualified Searcher.Engine.Data.Symbol               as Symbol
 
 import JS.Searcher                               (searcherId)
-import LunaStudio.Data.NodeSearcher              (Match, Range)
 import NodeEditor.React.Event.Searcher
 import NodeEditor.React.IsRef                    (IsRef, dispatch)
-import NodeEditor.React.Model.SearcherProperties (SearcherProperties)
+import NodeEditor.React.Model.SearcherProperties (Match, Range, SearcherData,
+                                                  SearcherProperties)
 import NodeEditor.React.View.Visualization       (docVisualization_)
 
 
@@ -40,12 +42,13 @@ searcher =  React.defineView name $ \(ref, s) -> do
         -- nodePos     = s ^. Searcher.position
         -- nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className   = "native-key-bindings " <> Style.prefixFromList ( "input" : "searcher" : ( case mode of
-            Searcher.Command  {} -> [ "searcher--command"]
-            Searcher.Node     {} -> [ "searcher--node" ]
-            Searcher.NodeName {} -> [ "searcher--node-name"]
-            Searcher.PortName {} -> [ "searcher--port-name"]))
+            Searcher.CommandSearcher  {} -> [ "searcher--command"]
+            Searcher.NodeSearcher     ns -> case ns ^. Searcher.modeData of
+                Searcher.ExpressionMode {} -> [ "searcher--node" ]
+                Searcher.NodeNameMode   {} -> [ "searcher--node-name"]
+                Searcher.PortNameMode   {} -> [ "searcher--port-name"]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
-        docPresent = maybe False (not . Text.null) $ s ^? Searcher.selectedMatch . _Just . NS.doc
+        docPresent = maybe False (not . Text.null) $ s ^? Searcher.selectedHint . _Just . Searcher.documentation . _Just
     div_
         [ "key"       $= name
         , "className" $= className
@@ -59,12 +62,16 @@ searcher =  React.defineView name $ \(ref, s) -> do
 
         -- TODO [LJK, PM]: Refactor this piece of code:
         case s ^. Searcher.mode of
-            Searcher.Command    results -> do results_ ref selected results
-            Searcher.Node _ nmi results -> do results_ ref selected results
-                                              withJust (s ^. Searcher.docVis) $
-                                                    docVisualization_ ref docPresent (s ^. Searcher.visLibPath)
-            Searcher.NodeName _ results -> do results_ ref selected results
-            Searcher.PortName _ results -> do results_ ref selected results
+            Searcher.CommandSearcher results -> do results_ ref selected results
+            Searcher.NodeSearcher ns -> let results = ns ^. NodeSearcher.nodes
+                in case ns ^. Searcher.modeData of
+                    Searcher.ExpressionMode {} -> do
+                        results_ ref selected results
+                        withJust (s ^. Searcher.documentationVisualization) $
+                            docVisualization_ ref docPresent (s ^. Searcher.visualizerLibraryPath)
+
+                    Searcher.NodeNameMode {} -> do results_ ref selected results
+                    Searcher.PortNameMode {} -> do results_ ref selected results
 
         input_ (
             [ "key"         $= "searchInput"
@@ -87,8 +94,8 @@ searcher =  React.defineView name $ \(ref, s) -> do
 searcher_ :: IsRef ref => ref -> SearcherProperties -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
-results_ :: IsRef ref => ref -> Int -> [Match] -> ReactElementM ViewEventHandler ()
-results_ ref selected results = if results == [] then return () else
+results_ :: SearcherData a => IsRef ref => ref -> Int -> [Match a] -> ReactElementM ViewEventHandler ()
+results_ ref selected results = if null results then return () else
     div_
         [ "key"       $= "searcherResults"
         , "className" $= Style.prefix "searcher__results"
@@ -96,26 +103,26 @@ results_ ref selected results = if results == [] then return () else
         div_
             [ "key"       $= "searcherResultsList"
             , "className" $= Style.prefix "searcher__results__list"
-            ] $ forKeyed_ (take 10 $ drop (selected - 1) results) $ \(idx, result) -> do
+            ] $ forKeyed_ results $ \(idx, result) -> do
             let resultClasses i = Style.prefixFromList $ "searcher__results__item" : (if selected > 0 && i == 0 then [ "searcher__results__item--selected" ] else [])
             div_
                 [ "key"       $= jsShow idx
                 , "className" $= resultClasses idx
-                , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptWithHint (idx + 1))
+                , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptWithHint (selected + idx))
                 ] $ do
                 div_
                     ["key" $= "name"
                     ,"className" $= Style.prefix "searcher__results__item__name"
                     ] $ highlighted_ result
 
-highlighted_ :: Match -> ReactElementM ViewEventHandler ()
+highlighted_ :: SearcherData a => Match a -> ReactElementM ViewEventHandler ()
 highlighted_ result = prefixElem >> highlighted_' 0 highlights where
-    prefix     = convert $ result ^. NS.className
+    prefix     = convert $ result ^. Match.prefix
     prefixElem = span_ [ "className" $= Style.prefix "searcher__pre"
                        , "key"       $= "searcherPre"]
                        $ elemString $ if prefix == "" then prefix else prefix <> " . "
-    highlights = result ^. NS.charsMatch
-    name'      = convert $ result ^. NS.name
+    highlights = result ^. Searcher.matchedCharacters
+    name'      = convert $ result ^. Searcher.name
     highlighted_' :: Int -> [Range] -> ReactElementM ViewEventHandler ()
     highlighted_' omit [] = span_ [ "key" $= "l" ] $ elemString $ snd $ splitAt omit name'
     highlighted_' omit ((start, end):rest) = do

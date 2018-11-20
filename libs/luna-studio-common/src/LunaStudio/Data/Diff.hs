@@ -27,9 +27,9 @@ import LunaStudio.Data.Node                 (ExpressionNode, InputSidebar,
                                              toExpressionNodesMap)
 import LunaStudio.Data.NodeLoc              (HasNodeLoc (nodeLoc), NodeLoc)
 import LunaStudio.Data.NodeMeta             (NodeMeta)
-import LunaStudio.Data.NodeSearcher         (ImportName)
 import LunaStudio.Data.Port                 (InPort, InPortTree, OutPort,
                                              OutPortTree)
+import LunaStudio.Data.Searcher.Node        (LibraryName)
 import LunaStudio.Data.TypeRep              (TypeRep)
 import LunaStudio.Data.Visualizer           (ExternalVisualizers, Visualizer)
 
@@ -116,7 +116,7 @@ data ModificationSetGraphError = ModificationSetGraphError
     } deriving (Eq, Generic, Show)
 
 data ModificationSetImports = ModificationSetImports
-    { _newImports :: Set ImportName
+    { _newImports :: Set LibraryName
     } deriving (Eq, Generic, Show)
 
 data ModificationSetInPorts = ModificationSetInPorts
@@ -502,7 +502,7 @@ instance Diffable (Either (Error GraphError) Graph) where
     diff (Left _)   (Right g)  = Diff . pure . toModification $ ModificationSetGraph      g
     diff (Right g1) (Right g2) = diff g1 g2
 
-instance Diffable (Set ImportName) where
+instance Diffable (Set LibraryName) where
     patch (SetImports m) = const $ m ^. newImports
     patch _              = id
     diff imps1 imps2 = if imps1 == imps2

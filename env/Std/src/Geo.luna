@@ -13,8 +13,8 @@ class GeoJSONFeature:
     properties :: JSON
     geometry   :: JSON
 
-    def addProperty k v:
-        self.properties = self.properties.insert k v
+    def addProperty k v: case self of
+        GeoJSONFeature props geo: GeoJSONFeature (props.insert k v) geo
 
     def toJSON: JSON . empty . insert "type" "Feature" . insert "properties" self.properties . insert "geometry" self.geometry
 

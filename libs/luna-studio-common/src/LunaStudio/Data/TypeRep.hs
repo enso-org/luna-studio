@@ -1,11 +1,13 @@
 module LunaStudio.Data.TypeRep where
 
-import           Control.DeepSeq  (NFData)
-import           Data.Aeson.Types (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
-import           Data.Binary      (Binary)
-import           Data.Hashable    (Hashable)
-import           Data.Text        (Text)
-import           Prologue         hiding (Text, TypeRep, intercalate)
+import Prologue hiding (Text, TypeRep, intercalate)
+
+import Control.DeepSeq  (NFData)
+import Control.Lens     (makePrisms)
+import Data.Aeson.Types (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
+import Data.Binary      (Binary)
+import Data.Hashable    (Hashable)
+import Data.Text        (Text)
 
 
 data TypeRep
@@ -16,6 +18,8 @@ data TypeRep
     | TBlank
     | TAcc  String TypeRep
     deriving (Eq, Generic, Show)
+
+makePrisms ''TypeRep
 
 instance NFData TypeRep
 instance Binary TypeRep
@@ -63,4 +67,4 @@ toConstructorRep _           = Nothing
 matchTypes :: TypeRep -> TypeRep -> Bool
 matchTypes TStar _ = True
 matchTypes _ TStar = True
-matchTypes t1 t2 = t1 == t2
+matchTypes t1 t2   = t1 == t2

@@ -96,14 +96,13 @@ instance Action (Command State) VisualizationActive where
 instance Action (Command State) DocVisualizationActive where
     begin action = do
         beginActionWithKey docVisualizationActiveAction action
-        modifySearcher $ Searcher.mode . Searcher._Node . _2
-            . Searcher.docVisInfo . _Just . visualizationMode
-                .= action ^. docVisualizationActiveSelectedMode
+        modifySearcher $ Searcher.documentationVisualization . _Just
+            . visualizationMode .= action ^. docVisualizationActiveSelectedMode
     continue     = continueActionWithKey docVisualizationActiveAction
     update       = updateActionWithKey   docVisualizationActiveAction
     end action   = do
-        modifySearcher $ Searcher.mode . Searcher._Node . _2
-            . Searcher.docVisInfo . _Just . visualizationMode .= def
+        modifySearcher $ Searcher.documentationVisualization . _Just
+            . visualizationMode .= def
         removeActionFromState docVisualizationActiveAction
         when (action ^. docVisualizationActiveTriggeredByVis) $ begin $ action
             & docVisualizationActiveSelectedMode   .~ Focused

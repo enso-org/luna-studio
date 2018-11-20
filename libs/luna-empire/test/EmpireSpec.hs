@@ -9,7 +9,8 @@ import           Data.Char                       (isSpace)
 import           Data.Foldable                   (toList)
 import qualified Data.Graph.Store                as Store
 import           Data.List                       (find, stripPrefix)
-import           Data.List                       (dropWhileEnd, find, minimum, maximum)
+import           Data.List                       (dropWhileEnd, find, maximum,
+                                                  minimum)
 import qualified Data.Map                        as Map
 import qualified Data.Text                       as Text
 import           Empire.ASTOp                    (runASTOp)
@@ -20,17 +21,28 @@ import qualified Empire.ASTOps.Parse             as Parser
 import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST (isTrivialLambda)
-import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
-                                                           getNodeIdForMarker, getNodes, loadCode, movePort, removeNodes, removePort,
-                                                           renameNode, renamePort, setNodeExpression, setNodeMeta, withGraph,
-                                                           addPortWithConnections, withUnit)
+import qualified Empire.Commands.Graph           as Graph (addNode, addPort, addPortWithConnections,
+                                                           connect, disconnect,
+                                                           getConnections,
+                                                           getGraph,
+                                                           getNodeIdForMarker,
+                                                           getNodes, loadCode,
+                                                           movePort,
+                                                           removeNodes,
+                                                           removePort,
+                                                           renameNode,
+                                                           renamePort,
+                                                           setNodeExpression,
+                                                           setNodeMeta,
+                                                           withGraph, withUnit)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import           Empire.Commands.Library         (createLibrary, withLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
 import qualified Empire.Data.AST                 as AST
 import           Empire.Data.BreadcrumbHierarchy (BreadcrumbDoesNotExistException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Data.Graph               (breadcrumbHierarchy, userState)
+import           Empire.Data.Graph               (breadcrumbHierarchy,
+                                                  userState)
 import qualified Empire.Data.Graph               as Graph hiding (Graph)
 import qualified Empire.Data.Library             as Library (body)
 -- import qualified Luna.Builtin.Data.Class         as Class
@@ -39,7 +51,8 @@ import           Empire.Empire                   (InterpreterEnv (..))
 import qualified Language.Haskell.TH             as TH
 import qualified Luna.Package.Structure.Generate as Package
 import qualified Luna.Package.Structure.Name     as Project
-import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (Definition))
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..),
+                                                  BreadcrumbItem (Definition))
 import           LunaStudio.Data.Connection      (Connection (Connection))
 import qualified LunaStudio.Data.Graph           as Graph
 import           LunaStudio.Data.GraphLocation   (GraphLocation (..), (|>|))
@@ -48,26 +61,27 @@ import qualified LunaStudio.Data.Node            as Node
 import           LunaStudio.Data.NodeId          (NodeId)
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta        (NodeMeta (..), position)
-import qualified LunaStudio.Data.NodeSearcher    as NodeSearcher
 import           LunaStudio.Data.Port            (InPorts (..), OutPorts (..))
 import qualified LunaStudio.Data.Port            as Port
 import           LunaStudio.Data.PortDefault     (PortDefault (Expression))
-import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           LunaStudio.Data.PortRef         (AnyPortRef (..),
+                                                  InPortRef (..),
+                                                  OutPortRef (..))
 import qualified LunaStudio.Data.PortRef         as PortRef
 import qualified LunaStudio.Data.Position        as Position
 import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
 -- import           OCI.IR.Class                    (exprs, links)
-import           Empire.Prelude                  hiding (mapping, toList, (|>))
-import           Text.RawString.QQ                     (r)
-import           System.Directory                (canonicalizePath, getCurrentDirectory)
-import           System.FilePath                 ((</>), takeDirectory)
-import qualified System.IO.Temp                  as Temp
+import           Empire.Prelude    hiding (mapping, toList, (|>))
+import           System.Directory  (canonicalizePath, getCurrentDirectory)
+import           System.FilePath   (takeDirectory, (</>))
+import qualified System.IO.Temp    as Temp
+import           Text.RawString.QQ (r)
 
-import           Test.Hspec                      (Selector, Spec, around, describe, it, parallel, shouldBe,
-                                                  shouldContain, shouldMatchList, shouldSatisfy, shouldStartWith, shouldThrow,
-                                                  xdescribe, xit)
+import Test.Hspec (Selector, Spec, around, describe, it, parallel, shouldBe,
+                   shouldContain, shouldMatchList, shouldSatisfy,
+                   shouldStartWith, shouldThrow, xdescribe, xit)
 
-import           EmpireUtils
+import EmpireUtils
 
 
 spec :: Spec

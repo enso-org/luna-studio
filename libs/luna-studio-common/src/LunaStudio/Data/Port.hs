@@ -3,14 +3,16 @@ module LunaStudio.Data.Port
     , module X
     ) where
 
-import           Control.Lens                (_Just, anyOf, FunctorWithIndex(..),
-                                              makePrisms, makeWrapped)
-import           Data.Aeson.Types            (FromJSON, ToJSON)
-import           Data.Binary                 (Binary)
-import           LunaStudio.Data.LabeledTree as X (LabeledTree (LabeledTree))
-import           LunaStudio.Data.PortDefault (PortDefault)
-import           LunaStudio.Data.TypeRep     (TypeRep (TStar))
-import           Prologue                    hiding (TypeRep, head)
+import LunaStudio.Data.LabeledTree as X (LabeledTree (LabeledTree))
+
+import Prologue hiding (TypeRep, head)
+
+import Control.Lens                (FunctorWithIndex (..), anyOf, makePrisms,
+                                    makeWrapped, _Just)
+import Data.Aeson.Types            (FromJSON, ToJSON)
+import Data.Binary                 (Binary)
+import LunaStudio.Data.PortDefault (PortDefault)
+import LunaStudio.Data.TypeRep     (TypeRep (TStar))
 
 
 data InPortIndex
@@ -113,10 +115,10 @@ instance ToJSON PortState
 
 
 data Port i = Port
-    { _portId     :: i
-    , _name       :: Text
-    , _valueType  :: TypeRep
-    , _state      :: PortState
+    { _portId    :: i
+    , _name      :: Text
+    , _valueType :: TypeRep
+    , _state     :: PortState
     } deriving (Eq, Generic, Show)
 
 type InPort  = Port InPortId
@@ -190,7 +192,7 @@ instance PortNumber OutPortId where
     getPortNumber (Projection i : _) = i
     getPortNumber _                  = 0
 instance PortNumber AnyPortId where
-    getPortNumber (InPortId' i) = getPortNumber i
+    getPortNumber (InPortId' i)  = getPortNumber i
     getPortNumber (OutPortId' i) = getPortNumber i
 
 instance Default (InPortTree InPort) where

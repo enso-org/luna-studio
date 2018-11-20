@@ -162,16 +162,15 @@ installNodeModules = do
 -- === Installing Haskell === --
 
 haskellBins :: [T.Text]
-haskellBins = ["happy", "hsc2hs"]
+haskellBins = ["happy"]
 
 installHaskellBins :: (MonadSh m, MonadShControl m, MonadIO m) => m ()
 installHaskellBins = do
     current <- currentPath
     home    <- liftIO $ System.getHomeDirectory
     Shelly.appendToPath $ home </> ".local/bin"
-    mapM (Shelly.cmd (current </> stack) "--resolver" "lts-8.2" "install" "--install-ghc") haskellBins
+    mapM (Shelly.cmd (current </> stack) "--resolver" "lts-12.16" "install" "--install-ghc") haskellBins
     sanityCheck "happy" ["--version"]
-    sanityCheck "hsc2hs" ["--version"]
 
 stackSetupForLunaStudio :: (MonadIO m, MonadSh m, MonadShControl m) => m ()
 stackSetupForLunaStudio = do

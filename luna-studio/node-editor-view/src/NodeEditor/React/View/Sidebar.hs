@@ -160,7 +160,10 @@ sidebarPortName_ ref portRef portName mayS = div_ ([ "className" $= Style.prefix
             let outPortRefRegularHandler = [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.EditPortName outPortRef) ]
                 regularHandlersAndElem   = (outPortRefRegularHandler, regularName)
             flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
-                Searcher.PortName sPortRef _ -> if sPortRef == outPortRef then ([], searcher_ ref s) else regularHandlersAndElem
+                Searcher.NodeSearcher ns -> case ns ^. Searcher.modeData of
+                    Searcher.PortNameMode d -> let sPortRef = OutPortRef (ns ^. Searcher.nodeLoc) (d ^. Searcher.portId)
+                        in if sPortRef == outPortRef then ([], searcher_ ref s) else regularHandlersAndElem
+                    _ -> regularHandlersAndElem
                 _                            -> regularHandlersAndElem
         _ -> ([], regularName)
 
@@ -244,6 +247,9 @@ focusPortLabel = UI.focus portLabelId
 
 filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe SearcherProperties -> Maybe SearcherProperties
 filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just s) = case s ^. Searcher.mode of
-    Searcher.PortName sPortRef _ -> if portRef == sPortRef then Just s else Nothing
+    Searcher.NodeSearcher ns -> case ns ^. Searcher.modeData of
+        Searcher.PortNameMode d -> let sPortRef = OutPortRef (ns ^. Searcher.nodeLoc) (d ^. Searcher.portId)
+            in if portRef == sPortRef then Just s else Nothing
+        _ -> Nothing
     _                            -> Nothing
 filterOutSearcherIfNotRelated _ _ = Nothing

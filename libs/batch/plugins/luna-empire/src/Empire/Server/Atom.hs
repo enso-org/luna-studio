@@ -152,10 +152,7 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
                 file = Path.toFilePath $ Path.filename path
             liftIO $ withClosedTempFile dir (file <> ".tmp") $ \tmpFile -> do
                 Text.writeFile tmpFile source
-                let backupFile = Path.toFilePath path <> ".backup"
-                Dir.renameFile (Path.toFilePath path) backupFile
                 Dir.renameFile tmpFile (Path.toFilePath path)
-                Dir.removeFile backupFile
             replyOk req ()
 
 handleCloseFile :: Request CloseFile.Request -> StateT Env BusT ()

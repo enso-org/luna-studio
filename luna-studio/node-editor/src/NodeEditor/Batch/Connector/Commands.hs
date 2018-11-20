@@ -1,6 +1,8 @@
 module NodeEditor.Batch.Connector.Commands where
 
-import           Common.Batch.Connector.Connection        (Message (Message), sendRequest, sendUpdate)
+import           Common.Batch.Connector.Connection        (Message (Message),
+                                                           sendRequest,
+                                                           sendUpdate)
 import           Common.Prelude
 import           Data.Map                                 (Map)
 import qualified Data.Map                                 as Map
@@ -41,14 +43,19 @@ import           LunaStudio.Data.Connection               (Connection)
 import           LunaStudio.Data.GraphLocation            (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation            as GraphLocation
 import           LunaStudio.Data.Node                     (ExpressionNode)
-import           LunaStudio.Data.NodeLoc                  (NodeLoc, normalise, normalise', normalise_)
+import           LunaStudio.Data.NodeLoc                  (NodeLoc, normalise,
+                                                           normalise',
+                                                           normalise_)
 import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
 import           LunaStudio.Data.NodeMeta                 (NodeMeta)
-import           LunaStudio.Data.NodeSearcher             (ImportName)
 import           LunaStudio.Data.PortDefault              (PortDefault)
-import           LunaStudio.Data.PortRef                  (AnyPortRef (InPortRef'), InPortRef, OutPortRef)
+import           LunaStudio.Data.PortRef                  (AnyPortRef (InPortRef'),
+                                                           InPortRef,
+                                                           OutPortRef)
 import           LunaStudio.Data.Position                 (Position)
-import           LunaStudio.Data.Project                  (LocationSettings, ProjectId)
+import           LunaStudio.Data.Project                  (LocationSettings,
+                                                           ProjectId)
+import           LunaStudio.Data.Searcher.Node            (LibraryName)
 import           NodeEditor.Batch.Workspace               (Workspace)
 import           NodeEditor.Batch.Workspace               (currentLocation)
 import           NodeEditor.React.Model.Connection        (ConnectionId)
@@ -92,9 +99,9 @@ addConnection src dst workspace uuid guiID = sendRequest
             conv (Left a)  = Left a --TODO normalise
             conv (Right a) = Right $ a ^. NodeLoc.nodeId
 
-addImports :: Set ImportName -> Workspace -> UUID -> Maybe UUID -> IO ()
-addImports imps workspace uuid guiID = sendRequest . Message uuid guiID
-    . withLibrary workspace AddImports.Request $ imps
+addImports :: Set LibraryName -> Workspace -> UUID -> Maybe UUID -> IO ()
+addImports libs workspace uuid guiID = sendRequest . Message uuid guiID
+    . withLibrary workspace AddImports.Request $ libs
 
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Workspace -> UUID
     -> Maybe UUID -> IO ()
@@ -182,9 +189,9 @@ saveSettings :: LocationSettings -> Workspace -> UUID -> Maybe UUID -> IO ()
 saveSettings settings workspace uuid guiID = sendRequest $ Message uuid guiID
     $ withLibrary workspace SaveSettings.Request settings
 
-searchNodes :: Set ImportName -> Workspace -> UUID -> Maybe UUID -> IO ()
-searchNodes importNames workspace uuid guiID = sendRequest $ Message uuid guiID
-    $ withLibrary workspace SearchNodes.Request importNames
+searchNodes :: Set LibraryName -> Workspace -> UUID -> Maybe UUID -> IO ()
+searchNodes libsNames workspace uuid guiID = sendRequest $ Message uuid guiID
+    $ withLibrary workspace SearchNodes.Request libsNames
 
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeExpression nodeLoc expression workspace uuid guiID = sendRequest

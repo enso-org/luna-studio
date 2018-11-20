@@ -5,9 +5,12 @@ import Common.Prelude
 import qualified Data.Map                                   as Map
 import qualified Data.Set                                   as Set
 import qualified LunaStudio.Data.Node                       as API
+import qualified LunaStudio.Data.PortRef                    as PortRef
+import qualified LunaStudio.Data.TypeRep                    as TypeRep
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
+import qualified NodeEditor.React.Model.Port                as Port
 import qualified NodeEditor.React.Model.Searcher            as Searcher
 
 import Common.Action.Command                       (Command)
@@ -34,10 +37,11 @@ import NodeEditor.React.Model.Visualization        (VisualizationBackup (Message
 import NodeEditor.State.Global                     (State)
 
 
-data NodeUpdateModification = KeepPorts
-                            | KeepNodeMeta
-                            | MergePorts
-                            deriving (Eq, Ord)
+data NodeUpdateModification
+    = KeepPorts
+    | KeepNodeMeta
+    | MergePorts
+    deriving (Eq, Ord)
 
 
 localUpdateExpressionNodes :: Set NodeUpdateModification -> [ExpressionNode]
@@ -184,12 +188,19 @@ localUpdateNodeTypecheck path update = do
             SidebarNode.inputSidebarPorts .= convert `fmap2` outPorts
 
 updateSearcherClassName :: ExpressionNode -> Command State ()
-updateSearcherClassName node = do
-    let (className, _) = Searcher.getPredInfo node
-        isNodePred n s
-            = s ^. Searcher.predNl == Just (n ^. ExpressionNode.nodeLoc)
-    whenM (maybe False (isNodePred node) <$> NodeEditor.getSearcher) $ do
-        NodeEditor.modifySearcher
-            $ Searcher.mode . Searcher._Node . _2 . Searcher.className
-                .= className
+updateSearcherClassName updatedNode = do
+    mayConnectedPortRef <- maybe
+        Nothing
+        (view Searcher.connectedPortRef)
+        <$> NodeEditor.getSearcher
+    let mayConnectedNL   = view PortRef.nodeLoc <$> mayConnectedPortRef
+        nl               = updatedNode ^. ExpressionNode.nodeLoc
+        mayConnectedPort = listToMaybe $ ExpressionNode.outPortsList updatedNode
+        className        = maybe mempty toClassName mayConnectedPort
+        toClassName p    = convert <$> p ^? Port.valueType . TypeRep._TCons . _1
+
+    when (mayConnectedNL == Just nl) $ do
+        NodeEditor.modifySearcher $ Searcher.mode
+            . Searcher._NodeSearcher . Searcher.modeData
+            . Searcher._ExpressionMode . Searcher.className .= className
         localUpdateSearcherHintsPreservingSelection

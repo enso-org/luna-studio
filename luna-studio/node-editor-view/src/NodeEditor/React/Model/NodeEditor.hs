@@ -41,6 +41,8 @@ import NodeEditor.React.Model.SelectionBox  (SelectionBox)
 import NodeEditor.React.Model.Visualization (NodeVisualizations, VisualizationProperties (VisualizationProperties),
                                              VisualizationsBackupMap,
                                              Visualizers)
+import NodeEditor.React.Model.SearcherProperties (SearcherProperties,
+                                                  toSearcherProperties)
 
 
 data GraphStatus = GraphLoaded
@@ -98,9 +100,12 @@ isGraphLoaded = graphStatus . to (== GraphLoaded)
 returnsGraphError :: Getter NodeEditor Bool
 returnsGraphError = to (has (graphStatus . _GraphError))
 
-
 screenTransform :: Lens' NodeEditor CameraTransformation
 screenTransform = layout . Layout.screenTransform
+
+searcherProperties :: Getter NodeEditor (Maybe SearcherProperties)
+searcherProperties = to $ \ne -> flip
+    toSearcherProperties (ne ^. visualizersLibPaths) <$> ne ^. searcher
 
 expressionNodesRecursive :: Getter NodeEditor [ExpressionNode]
 expressionNodesRecursive = to (concatMap expressionNodesRecursive' . HashMap.elems . view expressionNodes) where

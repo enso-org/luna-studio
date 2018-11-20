@@ -67,6 +67,7 @@ dependencies:
   - datetime
   - deepseq
   - extra
+  - fuzzy-text
   - ghcjs-base
   - ghcjs-prim
   - hashable

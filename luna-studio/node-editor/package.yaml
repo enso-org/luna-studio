@@ -68,6 +68,7 @@ dependencies:
   - deepseq
   - extra
   - filepath
+  - fuzzy-text
   - ghcjs-base
   - ghcjs-prim
   - hashable
