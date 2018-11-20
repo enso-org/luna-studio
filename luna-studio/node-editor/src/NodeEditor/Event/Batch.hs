@@ -40,11 +40,13 @@ import qualified LunaStudio.API.Graph.SetPortDefault        as SetPortDefault
 import qualified LunaStudio.API.Graph.TypeCheck             as TypeCheck
 import qualified LunaStudio.API.Graph.Undo                  as Undo
 
+import LunaStudio.API.Response (ResponseOf)
+
 
 data Event = UnknownEvent                             String
            | AddConnectionResponse             AddConnection.Response
            | AddImportsResponse                   AddImports.Response
-           | AddNodeResponse                         AddNode.Response
+           | AddNodeResponse             (ResponseOf AddNode.Request)
            | AddPortResponse                         AddPort.Response
            | AddSubgraphResponse                 AddSubgraph.Response
            | AtomPasteResponse                     AtomPaste.Response
@@ -66,7 +68,7 @@ data Event = UnknownEvent                             String
            | ProjectMoved                        MoveProject.Response
            | RedoResponse                               Redo.Response
            | RemoveConnectionResponse       RemoveConnection.Response
-           | RemoveNodesResponse                 RemoveNodes.Response
+           | RemoveNodesResponse                 (ResponseOf RemoveNodes.Request)
            | RemovePortResponse                   RemovePort.Response
            | RenameNodeResponse                   RenameNode.Response
            | RenamePortResponse                   RenamePort.Response

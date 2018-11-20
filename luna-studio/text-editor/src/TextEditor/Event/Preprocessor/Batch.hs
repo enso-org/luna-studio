@@ -20,7 +20,7 @@ process (Event.Connection (Message msg)) = Just $ Event.Batch $ processMessage m
 process _                                = Nothing
 
 handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> BatchEvent) -> (String, ByteString -> BatchEvent)
-handle cons = (Topic.topic (undefined :: a), cons . decode . GZip.decompress)
+handle cons = (Topic.topic @a, cons . decode . GZip.decompress)
 
 handlers :: Map String (ByteString -> BatchEvent)
 handlers = Map.fromList [ handle BufferGetResponse

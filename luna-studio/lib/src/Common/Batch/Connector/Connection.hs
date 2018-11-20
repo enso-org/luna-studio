@@ -58,10 +58,10 @@ sendMessage :: WebMessage -> IO ()
 sendMessage msg = sendMessages [msg]
 
 makeMessage :: BinaryRequest a => Message a -> WebMessage
-makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (GZip.compress $ Binary.encode body')
+makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic' body') (GZip.compress $ Binary.encode body')
 
 makeMessage' :: BinaryMessage a => a -> WebMessage
-makeMessage' body = let body' = body in WebMessage (Topic.topic body') (GZip.compress $ Binary.encode body')
+makeMessage' body = WebMessage (Topic.topic' body) (GZip.compress $ Binary.encode body)
 
 sendRequest :: BinaryRequest a => Message a -> IO ()
 sendRequest = sendMessage . makeMessage

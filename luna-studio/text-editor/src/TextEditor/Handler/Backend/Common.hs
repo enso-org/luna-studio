@@ -27,7 +27,7 @@ handleResponse resp@(Response.Response uuid _ _ inv res) success failure = do
         Response.Ok    res' -> success res'
         Response.Error err  -> do
             let str = Text.unpack $ err ^. ErrorAPI.errorContent
-            error $ str <> "\n\nwhile processing event\n\n" <> Topic.topic resp
+            error $ str <> "\n\nwhile processing event\n\n" <> Topic.topic' resp
             failure err inv
     measureResponseTime resp
     whenM (isOwnRequest uuid) $ unregisterRequest uuid

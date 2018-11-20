@@ -18,7 +18,7 @@ process (Event.Connection (Message msg)) = Just $ Event.Batch $ processMessage m
 process _                                = Nothing
 
 handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (String, ByteString -> Batch.Event)
-handle cons = (Topic.topic (undefined :: a), cons . decode . GZip.decompress)
+handle cons = (Topic.topic @a, cons . decode . GZip.decompress)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
 handlers = Map.fromList [ handle AddConnectionResponse

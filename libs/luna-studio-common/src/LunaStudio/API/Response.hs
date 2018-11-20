@@ -9,7 +9,7 @@ import Prologue
 {-import qualified LunaStudio.API.Control.Interpreter      as Interpreter-}
 {-import qualified LunaStudio.API.Graph.AddConnection      as AddConnection-}
 {-import qualified LunaStudio.API.Graph.AddImports         as AddImports-}
-{-import qualified LunaStudio.API.Graph.AddNode            as AddNode-}
+import qualified LunaStudio.API.Graph.AddNode            as AddNode
 {-import qualified LunaStudio.API.Graph.AddPort            as AddPort-}
 {-import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph-}
 {-import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes-}
@@ -21,7 +21,7 @@ import Prologue
 {-import qualified LunaStudio.API.Graph.MovePort           as MovePort-}
 {-import qualified LunaStudio.API.Graph.Paste              as Paste-}
 {-import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection-}
-{-import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes-}
+import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
 {-import qualified LunaStudio.API.Graph.RemovePort         as RemovePort-}
 {-import qualified LunaStudio.API.Graph.RenameNode         as RenameNode-}
 {-import qualified LunaStudio.API.Graph.RenamePort         as RenamePort-}
@@ -41,6 +41,7 @@ import Data.Binary            (Binary)
 import Data.UUID.Types        (UUID)
 import LunaStudio.API.Request (Request (..))
 import LunaStudio.API.Topic   (MessageTopic)
+import LunaStudio.Data.Diff   (Diff)
 import LunaStudio.Data.Error  (Error, LunaError)
 
 
@@ -107,4 +108,9 @@ instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response req inv res)
 -- === Instances === --
 -----------------------
 
+type instance InverseOf AddNode.Request = RemoveNodes.Request
+type instance ResultOf  AddNode.Request = Diff
+
+type instance InverseOf RemoveNodes.Request = RemoveNodes.Inverse
+type instance ResultOf  RemoveNodes.Request = Diff
 

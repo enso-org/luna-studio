@@ -30,4 +30,4 @@ type instance Response.InverseOf Request = ()
 type instance Response.ResultOf  Request = ()
 
 instance T.MessageTopic Request where
-    topic = "empire.undo"
+    topic = "empire.redo"

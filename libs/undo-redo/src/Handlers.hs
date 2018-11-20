@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE StandaloneDeriving        #-}
+{-# LANGUAGE UndecidableInstances      #-}
 {-# LANGUAGE TypeFamilies              #-}
 
 module Handlers where
@@ -38,7 +39,7 @@ import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
 import           LunaStudio.API.Request                  (Request (..))
 import qualified LunaStudio.API.Request                  as Request
-import           LunaStudio.API.Response                 (Response (..))
+import           LunaStudio.API.Response                 (Response (..), ResponseOf, InverseOf)
 import qualified LunaStudio.API.Response                 as Response
 import qualified LunaStudio.API.Topic                    as Topic
 import           LunaStudio.Data.Connection              as Connection
@@ -63,7 +64,7 @@ type Handler = ByteString -> UndoPure ()
 handlersMap :: Map String Handler
 handlersMap = fromList
     [ makeHandler handleAddConnectionUndo
-    , makeHandler handleAddNodeUndo
+    , makeHandler $ autoHandle @AddNode.Request
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleAutolayoutNodes
@@ -83,43 +84,31 @@ handlersMap = fromList
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
-type family UndoResponseRequest t where
-    UndoResponseRequest AddConnection.Response        = SetNodeExpression.Request
-    UndoResponseRequest AddNode.Response              = RemoveNodes.Request
-    UndoResponseRequest AddPort.Response              = RemovePort.Request
-    UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
-    UndoResponseRequest AutolayoutNodes.Response      = SetNodesMeta.Request
-    UndoResponseRequest CollapseToFunction.Response   = SetCode.Request
-    UndoResponseRequest MovePort.Response             = MovePort.Request
-    UndoResponseRequest Paste.Response                = RemoveNodes.Request
-    UndoResponseRequest RemoveConnection.Response     = AddConnection.Request
-    UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
-    UndoResponseRequest RemovePort.Response           = AddPort.Request
-    UndoResponseRequest RenameNode.Response           = RenameNode.Request
-    UndoResponseRequest RenamePort.Response           = RenamePort.Request
-    UndoResponseRequest SetCode.Response              = SetCode.Request
-    UndoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
-    UndoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
-    UndoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
+type family UndoReqRequest t where
+    UndoReqRequest AddConnection.Request        = SetNodeExpression.Request
+    UndoReqRequest AddNode.Request              = RemoveNodes.Request
+    UndoReqRequest AddPort.Request              = RemovePort.Request
+    UndoReqRequest AddSubgraph.Request          = RemoveNodes.Request
+    UndoReqRequest AutolayoutNodes.Request      = SetNodesMeta.Request
+    UndoReqRequest CollapseToFunction.Request   = SetCode.Request
+    UndoReqRequest MovePort.Request             = MovePort.Request
+    UndoReqRequest Paste.Request                = RemoveNodes.Request
+    UndoReqRequest RemoveConnection.Request     = AddConnection.Request
+    UndoReqRequest RemoveNodes.Request          = AddSubgraph.Request
+    UndoReqRequest RemovePort.Request           = AddPort.Request
+    UndoReqRequest RenameNode.Request           = RenameNode.Request
+    UndoReqRequest RenamePort.Request           = RenamePort.Request
+    UndoReqRequest SetCode.Request              = SetCode.Request
+    UndoReqRequest SetNodeExpression.Request    = SetNodeExpression.Request
+    UndoReqRequest SetNodesMeta.Request         = SetNodesMeta.Request
+    UndoReqRequest SetPortDefault.Request       = SetPortDefault.Request
+    UndoReqRequest a = InverseOf a
 
-type family RedoResponseRequest t where
-    RedoResponseRequest AddConnection.Response        = AddConnection.Request
-    RedoResponseRequest AddNode.Response              = AddNode.Request
-    RedoResponseRequest AddPort.Response              = AddPort.Request
-    RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
-    RedoResponseRequest AutolayoutNodes.Response      = AutolayoutNodes.Request
-    RedoResponseRequest CollapseToFunction.Response   = CollapseToFunction.Request
-    RedoResponseRequest MovePort.Response             = MovePort.Request
-    RedoResponseRequest Paste.Response                = Paste.Request
-    RedoResponseRequest RemoveConnection.Response     = RemoveConnection.Request
-    RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
-    RedoResponseRequest RemovePort.Response           = RemovePort.Request
-    RedoResponseRequest RenameNode.Response           = RenameNode.Request
-    RedoResponseRequest RenamePort.Response           = RenamePort.Request
-    RedoResponseRequest SetCode.Response              = SetCode.Request
-    RedoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
-    RedoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
-    RedoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
+type family UndoResponseRequest t where
+    UndoResponseRequest (Response req inv res) = UndoReqRequest req
+
+type family RedoResponseRequest a where
+    RedoResponseRequest (Response req inv res) = req
 
 data ResponseErrorException = forall req inv res. (Show req, Show res, Show inv)
     => ResponseErrorException (Response req inv res)
@@ -164,17 +153,11 @@ handle message = do
     redo    %= List.filter (not . compareMsgByUserId message)
     history %= (message :)
 
-
-getUndoAddNode :: AddNode.Request -> RemoveNodes.Request
-getUndoAddNode (AddNode.Request location nodeLoc _ _ _) =
-    RemoveNodes.Request location [nodeLoc]
-
-handleAddNodeUndo :: AddNode.Response
-    -> Maybe (RemoveNodes.Request, AddNode.Request)
-handleAddNodeUndo (Response.Response _ _ req _ status) = case status of
-    Response.Ok _ -> Just (getUndoAddNode req, req)
-    _             -> Nothing
-
+autoHandle :: forall req. ResponseOf req -> Maybe (InverseOf req, req)
+autoHandle (Response.Response _ _ req invStatus status)
+    = case (invStatus, status) of
+        (Response.Ok inv, Response.Ok _) -> Just (inv, req)
+        _ -> Nothing
 
 getUndoAddPort :: AddPort.Request -> RemovePort.Request
 getUndoAddPort (AddPort.Request location portRef connections _)
@@ -293,7 +276,7 @@ getUndoRemoveNodes
     (RemoveNodes.Request location _)
     (RemoveNodes.Inverse nodes conns) = AddSubgraph.Request location nodes conns
 
-handleRemoveNodesUndo :: RemoveNodes.Response
+handleRemoveNodesUndo :: ResponseOf RemoveNodes.Request
     -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ _ req invStatus status)
     = case (invStatus, status) of
