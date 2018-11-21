@@ -1,6 +1,6 @@
 module Empire.ApiHandlers where
 
-import Prologue
+import Prologue hiding (init, last)
 
 import qualified Data.Map                                as Map
 import qualified Data.Set                         as Set
@@ -53,7 +53,7 @@ import qualified System.Log.MLogger                      as Logger
 
 import Control.Lens                  (to, traversed, use, (.=), (^..), _Left)
 import Control.Monad.Catch           (handle, try)
-import Data.List                     (break, find, partition, sortBy)
+import Data.List                     (break, find, init, last, partition, sortBy)
 import Data.Maybe                    (isJust, isNothing, listToMaybe,
                                       maybeToList)
 import Empire.ASTOp                  (runASTOp)
@@ -208,6 +208,13 @@ instance Modification GetSubgraphs.Request where
 instance Modification MovePort.Request where
     perform (MovePort.Request location portRef newPortPos)
         = withDiff location $ Graph.movePort location portRef newPortPos
+    buildInverse (MovePort.Request location (OutPortRef nl pid) newPortPos)
+        = let prevPos = last pid
+              toBePos = init pid <> [prevPos]
+          in pure $
+                MovePort.Request location
+                    (OutPortRef nl toBePos)
+                    (coerce newPortPos)
 
 instance Modification Paste.Request where
     perform (Paste.Request location position string)

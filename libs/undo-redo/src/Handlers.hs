@@ -69,7 +69,7 @@ handlersMap = fromList
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleAutolayoutNodes
     , makeHandler handleCollapseToFunctionUndo
-    , makeHandler handleMovePortUndo
+    , makeHandler $ autoHandle @MovePort.Request
     , makeHandler handlePasteUndo
     , makeHandler handleRemoveConnectionUndo
     , makeHandler handleRemoveNodesUndo
@@ -89,7 +89,6 @@ type family UndoReqRequest t where
     UndoReqRequest AddSubgraph.Request          = RemoveNodes.Request
     UndoReqRequest AutolayoutNodes.Request      = SetNodesMeta.Request
     UndoReqRequest CollapseToFunction.Request   = SetCode.Request
-    UndoReqRequest MovePort.Request             = MovePort.Request
     UndoReqRequest Paste.Request                = RemoveNodes.Request
     UndoReqRequest RemoveConnection.Request     = AddConnection.Request
     UndoReqRequest RemoveNodes.Request          = AddSubgraph.Request
@@ -202,21 +201,6 @@ handleCollapseToFunctionUndo (Response.Response _ _ req invStatus status)
                 (inv ^. CollapseToFunction.nodeCache)
             , req)
         _ -> Nothing
-
-
-getUndoMovePort :: MovePort.Request -> MovePort.Request
-getUndoMovePort (MovePort.Request location oldPortRef newPos) =
-    case oldPortRef of
-        OutPortRef nid (Projection i : rest) -> MovePort.Request
-            location
-            (OutPortRef nid $ Projection newPos : rest)
-            i
-
-handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
-handleMovePortUndo (Response.Response _ _ req _ status) = case status of
-    Response.Ok _ -> Just (getUndoMovePort req, req)
-    _             -> Nothing
-
 
 getUndoPaste :: Paste.Request -> Diff -> RemoveNodes.Request
 getUndoPaste request (Diff mods)

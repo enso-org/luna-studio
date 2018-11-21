@@ -18,7 +18,7 @@ import qualified LunaStudio.API.Graph.AddNode            as AddNode
 {-import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz-}
 {-import qualified LunaStudio.API.Graph.GetProgram         as GetProgram-}
 {-import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs-}
-{-import qualified LunaStudio.API.Graph.MovePort           as MovePort-}
+import qualified LunaStudio.API.Graph.MovePort           as MovePort
 {-import qualified LunaStudio.API.Graph.Paste              as Paste-}
 {-import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection-}
 import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
@@ -113,6 +113,9 @@ type instance ResultOf  AddConnection.Request = Diff
 
 type instance InverseOf AddNode.Request = RemoveNodes.Request
 type instance ResultOf  AddNode.Request = Diff
+
+type instance InverseOf MovePort.Request = MovePort.Request
+type instance ResultOf  MovePort.Request = Diff
 
 type instance InverseOf RemoveNodes.Request = RemoveNodes.Inverse
 type instance ResultOf  RemoveNodes.Request = Diff
