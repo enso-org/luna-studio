@@ -111,7 +111,7 @@ handleOpenFile req@(Request _ _ (OpenFile.Request path)) = timeIt "handleOpenFil
     empireNotifEnv   <- use Env.empireNotif
     result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
     case result of
-        Left (exc :: SomeASTException) -> do
+        Left (exc :: SomeException) -> do
             err <- liftIO $ Graph.prepareLunaError $ toException exc
             replyFail logger err req (Response.Error err)
         Right (_, newEmpireEnv)  -> do
