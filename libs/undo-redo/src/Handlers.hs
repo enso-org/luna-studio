@@ -79,7 +79,7 @@ handlersMap = fromList
     , makeHandler handleSetCodeUndo
     , makeHandler $ autoHandle @SetNodeExpression.Request
     , makeHandler $ autoHandle @SetNodesMeta.Request
-    , makeHandler handleSetPortDefaultUndo
+    , makeHandler $ autoHandle @SetPortDefault.Request
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
@@ -97,7 +97,6 @@ type family UndoReqRequest t where
     UndoReqRequest RenameNode.Request           = RenameNode.Request
     UndoReqRequest RenamePort.Request           = RenamePort.Request
     UndoReqRequest SetCode.Request              = SetCode.Request
-    UndoReqRequest SetPortDefault.Request       = SetPortDefault.Request
     UndoReqRequest a = InverseOf a
 
 type family UndoResponseRequest t where
@@ -323,18 +322,3 @@ handleSetCodeUndo (Response.Response _ _ req invStatus status)
                 (inv ^. SetCode.prevCache)
             , req)
         _ -> Nothing
-
-getUndoSetPortDefault :: SetPortDefault.Request -> SetPortDefault.Inverse
-    -> SetPortDefault.Request
-getUndoSetPortDefault
-    (SetPortDefault.Request location portRef _)
-    (SetPortDefault.Inverse prevPortDefault)
-        = SetPortDefault.Request location portRef prevPortDefault
-
-handleSetPortDefaultUndo :: SetPortDefault.Response
-    -> Maybe (SetPortDefault.Request, SetPortDefault.Request)
-handleSetPortDefaultUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoSetPortDefault req inv, req)
-        _   -> Nothing

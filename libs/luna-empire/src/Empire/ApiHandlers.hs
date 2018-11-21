@@ -156,7 +156,8 @@ instance Modification SetPortDefault.Request where
     perform (SetPortDefault.Request location portRef defaultValue)
         = withDiff location $ Graph.setPortDefault location portRef defaultValue
     buildInverse (SetPortDefault.Request location portRef _)
-        = SetPortDefault.Inverse <$> Graph.getPortDefault location portRef
+        = SetPortDefault.Request location portRef
+            <$> Graph.getPortDefault location portRef
 
 instance Modification AddImports.Request where
     perform (AddImports.Request location modules)
