@@ -27,7 +27,7 @@ import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
 {-import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings-}
 {-import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes-}
-{-import qualified LunaStudio.API.Graph.SetCode            as SetCode-}
+import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
@@ -125,6 +125,9 @@ type instance ResultOf  RenameNode.Request = Diff
 
 type instance InverseOf RenamePort.Request = RenamePort.Request
 type instance ResultOf  RenamePort.Request = Diff
+
+type instance InverseOf SetCode.Request = SetCode.Request
+type instance ResultOf  SetCode.Request = Diff
 
 type instance InverseOf SetNodeExpression.Request = SetNodeExpression.Request
 type instance ResultOf  SetNodeExpression.Request = Diff

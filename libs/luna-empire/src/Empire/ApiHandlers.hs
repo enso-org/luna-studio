@@ -256,27 +256,27 @@ instance Exception SidebarDoesNotExistException where
     toException = astExceptionToException
 
 instance Modification RemovePort.Request where
+    perform (RemovePort.Request location portRef) = withDiff location $ do
+        maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
+        () <- when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
+        Graph.removePort location portRef
     buildInverse (RemovePort.Request location portRef) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         oldName     <- Graph.getPortName location portRef
         let conns = flip filter connections $ (== portRef) . fst
         pure $ RemovePort.Inverse oldName $ fmap (uncurry Connection) conns
-    perform (RemovePort.Request location portRef) = withDiff location $ do
-        maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraphNoTC location
-        () <- when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
-        Graph.removePort location portRef
 
 instance Modification SetCode.Request where
-    buildInverse (SetCode.Request location@(GraphLocation file _) _ _) = do
-        cache <- Graph.prepareNodeCache location
-        code  <- Graph.withUnit (GraphLocation file def) $ use Graph.code
-        pure $ SetCode.Inverse code cache
     perform (SetCode.Request location@(GraphLocation file _) code cache)
         = withDiff location $ do
             Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
             Graph.loadCode location code
             Graph.resendCode location
             Graph.typecheck location
+    buildInverse (SetCode.Request location@(GraphLocation file _) _ _) = do
+        cache <- Graph.prepareNodeCache location
+        code  <- Graph.withUnit (GraphLocation file def) $ use Graph.code
+        pure $ SetCode.Request location code cache
 
 instance Modification SaveSettings.Request where
     perform (SaveSettings.Request gl settings) = saveSettings gl settings gl

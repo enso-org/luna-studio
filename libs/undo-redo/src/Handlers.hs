@@ -76,7 +76,7 @@ handlersMap = fromList
     , makeHandler handleRemovePortUndo
     , makeHandler $ autoHandle @RenameNode.Request
     , makeHandler $ autoHandle @RenamePort.Request
-    , makeHandler handleSetCodeUndo
+    , makeHandler $ autoHandle @SetCode.Request
     , makeHandler $ autoHandle @SetNodeExpression.Request
     , makeHandler $ autoHandle @SetNodesMeta.Request
     , makeHandler $ autoHandle @SetPortDefault.Request
@@ -93,8 +93,6 @@ type family UndoReqRequest t where
     UndoReqRequest RemoveConnection.Request     = AddConnection.Request
     UndoReqRequest RemoveNodes.Request          = AddSubgraph.Request
     UndoReqRequest RemovePort.Request           = AddPort.Request
-    UndoReqRequest RenameNode.Request           = RenameNode.Request
-    UndoReqRequest SetCode.Request              = SetCode.Request
     UndoReqRequest a = InverseOf a
 
 type family UndoResponseRequest t where
@@ -263,15 +261,3 @@ handleRemovePortUndo (Response.Response _ _ req invStatus status)
         (Response.Ok inv, Response.Ok _)
             -> Just (getUndoRemovePort req inv, req)
         _   -> Nothing
-
-handleSetCodeUndo :: SetCode.Response
-    -> Maybe (SetCode.Request,  SetCode.Request)
-handleSetCodeUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _) -> Just
-            (SetCode.Request
-                (req ^. SetCode.location)
-                (inv ^. SetCode.prevCode)
-                (inv ^. SetCode.prevCache)
-            , req)
-        _ -> Nothing
