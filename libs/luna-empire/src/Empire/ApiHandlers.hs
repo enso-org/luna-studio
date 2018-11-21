@@ -284,6 +284,8 @@ instance Modification SetNodeExpression.Request where
         pure $ SetNodeExpression.Request location nodeId oldExpr
 
 instance Modification SetNodesMeta.Request where
+    perform (SetNodesMeta.Request location updates) = withDiff location $ do
+        for_ (toList updates) $ uncurry $ Graph.setNodeMeta location
     buildInverse (SetNodesMeta.Request location updates) = do
         allNodes <- Graph.withBreadcrumb location (runASTOp buildNodes)
             $ view GraphAPI.nodes <$> runASTOp buildClassGraph
@@ -291,9 +293,7 @@ instance Modification SetNodesMeta.Request where
                 justIf
                     (Map.member (node ^. Node.nodeId) updates)
                     (node ^. Node.nodeId, node ^. Node.nodeMeta)
-        pure $ SetNodesMeta.Inverse prevMeta
-    perform (SetNodesMeta.Request location updates) = withDiff location $ do
-        for_ (toList updates) $ uncurry $ Graph.setNodeMeta location
+        pure $ SetNodesMeta.Request location prevMeta
 
 instance Modification Substitute.Request where
     perform (Substitute.Request location diffs) = do

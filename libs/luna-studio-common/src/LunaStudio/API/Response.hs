@@ -29,7 +29,7 @@ import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
 {-import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes-}
 {-import qualified LunaStudio.API.Graph.SetCode            as SetCode-}
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
-{-import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta-}
+import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 {-import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault-}
 {-import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck-}
 
@@ -119,3 +119,6 @@ type instance ResultOf  RemoveNodes.Request = Diff
 
 type instance InverseOf SetNodeExpression.Request = SetNodeExpression.Request
 type instance ResultOf  SetNodeExpression.Request = Diff
+
+type instance InverseOf SetNodesMeta.Request = SetNodesMeta.Request
+type instance ResultOf  SetNodesMeta.Request = Diff
