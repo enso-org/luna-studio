@@ -65,7 +65,7 @@ handlersMap :: Map String Handler
 handlersMap = fromList
     [ makeHandler $ autoHandle @AddConnection.Request
     , makeHandler $ autoHandle @AddNode.Request
-    , makeHandler handleAddPortUndo
+    , makeHandler $ autoHandle @AddPort.Request
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleAutolayoutNodes
     , makeHandler handleCollapseToFunctionUndo
@@ -73,7 +73,7 @@ handlersMap = fromList
     , makeHandler handlePasteUndo
     , makeHandler handleRemoveConnectionUndo
     , makeHandler handleRemoveNodesUndo
-    , makeHandler handleRemovePortUndo
+    , makeHandler $ autoHandle @RemovePort.Request
     , makeHandler $ autoHandle @RenameNode.Request
     , makeHandler $ autoHandle @RenamePort.Request
     , makeHandler $ autoHandle @SetCode.Request
@@ -85,14 +85,12 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
-    UndoReqRequest AddPort.Request              = RemovePort.Request
     UndoReqRequest AddSubgraph.Request          = RemoveNodes.Request
     UndoReqRequest AutolayoutNodes.Request      = SetNodesMeta.Request
     UndoReqRequest CollapseToFunction.Request   = SetCode.Request
     UndoReqRequest Paste.Request                = RemoveNodes.Request
     UndoReqRequest RemoveConnection.Request     = AddConnection.Request
     UndoReqRequest RemoveNodes.Request          = AddSubgraph.Request
-    UndoReqRequest RemovePort.Request           = AddPort.Request
     UndoReqRequest a = InverseOf a
 
 type family UndoResponseRequest t where
@@ -149,17 +147,6 @@ autoHandle (Response.Response _ _ req invStatus status)
     = case (invStatus, status) of
         (Response.Ok inv, Response.Ok _) -> Just (inv, req)
         _ -> Nothing
-
-getUndoAddPort :: AddPort.Request -> RemovePort.Request
-getUndoAddPort (AddPort.Request location portRef connections _)
-    = RemovePort.Request location portRef
-
-handleAddPortUndo :: AddPort.Response
-    -> Maybe (RemovePort.Request, AddPort.Request)
-handleAddPortUndo (Response.Response _ _ req _ status) = case status of
-    Response.Ok _ -> Just (getUndoAddPort req, req)
-    _             -> Nothing
-
 
 getUndoAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
 getUndoAddSubgraph (AddSubgraph.Request location nodes conns) =
@@ -241,23 +228,4 @@ handleRemoveNodesUndo (Response.Response _ _ req invStatus status)
     = case (invStatus, status) of
         (Response.Ok inv, Response.Ok _)
             -> Just (getUndoRemoveNodes req inv, req)
-        _   -> Nothing
-
-
--- TODO[LJK/SB]: Preserve connections
-getUndoRemovePort :: RemovePort.Request -> RemovePort.Inverse -> AddPort.Request
-getUndoRemovePort
-    (RemovePort.Request location portRef)
-    (RemovePort.Inverse oldName conns) = AddPort.Request
-        location
-        portRef
-        (InPortRef' . view Connection.dst <$> conns)
-        (Just oldName)
-
-handleRemovePortUndo :: RemovePort.Response
-    -> Maybe (AddPort.Request, RemovePort.Request)
-handleRemovePortUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoRemovePort req inv, req)
         _   -> Nothing

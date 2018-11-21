@@ -167,6 +167,8 @@ instance Modification AddPort.Request where
     perform (AddPort.Request location portRef connsDst name)
         = withDiff location
             $ Graph.addPortWithConnections location portRef name connsDst
+    buildInverse (AddPort.Request location portRef _ _)
+        = pure $ RemovePort.Request location portRef
 
 instance Modification AddSubgraph.Request where
     perform (AddSubgraph.Request location nodes connections)
@@ -264,7 +266,11 @@ instance Modification RemovePort.Request where
         connections <- Graph.withGraph location $ runASTOp buildConnections
         oldName     <- Graph.getPortName location portRef
         let conns = flip filter connections $ (== portRef) . fst
-        pure $ RemovePort.Inverse oldName $ fmap (uncurry Connection) conns
+        pure $ AddPort.Request
+            location
+            portRef
+            (map (InPortRef' . snd) conns)
+            (Just oldName)
 
 instance Modification SetCode.Request where
     perform (SetCode.Request location@(GraphLocation file _) code cache)

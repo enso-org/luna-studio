@@ -10,7 +10,7 @@ import Prologue
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 {-import qualified LunaStudio.API.Graph.AddImports         as AddImports-}
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
-{-import qualified LunaStudio.API.Graph.AddPort            as AddPort-}
+import qualified LunaStudio.API.Graph.AddPort            as AddPort
 {-import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph-}
 {-import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes-}
 {-import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction-}
@@ -22,7 +22,7 @@ import qualified LunaStudio.API.Graph.MovePort           as MovePort
 {-import qualified LunaStudio.API.Graph.Paste              as Paste-}
 {-import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection-}
 import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
-{-import qualified LunaStudio.API.Graph.RemovePort         as RemovePort-}
+import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
 {-import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings-}
@@ -114,11 +114,17 @@ type instance ResultOf  AddConnection.Request = Diff
 type instance InverseOf AddNode.Request = RemoveNodes.Request
 type instance ResultOf  AddNode.Request = Diff
 
+type instance InverseOf AddPort.Request = RemovePort.Request
+type instance ResultOf  AddPort.Request = Diff
+
 type instance InverseOf MovePort.Request = MovePort.Request
 type instance ResultOf  MovePort.Request = Diff
 
 type instance InverseOf RemoveNodes.Request = RemoveNodes.Inverse
 type instance ResultOf  RemoveNodes.Request = Diff
+
+type instance InverseOf RemovePort.Request = AddPort.Request
+type instance ResultOf  RemovePort.Request = Diff
 
 type instance InverseOf RenameNode.Request = RenameNode.Request
 type instance ResultOf  RenameNode.Request = Diff
