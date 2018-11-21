@@ -143,7 +143,7 @@ instance Modification RenamePort.Request where
         = withDiff location $ Graph.renamePort location portRef name
     buildInverse (RenamePort.Request location portRef name) = do
         oldName <- Graph.getPortName location portRef
-        pure $ RenamePort.Inverse oldName
+        pure $ RenamePort.Request location portRef oldName
 
 instance Modification RenameNode.Request where
     perform (RenameNode.Request location nodeId name)
