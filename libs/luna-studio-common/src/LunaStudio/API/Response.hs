@@ -7,7 +7,7 @@ import Prologue
 {-import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer-}
 {-import qualified LunaStudio.API.Atom.Substitute          as Substitute-}
 {-import qualified LunaStudio.API.Control.Interpreter      as Interpreter-}
-{-import qualified LunaStudio.API.Graph.AddConnection      as AddConnection-}
+import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 {-import qualified LunaStudio.API.Graph.AddImports         as AddImports-}
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
 {-import qualified LunaStudio.API.Graph.AddPort            as AddPort-}
@@ -28,7 +28,7 @@ import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
 {-import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings-}
 {-import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes-}
 {-import qualified LunaStudio.API.Graph.SetCode            as SetCode-}
-{-import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression-}
+import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 {-import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta-}
 {-import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault-}
 {-import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck-}
@@ -108,9 +108,14 @@ instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response req inv res)
 -- === Instances === --
 -----------------------
 
+type instance InverseOf AddConnection.Request = SetNodeExpression.Request
+type instance ResultOf  AddConnection.Request = Diff
+
 type instance InverseOf AddNode.Request = RemoveNodes.Request
 type instance ResultOf  AddNode.Request = Diff
 
 type instance InverseOf RemoveNodes.Request = RemoveNodes.Inverse
 type instance ResultOf  RemoveNodes.Request = Diff
 
+type instance InverseOf SetNodeExpression.Request = SetNodeExpression.Request
+type instance ResultOf  SetNodeExpression.Request = Diff

@@ -63,7 +63,7 @@ type Handler = ByteString -> UndoPure ()
 
 handlersMap :: Map String Handler
 handlersMap = fromList
-    [ makeHandler handleAddConnectionUndo
+    [ makeHandler $ autoHandle @AddConnection.Request
     , makeHandler $ autoHandle @AddNode.Request
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
@@ -77,7 +77,7 @@ handlersMap = fromList
     , makeHandler handleRenameNodeUndo
     , makeHandler handleRenamePortUndo
     , makeHandler handleSetCodeUndo
-    , makeHandler handleSetNodeExpressionUndo
+    , makeHandler $ autoHandle @SetNodeExpression.Request
     , makeHandler handleSetNodesMetaUndo
     , makeHandler handleSetPortDefaultUndo
     ]
@@ -85,8 +85,6 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
-    UndoReqRequest AddConnection.Request        = SetNodeExpression.Request
-    UndoReqRequest AddNode.Request              = RemoveNodes.Request
     UndoReqRequest AddPort.Request              = RemovePort.Request
     UndoReqRequest AddSubgraph.Request          = RemoveNodes.Request
     UndoReqRequest AutolayoutNodes.Request      = SetNodesMeta.Request
@@ -99,7 +97,6 @@ type family UndoReqRequest t where
     UndoReqRequest RenameNode.Request           = RenameNode.Request
     UndoReqRequest RenamePort.Request           = RenamePort.Request
     UndoReqRequest SetCode.Request              = SetCode.Request
-    UndoReqRequest SetNodeExpression.Request    = SetNodeExpression.Request
     UndoReqRequest SetNodesMeta.Request         = SetNodesMeta.Request
     UndoReqRequest SetPortDefault.Request       = SetPortDefault.Request
     UndoReqRequest a = InverseOf a
@@ -179,23 +176,6 @@ handleAddSubgraphUndo :: AddSubgraph.Response
 handleAddSubgraphUndo (Response.Response _ _ req _ status) = case status of
     Response.Ok _ -> Just (getUndoAddSubgraph req, req)
     _             -> Nothing
-
-
-getUndoAddConnection :: AddConnection.Request -> AddConnection.Inverse
-    -> SetNodeExpression.Request
-getUndoAddConnection
-    (AddConnection.Request location _ dstPort)
-    (AddConnection.Inverse prevExpr) =
-        let nid = either (view PortRef.nodeId) (view NodeLoc.nodeId) dstPort
-        in SetNodeExpression.Request location nid prevExpr
-
-handleAddConnectionUndo :: AddConnection.Response
-    -> Maybe (SetNodeExpression.Request, AddConnection.Request)
-handleAddConnectionUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoAddConnection req inv, req)
-        _   -> Nothing
 
 getUndoAutolayout :: AutolayoutNodes.Request -> AutolayoutNodes.Inverse
     -> SetNodesMeta.Request
@@ -344,22 +324,6 @@ handleSetCodeUndo (Response.Response _ _ req invStatus status)
                 (inv ^. SetCode.prevCache)
             , req)
         _ -> Nothing
-
-getUndoSetNodeExpression :: SetNodeExpression.Request
-    -> SetNodeExpression.Inverse -> SetNodeExpression.Request
-getUndoSetNodeExpression
-    (SetNodeExpression.Request location nodeId _)
-    (SetNodeExpression.Inverse prevExpr)
-        = SetNodeExpression.Request location nodeId prevExpr
-
-handleSetNodeExpressionUndo :: SetNodeExpression.Response
-    -> Maybe (SetNodeExpression.Request, SetNodeExpression.Request)
-handleSetNodeExpressionUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoSetNodeExpression req inv, req)
-        _   -> Nothing
-
 
 getUndoSetNodesMeta :: SetNodesMeta.Request -> SetNodesMeta.Inverse
     -> SetNodesMeta.Request

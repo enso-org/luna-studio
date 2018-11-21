@@ -8,7 +8,9 @@ import qualified Data.UUID.V4                            as UUID
 import qualified Empire.Commands.Graph            as Graph
 import qualified Empire.Data.Graph                       as Graph (code,
                                                                    nodeCache)
+import qualified LunaStudio.API.Atom.Copy                as CopyText
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
+import qualified LunaStudio.API.Atom.Paste               as PasteText
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Control.Interpreter      as Interpreter
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
@@ -134,7 +136,7 @@ instance Modification AddConnection.Request where
     buildInverse (AddConnection.Request location _ dst') = do
         let dstNodeId = either (view PortRef.nodeId) (view NodeLoc.nodeId) dst'
         prevExpr <- Graph.withGraph location . runASTOp $ getNodeCode dstNodeId
-        pure $ AddConnection.Inverse prevExpr
+        pure $ SetNodeExpression.Request location dstNodeId prevExpr
 
 instance Modification RenamePort.Request where
     perform (RenamePort.Request location portRef name)
@@ -272,14 +274,14 @@ instance Modification SaveSettings.Request where
     perform (SaveSettings.Request gl settings) = saveSettings gl settings gl
 
 instance Modification SetNodeExpression.Request where
-    buildInverse (SetNodeExpression.Request location nodeId _) = do
-        oldExpr <- Graph.withGraph location . runASTOp $
-            getNodeCode nodeId
-        pure $ SetNodeExpression.Inverse oldExpr
     perform (SetNodeExpression.Request location nodeId expression)
         = withDiff location $ do
             Graph.setNodeExpression location nodeId expression
             Graph.typecheck location
+    buildInverse (SetNodeExpression.Request location nodeId _) = do
+        oldExpr <- Graph.withGraph location . runASTOp $
+            getNodeCode nodeId
+        pure $ SetNodeExpression.Request location nodeId oldExpr
 
 instance Modification SetNodesMeta.Request where
     buildInverse (SetNodesMeta.Request location updates) = do
