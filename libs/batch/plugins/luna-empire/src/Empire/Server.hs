@@ -44,7 +44,7 @@ import           LunaStudio.Data.GraphLocation        (GraphLocation)
 
 import           Empire.ASTOp                         (liftScheduler)
 import qualified Empire.Commands.AST                  as AST
-import qualified Empire.Commands.Graph                as Graph (openFile)
+import qualified Empire.Commands.Graph                as Graph
 import qualified Empire.Commands.Library              as Library
 import qualified Empire.Commands.Persistence          as Persistence
 -- import           Empire.Commands.Typecheck            (Scope (..))
@@ -240,18 +240,23 @@ handleMessage = do
     case msgFrame of
         Left err -> logger Logger.error $ "Unparseable message: " <> err
         Right (MessageFrame msg crlID senderID lastFrame) -> do
-            time <- liftIO Utils.currentISO8601Time
-            let topic   = msg ^. Message.topic
-                logMsg  = time <> "\t:: received " <> topic
-                content = Compress.unpack $ msg ^. Message.message
-            case Utils.lastPart '.' topic of
-                "update"    -> handleUpdate        logMsg topic content
-                "status"    -> handleStatus        logMsg topic content
-                "request"   -> handleRequest       logMsg topic content
-                "debug"     -> handleDebug         logMsg topic content
-                "response"  -> handleResponse      logMsg topic content
-                "typecheck" -> handleTypecheck     logMsg topic content
-                _           -> handleNotRecognized logMsg topic content
+            let handler :: MonadIO m => SomeException -> m ()
+                handler e = do
+                    excMsg <- liftIO $ Graph.prettyException e
+                    logger Logger.error $ "Uncaught exception: " <> excMsg
+            Exception.handle handler $ do
+                time <- liftIO Utils.currentISO8601Time
+                let topic   = msg ^. Message.topic
+                    logMsg  = time <> "\t:: received " <> topic
+                    content = Compress.unpack $ msg ^. Message.message
+                case Utils.lastPart '.' topic of
+                    "update"    -> handleUpdate        logMsg topic content
+                    "status"    -> handleStatus        logMsg topic content
+                    "request"   -> handleRequest       logMsg topic content
+                    "debug"     -> handleDebug         logMsg topic content
+                    "response"  -> handleResponse      logMsg topic content
+                    "typecheck" -> handleTypecheck     logMsg topic content
+                    _           -> handleNotRecognized logMsg topic content
 
 defaultHandler :: ByteString -> StateT Env BusT ()
 defaultHandler content = do
