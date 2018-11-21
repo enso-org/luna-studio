@@ -74,7 +74,7 @@ handlersMap = fromList
     , makeHandler handleRemoveConnectionUndo
     , makeHandler handleRemoveNodesUndo
     , makeHandler handleRemovePortUndo
-    , makeHandler handleRenameNodeUndo
+    , makeHandler $ autoHandle @RenameNode.Request
     , makeHandler $ autoHandle @RenamePort.Request
     , makeHandler handleSetCodeUndo
     , makeHandler $ autoHandle @SetNodeExpression.Request
@@ -262,21 +262,6 @@ handleRemovePortUndo (Response.Response _ _ req invStatus status)
     = case (invStatus, status) of
         (Response.Ok inv, Response.Ok _)
             -> Just (getUndoRemovePort req inv, req)
-        _   -> Nothing
-
-
-getUndoRenameNode :: RenameNode.Request -> RenameNode.Inverse
-    -> RenameNode.Request
-getUndoRenameNode
-    (RenameNode.Request location nodeId _)
-    (RenameNode.Inverse prevName) = RenameNode.Request location nodeId prevName
-
-handleRenameNodeUndo :: RenameNode.Response
-    -> Maybe (RenameNode.Request, RenameNode.Request)
-handleRenameNodeUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoRenameNode req inv, req)
         _   -> Nothing
 
 handleSetCodeUndo :: SetCode.Response
