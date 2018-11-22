@@ -184,7 +184,8 @@ instance Modification AutolayoutNodes.Request where
             $ Graph.autolayoutNodes location (convert <$> nodeLocs)
     buildInverse (AutolayoutNodes.Request location nodeLocs _) = do
         positions <- Graph.getNodeMetas location nodeLocs
-        pure $ AutolayoutNodes.Inverse $ catMaybes positions
+        pure $ SetNodesMeta.Request location $ Map.fromList $
+            map (over _1 convert) $ catMaybes positions
 
 instance Modification CollapseToFunction.Request where
     perform (CollapseToFunction.Request location locs) = withDiff location $ do
@@ -193,7 +194,7 @@ instance Modification CollapseToFunction.Request where
     buildInverse (CollapseToFunction.Request (GraphLocation file _) _) = do
         code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
         cache <- Graph.prepareNodeCache (GraphLocation file def)
-        pure $ CollapseToFunction.Inverse code cache
+        pure $ SetCode.Request (GraphLocation file def) code cache
 
 instance Modification Copy.Request where
     perform (Copy.Request location nodeLocs) = do

@@ -12,7 +12,7 @@ import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
 import qualified LunaStudio.API.Graph.AddPort            as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
-{-import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes-}
+import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes
 import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
 {-import qualified LunaStudio.API.Graph.Copy               as Copy-}
 {-import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz-}
@@ -119,6 +119,9 @@ type instance ResultOf  AddPort.Request = Diff
 
 type instance InverseOf AddSubgraph.Request = RemoveNodes.Request
 type instance ResultOf  AddSubgraph.Request = Diff
+
+type instance InverseOf AutolayoutNodes.Request = SetNodesMeta.Request
+type instance ResultOf  AutolayoutNodes.Request = Diff
 
 type instance InverseOf CollapseToFunction.Request = SetCode.Request
 type instance ResultOf  CollapseToFunction.Request = Diff
