@@ -106,7 +106,7 @@ import Empire.Data.AST               (SomeASTException,
 import Empire.Empire                 (Empire)
 import Empire.Env                    (Env)
 import Empire.Server.Server          (defInverse, errorMessage, modifyGraph,
-                                      modifyGraphOk, prettyException, replyFail,
+                                      modifyGraphOk, replyFail,
                                       replyOk, replyResult, sendToBus',
                                       webGUIHack)
 import Luna.Package                  (findPackageFileForFile,

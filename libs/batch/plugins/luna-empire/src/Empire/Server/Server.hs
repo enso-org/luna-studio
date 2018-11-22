@@ -100,11 +100,6 @@ webGUIHack req = do
             else req
     return hackedReq
 
-prettyException :: Exception e => e -> IO String
-prettyException e = do
-    stack <- whoCreated e
-    return $ displayException e ++ "\n" ++ renderStack stack
-
 modifyGraph :: forall req inv res res'.
     ( Show req
     , G.GraphRequest req
