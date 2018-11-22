@@ -44,15 +44,15 @@ import LunaStudio.API.Response (ResponseOf)
 
 
 data Event = UnknownEvent                             String
-           | AddConnectionResponse             AddConnection.Response
+           | AddConnectionResponse             (ResponseOf AddConnection.Request)
            | AddImportsResponse                   AddImports.Response
            | AddNodeResponse             (ResponseOf AddNode.Request)
-           | AddPortResponse                         AddPort.Response
-           | AddSubgraphResponse                 AddSubgraph.Response
+           | AddPortResponse                         (ResponseOf AddPort.Request)
+           | AddSubgraphResponse                 (ResponseOf AddSubgraph.Request)
            | AtomPasteResponse                     AtomPaste.Response
-           | AutolayoutNodesResponse         AutolayoutNodes.Response
+           | AutolayoutNodesResponse         (ResponseOf AutolayoutNodes.Request)
            | CollaborationUpdate         CollaborationUpdate.Update
-           | CollapseToFunctionResponse   CollapseToFunction.Response
+           | CollapseToFunctionResponse   (ResponseOf CollapseToFunction.Request)
            | ConnectionDropped
            | ConnectionOpened
            | CopyResponse                               Copy.Response
@@ -61,22 +61,22 @@ data Event = UnknownEvent                             String
            | GetProgramResponse                   GetProgram.Response
            | GetSubgraphsResponse               GetSubgraphs.Response
            | MonadsUpdate                       MonadsUpdate.Update
-           | MovePortResponse                       MovePort.Response
+           | MovePortResponse                       (ResponseOf MovePort.Request)
            | NodeResultUpdate               NodeResultUpdate.Update
            | NodeTypecheckerUpdate              NodeTCUpdate.Update
-           | PasteResponse                             Paste.Response
+           | PasteResponse                             (ResponseOf Paste.Request)
            | ProjectMoved                        MoveProject.Response
            | RedoResponse                               Redo.Response
-           | RemoveConnectionResponse       RemoveConnection.Response
+           | RemoveConnectionResponse       (ResponseOf RemoveConnection.Request)
            | RemoveNodesResponse                 (ResponseOf RemoveNodes.Request)
-           | RemovePortResponse                   RemovePort.Response
-           | RenameNodeResponse                   RenameNode.Response
-           | RenamePortResponse                   RenamePort.Response
+           | RemovePortResponse                   (ResponseOf RemovePort.Request)
+           | RenameNodeResponse                   (ResponseOf RenameNode.Request)
+           | RenamePortResponse                   (ResponseOf RenamePort.Request)
            | SearchNodesResponse                 SearchNodes.Response
-           | SetCodeResponse                         SetCode.Response
-           | SetNodeExpressionResponse     SetNodeExpression.Response
-           | SetNodesMetaResponse               SetNodesMeta.Response
-           | SetPortDefaultResponse           SetPortDefault.Response
+           | SetCodeResponse                         (ResponseOf SetCode.Request)
+           | SetNodeExpressionResponse     (ResponseOf SetNodeExpression.Request)
+           | SetNodesMetaResponse               (ResponseOf SetNodesMeta.Request)
+           | SetPortDefaultResponse           (ResponseOf SetPortDefault.Request)
            | SubstituteResponse                   Substitute.Response
            | TypeCheckResponse                     TypeCheck.Response
            | UndoResponse                               Undo.Response

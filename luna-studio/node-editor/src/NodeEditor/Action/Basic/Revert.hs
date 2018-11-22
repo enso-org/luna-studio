@@ -16,6 +16,7 @@ import qualified LunaStudio.API.Graph.RenamePort           as RenamePort
 import qualified LunaStudio.API.Graph.SetNodeExpression    as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta         as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault       as SetPortDefault
+import           LunaStudio.API.Response                   (InverseOf)
 import qualified LunaStudio.API.Response                   as Response
 import           LunaStudio.Data.Connection                (Connection (Connection))
 import qualified LunaStudio.Data.Connection                as Connection
@@ -73,80 +74,84 @@ revertMovePort (MovePort.Request loc oldPortRef newPos) =
         _                                           -> panic
 
 revertRemoveConnection :: RemoveConnection.Request
-    -> Response.Status RemoveConnection.Inverse -> Command State ()
+    -> Response.Status (InverseOf RemoveConnection.Request) -> Command State ()
 revertRemoveConnection
-    (RemoveConnection.Request loc dst')
-    (Response.Ok (RemoveConnection.Inverse src')) = inCurrentLocation loc
+    (RemoveConnection.Request _ _)
+    (Response.Ok (AddConnection.Request loc (Left src') (Left (InPortRef' dst')))) = inCurrentLocation loc
         $ \path -> void . localAddConnection
             $ Connection (prependPath path src') (prependPath path dst')
 revertRemoveConnection
     (RemoveConnection.Request _loc _dst)
-    (Response.Error _msg) = panic
+    _ = panic
 
 --TODO[LJK]: Force LunaStudio.Data.Connection to be instance of wrapped to make functions like this cleaner
-revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse
+revertRemoveNodes :: RemoveNodes.Request -> Response.Status (InverseOf RemoveNodes.Request)
     -> Command State ()
 revertRemoveNodes
-    (RemoveNodes.Request loc _)
-    (Response.Ok (RemoveNodes.Inverse nodes conns)) = inCurrentLocation loc
+    (RemoveNodes.Request _ _)
+    (Response.Ok (AddSubgraph.Request loc nodes conns)) = inCurrentLocation loc
         $ \path -> do
             let nodes' = map (convert . (path,)) nodes
             void . localAddSubgraph nodes'
                 $ Connection.prependPath path <$> conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 
-revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse
+revertRemovePort :: RemovePort.Request -> Response.Status (InverseOf RemovePort.Request)
     -> Command State ()
 revertRemovePort
-    (RemovePort.Request loc portRef)
-    (Response.Ok (RemovePort.Inverse prevName conns)) = inCurrentLocation loc
+    (RemovePort.Request _ _)
+    (Response.Ok (AddPort.Request loc portRef conns prevName)) = inCurrentLocation loc
     $ \path -> do
-        void $ localAddPort (prependPath path portRef) Nothing (Just prevName)
-        void . localAddConnections $ Connection.prependPath path <$> conns
+        void $ localAddPort (prependPath path portRef) Nothing prevName
+        void $ forM_ conns $ \case
+            InPortRef' _ -> return ()
+            _            -> panic
+        let connections = map (\(InPortRef' p) -> Connection portRef p) conns
+        void . localAddConnections $ Connection.prependPath path <$> connections
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg)
     = panic
 
-revertRenameNode :: RenameNode.Request -> Response.Status RenameNode.Inverse
+revertRenameNode :: RenameNode.Request -> Response.Status (InverseOf RenameNode.Request)
     -> Command State ()
 revertRenameNode
-    (RenameNode.Request loc nid _)
-    (Response.Ok (RenameNode.Inverse prevName)) = inCurrentLocation loc
+    (RenameNode.Request _ _ _)
+    (Response.Ok (RenameNode.Request loc nid prevName)) = inCurrentLocation loc
         $ \path -> void $ localRenameNode (convert (path, nid)) $ Just prevName
 revertRenameNode (RenameNode.Request _loc _nid _) (Response.Error _msg) = panic
 
-revertRenamePort :: RenamePort.Request -> Response.Status RenamePort.Inverse
+revertRenamePort :: RenamePort.Request -> Response.Status (InverseOf RenamePort.Request)
     -> Command State ()
 revertRenamePort
-    (RenamePort.Request loc portRef _)
-    (Response.Ok (RenamePort.Inverse prevName)) = inCurrentLocation loc
+    (RenamePort.Request _ _ _)
+    (Response.Ok (RenamePort.Request loc portRef prevName)) = inCurrentLocation loc
         $ \path -> void $ localRenamePort (prependPath path portRef) prevName
 revertRenamePort (RenamePort.Request _loc _portRef _) (Response.Error _msg)
     = panic
 
 revertSetNodeExpression :: SetNodeExpression.Request
-    -> Response.Status SetNodeExpression.Inverse -> Command State ()
+    -> Response.Status (InverseOf SetNodeExpression.Request) -> Command State ()
 revertSetNodeExpression
-    (SetNodeExpression.Request loc nid _)
-    (Response.Ok (SetNodeExpression.Inverse prevCode)) = inCurrentLocation loc
+    (SetNodeExpression.Request _ _ _)
+    (Response.Ok (SetNodeExpression.Request loc nid prevCode)) = inCurrentLocation loc
         $ \path -> void $ localSetNodeExpression (convert (path, nid)) prevCode
 revertSetNodeExpression
     (SetNodeExpression.Request _loc _nid _)
     (Response.Error _msg) = panic
 
 revertSetNodesMeta :: SetNodesMeta.Request
-    -> Response.Status SetNodesMeta.Inverse -> Command State ()
+    -> Response.Status (InverseOf SetNodesMeta.Request) -> Command State ()
 revertSetNodesMeta
-    (SetNodesMeta.Request loc _)
-    (Response.Ok (SetNodesMeta.Inverse prevMeta)) = inCurrentLocation loc
+    (SetNodesMeta.Request _ _)
+    (Response.Ok (SetNodesMeta.Request loc prevMeta)) = inCurrentLocation loc
         $ \path -> void . localSetNodesMeta
             $ Map.mapKeys (convert . (path,)) prevMeta
 revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = panic
 
 revertSetPortDefault :: SetPortDefault.Request
-    -> Response.Status SetPortDefault.Inverse -> Command State ()
+    -> Response.Status (InverseOf SetPortDefault.Request) -> Command State ()
 revertSetPortDefault
-    (SetPortDefault.Request loc portRef _)
-    (Response.Ok (SetPortDefault.Inverse prevCode)) = inCurrentLocation loc
+    (SetPortDefault.Request _ _ _)
+    (Response.Ok (SetPortDefault.Request loc portRef prevCode)) = inCurrentLocation loc
         $ \path ->
             mapM_(localSetPortDefault (prependPath path portRef)) prevCode
 revertSetPortDefault
