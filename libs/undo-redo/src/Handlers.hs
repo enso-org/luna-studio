@@ -66,13 +66,13 @@ handlersMap = fromList
     [ makeHandler $ autoHandle @AddConnection.Request
     , makeHandler $ autoHandle @AddNode.Request
     , makeHandler $ autoHandle @AddPort.Request
-    , makeHandler handleAddSubgraphUndo
+    , makeHandler $ autoHandle @AddSubgraph.Request
     , makeHandler handleAutolayoutNodes
     , makeHandler handleCollapseToFunctionUndo
     , makeHandler $ autoHandle @MovePort.Request
     , makeHandler handlePasteUndo
     , makeHandler handleRemoveConnectionUndo
-    , makeHandler handleRemoveNodesUndo
+    , makeHandler $ autoHandle @RemoveNodes.Request
     , makeHandler $ autoHandle @RemovePort.Request
     , makeHandler $ autoHandle @RenameNode.Request
     , makeHandler $ autoHandle @RenamePort.Request
@@ -85,12 +85,10 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
-    UndoReqRequest AddSubgraph.Request          = RemoveNodes.Request
     UndoReqRequest AutolayoutNodes.Request      = SetNodesMeta.Request
     UndoReqRequest CollapseToFunction.Request   = SetCode.Request
     UndoReqRequest Paste.Request                = RemoveNodes.Request
     UndoReqRequest RemoveConnection.Request     = AddConnection.Request
-    UndoReqRequest RemoveNodes.Request          = AddSubgraph.Request
     UndoReqRequest a = InverseOf a
 
 type family UndoResponseRequest t where
@@ -148,16 +146,6 @@ autoHandle (Response.Response _ _ req invStatus status)
         (Response.Ok inv, Response.Ok _) -> Just (inv, req)
         _ -> Nothing
 
-getUndoAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
-getUndoAddSubgraph (AddSubgraph.Request location nodes conns) =
-    RemoveNodes.Request location $ map (convert . view Node.nodeId) nodes
-
-handleAddSubgraphUndo :: AddSubgraph.Response
-    -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
-handleAddSubgraphUndo (Response.Response _ _ req _ status) = case status of
-    Response.Ok _ -> Just (getUndoAddSubgraph req, req)
-    _             -> Nothing
-
 getUndoAutolayout :: AutolayoutNodes.Request -> AutolayoutNodes.Inverse
     -> SetNodesMeta.Request
 getUndoAutolayout
@@ -213,19 +201,4 @@ handleRemoveConnectionUndo (Response.Response _ _ req invStatus status)
     = case (invStatus, status) of
         (Response.Ok inv, Response.Ok _)
             -> Just (getUndoRemoveConnection req inv, req)
-        _   -> Nothing
-
-
-getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse
-    -> AddSubgraph.Request
-getUndoRemoveNodes
-    (RemoveNodes.Request location _)
-    (RemoveNodes.Inverse nodes conns) = AddSubgraph.Request location nodes conns
-
-handleRemoveNodesUndo :: ResponseOf RemoveNodes.Request
-    -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoRemoveNodes req inv, req)
         _   -> Nothing

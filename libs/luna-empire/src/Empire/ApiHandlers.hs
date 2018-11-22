@@ -118,7 +118,7 @@ instance Modification RemoveNodes.Request where
             idSet = Set.fromList nodeIds
             nodes = filter isNodeRelevant allNodes
             conns = filter isConnRelevant allConnections
-        pure $ RemoveNodes.Inverse nodes conns
+        pure $ AddSubgraph.Request location nodes conns
 
 getSrcPortByNodeId :: NodeId -> OutPortRef
 getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
@@ -173,6 +173,10 @@ instance Modification AddPort.Request where
 instance Modification AddSubgraph.Request where
     perform (AddSubgraph.Request location nodes connections)
         = withDiff location $ Graph.addSubgraph location nodes connections
+    buildInverse (AddSubgraph.Request location nodes connections)
+        = pure $ RemoveNodes.Request
+            location
+            ((convert . view Node.nodeId) <$> nodes)
 
 instance Modification AutolayoutNodes.Request where
     perform (AutolayoutNodes.Request location nodeLocs _)
