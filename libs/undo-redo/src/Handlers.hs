@@ -68,7 +68,7 @@ handlersMap = fromList
     , makeHandler $ autoHandle @AddPort.Request
     , makeHandler $ autoHandle @AddSubgraph.Request
     , makeHandler handleAutolayoutNodes
-    , makeHandler handleCollapseToFunctionUndo
+    , makeHandler $ autoHandle @CollapseToFunction.Request
     , makeHandler $ autoHandle @MovePort.Request
     , makeHandler handlePasteUndo
     , makeHandler handleRemoveConnectionUndo
@@ -86,7 +86,6 @@ type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
     UndoReqRequest AutolayoutNodes.Request      = SetNodesMeta.Request
-    UndoReqRequest CollapseToFunction.Request   = SetCode.Request
     UndoReqRequest Paste.Request                = RemoveNodes.Request
     UndoReqRequest RemoveConnection.Request     = AddConnection.Request
     UndoReqRequest a = InverseOf a
@@ -161,18 +160,6 @@ handleAutolayoutNodes (Response.Response _ _ req invStatus status)
         (Response.Ok inv, Response.Ok _)
             -> Just (getUndoAutolayout req inv, req)
         _   -> Nothing
-
-handleCollapseToFunctionUndo :: CollapseToFunction.Response
-    -> Maybe (SetCode.Request, CollapseToFunction.Request)
-handleCollapseToFunctionUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _) -> Just
-            ( SetCode.Request
-                (req ^. CollapseToFunction.location)
-                (inv ^. CollapseToFunction.prevCode)
-                (inv ^. CollapseToFunction.nodeCache)
-            , req)
-        _ -> Nothing
 
 getUndoPaste :: Paste.Request -> Diff -> RemoveNodes.Request
 getUndoPaste request (Diff mods)
