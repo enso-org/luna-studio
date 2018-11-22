@@ -71,7 +71,7 @@ handlersMap = fromList
     , makeHandler $ autoHandle @CollapseToFunction.Request
     , makeHandler $ autoHandle @MovePort.Request
     , makeHandler $ autoHandle @Paste.Request
-    , makeHandler handleRemoveConnectionUndo
+    , makeHandler $ autoHandle @RemoveConnection.Request
     , makeHandler $ autoHandle @RemoveNodes.Request
     , makeHandler $ autoHandle @RemovePort.Request
     , makeHandler $ autoHandle @RenameNode.Request
@@ -85,7 +85,6 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
-    UndoReqRequest RemoveConnection.Request     = AddConnection.Request
     UndoReqRequest a = InverseOf a
 
 type family UndoResponseRequest t where
@@ -155,19 +154,3 @@ autoHandle (Response.Response _ _ req invStatus status)
 -- handlePasteUndo (Response.Response _ _ req _ status) = case status of
 --     Response.Ok rsp -> Just (getUndoPaste req rsp, req)
 --     _               -> Nothing
-
-
-getUndoRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse
-    -> AddConnection.Request
-getUndoRemoveConnection
-    (RemoveConnection.Request location dst)
-    (RemoveConnection.Inverse src)
-        = AddConnection.Request location (Left src) (Left $ InPortRef' dst)
-
-handleRemoveConnectionUndo :: RemoveConnection.Response
-    -> Maybe (AddConnection.Request, RemoveConnection.Request)
-handleRemoveConnectionUndo (Response.Response _ _ req invStatus status)
-    = case (invStatus, status) of
-        (Response.Ok inv, Response.Ok _)
-            -> Just (getUndoRemoveConnection req inv, req)
-        _   -> Nothing

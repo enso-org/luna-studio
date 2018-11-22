@@ -254,8 +254,9 @@ instance Modification RemoveConnection.Request where
     buildInverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
-            Nothing       -> throwM $ ConnectionDoesNotExistException dst
-            Just (src, _) -> pure $ RemoveConnection.Inverse src
+            Nothing         -> throwM $ ConnectionDoesNotExistException dst
+            Just (src, dst) -> pure $
+                AddConnection.Request location (Left src) (Left $ InPortRef' dst)
 
 data SidebarDoesNotExistException = SidebarDoesNotExistException
     deriving (Show)
