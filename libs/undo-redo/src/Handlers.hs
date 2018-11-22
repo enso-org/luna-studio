@@ -70,7 +70,7 @@ handlersMap = fromList
     , makeHandler $ autoHandle @AutolayoutNodes.Request
     , makeHandler $ autoHandle @CollapseToFunction.Request
     , makeHandler $ autoHandle @MovePort.Request
-    , makeHandler handlePasteUndo
+    , makeHandler $ autoHandle @Paste.Request
     , makeHandler handleRemoveConnectionUndo
     , makeHandler $ autoHandle @RemoveNodes.Request
     , makeHandler $ autoHandle @RemovePort.Request
@@ -85,7 +85,6 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
-    UndoReqRequest Paste.Request                = RemoveNodes.Request
     UndoReqRequest RemoveConnection.Request     = AddConnection.Request
     UndoReqRequest a = InverseOf a
 
@@ -144,18 +143,18 @@ autoHandle (Response.Response _ _ req invStatus status)
         (Response.Ok inv, Response.Ok _) -> Just (inv, req)
         _ -> Nothing
 
-getUndoPaste :: Paste.Request -> Diff -> RemoveNodes.Request
-getUndoPaste request (Diff mods)
-    = RemoveNodes.Request (request ^. Paste.location) addedNodesLocs where
-        toMaybeNodeLoc (Diff.AddNode m) = Just . convert
-            $ m ^. Diff.newNode . Node.nodeId
-        toMaybeNodeLoc _                = Nothing
-        addedNodesLocs                  = catMaybes $ toMaybeNodeLoc <$> mods
+-- getUndoPaste :: Paste.Request -> Diff -> RemoveNodes.Request
+-- getUndoPaste request (Diff mods)
+--     = RemoveNodes.Request (request ^. Paste.location) addedNodesLocs where
+--         toMaybeNodeLoc (Diff.AddNode m) = Just . convert
+--             $ m ^. Diff.newNode . Node.nodeId
+--         toMaybeNodeLoc _                = Nothing
+--         addedNodesLocs                  = catMaybes $ toMaybeNodeLoc <$> mods
 
-handlePasteUndo :: Paste.Response -> Maybe (RemoveNodes.Request, Paste.Request)
-handlePasteUndo (Response.Response _ _ req _ status) = case status of
-    Response.Ok rsp -> Just (getUndoPaste req rsp, req)
-    _               -> Nothing
+-- handlePasteUndo :: Paste.Response -> Maybe (RemoveNodes.Request, Paste.Request)
+-- handlePasteUndo (Response.Response _ _ req _ status) = case status of
+--     Response.Ok rsp -> Just (getUndoPaste req rsp, req)
+--     _               -> Nothing
 
 
 getUndoRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse

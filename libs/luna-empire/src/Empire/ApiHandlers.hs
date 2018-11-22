@@ -226,6 +226,8 @@ instance Modification MovePort.Request where
 instance Modification Paste.Request where
     perform (Paste.Request location position string)
         = withDiff location $ Graph.paste location position string
+    buildInverse (Paste.Request location position string)
+        = pure $ RemoveNodes.Request location (error "empty remove nodes")
 
 data ConnectionDoesNotExistException
     = ConnectionDoesNotExistException InPortRef

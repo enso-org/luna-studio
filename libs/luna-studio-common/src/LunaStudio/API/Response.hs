@@ -19,7 +19,7 @@ import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
 {-import qualified LunaStudio.API.Graph.GetProgram         as GetProgram-}
 {-import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs-}
 import qualified LunaStudio.API.Graph.MovePort           as MovePort
-{-import qualified LunaStudio.API.Graph.Paste              as Paste-}
+import qualified LunaStudio.API.Graph.Paste              as Paste
 {-import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection-}
 import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
@@ -128,6 +128,9 @@ type instance ResultOf  CollapseToFunction.Request = Diff
 
 type instance InverseOf MovePort.Request = MovePort.Request
 type instance ResultOf  MovePort.Request = Diff
+
+type instance InverseOf Paste.Request = RemoveNodes.Request
+type instance ResultOf  Paste.Request = Diff
 
 type instance InverseOf RemoveNodes.Request = AddSubgraph.Request
 type instance ResultOf  RemoveNodes.Request = Diff
