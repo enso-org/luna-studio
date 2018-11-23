@@ -129,7 +129,7 @@ type instance ResultOf  CollapseToFunction.Request = Diff
 type instance InverseOf MovePort.Request = MovePort.Request
 type instance ResultOf  MovePort.Request = Diff
 
-type instance InverseOf RemoveConnection.Request = AddConnection.Request
+type instance InverseOf RemoveConnection.Request = SetNodeExpression.Request
 type instance ResultOf  RemoveConnection.Request = Diff
 
 type instance InverseOf RemoveNodes.Request = AddSubgraph.Request

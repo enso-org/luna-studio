@@ -77,9 +77,8 @@ revertRemoveConnection :: RemoveConnection.Request
     -> Response.Status (InverseOf RemoveConnection.Request) -> Command State ()
 revertRemoveConnection
     (RemoveConnection.Request _ _)
-    (Response.Ok (AddConnection.Request loc (Left src') (Left (InPortRef' dst')))) = inCurrentLocation loc
-        $ \path -> void . localAddConnection
-            $ Connection (prependPath path src') (prependPath path dst')
+    (Response.Ok (SetNodeExpression.Request loc nid prevCode)) = inCurrentLocation loc
+        $ \path -> void $ localSetNodeExpression (convert (path, nid)) prevCode
 revertRemoveConnection
     (RemoveConnection.Request _loc _dst)
     _ = panic
