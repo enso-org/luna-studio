@@ -33,7 +33,7 @@ data Message a = Message { _reqUUID :: UUID
 data Frame = Frame { _messages :: [WebMessage] } deriving (Show, Generic)
 
 makeLenses ''Frame
-makeLenses ''WebMessage
+makeLenses ''Message
 
 type BinaryRequest a = (Topic.MessageTopic (Request a), Binary a)
 type BinaryMessage a = (Topic.MessageTopic a, Binary a)
@@ -58,10 +58,13 @@ sendMessage :: WebMessage -> IO ()
 sendMessage msg = sendMessages [msg]
 
 makeMessage :: BinaryRequest a => Message a -> WebMessage
-makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic' body') (GZip.compress $ Binary.encode body')
+makeMessage msg =
+    let body = Request (msg ^. reqUUID) (msg ^. guiID) (msg ^. request)
+    in makeMessage' body
 
 makeMessage' :: BinaryMessage a => a -> WebMessage
-makeMessage' body = WebMessage (Topic.topic' body) (GZip.compress $ Binary.encode body)
+makeMessage' body =
+    WebMessage (Topic.topic' body) (GZip.compress $ Binary.encode body)
 
 sendRequest :: BinaryRequest a => Message a -> IO ()
 sendRequest = sendMessage . makeMessage

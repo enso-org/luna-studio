@@ -85,8 +85,8 @@ handlersMap = fromList
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoReqRequest t where
-    UndoReqRequest Paste.Request                = RemoveNodes.Request
-    UndoReqRequest a = InverseOf a
+    UndoReqRequest Paste.Request = RemoveNodes.Request
+    UndoReqRequest a             = InverseOf a
 
 type family UndoResponseRequest t where
     UndoResponseRequest (Response req inv res) = UndoReqRequest req
