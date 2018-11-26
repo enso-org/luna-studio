@@ -43,43 +43,43 @@ import qualified LunaStudio.API.Graph.Undo                  as Undo
 import LunaStudio.API.Response (ResponseOf)
 
 
-data Event = UnknownEvent                             String
-           | AddConnectionResponse             (ResponseOf AddConnection.Request)
-           | AddImportsResponse                   AddImports.Response
-           | AddNodeResponse             (ResponseOf AddNode.Request)
-           | AddPortResponse                         (ResponseOf AddPort.Request)
-           | AddSubgraphResponse                 (ResponseOf AddSubgraph.Request)
-           | AtomPasteResponse                     AtomPaste.Response
-           | AutolayoutNodesResponse         (ResponseOf AutolayoutNodes.Request)
-           | CollaborationUpdate         CollaborationUpdate.Update
-           | CollapseToFunctionResponse   (ResponseOf CollapseToFunction.Request)
+data Event = UnknownEvent                                                String
+           | AddConnectionResponse           (ResponseOf AddConnection.Request)
+           | AddImportsResponse                             AddImports.Response
+           | AddNodeResponse                       (ResponseOf AddNode.Request)
+           | AddPortResponse                       (ResponseOf AddPort.Request)
+           | AddSubgraphResponse               (ResponseOf AddSubgraph.Request)
+           | AtomPasteResponse                               AtomPaste.Response
+           | AutolayoutNodesResponse       (ResponseOf AutolayoutNodes.Request)
+           | CollaborationUpdate                   CollaborationUpdate.Update
+           | CollapseToFunctionResponse (ResponseOf CollapseToFunction.Request)
            | ConnectionDropped
            | ConnectionOpened
-           | CopyResponse                               Copy.Response
-           | DumpGraphVizResponse               DumpGraphViz.Response
-           | EmpireStarted                     EmpireStarted.Status
-           | GetProgramResponse                   GetProgram.Response
-           | GetSubgraphsResponse               GetSubgraphs.Response
-           | MonadsUpdate                       MonadsUpdate.Update
-           | MovePortResponse                       (ResponseOf MovePort.Request)
-           | NodeResultUpdate               NodeResultUpdate.Update
-           | NodeTypecheckerUpdate              NodeTCUpdate.Update
-           | PasteResponse                             (ResponseOf Paste.Request)
-           | ProjectMoved                        MoveProject.Response
-           | RedoResponse                               Redo.Response
-           | RemoveConnectionResponse       (ResponseOf RemoveConnection.Request)
-           | RemoveNodesResponse                 (ResponseOf RemoveNodes.Request)
-           | RemovePortResponse                   (ResponseOf RemovePort.Request)
-           | RenameNodeResponse                   (ResponseOf RenameNode.Request)
-           | RenamePortResponse                   (ResponseOf RenamePort.Request)
-           | SearchNodesResponse                 SearchNodes.Response
-           | SetCodeResponse                         (ResponseOf SetCode.Request)
-           | SetNodeExpressionResponse     (ResponseOf SetNodeExpression.Request)
-           | SetNodesMetaResponse               (ResponseOf SetNodesMeta.Request)
-           | SetPortDefaultResponse           (ResponseOf SetPortDefault.Request)
-           | SubstituteResponse                   Substitute.Response
-           | TypeCheckResponse                     TypeCheck.Response
-           | UndoResponse                               Undo.Response
+           | CopyResponse                                         Copy.Response
+           | DumpGraphVizResponse                         DumpGraphViz.Response
+           | EmpireStarted                               EmpireStarted.Status
+           | GetProgramResponse                             GetProgram.Response
+           | GetSubgraphsResponse                         GetSubgraphs.Response
+           | MonadsUpdate                                 MonadsUpdate.Update
+           | MovePortResponse                     (ResponseOf MovePort.Request)
+           | NodeResultUpdate                         NodeResultUpdate.Update
+           | NodeTypecheckerUpdate                        NodeTCUpdate.Update
+           | PasteResponse                           (ResponseOf Paste.Request)
+           | ProjectMoved                                  MoveProject.Response
+           | RedoResponse                                         Redo.Response
+           | RemoveConnectionResponse     (ResponseOf RemoveConnection.Request)
+           | RemoveNodesResponse               (ResponseOf RemoveNodes.Request)
+           | RemovePortResponse                 (ResponseOf RemovePort.Request)
+           | RenameNodeResponse                 (ResponseOf RenameNode.Request)
+           | RenamePortResponse                 (ResponseOf RenamePort.Request)
+           | SearchNodesResponse                           SearchNodes.Response
+           | SetCodeResponse                       (ResponseOf SetCode.Request)
+           | SetNodeExpressionResponse   (ResponseOf SetNodeExpression.Request)
+           | SetNodesMetaResponse             (ResponseOf SetNodesMeta.Request)
+           | SetPortDefaultResponse         (ResponseOf SetPortDefault.Request)
+           | SubstituteResponse                             Substitute.Response
+           | TypeCheckResponse                               TypeCheck.Response
+           | UndoResponse                                         Undo.Response
            deriving (Show, Generic, NFData)
 
 instance EventName Event

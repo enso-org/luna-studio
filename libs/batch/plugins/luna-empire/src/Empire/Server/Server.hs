@@ -140,18 +140,21 @@ modifyGraphOk inverse action = modifyGraph inverse action reply where
     reply :: Request req -> inv -> () -> StateT Env BusT ()
     reply req inv _ = replyOk req inv
 
-handle :: forall req inv res. (
-    Show req, Show res, Bin.Binary req, G.GraphRequest req,
-    Response.ResponseResult req inv res, Api.Modification req,
-    Response.InverseOf req ~ inv, Response.ResultOf req ~ res
-    ) => Request req -> StateT Env BusT ()
+type GraphRequestContext req inv result = (
+    Show req, Show result, Bin.Binary req, G.GraphRequest req,
+    Response.ResponseResult req inv result, Api.Modification req,
+    Response.InverseOf req ~ inv, Response.ResultOf req ~ result
+    )
+
+type GraphRequestContext'  req     =
+    GraphRequestContext'' req (Response.ResultOf req)
+type GraphRequestContext'' req res =
+    GraphRequestContext   req (Response.InverseOf req) res
+
+handle :: GraphRequestContext' req => Request req -> StateT Env BusT ()
 handle = modifyGraph Api.buildInverse Api.perform replyResult
 
-handleOk :: forall req inv. (
-    Show req, Bin.Binary req, G.GraphRequest req,
-    Response.ResponseResult req inv (), Api.Modification req,
-    Response.InverseOf req ~ inv, Response.ResultOf req ~ ()
-    ) => Request req -> StateT Env BusT ()
+handleOk :: GraphRequestContext'' req () => Request req -> StateT Env BusT ()
 handleOk = modifyGraph Api.buildInverse Api.perform replyResult
 
 defInverse :: a -> Empire ()

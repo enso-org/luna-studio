@@ -34,6 +34,7 @@ data Frame = Frame { _messages :: [WebMessage] } deriving (Show, Generic)
 
 makeLenses ''Frame
 makeLenses ''Message
+makeLenses ''WebMessage
 
 type BinaryRequest a = (Topic.MessageTopic (Request a), Binary a)
 type BinaryMessage a = (Topic.MessageTopic a, Binary a)

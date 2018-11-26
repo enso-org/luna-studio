@@ -37,7 +37,7 @@ instance T.MessageTopic Request where
 instance G.GraphRequest Request where
     location = lens getter setter where
         getter (Request file)
-            = GraphLocation.GraphLocation file (Breadcrumb [])
-        setter (Request _   ) (GraphLocation.GraphLocation file _)
-            = Request file
+            = GraphLocation.top file
+        setter (Request _   ) gl
+            = Request $ gl ^. GraphLocation.filePath
 
