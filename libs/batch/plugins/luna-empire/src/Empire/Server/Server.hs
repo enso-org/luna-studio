@@ -87,12 +87,10 @@ errorMessage = "error during processing request "
 formatErrorMessage :: forall a. MessageTopic a => a -> String -> String
 formatErrorMessage req msg = errorMessage <> (Topic.topic @a) <> ": " <> msg
 
-defaultLibraryPath = "Main.luna"
-
 webGUIHack :: G.GraphRequest req => req -> IO req
 webGUIHack req = do
     lunaroot <- liftIO $ getEnv Package.lunaRootEnv
-    let path = lunaroot </> "projects" </> defaultLibraryPath
+    let path = lunaroot </> "projects" </> Package.mainFile
         realLocation = req ^. G.location
         realFile     = realLocation ^. GraphLocation.filePath
         hackedReq    = if null realFile
