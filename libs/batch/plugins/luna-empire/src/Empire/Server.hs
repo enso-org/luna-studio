@@ -92,8 +92,7 @@ logger = Logger.getLogger $(Logger.moduleName)
 sendStarted :: BusEndPoints -> IO ()
 sendStarted endPoints = do
     let content = Compress.pack .  Bin.encode $ EmpireStarted.Status
-    void . Bus.runBus endPoints . Bus.send Flag.Enable 
-        $ Message.Message (Topic.topic' EmpireStarted.Status) content
+    void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic' EmpireStarted.Status) content
 
 requestCapability, tcCapability :: Int
 requestCapability = 0
