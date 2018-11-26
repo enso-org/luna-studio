@@ -151,7 +151,7 @@ getUndoPaste request (Diff mods)
         toMaybeNodeLoc _                = Nothing
         addedNodesLocs                  = catMaybes $ toMaybeNodeLoc <$> mods
 
-handlePasteUndo :: Paste.Response -> Maybe (RemoveNodes.Request, Paste.Request)
+handlePasteUndo :: ResponseOf Paste.Request -> Maybe (RemoveNodes.Request, Paste.Request)
 handlePasteUndo (Response.Response _ _ req _ status) = case status of
     Response.Ok rsp -> Just (getUndoPaste req rsp, req)
     _               -> Nothing

@@ -4,34 +4,34 @@ module LunaStudio.API.Response where
 
 import Prologue
 
-{-import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer-}
-{-import qualified LunaStudio.API.Atom.Substitute          as Substitute-}
-{-import qualified LunaStudio.API.Control.Interpreter      as Interpreter-}
+import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
+import qualified LunaStudio.API.Atom.Substitute          as Substitute
+import qualified LunaStudio.API.Control.Interpreter      as Interpreter
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
-{-import qualified LunaStudio.API.Graph.AddImports         as AddImports-}
+import qualified LunaStudio.API.Graph.AddImports         as AddImports
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
 import qualified LunaStudio.API.Graph.AddPort            as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph        as AddSubgraph
 import qualified LunaStudio.API.Graph.AutolayoutNodes    as AutolayoutNodes
 import qualified LunaStudio.API.Graph.CollapseToFunction as CollapseToFunction
-{-import qualified LunaStudio.API.Graph.Copy               as Copy-}
-{-import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz-}
-{-import qualified LunaStudio.API.Graph.GetProgram         as GetProgram-}
-{-import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs-}
+import qualified LunaStudio.API.Graph.Copy               as Copy
+import qualified LunaStudio.API.Graph.DumpGraphViz       as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram         as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs       as GetSubgraphs
 import qualified LunaStudio.API.Graph.MovePort           as MovePort
-{-import qualified LunaStudio.API.Graph.Paste              as Paste-}
+import qualified LunaStudio.API.Graph.Paste              as Paste
 import qualified LunaStudio.API.Graph.RemoveConnection   as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes        as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort         as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode         as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort         as RenamePort
-{-import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings-}
-{-import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes-}
+import qualified LunaStudio.API.Graph.SaveSettings       as SaveSettings
+import qualified LunaStudio.API.Graph.SearchNodes        as SearchNodes
 import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
-{-import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck-}
+import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
 
 import qualified LunaStudio.API.Topic                    as Topic
 
@@ -111,6 +111,9 @@ instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response req inv res)
 type instance InverseOf AddConnection.Request = SetNodeExpression.Request
 type instance ResultOf  AddConnection.Request = Diff
 
+type instance InverseOf AddImports.Request = ()
+type instance ResultOf  AddImports.Request = Diff
+
 type instance InverseOf AddNode.Request = RemoveNodes.Request
 type instance ResultOf  AddNode.Request = Diff
 
@@ -126,8 +129,29 @@ type instance ResultOf  AutolayoutNodes.Request = Diff
 type instance InverseOf CollapseToFunction.Request = SetCode.Request
 type instance ResultOf  CollapseToFunction.Request = Diff
 
+type instance InverseOf Copy.Request = ()
+type instance ResultOf  Copy.Request = Copy.Result
+
+type instance InverseOf DumpGraphViz.Request = ()
+type instance ResultOf  DumpGraphViz.Request = ()
+
+type instance InverseOf GetBuffer.Request = ()
+type instance ResultOf  GetBuffer.Request = GetBuffer.Result
+
+type instance InverseOf GetProgram.Request = ()
+type instance ResultOf  GetProgram.Request = GetProgram.Result
+
+type instance InverseOf GetSubgraphs.Request = ()
+type instance ResultOf  GetSubgraphs.Request = GetSubgraphs.Result
+
+type instance InverseOf Interpreter.Request = ()
+type instance ResultOf  Interpreter.Request = ()
+
 type instance InverseOf MovePort.Request = MovePort.Request
 type instance ResultOf  MovePort.Request = Diff
+
+type instance InverseOf Paste.Request = ()
+type instance ResultOf  Paste.Request = Diff
 
 type instance InverseOf RemoveConnection.Request = SetNodeExpression.Request
 type instance ResultOf  RemoveConnection.Request = Diff
@@ -144,6 +168,12 @@ type instance ResultOf  RenameNode.Request = Diff
 type instance InverseOf RenamePort.Request = RenamePort.Request
 type instance ResultOf  RenamePort.Request = Diff
 
+type instance InverseOf SaveSettings.Request = ()
+type instance ResultOf  SaveSettings.Request = ()
+
+type instance InverseOf SearchNodes.Request = ()
+type instance ResultOf  SearchNodes.Request = SearchNodes.Result
+
 type instance InverseOf SetCode.Request = SetCode.Request
 type instance ResultOf  SetCode.Request = Diff
 
@@ -155,3 +185,9 @@ type instance ResultOf  SetNodesMeta.Request = Diff
 
 type instance InverseOf SetPortDefault.Request = SetPortDefault.Request
 type instance ResultOf  SetPortDefault.Request = Diff
+
+type instance InverseOf Substitute.Request = ()
+type instance ResultOf  Substitute.Request = Diff
+
+type instance InverseOf TypeCheck.Request = ()
+type instance ResultOf  TypeCheck.Request = ()

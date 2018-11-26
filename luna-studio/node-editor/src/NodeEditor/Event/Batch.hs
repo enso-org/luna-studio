@@ -45,21 +45,21 @@ import LunaStudio.API.Response (ResponseOf)
 
 data Event = UnknownEvent                                                String
            | AddConnectionResponse           (ResponseOf AddConnection.Request)
-           | AddImportsResponse                             AddImports.Response
+           | AddImportsResponse                 (ResponseOf AddImports.Request)
            | AddNodeResponse                       (ResponseOf AddNode.Request)
            | AddPortResponse                       (ResponseOf AddPort.Request)
            | AddSubgraphResponse               (ResponseOf AddSubgraph.Request)
-           | AtomPasteResponse                               AtomPaste.Response
+           | AtomPasteResponse                   (ResponseOf AtomPaste.Request)
            | AutolayoutNodesResponse       (ResponseOf AutolayoutNodes.Request)
            | CollaborationUpdate                   CollaborationUpdate.Update
            | CollapseToFunctionResponse (ResponseOf CollapseToFunction.Request)
            | ConnectionDropped
            | ConnectionOpened
-           | CopyResponse                                         Copy.Response
-           | DumpGraphVizResponse                         DumpGraphViz.Response
+           | CopyResponse                             (ResponseOf Copy.Request)
+           | DumpGraphVizResponse             (ResponseOf DumpGraphViz.Request)
            | EmpireStarted                               EmpireStarted.Status
-           | GetProgramResponse                             GetProgram.Response
-           | GetSubgraphsResponse                         GetSubgraphs.Response
+           | GetProgramResponse                 (ResponseOf GetProgram.Request)
+           | GetSubgraphsResponse             (ResponseOf GetSubgraphs.Request)
            | MonadsUpdate                                 MonadsUpdate.Update
            | MovePortResponse                     (ResponseOf MovePort.Request)
            | NodeResultUpdate                         NodeResultUpdate.Update
@@ -72,13 +72,13 @@ data Event = UnknownEvent                                                String
            | RemovePortResponse                 (ResponseOf RemovePort.Request)
            | RenameNodeResponse                 (ResponseOf RenameNode.Request)
            | RenamePortResponse                 (ResponseOf RenamePort.Request)
-           | SearchNodesResponse                           SearchNodes.Response
+           | SearchNodesResponse               (ResponseOf SearchNodes.Request)
            | SetCodeResponse                       (ResponseOf SetCode.Request)
            | SetNodeExpressionResponse   (ResponseOf SetNodeExpression.Request)
            | SetNodesMetaResponse             (ResponseOf SetNodesMeta.Request)
            | SetPortDefaultResponse         (ResponseOf SetPortDefault.Request)
-           | SubstituteResponse                             Substitute.Response
-           | TypeCheckResponse                               TypeCheck.Response
+           | SubstituteResponse                 (ResponseOf Substitute.Request)
+           | TypeCheckResponse                   (ResponseOf TypeCheck.Request)
            | UndoResponse                                         Undo.Response
            deriving (Show, Generic, NFData)
 

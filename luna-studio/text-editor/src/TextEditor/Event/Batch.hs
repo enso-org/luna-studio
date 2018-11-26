@@ -19,10 +19,12 @@ import qualified LunaStudio.API.Atom.Substitute       as Substitute
 import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
 import qualified LunaStudio.API.Control.Interpreter   as Interpreter
 
+import LunaStudio.API.Response (ResponseOf)
+
 
 data BatchEvent
         = UnknownEvent String
-        | BufferGetResponse                       GetBuffer.Response
+        | BufferGetResponse           (ResponseOf GetBuffer.Request)
         | ConnectionDropped
         | ConnectionOpened
         | CopyResponse                                 Copy.Response
@@ -30,13 +32,13 @@ data BatchEvent
         | FileClosed                              CloseFile.Response
         | FileOpened                               OpenFile.Response
         | FileSaved                                SaveFile.Response
-        | InterpreterResponse                   Interpreter.Response
+        | InterpreterResponse       (ResponseOf Interpreter.Request)
         | InterpreterUpdate                     Interpreter.Update
         | IsSaved                                   IsSaved.Response
         | ProjectMove                           MoveProject.Response
         | ProjectCreated                      CreateProject.Response
         | ProjectSet                             SetProject.Response
-        | SubstituteResponse                     Substitute.Response
+        | SubstituteResponse         (ResponseOf Substitute.Request)
         | SubstituteUpdate                       Substitute.Update
         deriving (Eq, Show, Generic, NFData)
 
