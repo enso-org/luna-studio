@@ -191,10 +191,10 @@ instance Modification CollapseToFunction.Request where
     perform (CollapseToFunction.Request location locs) = withDiff location $ do
         let ids = convert <$> locs
         Graph.collapseToFunction location ids
-    buildInverse (CollapseToFunction.Request (GraphLocation file _) _) = do
+    buildInverse (CollapseToFunction.Request loc@(GraphLocation file _) _) = do
         code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
         cache <- Graph.prepareNodeCache (GraphLocation file def)
-        pure $ SetCode.Request (GraphLocation file def) code cache
+        pure $ SetCode.Request loc code cache
 
 instance Modification Copy.Request where
     perform (Copy.Request location nodeLocs) = do
@@ -215,13 +215,13 @@ instance Modification GetSubgraphs.Request where
 instance Modification MovePort.Request where
     perform (MovePort.Request location portRef newPortPos)
         = withDiff location $ Graph.movePort location portRef newPortPos
-    buildInverse (MovePort.Request location (OutPortRef nl pid) newPortPos)
-        = let prevPos = last pid
-              toBePos = init pid <> [prevPos]
+    buildInverse (MovePort.Request location (OutPortRef nl (i:rest)) newPortPos)
+        = let prevPos = i
+              toBePos = coerce newPortPos : rest
           in pure $
                 MovePort.Request location
                     (OutPortRef nl toBePos)
-                    (coerce newPortPos)
+                    (coerce prevPos)
 
 instance Modification Paste.Request where
     perform (Paste.Request location position string)
@@ -316,7 +316,9 @@ instance Modification SetNodesMeta.Request where
 instance Modification Substitute.Request where
     perform (Substitute.Request location diffs) = do
         let file = location ^. GraphLocation.filePath
-        withDiff location $ Graph.substituteCodeFromPoints file diffs
+        withDiff location $ do
+            Graph.substituteCodeFromPoints file diffs
+            Graph.typecheck location
 
 instance Modification GetBuffer.Request where
     perform (GetBuffer.Request file) = do
