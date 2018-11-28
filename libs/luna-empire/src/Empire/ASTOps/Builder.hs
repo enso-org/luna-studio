@@ -542,7 +542,7 @@ detachNodeMarkersForArgs lam = do
     mapM_ detachNodeMarkers args
 
 attachNodeMarkersForArgs :: NodeId -> Port.OutPortId -> NodeRef -> GraphOp ()
-attachNodeMarkersForArgs nid _port lam = do
+attachNodeMarkersForArgs nid _ lam = do
     args <- extractFunctionPorts lam
     zipWithM_ (attachNodeMarkers nid) (pure . Port.Projection <$> [0..]) args
 

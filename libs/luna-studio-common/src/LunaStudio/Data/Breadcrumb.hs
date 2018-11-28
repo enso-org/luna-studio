@@ -6,7 +6,7 @@ import qualified Control.Lens.Aeson as Lens
 import qualified Data.Text          as Text
 
 import Control.DeepSeq        (NFData)
-import Control.Lens           (toListOf, traversed)
+import Control.Lens           (makePrisms, toListOf, traversed)
 import Data.Aeson.Types       (FromJSON (..), FromJSONKey, ToJSON (..),
                                ToJSONKey)
 import Data.Binary            (Binary)
@@ -31,6 +31,7 @@ newtype Breadcrumb a = Breadcrumb
     } deriving (Eq, Foldable, Generic, Ord, Show)
 
 makeLenses ''BreadcrumbItem
+makePrisms ''BreadcrumbItem
 makeLenses ''Breadcrumb
 makeLenses ''Named
 

@@ -103,7 +103,7 @@ dumpAccessors' _firstApp node = do
     match node $ \case
         Var{}  -> do
             isNode <- Read.isGraphNode node
-            name <- Read.getVarName node
+            name   <- Read.getVarName node
             if isNode
                 then return (Just node, [])
                 else return (Nothing, [name])
@@ -111,8 +111,8 @@ dumpAccessors' _firstApp node = do
             tgt <- source t
             dumpAccessors' False tgt
         Acc t n -> do
-            tgt <- source t
-            name <- Read.getVarName =<< source n
+            tgt           <- source t
+            name          <- Read.getVarName =<< source n
             (tgt', names) <- dumpAccessors' False tgt
             return (tgt', names <> [name])
         _ -> return (Just node, [])

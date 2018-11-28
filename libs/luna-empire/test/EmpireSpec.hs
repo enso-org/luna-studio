@@ -377,7 +377,7 @@ spec = around withChannels $ parallel $ do
                     let interpreterEnv = InterpreterEnv (return ()) g [] def def def def
                     (_, (extractGraph -> g')) <- runEmpire env (Graph.CommandState pmState interpreterEnv) $
                         Typecheck.run loc g rooted False False
-                    (_res'',_) <- runEmp' env st g' $ do
+                    _ <- runEmp' env st g' $ do
                         Graph.withGraph loc $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
                     -- withResult res'' $ \(n1, n2) -> do
                     --     view Node.inPorts n2 `shouldMatchList` [

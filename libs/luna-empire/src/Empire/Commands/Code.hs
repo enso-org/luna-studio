@@ -89,7 +89,7 @@ remarkerCode (convert -> code) reservedMarkers = (remarkedCode, substitutions) w
         case el of
             Lexer.Marker m ->
                 if m `Set.member` reservedMarkers' then
-                    let maxReservedMarker  = if Set.null reservedMarkers' then 0 else Set.findMax reservedMarkers'
+                    let maxReservedMarker  = fromMaybe 0 $ Set.lookupMax reservedMarkers'
                         newMarker          = succ maxReservedMarker
                         newSubstitutions   = Map.insert m newMarker substitutions'
                         newReservedMarkers = Set.insert newMarker reservedMarkers'
@@ -108,7 +108,7 @@ viewDeltasToReal (convert -> code) (b, e) = if b == e then (bAf, bAf) else block
 
 viewToRealBlockBeforeMarker :: Spantree a -> (Delta, Delta) -> (Delta, Delta)
 viewToRealBlockBeforeMarker st (left, right) = (len, r' + len - shift) where
-    (len, (shift, _pre, post)) = SpanTree.viewToRealCursorSplitBeforeMarker st left
+    (len, (shift, _, post)) = SpanTree.viewToRealCursorSplitBeforeMarker st left
     r' = SpanTree.viewToRealCursorBeforeMarker post (shift + right - left)
 
 viewDeltasToRealBeforeMarker :: Text -> (Delta, Delta) -> (Delta, Delta)
@@ -364,7 +364,7 @@ getCurrentIndentationLength = do
 
 propagateLengths :: NodeRef -> GraphOp ()
 propagateLengths node = do
-    LeftSpacedSpan (SpacedSpan _off len) <- fmap (view CodeSpan.realSpan) $ getLayer @CodeSpan node
+    LeftSpacedSpan (SpacedSpan _off len) <- view CodeSpan.realSpan <$> getLayer @CodeSpan node
     putLayer @SpanLength node len
     mapM_ propagateOffsets =<< inputs node
 

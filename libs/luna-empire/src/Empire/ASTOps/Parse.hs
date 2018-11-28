@@ -100,8 +100,8 @@ run :: Parser3.ParserPass (Pass.Pass stage Parser3.Parser)
     => Macro.Parser (Parsing.Spanned Parsing.Ast) -> Lexer.Source -> Pass.Pass stage Parser3.Parser (IR.SomeTerm, Marker.TermMap)
 run parser src = do
     ((ref, _unmarked), gidMap) <- State.runDefT @Marker.TermMap
-                               $ State.runDefT @Marker.TermOrphanList
-                               $ Parser3.buildIR $ runWith parser src
+                                $ State.runDefT @Marker.TermOrphanList
+                                $ Parser3.buildIR $ runWith parser src
     pure (ref, gidMap)
 
 runParser :: Macro.Parser (Parsing.Spanned Parsing.Ast) -> Text -> IO (NodeRef, LunaGraph.State Stage, Scheduler.State, MarkedExprMap)
@@ -200,14 +200,17 @@ parsePortDefault (Expression expr) = do
 parsePortDefault (Constant (IntValue  i))
     | i >= 0     = runASTOp $ do
         intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show i
-        empty'   <- Mutable.new
+        empty'  <- Mutable.new
         generalize <$> IR.number 10 intPart empty' `withLength` (length $ show i)
     | otherwise = runASTOp $ do
         intPart <- Mutable.fromList $ map (fromIntegral . digitToInt) $ show (abs i)
-        empty'   <- Mutable.new
-        number <- generalize <$> IR.number 10 intPart empty' `withLength` (length $ show $ abs i)
-        minus  <- generalize <$> IR.var Parser.uminus `withLength` 1
-        app    <- generalize <$> IR.app minus number `withLength` (1 + length (show (abs i)))
+        empty'  <- Mutable.new
+        number  <- generalize <$>
+            IR.number 10 intPart empty' `withLength` (length $ show $ abs i)
+        minus   <- generalize <$>
+            IR.var Parser.uminus `withLength` 1
+        app     <- generalize <$>
+            IR.app minus number `withLength` (1 + length (show (abs i)))
         return app
 parsePortDefault (Constant (TextValue s)) = runASTOp $ do
     l <- Mutable.fromList s
@@ -227,11 +230,13 @@ parsePortDefault (Constant (RealValue d)) = runASTOp $ do
             number   <- generalize <$> IR.number 10 intPart fracPart `withLength`
                 (intLength + dotLength + fracLength)
             if negative then do
-                minus <- generalize <$> IR.var Parser.uminus `withLength` minusLength
+                minus <- generalize <$>
+                    IR.var Parser.uminus `withLength` minusLength
                 app   <- generalize <$> IR.app minus number `withLength`
                     (minusLength + intLength + dotLength + fracLength)
                 return app
             else
                 return number
         _ -> throwM $ PortDefaultNotConstructibleException (Constant (RealValue d))
-parsePortDefault (Constant (BoolValue b)) = runASTOp $ generalize <$> IR.cons (convert $ show b) []  `withLength` (length $ show b)
+parsePortDefault (Constant (BoolValue b)) = runASTOp $ generalize <$>
+    IR.cons (convert $ show b) [] `withLength` length (show b)

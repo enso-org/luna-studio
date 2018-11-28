@@ -118,9 +118,8 @@ replaceWithLam parent name lam = do
             replaceSource newLam $ coerce e
         Nothing -> substitute newLam lam
     P.replace lam tmpBlank
-    Code.gossipLengthsChangedBy (argLen + 2) $ case parent of
-        Just _ -> newLam
-        _      -> lam
+    Code.gossipLengthsChangedBy (argLen + 2) $
+        if isJust parent then newLam else lam
     return ()
 
 addLambdaArg' :: Int -> String -> Maybe EdgeRef -> NodeRef -> GraphOp ()

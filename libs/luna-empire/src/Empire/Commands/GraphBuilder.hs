@@ -30,7 +30,7 @@ import qualified LunaStudio.Data.NodeMeta             as NodeMeta
 import qualified LunaStudio.Data.Port                 as Port
 import qualified Safe
 
-import Control.Lens                         (uses)
+import Control.Lens                         (has, uses)
 import Control.Monad.State                  hiding (state, void, when)
 import Data.Char                            (intToDigit)
 import Data.Foldable                        (toList)
@@ -67,8 +67,7 @@ import LunaStudio.Data.TypeRep              (TypeRep (TCons, TStar))
 
 
 isDefinition :: BreadcrumbItem -> Bool
-isDefinition bc | Breadcrumb.Definition{} <- bc = True
-                | otherwise                     = False
+isDefinition = has Breadcrumb._Definition
 
 decodeBreadcrumbs :: Map.Map NodeId String -> Breadcrumb BreadcrumbItem
     -> Command Graph (Breadcrumb (Named BreadcrumbItem))
@@ -489,9 +488,7 @@ extractPortInfo :: NodeRef -> GraphOp [(TypeRep, PortState)]
 extractPortInfo n = do
     tp       <- getLayer @TypeLayer n >>= source
     match tp $ \case
-        ResolvedList "List" _ -> do
-            a <- extractListPorts n
-            return $ reverse a
+        ResolvedList "List" _ -> reverse <$> extractListPorts n
         _ -> do
             applied  <- reverse <$> extractAppliedPorts False False [] n
             fromType <- extractArgTypes tp
@@ -672,8 +669,7 @@ nodeConnectedToOutput = do
     edges  <- fmap Just $ use $ Graph.breadcrumbHierarchy . BH.portMapping
     fmap join $ forM edges $ \(_i, o) -> do
         connection <- getOutputSidebarInputs o
-        let a = (view srcNodeId . fst) <$> connection
-        return a
+        pure $ (view srcNodeId . fst) <$> connection
 
 resolveInput :: NodeRef -> GraphOp (Maybe OutPortRef)
 resolveInput n = traverse fromPortMarker =<< getLayer @Marker n

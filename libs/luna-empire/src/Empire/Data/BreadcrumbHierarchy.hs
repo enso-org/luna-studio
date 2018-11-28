@@ -72,6 +72,10 @@ instance HasRefs BChild where
     refs f (ExprChild   it) = ExprChild   <$> refs f it
     refs f (LambdaChild it) = LambdaChild <$> refs f it
 
+unexpectedBreadcrumbError :: BreadcrumbItem -> String
+unexpectedBreadcrumbError bc =
+    "internal error: unexpected breadcrumb " <> show bc
+
 getBreadcrumbItems :: LamItem -> Breadcrumb BreadcrumbItem -> [BChild]
 getBreadcrumbItems item (Breadcrumb bc) = go bc item where
     go [] _ = []
@@ -79,7 +83,7 @@ getBreadcrumbItems item (Breadcrumb bc) = go bc item where
         Just (LambdaChild c) -> LambdaChild c : go crumbs c
         Just (ExprChild   c) -> ExprChild   c : []
         Nothing              -> []
-    go (a : _) _ = error $ "internal error: unexpected breadcrumb " <> show a
+    go (a : _) _ = error $ unexpectedBreadcrumbError a
 
 navigateTo :: LamItem -> Breadcrumb BreadcrumbItem -> Maybe LamItem
 navigateTo item (Breadcrumb bc) = go bc item where
@@ -90,7 +94,7 @@ navigateTo item (Breadcrumb bc) = go bc item where
     go (Arg id pos : crumbs) b = do
         child <- b ^? children . ix id . _ExprChild . portChildren . ix pos
         go crumbs child
-    go (a : _) _ = error $ "internal error: unexpected breadcrumb " <> show a
+    go (a : _) _ = error $ unexpectedBreadcrumbError a
 
 replaceAt :: Breadcrumb BreadcrumbItem -> LamItem -> LamItem -> Maybe LamItem
 replaceAt (Breadcrumb bc) parent child = go bc parent child where
@@ -103,7 +107,7 @@ replaceAt (Breadcrumb bc) parent child = go bc parent child where
         lowerPar <- par ^? children . ix id . _ExprChild . portChildren . ix pos
         replaced <- go crumbs lowerPar child
         return $ par & children . ix id . _ExprChild . portChildren . ix pos .~ replaced
-    go (a : _) _ _ = error $ "internal error: unexpected breadcrumb " <> show a
+    go (a : _) _ _ = error $ unexpectedBreadcrumbError a
 
 topLevelIDs :: LamItem -> [NodeId]
 topLevelIDs = Map.keys . view children
