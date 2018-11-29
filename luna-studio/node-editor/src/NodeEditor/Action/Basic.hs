@@ -3,6 +3,11 @@ module NodeEditor.Action.Basic
     , module X
     ) where
 
+import Common.Prelude
+import Data.Map (Map)
+import LunaStudio.Data.Position                   (Position)
+
+import NodeEditor.Action.Batch                          (addConnectionRequest, moveNodeRequest)
 import NodeEditor.Action.Basic.AddConnection       as X (connect,
                                                          localAddConnection,
                                                          localAddConnections)
@@ -68,7 +73,8 @@ import NodeEditor.Action.Basic.SetNodeMeta         as X (localMoveNode,
                                                          localSetNodesMeta,
                                                          moveNode, moveNodes,
                                                          setNodeMeta,
-                                                         setNodesMeta)
+                                                         setNodesMeta,
+                                                         toMetaUpdate)
 import NodeEditor.Action.Basic.SetNodeMode         as X (toggleSelectedNodesMode,
                                                          toggleSelectedNodesUnfold)
 import NodeEditor.Action.Basic.SetPortDefault      as X (localSetPortDefault,
@@ -104,3 +110,36 @@ import NodeEditor.Action.State.Model               as X (isArgConstructorConnect
                                                          updateArgConstructorMode,
                                                          updatePortMode,
                                                          updatePortsModeForNode)
+
+import           Common.Action.Command                      (Command)
+import           NodeEditor.React.Model.Node                (NodeLoc)
+import           NodeEditor.React.Model.Connection          (Connection, src, dst)
+import           NodeEditor.State.Global                    (State, backend, clientId)
+import qualified Data.Binary      as Binary
+import qualified LunaStudio.API.Graph.Transaction      as Transaction
+import qualified LunaStudio.API.Topic     as Topic
+import NodeEditor.Action.State.App       (getWorkspace)
+import NodeEditor.Action.UUID            (registerRequest)
+import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
+import           Common.Batch.Connector.Connection        (Message (Message),
+                                                           sendRequest)
+import           NodeEditor.Batch.Workspace               (currentLocation)
+
+moveNodeOnConnection :: NodeLoc -> Connection -> Map NodeLoc Position -> Command State ()
+moveNodeOnConnection nl conn metaUpdate = do
+   leftConnect  <- addConnectionRequest (Left $ conn ^. src) $ Right nl
+   rightConnect <- addConnectionRequest (Right nl) $ Left $ InPortRef' $ conn ^. dst
+   move         <- moveNodeRequest =<< toMetaUpdate metaUpdate
+   Just workspace <- getWorkspace
+
+   uuid <- registerRequest
+   guiID      <- use $ backend . clientId
+
+   liftIO $ sendRequest $ Message uuid (Just guiID) $
+      Transaction.Request (workspace ^. currentLocation) [
+         (Topic.topic' move, Binary.encode move),
+         (Topic.topic' leftConnect, Binary.encode leftConnect),
+         (Topic.topic' rightConnect, Binary.encode rightConnect)
+         ]
+  -- connect (Left $ conn ^. src) $ Right nl
+  -- connect (Right nl)           $ Left $ conn ^. dst

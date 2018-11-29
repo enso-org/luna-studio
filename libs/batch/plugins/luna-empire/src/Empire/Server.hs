@@ -261,7 +261,6 @@ handleMessage = do
 defaultHandler :: ByteString -> StateT Env BusT ()
 defaultHandler content = do
     logger Logger.error $ "Not recognized request"
-    logger Logger.info $ unpack content
 
 handleRequest :: String -> String -> ByteString -> StateT Env BusT ()
 handleRequest logMsg topic content = do

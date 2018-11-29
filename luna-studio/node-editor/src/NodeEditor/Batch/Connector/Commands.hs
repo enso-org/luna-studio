@@ -94,10 +94,14 @@ getProgram maySettings retrieveLocation workspace uuid guiID = sendRequest
 addConnection :: Either OutPortRef NodeLoc -> Either AnyPortRef NodeLoc
     -> Workspace -> UUID -> Maybe UUID -> IO ()
 addConnection src dst workspace uuid guiID = sendRequest
-    $ Message uuid guiID
-        $ withLibrary workspace AddConnection.Request (conv src) dst where
-            conv (Left a)  = Left a --TODO normalise
-            conv (Right a) = Right $ a ^. NodeLoc.nodeId
+    $ Message uuid guiID $ addConnectionRequest src dst workspace
+
+addConnectionRequest :: Either OutPortRef NodeLoc -> Either AnyPortRef NodeLoc
+    -> Workspace -> AddConnection.Request
+addConnectionRequest src dst workspace = withLibrary workspace $ \location ->
+    AddConnection.Request location (conv src) dst where
+        conv (Left a)  = Left a --TODO normalise
+        conv (Right a) = Right $ a ^. NodeLoc.nodeId
 
 addImports :: Set LibraryName -> Workspace -> UUID -> Maybe UUID -> IO ()
 addImports libs workspace uuid guiID = sendRequest . Message uuid guiID
@@ -201,10 +205,13 @@ setNodeExpression nodeLoc expression workspace uuid guiID = sendRequest
 
 setNodesMeta :: Map NodeLoc NodeMeta -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID
-    $ withLibrary workspace'
-        SetNodesMeta.Request (Map.mapKeys convert updates') where
-            (workspace', nls) = normalise' workspace $ Map.keys updates
-            updates'          = Map.fromList $ zip nls $ Map.elems updates
+    $ setNodesMetaRequest updates workspace 
+
+setNodesMetaRequest :: Map NodeLoc NodeMeta -> Workspace -> SetNodesMeta.Request
+setNodesMetaRequest updates workspace = withLibrary workspace $ \location ->
+    SetNodesMeta.Request location (Map.mapKeys convert updates') where
+        (workspace', nls) = normalise' workspace $ Map.keys updates
+        updates'          = Map.fromList $ zip nls $ Map.elems updates
 
 sendNodesMetaUpdate :: Map NodeLoc NodeMeta -> Workspace -> UUID -> Maybe UUID
     -> IO ()

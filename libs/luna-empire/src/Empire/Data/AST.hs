@@ -59,11 +59,19 @@ instance Exception InvalidConnectionException where
     toException   = astExceptionToException
     fromException = astExceptionFromException
 
-data NotInputEdgeException = NotInputEdgeException deriving (Show)
+data NotInputEdgeException = NotInputEdgeException {
+      _expected :: NodeId
+    , _received :: NodeId
+    } deriving (Show)
+
+makeLenses ''NotInputEdgeException
 
 instance Exception NotInputEdgeException where
     toException   = astExceptionToException
     fromException = astExceptionFromException
+    displayException e = "Exception: " <> show (e ^. received)
+                        <> " is not an input sidebar ID ("
+                        <> show (e ^. expected) <> ")"
 
 data PortDoesNotExistException = PortDoesNotExistException OutPortId deriving (Show)
 

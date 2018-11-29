@@ -41,7 +41,9 @@ dependencies:
     - async
     - base
     - bimap
+    - binary
     - bytestring
+    - constraints
     - container
     - containers
     - convert

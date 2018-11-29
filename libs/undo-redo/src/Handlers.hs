@@ -37,6 +37,7 @@ import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import qualified LunaStudio.API.Graph.Transaction        as Transaction
 import           LunaStudio.API.Request                  (Request (..))
 import qualified LunaStudio.API.Request                  as Request
 import           LunaStudio.API.Response                 (Response (..), ResponseOf, InverseOf)
@@ -80,6 +81,7 @@ handlersMap = fromList
     , makeHandler $ autoHandle @SetNodeExpression.Request
     , makeHandler $ autoHandle @SetNodesMeta.Request
     , makeHandler $ autoHandle @SetPortDefault.Request
+    , makeHandler $ autoHandle @Transaction.Request
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)

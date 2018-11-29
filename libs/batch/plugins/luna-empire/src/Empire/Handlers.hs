@@ -33,14 +33,17 @@ import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import qualified LunaStudio.API.Graph.Transaction        as Transaction
 import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
 
 import           Control.Monad.State   (StateT)
 import qualified Data.Binary           as Bin
 import           Data.ByteString       (ByteString)
 import qualified Data.ByteString.Lazy  as BSL
+import           Data.Constraint
 import           Data.Map.Strict       (Map)
 import qualified Data.Map.Strict       as Map
+import           Empire.ApiHandlers    (Modification)
 import           Empire.Env            (Env)
 import qualified Empire.Server.Atom    as Atom
 import qualified Empire.Server.Graph   as Graph
@@ -75,6 +78,7 @@ handlersMap = Map.fromList
     , makeHandler $ Server.handle @SetNodeExpression.Request
     , makeHandler $ Server.handle @SetNodesMeta.Request
     , makeHandler $ Server.handle @SetPortDefault.Request
+    , makeHandler $ Server.handle @Transaction.Request
     , makeHandler Graph.handleTypecheck
     , makeHandler $ Server.handle @Interpreter.Request
     , makeHandler Library.handleCreateLibrary
@@ -92,6 +96,7 @@ handlersMap = Map.fromList
     , makeHandler $ Server.handle @Substitute.Request
     , makeHandler $ Server.handleOk @SaveSettings.Request
     ]
+
 
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)
 makeHandler h = (Topic.topic @a, process) where

@@ -9,6 +9,7 @@ dependencies:
     - bimap
     - binary
     - bytestring
+    - constraints
     - containers
     - directory
     - either

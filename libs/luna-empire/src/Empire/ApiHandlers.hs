@@ -1,11 +1,14 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 module Empire.ApiHandlers where
 
 import Prologue hiding (init, last)
 
+import qualified Data.Binary                             as Binary
 import qualified Data.Map                                as Map
-import qualified Data.Set                         as Set
+import qualified Data.Set                                as Set
 import qualified Data.UUID.V4                            as UUID
-import qualified Empire.Commands.Graph            as Graph
+import qualified Empire.Commands.Graph                   as Graph
 import qualified Empire.Data.Graph                       as Graph (code,
                                                                    nodeCache)
 import qualified LunaStudio.API.Atom.Copy                as CopyText
@@ -38,8 +41,10 @@ import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import qualified LunaStudio.API.Graph.Transaction        as Transaction
 import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
 import qualified LunaStudio.API.Response                 as Response
+import qualified LunaStudio.API.Topic                    as Topic
 import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
 import qualified LunaStudio.Data.Connection       as Connection
 import qualified LunaStudio.Data.Graph                   as GraphAPI
@@ -53,6 +58,9 @@ import qualified System.Log.MLogger                      as Logger
 
 import Control.Lens                  (to, traversed, use, (.=), (^..), _Left)
 import Control.Monad.Catch           (handle, try)
+import Data.Binary                   (Binary)
+import Data.ByteString.Lazy          (ByteString)
+import Data.Constraint               (Dict(..))
 import Data.List                     (break, find, init, last, partition, sortBy)
 import Data.Maybe                    (isJust, isNothing, listToMaybe,
                                       maybeToList)
@@ -81,6 +89,40 @@ import LunaStudio.Data.Project       (LocationSettings)
 
 import Empire.Empire         (Empire)
 import LunaStudio.Data.Graph (Graph (Graph))
+import qualified System.IO as IO
+
+type TransactionDict a =
+        ( Modification a
+        , Binary a
+        , Binary (InverseOf a)
+        , ResultOf a ~ Diff
+        , Topic.MessageTopic (InverseOf a)
+        )
+data ModificationDict = forall a. ModificationDict (Dict (TransactionDict a))
+
+dictsMap :: Map.Map String ModificationDict
+dictsMap = Map.fromList
+    [ makeDict @AddConnection.Request
+    , makeDict @AddNode.Request
+    , makeDict @AddPort.Request
+    , makeDict @AddSubgraph.Request
+    , makeDict @AutolayoutNodes.Request
+    , makeDict @CollapseToFunction.Request
+    , makeDict @MovePort.Request
+    , makeDict @RemoveConnection.Request
+    , makeDict @RemoveNodes.Request
+    , makeDict @RemovePort.Request
+    , makeDict @RenameNode.Request
+    , makeDict @RenamePort.Request
+    , makeDict @SetCode.Request
+    , makeDict @SetNodeExpression.Request
+    , makeDict @SetNodesMeta.Request
+    , makeDict @SetPortDefault.Request
+    ]
+
+makeDict :: forall a. (Topic.MessageTopic a, TransactionDict a)
+    => (String, ModificationDict)
+makeDict = (Topic.topic @a, ModificationDict (Dict @(TransactionDict a)))
 
 -- | The law satisfied by all instances of this class should be:
 --   buildInverse a >>= \inv -> perform a >> perform inv ~ pure ()
@@ -167,8 +209,21 @@ instance Modification AddPort.Request where
     perform (AddPort.Request location portRef connsDst name)
         = withDiff location
             $ Graph.addPortWithConnections location portRef name connsDst
-    buildInverse (AddPort.Request location portRef _ _)
-        = pure $ RemovePort.Request location portRef
+    buildInverse (AddPort.Request location portRef connsDst _)
+        = let removePort = RemovePort.Request location portRef
+              removeReq  = (Topic.topic' removePort, Binary.encode removePort)
+          in case connsDst of
+            []       -> pure $ Transaction.Request location [removeReq]
+            portRefs -> do
+                let nodeIds = map (view PortRef.nodeId) portRefs
+                previousExprs <- Graph.withGraph location . runASTOp $
+                    mapM getNodeCode nodeIds
+                let makeRequest nid expr =
+                        let req = SetNodeExpression.Request location nid expr
+                        in (Topic.topic' req, Binary.encode req)
+                pure $ Transaction.Request location $
+                    removeReq : zipWith makeRequest nodeIds previousExprs
+
 
 instance Modification AddSubgraph.Request where
     perform (AddSubgraph.Request location nodes connections)
@@ -312,6 +367,39 @@ instance Modification SetNodesMeta.Request where
                     (Map.member (node ^. Node.nodeId) updates)
                     (node ^. Node.nodeId, node ^. Node.nodeMeta)
         pure $ SetNodesMeta.Request location prevMeta
+
+instance Modification Transaction.Request where
+    perform (Transaction.Request location requests) = do
+        let dicts = map (\(t, bs) -> (dictsMap Map.! t, bs)) requests
+        diff <- withDiff location $ mapM (\(d, bs) -> actWithDict d performBS bs) dicts
+        pure diff
+    buildInverse (Transaction.Request location requests) = do
+        let dicts = map (\(t, bs) -> (dictsMap Map.! t, bs)) requests
+        inverse <- reverse <$> mapM (\(d, bs) -> actWithDict d inverseBS bs) dicts
+        pure $ Transaction.Request location inverse
+
+actWithDict :: ModificationDict
+    -> (forall a. Dict (TransactionDict a) -> ByteString -> Empire b)
+    -> ByteString
+    -> Empire b
+actWithDict md f bs = case md of
+    ModificationDict d -> f d bs
+
+inverseBS :: forall a. Dict (TransactionDict a) -> ByteString -> Empire (Topic.Topic, ByteString)
+inverseBS d bs = case d of
+    Dict -> do
+        let req = Binary.decode bs :: a
+        inv <- buildInverse req
+        return $ (Topic.topic' inv, Binary.encode inv)
+
+performBS :: forall a. Dict (TransactionDict a) -> ByteString -> Empire Diff
+performBS d bs = case d of
+    Dict -> do
+        let req = Binary.decode bs :: a
+        diff <- perform req
+        print diff
+        liftIO $ IO.hFlush IO.stdout
+        return diff
 
 instance Modification Substitute.Request where
     perform (Substitute.Request location diffs) = do

@@ -31,6 +31,7 @@ import qualified LunaStudio.API.Graph.SetCode            as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression  as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta       as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault     as SetPortDefault
+import qualified LunaStudio.API.Graph.Transaction        as Transaction
 import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
 
 import qualified LunaStudio.API.Topic                    as Topic
@@ -117,7 +118,7 @@ type instance ResultOf  AddImports.Request = Diff
 type instance InverseOf AddNode.Request = RemoveNodes.Request
 type instance ResultOf  AddNode.Request = Diff
 
-type instance InverseOf AddPort.Request = RemovePort.Request
+type instance InverseOf AddPort.Request = Transaction.Request
 type instance ResultOf  AddPort.Request = Diff
 
 type instance InverseOf AddSubgraph.Request = RemoveNodes.Request
@@ -188,6 +189,9 @@ type instance ResultOf  SetPortDefault.Request = Diff
 
 type instance InverseOf Substitute.Request = ()
 type instance ResultOf  Substitute.Request = Diff
+
+type instance InverseOf Transaction.Request = Transaction.Request
+type instance ResultOf  Transaction.Request = Diff
 
 type instance InverseOf TypeCheck.Request = ()
 type instance ResultOf  TypeCheck.Request = ()
