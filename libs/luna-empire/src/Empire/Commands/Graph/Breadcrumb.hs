@@ -79,7 +79,7 @@ makeGraphCls fun lastUUID = do
         runAliasAnalysis
         runASTOp $ do
             ASTBreadcrumb.makeTopBreadcrumbHierarchy ref
-            ASTBreadcrumb.restorePortMappings (nodeCache ^. portMappingMap)
+            ASTBreadcrumb.restorePortMappings uuid (nodeCache ^. portMappingMap)
             use Graph.graphNodeCache
     Graph.userState . Graph.clsNodeCache .= updatedCache
     pure (uuid, graph)
