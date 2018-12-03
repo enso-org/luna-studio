@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE PartialTypeSignatures #-}
+
 module Empire.ApiHandlers where
 
 import Prologue hiding (init, last)
@@ -46,12 +46,12 @@ import qualified LunaStudio.API.Graph.TypeCheck          as TypeCheck
 import qualified LunaStudio.API.Response                 as Response
 import qualified LunaStudio.API.Topic                    as Topic
 import qualified LunaStudio.Data.Breadcrumb              as Breadcrumb
-import qualified LunaStudio.Data.Connection       as Connection
+import qualified LunaStudio.Data.Connection              as Connection
 import qualified LunaStudio.Data.Graph                   as GraphAPI
 import qualified LunaStudio.Data.GraphLocation           as GraphLocation
-import qualified LunaStudio.Data.Node             as Node
+import qualified LunaStudio.Data.Node                    as Node
 import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
-import qualified LunaStudio.Data.PortRef          as PortRef
+import qualified LunaStudio.Data.PortRef                 as PortRef
 import qualified LunaStudio.Data.Project                 as Project
 import qualified Path
 import qualified System.Log.MLogger                      as Logger
@@ -68,6 +68,7 @@ import Empire.ASTOp                  (runASTOp)
 import Empire.Commands.GraphBuilder  (buildClassGraph, buildConnections,
                                       buildGraph, buildNodes, getNodeCode,
                                       getNodeName)
+import Empire.Empire                 (Empire)
 import Empire.Data.AST               (SomeASTException,
                                       astExceptionFromException,
                                       astExceptionToException)
@@ -78,6 +79,7 @@ import LunaStudio.API.Response       (InverseOf, ResultOf)
 import LunaStudio.Data.Breadcrumb    (Breadcrumb (..))
 import LunaStudio.Data.Connection    (Connection (..))
 import LunaStudio.Data.Diff          (Diff, diff)
+import LunaStudio.Data.Graph         (Graph (Graph))
 import LunaStudio.Data.GraphLocation (GraphLocation (..))
 import LunaStudio.Data.NodeLoc       (NodeLoc (..))
 import LunaStudio.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef (..))
@@ -87,9 +89,6 @@ import LunaStudio.Data.Port          (InPort (..), InPortIndex (..),
                                       Port (..), PortState (..), getPortNumber)
 import LunaStudio.Data.Project       (LocationSettings)
 
-import Empire.Empire         (Empire)
-import LunaStudio.Data.Graph (Graph (Graph))
-import qualified System.IO as IO
 
 type TransactionDict a =
         ( Modification a
