@@ -368,14 +368,31 @@ instance Modification SetNodesMeta.Request where
                     (node ^. Node.nodeId, node ^. Node.nodeMeta)
         pure $ SetNodesMeta.Request location prevMeta
 
+data RequestTransactionException = RequestTransactionException Topic.Topic
+    deriving Show
+
+instance Exception RequestTransactionException where
+    displayException (RequestTransactionException t) =
+        "internal error: request " <> t <> " is not handled in transaction"
+
+getDicts :: MonadThrow m => [(Topic.Topic, ByteString)]
+    -> m [(ModificationDict, ByteString)]
+getDicts requests = for requests $ \(topic, bs) -> do
+    let dict = Map.lookup topic dictsMap
+    case dict of
+        Just d -> pure (d, bs)
+        _      -> throwM $ RequestTransactionException topic
+
 instance Modification Transaction.Request where
     perform (Transaction.Request location requests) = do
-        let dicts = map (\(t, bs) -> (dictsMap Map.! t, bs)) requests
-        diff <- withDiff location $ mapM (\(d, bs) -> actWithDict d performBS bs) dicts
+        dicts <- getDicts requests
+        diff  <- withDiff location $
+            mapM (\(d, bs) -> actWithDict d performBS bs) dicts
         pure diff
     buildInverse (Transaction.Request location requests) = do
-        let dicts = map (\(t, bs) -> (dictsMap Map.! t, bs)) requests
-        inverse <- reverse <$> mapM (\(d, bs) -> actWithDict d inverseBS bs) dicts
+        dicts   <- getDicts requests
+        inverse <- reverse <$>
+            mapM (\(d, bs) -> actWithDict d inverseBS bs) dicts
         pure $ Transaction.Request location inverse
 
 actWithDict :: ModificationDict
@@ -385,21 +402,21 @@ actWithDict :: ModificationDict
 actWithDict md f bs = case md of
     ModificationDict d -> f d bs
 
-inverseBS :: forall a. Dict (TransactionDict a) -> ByteString -> Empire (Topic.Topic, ByteString)
+inverseBS :: forall a. Dict (TransactionDict a)
+    -> ByteString
+    -> Empire (Topic.Topic, ByteString)
 inverseBS d bs = case d of
     Dict -> do
         let req = Binary.decode bs :: a
         inv <- buildInverse req
-        return $ (Topic.topic' inv, Binary.encode inv)
+        pure (Topic.topic' inv, Binary.encode inv)
 
 performBS :: forall a. Dict (TransactionDict a) -> ByteString -> Empire Diff
 performBS d bs = case d of
     Dict -> do
         let req = Binary.decode bs :: a
         diff <- perform req
-        print diff
-        liftIO $ IO.hFlush IO.stdout
-        return diff
+        pure diff
 
 instance Modification Substitute.Request where
     perform (Substitute.Request location diffs) = do
