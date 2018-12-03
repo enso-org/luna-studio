@@ -25,7 +25,7 @@ def build_frontend (args):
     print("Building frontend")
     stack.create_bin_dirs()
     stack.build_ghcjs(args.frontend_stack, args.dev_mode)
-    atom_prepare.ghcjs_code_atomless()    
+    ghcjs_prepare.ghcjs_code_atomless()    
     copy_configs.run()
 
 def main ():
