@@ -1,0 +1,61 @@
+/* LOGO WITH ROTATING PROGRESS begin */
+
+#spinner {
+	margin: auto;
+	width: 180px;
+	height: 180px;
+}
+
+#spinner circle#full-ring-bg {
+	stroke-dasharray: 538.97948963149890246986;
+	stroke-width: 15.0;
+	stroke-dashoffset: 0;
+	stroke: #141414;
+	-webkit-transition: all 0.1s ease-in;
+	-moz-transition: all 0.1s ease-in;
+	-o-transition: all 0.1s ease-in;
+	transition: all 0.1s ease-in;
+}
+
+#spinner circle.logo-circle {
+	stroke-dasharray: 538.97948963149890246986;
+	stroke-width: 8.4375;
+	stroke-dashoffset: 0;
+}
+
+@-webkit-keyframes rotating {
+	from {
+		-webkit-transform: rotate(0deg);
+	}
+
+	to {
+		-webkit-transform: rotate(360deg);
+	}
+}
+
+.rotating {
+	-webkit-animation: rotating 2s linear infinite;
+}
+
+#logo-area {
+	margin: auto;
+	width: 180px;
+	height: 180px;
+	background-image: url("atom://luna-studio/rsc/luna_logo_without_border.svg");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.luna_logo-overlap {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(23,22,21,0.7);
+	margin-left: 0 !important;
+	display: flex;
+	z-index: 1;
+}
+
+/* LOGO WITH ROTATING PROGRESS end */

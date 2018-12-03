@@ -1,0 +1,16 @@
+html, body, #chart-container {
+    width:  100%;
+    height: 100%;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-content {
+    border-radius: 0 !important;
+}
+
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+    -webkit-transition: transform 1s ease;
+       -moz-transition: transform 1s ease;
+         -o-transition: transform 1s ease;
+            transition: transform 1s ease;
+}

@@ -1,0 +1,235 @@
+@grid:                  16px; // Grid size
+
+@background:            #171615;
+@searcher-bg:           lighten(#171615,5%);
+
+@button-color:       inherit;
+@button-bg:          @tile-bg;       //darken(orange,10%);
+@button-bg-hover:    @tile-bg-hover; //lighten(@button-bg, 10%);
+
+@passive:               lighten(@background,24%);
+
+@input-height:          2*@grid;
+@border-radius:         1*@grid;
+@border-radius-tile:    1*@grid;
+@border-radius-buttons: 1*@grid;
+
+
+@tile-size:             11*@grid;
+@tile-bg:               rgba(255,255,255,0.06);
+@tile-bg-hover:         rgba(255,255,255,0.12);
+@tile-margin:           1.5*@grid;
+@tile-new-stroke:       rgba(255,255,255,0.15);
+@tile-new-stroke-hover: rgba(255,255,255,0.3);
+
+@caption-height:        @grid*2;
+@sub-caption-height:    @grid*2;
+@width:                 52.5*@grid;
+@padding:               2*@grid;
+
+// .hide-scrollbar() {
+// 	&::-webkit-scrollbar {
+// 	   display: none;
+// 	}
+// }
+
+atom-panel.modal.overlay.from-top::before { // TODO: Make it more specific - use a global class?
+	background-color: #000;
+}
+
+atom-panel.modal.overlay.from-top { // TODO: Make it more specific - use a global class?
+	max-width: @width + 20px;
+
+}
+
+.luna-welcome-scroll {
+	position:   fixed !important;
+	top:        0;
+	bottom:     0;
+	left:       0;
+	overflow-y: auto;
+	overflow-x: auto;
+	width:      100%;
+	//.hide-scrollbar;
+}
+
+.luna-welcome {
+	font-weight:   300;
+	border-radius: @border-radius;
+	padding:       @padding @padding 0;
+	margin:        @padding auto;
+	background:    @background;
+	width:         @width - 2*@padding;
+	position:      relative;
+	overflow:      hidden;
+	box-sizing:    content-box;
+}
+
+.luna-welcome__body {
+	width:         110%;
+}
+
+.luna-welcome__title {
+	display:       none; // TODO: Decide on that
+	font-weight:   100 !important;
+	font-size:     2*@grid !important;
+	line-height:   1;
+	margin-bottom: @padding;
+	text-align:    center;
+	color:         @passive !important;
+}
+
+.luna-welcome__header {
+	text-align: center;
+}
+
+.luna-welcome__header__menu {
+	margin-bottom: 2*@grid;
+	overflow-y:    hidden;
+}
+
+.luna-welcome__header__menu__links {
+	float:           right;
+	width:           18*@grid;
+	display:         flex;
+	align-items:     stretch;
+	justify-content: space-between;
+	border-radius:   @border-radius-buttons;
+	overflow:        hidden;
+}
+
+.luna-welcome-link {
+	@a: 2px;
+	@b: @button-bg;
+	@c: @button-bg-hover;
+
+	color:           @button-color;
+	background:      @b;
+	line-height:     @input-height - @a;
+	border-bottom:   @a solid transparent;
+	cursor:          pointer;
+	display:         block;
+	text-decoration: none !important;
+	&:hover {
+		background: @c;
+		color:      @button-color;
+	}
+}
+.luna-welcome-link--docs {
+	width:           7.88*@grid;
+}
+.luna-welcome-link--support {
+	width:           9.88*@grid;
+}
+
+.luna-welcome-search {
+	border-radius:       @border-radius-buttons;
+	background-color:    @searcher-bg;
+	background-image:    url("atom://luna-studio/rsc/zoom.svg");
+	background-repeat:   no-repeat;
+	background-position: right;
+	background-size:     10% 50%;
+	height:        @input-height;
+	border-bottom: 2px solid @searcher-bg;
+	padding:       0 @grid;
+	width:         23.5*@grid;
+	float:         left;
+
+	&::-webkit-input-placeholder {
+		color: @passive;
+		opacity:1;
+	}
+	&:focus::-webkit-input-placeholder {
+		color: transparent;
+	}
+}
+
+.luna-welcome__section__container {
+	min-height:      @tile-size + @caption-height + @sub-caption-height + @tile-margin;
+	width:           100%;
+	display:         flex;
+	flex-wrap:       wrap;
+	justify-content: flex-start;
+	align-content:   flex-start;
+}
+
+.luna-welcome__section__title {
+	color:          @passive;
+	font-size:      1.2em !important;
+	line-height:    @grid;
+	padding-bottom: 0.5*@grid;
+	opacity:        0.6;
+
+	&::before {
+		opacity:  0.9;
+		position: relative;
+		top:      1px;
+	}
+}
+
+.luna-welcome__tile {
+	width:         @tile-size !important;
+	height:        @tile-size + @caption-height + @sub-caption-height;
+	position:      relative;
+	margin-right:  @tile-margin;
+	margin-bottom: @tile-margin;
+	cursor:        pointer;
+	.luna-project-logo,
+	&::before {
+			border-radius: @border-radius-tile;
+			overflow-y:    hidden;
+		}
+	&:hover {
+		.luna-project-logo,
+		&::before {
+			background: @tile-bg-hover;
+		}
+	}
+
+}
+
+.luna-welcome__tile--add-new {
+	&::before {
+		display:     block;
+		content:     "+";
+		width:       @tile-size;
+		height:      @tile-size;
+		text-align:  center;
+		line-height: @tile-size;
+		font-size:   4*@grid;
+		font-weight: 100;
+		color:       @tile-new-stroke;
+		border: 2px dashed @tile-new-stroke;
+	}
+	&:hover {
+		&::before {
+			background:   none;
+			color:        @tile-new-stroke-hover;
+			border-color: @tile-new-stroke-hover;
+
+		}
+	}
+	img { display: none }
+}
+
+.luna-project-logo {
+	background: @tile-bg;
+	overflow:   hidden;
+	width:      @tile-size;
+	height:     @tile-size;
+
+}
+
+.luna-project-caption {
+	height:        @caption-height;
+	line-height:   @caption-height;
+	text-align:    center;
+	text-overflow: ellipsis;
+	overflow:      hidden;
+}
+
+.luna-project-description {
+	opacity:    0.3;
+	text-align: center;
+	font-size:  10px;
+}

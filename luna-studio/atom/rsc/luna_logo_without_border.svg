@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="180" width="180">
+    <defs>
+      <circle id="innerCircle" cx="32" cy="32" r="26"/>
+      <circle id="leftAtom"    cx="15" cy="32" r="17"/>
+      <circle id="rightAtom"   cx="45" cy="32" r="13"/>
+      <mask id="innerCircleMask">
+        <use xlink:href="#innerCircle" fill="white"/>
+      </mask>
+
+      <rect id="bg" width="64" height="64" fill="white"/>
+      <mask id="bgmask">
+        <use xlink:href="#bg"/>
+        <circle cx="32" cy="32" r="29"/>
+      </mask>
+
+      <mask id="mainShapeMask">
+        <use xlink:href="#bg"/>
+        <use xlink:href="#leftAtom"/>
+        <rect cy="32" width="64" height="32"/>
+      </mask>
+
+      <g id="front">
+        <use xlink:href="#innerCircle" mask="url(#mainShapeMask)"/>
+        <use xlink:href="#rightAtom"/>
+      </g>
+
+      <g id="logo">
+      <use xlink:href="#border"/>
+        <use xlink:href="#front" transform="rotate(40 32 32)"/>
+      </g>
+
+    </defs>
+    <use xlink:href="#logo" fill="rgb(255,255,255)" opacity="0.2" transform="scale(2.8125)"/>
+  </svg>

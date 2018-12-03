@@ -1,0 +1,122 @@
+body {
+    margin:      0;
+    padding:     0;
+    font-size:   12px;
+    line-height: 16px;
+}
+
+/* custom scrollbars */
+
+html::-webkit-scrollbar {
+    width:  4px;
+    height: 4px;
+    background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0);
+    border-radius: 5px;
+}
+html:hover::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.05);
+}
+
+/* hasklig */
+
+@font-face {
+    font-family: 'hasklig-extra-light';
+    src: url('hasklig/extra-light.otf');
+    }
+    @font-face {
+    font-family: 'hasklig-light';
+    src: url('hasklig/light.otf');
+    }
+    @font-face {
+    font-family: 'hasklig-regular';
+    src: url('hasklig/regular.otf');
+    }
+    @font-face {
+    font-family: 'hasklig-medium';
+    src: url('hasklig/medium.otf');
+    }
+    @font-face {
+    font-family: 'hasklig-semibold';
+    src: url('hasklig/semibold.otf');
+    }
+    @font-face {
+    font-family: 'hasklig-bold';
+    src: url('hasklig/bold.otf');
+    }
+    @font-face {
+    font-family: 'hasklig-black';
+    src: url('hasklig/black.otf');
+    }
+    [data-font='hasklig-extra-light'] atom-text-editor {
+    font-family: 'hasklig-extra-light';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-extra-light'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-extra-light'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-light'] atom-text-editor {
+    font-family: 'hasklig-light';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-light'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-light'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-regular'] atom-text-editor {
+    font-family: 'hasklig-regular';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-regular'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-regular'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-medium'] atom-text-editor {
+    font-family: 'hasklig-medium';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-medium'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-medium'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-semibold'] atom-text-editor {
+    font-family: 'hasklig-semibold';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-semibold'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-semibold'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-bold'] atom-text-editor {
+    font-family: 'hasklig-bold';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-bold'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-bold'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-black'] atom-text-editor {
+    font-family: 'hasklig-black';
+    font-feature-settings: 'liga' off, 'calt' off;
+    }
+    [data-font='hasklig-black'] atom-text-editor .syntax--comment {
+    font-style: italic;
+    }
+    [data-font='hasklig-black'] atom-text-editor .syntax--string {
+    font-feature-settings: 'liga' off, 'calt' off;
+    }

@@ -1,0 +1,7 @@
+.syntax--marker {
+    opacity: 0.2;
+}
+
+.syntax--disabled {
+    opacity: 0.4;
+}

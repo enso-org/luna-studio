@@ -1,0 +1,132 @@
+@gridSize: 16px;
+@borderRadius: 16px;
+@gutter: 2px;
+@accentColor: #573614;
+@backgroundColor: @guideColor; //lighten(@accentColor,5%);
+@buttonColor: lighten(@accentColor,25%); //lighten(@accentColor,10%);
+@textColor: rgba(0,0,0,.7);
+@guideColor: lighten(@accentColor,10%); //darken(orange,10%);
+
+.luna-guide__message-positioner {
+	position: fixed;
+	bottom: 3.5*@gridSize;
+	width: 100%;
+	z-index: 10000;
+	display: flex;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.luna-guide__message {
+	position: relative;
+	color: @textColor;
+	width: 260px !important;
+	@a: 1px;
+	background: @backgroundColor;
+	padding: @gridSize/@a @gridSize @gridSize - @gridSize/@a + @gridSize;
+	box-sizing: content-box;
+	border-radius: @borderRadius;
+	height: auto !important;
+	min-height: 108px;
+
+	top: inherit !important;
+	left: inherit !important;
+
+}
+
+.luna-guide__title {
+	padding-bottom: @gridSize/1.5;
+	font-size: 		1*@gridSize;
+	font-weight:    bold;
+	color:          @textColor;
+}
+
+.luna-guide__description {
+	padding-bottom: @gridSize/1;
+}
+
+.luna-guide__button {
+	float:left;
+	color: #fff;
+	background: @buttonColor;
+	pointer-events: auto;
+	height: 1.5*@gridSize;
+	padding: 0 @gridSize/1.5 @gridSize*0.08;
+	margin-left: @gutter;
+	float: right;
+	border-radius: @borderRadius;
+	display: block;
+	position: absolute;
+	bottom: @gridSize;
+	right:  @gridSize;
+}
+.luna-guide__button-box {
+	border-radius: @borderRadius;
+	overflow: hidden;
+	display: block;
+	margin-right: 20px;
+	.luna-guide__button {
+	    border-radius: 0;
+	    margin-right: 0;
+		&:first-child {
+			padding-left: @gridSize/1.2;
+		}
+		&:last-child {
+			padding-right: @gridSize/1.1;
+		}
+	}
+}
+
+
+.luna-guide__button--link {
+	background: none;
+	color: @textColor;
+	text-decoration: underline;
+	margin-right: 0;
+}
+
+// .luna-guide__highlight::before,
+.luna-guide__pointer {
+	@a: @gridSize*5;
+	display: block;
+	content: " ";
+	width: @a;
+	height: @a;
+	background: fade(@guideColor, 40%);
+	border-radius: @gridSize;
+	//-webkit-transform: translate(-@a/2, -@a/2);
+	position: fixed;
+	z-index: 10000000;
+	animation-duration: 0.7s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-name: pulsing;
+	animation-timing-function: linear;
+	pointer-events: none;
+}
+.luna-guide__close-icon {
+	background: none;
+	position: absolute;
+	top: @gridSize*0.95;
+	right: @gridSize*0.75;
+	cursor: pointer;
+	pointer-events: all;
+	text-shadow: none;
+	opacity: .7;
+
+}
+
+@keyframes pulsing {
+  from { opacity:  1 }
+  to   { opacity: .2 }
+}
+
+@keyframes pulsing--window {
+  from { opacity:  .4 }
+  to   { opacity: .1 }
+}
+
+.luna-guide__pointer.luna-guide__pointer--window {
+	border-radius: 0;
+	animation-name: pulsing--window;
+}

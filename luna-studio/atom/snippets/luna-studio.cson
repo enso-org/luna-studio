@@ -1,0 +1,22 @@
+'.source.luna':
+  'Method documentation':
+    'prefix': 'doc'
+    'body': '# ${1:method} - ${2:description}'
+  'Function definition':
+    'prefix': 'def'
+    'body': """
+      def ${1:name} ${2:args}:
+          ${3:body}
+    """
+  'Class declaration':
+    'prefix': 'class'
+    'body': """
+      class ${1:name}:
+          ${2:constuctor}
+    """
+  'TODO':
+    'prefix': 't'
+    'body': '#TODO [ ] - $1'
+  'TODO':
+    'prefix': 'T'
+    'body': '#TODO [ ] - $1'

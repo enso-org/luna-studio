@@ -1,0 +1,180 @@
+#
+# http://flight-manual.atom.io/behind-atom/sections/keymaps-in-depth/
+#
+'.luna-input':
+  'backspace'       : 'native!'
+  'cmd-a'           : 'native!'
+  'cmd-c'           : 'native!'
+  'cmd-down'        : 'native!'
+  'cmd-l'           : 'native!'
+  'cmd-left'        : 'native!'
+  'cmd-right'       : 'native!'
+  'cmd-shift-z'     : 'native!'
+  'cmd-up'          : 'native!'
+  'cmd-v'           : 'native!'
+  'cmd-x'           : 'native!'
+  'cmd-y'           : 'native!'
+  'cmd-z'           : 'native!'
+  'ctrl-a'          : 'native!'
+  'ctrl-c'          : 'native!'
+  'ctrl-down'       : 'native!'
+  'ctrl-e'          : 'native!'
+  'ctrl-l'          : 'native!'
+  'ctrl-left'       : 'native!'
+  'ctrl-right'      : 'native!'
+  'ctrl-shift-left' : 'native!'
+  'ctrl-shift-right': 'native!'
+  'ctrl-shift-z'    : 'native!'
+  'ctrl-up'         : 'native!'
+  'ctrl-v'          : 'native!'
+  'ctrl-x'          : 'native!'
+  'ctrl-y'          : 'native!'
+  'ctrl-z'          : 'native!'
+  'delete'          : 'native!'
+  'down'            : 'native!'
+  'f'               : 'native!'
+  'h'               : 'native!'
+  'l'               : 'native!'
+  'left'            : 'native!'
+  'right'           : 'native!'
+  'shift-backspace' : 'native!'
+  'shift-down'      : 'native!'
+  'shift-left'      : 'native!'
+  'shift-right'     : 'native!'
+  'shift-up'        : 'native!'
+  'space'           : 'native!'
+  'up'              : 'native!'
+  'enter'           : 'core:accept'
+  'escape'          : 'core:cancel'
+
+'.luna-visualization--active':
+  'down'            : 'native!'
+  'left'            : 'native!'
+  'right'           : 'native!'
+  'up'              : 'native!'
+  'shift-down'      : 'native!'
+  'shift-left'      : 'native!'
+  'shift-right'     : 'native!'
+  'shift-up'        : 'native!'
+  'cmd-a'           : 'native!'
+  'cmd-c'           : 'native!'
+  'cmd-x'           : 'native!'
+  'cmd-v'           : 'native!'
+  'ctrl-a'          : 'native!'
+  'ctrl-c'          : 'native!'
+  'ctrl-x'          : 'native!'
+  'ctrl-v'          : 'native!'
+
+'.luna-searcher__input':
+  'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher HintShortcut 0
+  'cmd-0'      : 'luna-studio:searcher-accept-0'              # Searcher HintShortcut 0
+  'ctrl-1'     : 'luna-studio:searcher-accept-1'              # Searcher HintShortcut 1
+  'cmd-1'      : 'luna-studio:searcher-accept-1'              # Searcher HintShortcut 1
+  'ctrl-2'     : 'luna-studio:searcher-accept-2'              # Searcher HintShortcut 2
+  'cmd-2'      : 'luna-studio:searcher-accept-2'              # Searcher HintShortcut 2
+  'ctrl-3'     : 'luna-studio:searcher-accept-3'              # Searcher HintShortcut 3
+  'cmd-3'      : 'luna-studio:searcher-accept-3'              # Searcher HintShortcut 3
+  'ctrl-4'     : 'luna-studio:searcher-accept-4'              # Searcher HintShortcut 4
+  'cmd-4'      : 'luna-studio:searcher-accept-4'              # Searcher HintShortcut 4
+  'ctrl-5'     : 'luna-studio:searcher-accept-5'              # Searcher HintShortcut 5
+  'cmd-5'      : 'luna-studio:searcher-accept-5'              # Searcher HintShortcut 5
+  'ctrl-6'     : 'luna-studio:searcher-accept-6'              # Searcher HintShortcut 6
+  'cmd-6'      : 'luna-studio:searcher-accept-6'              # Searcher HintShortcut 6
+  'ctrl-7'     : 'luna-studio:searcher-accept-7'              # Searcher HintShortcut 7
+  'cmd-7'      : 'luna-studio:searcher-accept-7'              # Searcher HintShortcut 7
+  'ctrl-8'     : 'luna-studio:searcher-accept-8'              # Searcher HintShortcut 8
+  'cmd-8'      : 'luna-studio:searcher-accept-8'              # Searcher HintShortcut 8
+  'ctrl-9'     : 'luna-studio:searcher-accept-9'              # Searcher HintShortcut 9
+  'cmd-9'      : 'luna-studio:searcher-accept-9'              # Searcher HintShortcut 9
+  'ctrl-enter' : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
+  'cmd-enter'  : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
+  'down'       : 'luna-studio:searcher-move-down'             # Searcher MoveDown
+  'enter'      : 'luna-studio:searcher-accept'                # Searcher Accept
+  'tab'        : 'luna-studio:searcher-tab-pressed'           # Searcher TabPressed
+  'up'         : 'luna-studio:searcher-move-up'               # Searcher MoveUp
+
+'.luna-studio':
+  # camera
+  'ctrl--'            : 'luna-studio:zoom-out'                 # ZoomOut
+  'cmd--'             : 'luna-studio:zoom-out'                 # ZoomOut
+  'ctrl-_'            : 'luna-studio:zoom-out'                 # ZoomOut
+  'cmd-_'             : 'luna-studio:zoom-out'                 # ZoomOut
+  'ctrl-='            : 'luna-studio:zoom-in'                  # ZoomIn
+  'cmd-='             : 'luna-studio:zoom-in'                  # ZoomIn
+  'ctrl-+'            : 'luna-studio:zoom-in'                  # ZoomIn
+  'cmd-+'             : 'luna-studio:zoom-in'                  # ZoomIn
+  'ctrl-0'            : 'luna-studio:reset-zoom'               # ResetZoom
+  'cmd-0'             : 'luna-studio:reset-zoom'               # ResetZoom
+  'ctrl-alt-shift-0'  : 'luna-studio:reset-camera'             # ResetCamera
+  'cmd-alt-shift-0'   : 'luna-studio:reset-camera'             # ResetCamera
+  'ctrl-down'         : 'luna-studio:pan-down'                 # PanDown
+  'cmd-down'          : 'luna-studio:pan-down'                 # PanDown
+  'ctrl-left'         : 'luna-studio:pan-left'                 # PanLeft
+  'cmd-left'          : 'luna-studio:pan-left'                 # PanLeft
+  'ctrl-right'        : 'luna-studio:pan-right'                # PanRight
+  'cmd-right'         : 'luna-studio:pan-right'                # PanRight
+  'ctrl-shift-0'      : 'luna-studio:reset-pan'                # ResetPan
+  'cmd-shift-0'       : 'luna-studio:reset-pan'                # ResetPan
+  'ctrl-up'           : 'luna-studio:pan-up'                   # PanUp
+  'cmd-up'            : 'luna-studio:pan-up'                   # PanUp
+  'h'                 : 'luna-studio:center-graph'             # CenterGraph
+  # navigation
+  'ctrl-esc'          : 'luna-studio:exit-graph'               # ExitGraph
+  'cmd-esc'           : 'luna-studio:exit-graph'               # ExitGraph
+  'ctrl-shift-down'   : 'luna-studio:go-cone-down'             # GoConeDown
+  'cmd-shift-down'    : 'luna-studio:go-cone-down'             # GoConeDown
+  'ctrl-shift-left'   : 'luna-studio:go-cone-left'             # GoConeLeft
+  'cmd-shift-left'    : 'luna-studio:go-cone-left'             # GoConeLeft
+  'ctrl-shift-right'  : 'luna-studio:go-cone-right'            # GoConeRight
+  'cmd-shift-right'   : 'luna-studio:go-cone-right'            # GoConeRight
+  'ctrl-shift-up'     : 'luna-studio:go-cone-up'               # GoConeUp
+  'cmd-shift-up'      : 'luna-studio:go-cone-up'               # GoConeUp
+  'down'              : 'luna-studio:go-down'                  # GoDown
+  'left'              : 'luna-studio:go-left'                  # GoLeft
+  'right'             : 'luna-studio:go-right'                 # GoRight
+  'shift-left'        : 'luna-studio:go-prev'                  # GoPrev
+  'shift-right'       : 'luna-studio:go-next'                  # GoNext
+  'up'                : 'luna-studio:go-up'                    # GoUp
+  # nodes
+  'backspace'         : 'luna-studio:remove-selected-nodes'       # RemoveSelectedNodes
+  'ctrl-a'            : 'luna-studio:select-all'                  # SelectAll
+  'cmd-a'             : 'luna-studio:select-all'                  # SelectAll
+  'ctrl-c'            : 'luna-studio:copy'                        # Copy
+  'cmd-c'             : 'luna-studio:copy'                        # Copy
+  'ctrl-x'            : 'luna-studio:cut'                         # Cut
+  'cmd-x'             : 'luna-studio:cut'                         # Cut
+  'ctrl-v'            : 'luna-studio:paste'                       # Paste
+  'cmd-v'             : 'luna-studio:paste'                       # Paste
+  'ctrl-e'            : 'luna-studio:unfold-selected-nodes'       # UnfoldSelectedNodes
+  'cmd-e'             : 'luna-studio:unfold-selected-nodes'       # UnfoldSelectedNodes
+  'delete'            : 'luna-studio:remove-selected-nodes'       # RemoveSelectedNodes
+  'enter'             : 'luna-studio:expand-selected-nodes'       # ExpandSelectedNodes
+  'ctrl-enter'        : 'luna-studio:edit-selected-nodes'         # EditSelectedNodes
+  'cmd-enter'         : 'luna-studio:edit-selected-nodes'         # EditSelectedNodes
+  'f'                 : 'luna-studio:collapse-to-function'        # CollapseToFunction
+  'ctrl-space'        : 'luna-studio:zoom-visualization'          # ZoomVisualization
+  'space'             : 'luna-studio:open-visualization-preview'  # OpenVisualizationPreview
+  '^space'            : 'luna-studio:close-visualization-preview' # CloseVisualizationPreview
+  'l'                 : 'luna-studio:autolayout-selected-nodes'   # AutolayoutSelectedNodes
+  'ctrl-l'            : 'luna-studio:autolayout-all-nodes'        # AutolayoutAllNodes
+  'cmd-l'             : 'luna-studio:autolayout-all-nodes'        # AutolayoutAllNodes
+  # searcher
+  'tab'               : 'luna-studio:searcher-open'             # SearcherOpen
+  'shift-tab'         : 'luna-studio:searcher-edit-expression'  # SearcherEditExpression
+  # MockMonads
+  'cmd-m'             : 'luna-studio:mock-add-monad'
+  'ctrl-m'            : 'luna-studio:mock-add-monad'
+  'cmd-shift-m'       : 'luna-studio:mock-clear-monads'
+  'ctrl-shift-m'      : 'luna-studio:mock-clear-monads'
+  # debug basegl
+  'ctrl-alt-0'        : 'luna-studio:debug-layer-0' # EnableDebugLayer
+  'ctrl-alt-1'        : 'luna-studio:debug-layer-1' # EnableDebugLayer
+  'ctrl-alt-2'        : 'luna-studio:debug-layer-2' # EnableDebugLayer
+  'ctrl-alt-3'        : 'luna-studio:debug-layer-3' # EnableDebugLayer
+  'ctrl-alt-4'        : 'luna-studio:debug-layer-4' # EnableDebugLayer
+  'ctrl-alt-5'        : 'luna-studio:debug-layer-5' # EnableDebugLayer
+  'ctrl-alt-6'        : 'luna-studio:debug-layer-6' # EnableDebugLayer
+  'ctrl-alt-7'        : 'luna-studio:debug-layer-7' # EnableDebugLayer
+  'ctrl-alt-8'        : 'luna-studio:debug-layer-8' # EnableDebugLayer
+  'ctrl-alt-9'        : 'luna-studio:debug-layer-9' # EnableDebugLayer
+

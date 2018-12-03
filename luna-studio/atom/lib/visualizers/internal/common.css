@@ -1,0 +1,7 @@
+body {
+    font-family: monospace;
+    color: #777;
+    padding: 10px 12px;
+    margin: 0;
+    overflow: scroll;
+}
