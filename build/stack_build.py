@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import atom_prepare as ap
+import ghcjs_prepare as ap
 from glob import glob
 import os
 import subprocess

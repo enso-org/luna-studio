@@ -2,8 +2,7 @@ import argparse
 import os
 import subprocess
 import sys
-import atom_prepare
-import atom_apm
+import ghcjs_prepare
 import copy_configs
 import stack_build as stack
 
@@ -21,17 +20,12 @@ def build_backend (args):
     print ("Building backend")
     stack.create_bin_dirs()
     stack.build_backend(args.backend_stack)
-    # stack.copy_std_lib()
 
 def build_frontend (args):
     print("Building frontend")
     stack.create_bin_dirs()
     stack.build_ghcjs(args.frontend_stack, args.dev_mode)
-    if args.atomless:
-        atom_prepare.ghcjs_code_atomless()    
-    else:
-        atom_prepare.run(args.dev_mode)
-        atom_apm.run(args.gui_url, args.frontend_stack, args.dev_mode)
+    atom_prepare.ghcjs_code_atomless()    
     copy_configs.run()
 
 def main ():
@@ -44,7 +38,6 @@ def main ():
     arg ("--frontend"       , action="store_true"         , help="Build frontend only"                                       )
     arg ("--release"        , action="store_false"        , help="Build package in release mode"                             )
     arg ("--gui-url"                                      , help="Path to uploaded gui"                                      )
-    arg ("--atomless"       , action="store_true"         , help="Build the atomless version"                                )
     arg ("--backend-stack"  , action="append" , default=[], help="Additional options passed to stack while building backend" )
     arg ("--frontend-stack" , action="append" , default=[], help="Additional options passed to stack while building frontend")
     arg ("--runner-stack"   , action="append" , default=[], help="Additional options passed to stack while building runner"  )

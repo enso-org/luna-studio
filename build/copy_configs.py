@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import atom_prepare as ap
+import ghcjs_prepare as ap
 import os
 from distutils import dir_util
 from glob import glob
@@ -67,7 +67,6 @@ def run():
     copy_configs(supervisor_dir,env_dir, windows_dir)
     copy_resources(resources_dir)
     link_resources()
-    copy_atom_configs()
     rebrand_atom_logo()
 
 if __name__ == '__main__':
