@@ -56,7 +56,8 @@ createWindow = () ->
   addCrashHandler mainWindow
   addHangHandler  mainWindow
 
-  address = 'http://localhost:9000/'
+  dir = __dirname
+  address = 'file://' + dir + '/index.html'
   mainWindow.loadURL address
   
 
