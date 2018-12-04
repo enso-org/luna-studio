@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import ghcjs_prepare as ap
+import electron_prepare as ap
 import os
 from distutils import dir_util
 from glob import glob

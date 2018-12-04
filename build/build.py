@@ -2,7 +2,7 @@ import argparse
 import os
 import subprocess
 import sys
-import ghcjs_prepare
+import electron_prepare
 import copy_configs
 import stack_build as stack
 
@@ -25,7 +25,7 @@ def build_frontend (args):
     print("Building frontend")
     stack.create_bin_dirs()
     stack.build_ghcjs(args.frontend_stack, args.dev_mode)
-    ghcjs_prepare.ghcjs_code_atomless()    
+    electron_prepare.run()    
     copy_configs.run()
 
 def main ():
