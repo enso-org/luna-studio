@@ -28,3 +28,8 @@ def ghcjs_code_atomless():
     create_dirs_atomless()
     shutil.copy(node_editor_js[0], prep_path("../app/dist/web/lib/node-editor.js"))
     shutil.copy(text_editor_js[0], prep_path("../app/dist/web/lib/text-editor.js"))
+
+def run_npm():
+    with working_directory ("../app"):
+        subprocess.check_output(['npm', 'install'])
+        subprocess.check_output(['npm', 'run', 'build'])
