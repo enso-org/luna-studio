@@ -7,7 +7,7 @@
   "main": "dist/web/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cp src/index.html dist/web/index.html && cp rsc dist/web -r && webpack",
+    "build": "cp src/index.html dist/web/index.html && cp -r rsc dist/web && webpack",
     "build:native": "npm run build && electron-builder --mac --win --linux",
     "build:native-pack": "npm run build && electron-builder --mac --win --linux --dir",
     "start": "npm run build && webpack-dev-server",

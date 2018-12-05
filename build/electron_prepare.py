@@ -7,6 +7,7 @@ import glob
 import subprocess
 import shutil
 import system as system
+from common import working_directory
 
 
 def prep_path(path):
@@ -30,7 +31,7 @@ def ghcjs_code_atomless():
     shutil.copy(text_editor_js[0], prep_path("../app/dist/web/lib/text-editor.js"))
 
 def run_npm():
-    with working_directory ("../app"):
+    with working_directory(prep_path("../app")):
         subprocess.check_output(['npm', 'install'])
         subprocess.check_output(['npm', 'run', 'build'])
 
