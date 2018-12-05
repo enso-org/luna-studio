@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import electron_prepare as ap
+import electron_prepare as ep
 from glob import glob
 import os
 import subprocess
@@ -8,7 +8,7 @@ import system as system
 from common import working_directory
 from path import path
 
-# app_dir      = ap.prep_path('..')
+# app_dir      = ep.expand_path('..')
 backend_dir  = path('build-config/backend')
 frontend_dir = path('luna-studio')
 runner_dir   = path('runner')
@@ -49,12 +49,12 @@ def build_backend(args):
 def mv_runner(runner):
     if system.windows():
         runner_src = runner + '/src/' + '/StudioRunner.exe'
-        runner_dst = ap.prep_path('../dist/bin/public/luna-studio/luna-studio.exe')
+        runner_dst = ep.expand_path('../dist/bin/public/luna-studio/luna-studio.exe')
         os.replace(runner_src, runner_dst)
 
 
 def link_main_bin ():
-    with working_directory(ap.prep_path('../dist/bin')):
+    with working_directory(ep.expand_path('../dist/bin')):
         os.makedirs('main', exist_ok=True)
         for src_path in glob('public/luna-studio/*'):
             dst_path = os.path.join('main', os.path.basename(src_path))

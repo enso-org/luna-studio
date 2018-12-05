@@ -10,33 +10,29 @@ import system as system
 from common import working_directory
 
 
-def prep_path(path):
+def expand_path(path):
     script_abs_path = os.path.abspath(os.path.dirname(__file__))
     return os.path.normpath(os.path.join(script_abs_path, path))
 
+def create_dirs():
+    os.makedirs(expand_path('../app/dist/web/lib'), exist_ok=True)
 
-
-def create_dirs_atomless():
-    for path in ['../app/dist/web/lib']:
-        os.makedirs(prep_path(path), exist_ok=True)
-
-
-def ghcjs_code_atomless():
-    node_editor = prep_path('../luna-studio/.stack-work/') + '/**/bin/node-editor.jsexe/all.js'
-    text_editor = prep_path('../luna-studio/.stack-work/') + '/**/bin/text-editor.jsexe/all.js'
+def copy_ghcjs_code():
+    node_editor = expand_path('../luna-studio/.stack-work/') + '/**/bin/node-editor.jsexe/all.js'
+    text_editor = expand_path('../luna-studio/.stack-work/') + '/**/bin/text-editor.jsexe/all.js'
     node_editor_js = glob.glob(node_editor,recursive=True)
     text_editor_js = glob.glob(text_editor,recursive=True)
-    create_dirs_atomless()
-    shutil.copy(node_editor_js[0], prep_path("../app/dist/web/lib/node-editor.js"))
-    shutil.copy(text_editor_js[0], prep_path("../app/dist/web/lib/text-editor.js"))
+    create_dirs()
+    shutil.copy(node_editor_js[0], expand_path("../app/dist/web/lib/node-editor.js"))
+    shutil.copy(text_editor_js[0], expand_path("../app/dist/web/lib/text-editor.js"))
 
 def run_npm():
-    with working_directory(prep_path("../app")):
+    with working_directory(expand_path("../app")):
         subprocess.check_output(['npm', 'install'])
         subprocess.check_output(['npm', 'run', 'build'])
 
 def run():
-    ghcjs_code_atomless()
+    copy_ghcjs_code()
     run_npm()
 
 if __name__ == '__main__':
