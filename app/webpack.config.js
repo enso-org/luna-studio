@@ -37,8 +37,7 @@ function baseConfig(entryPath) {
 }
 
 
-serverConfig = baseConfig({index:'./src/index.coffee'});
-clientConfig = baseConfig({main:'./dist/web/main.js'});
+serverConfig = baseConfig({index:'./src/index.coffee', main:"./src/main.coffee"});
 
 serverConfig.target = 'electron-main';
 
