@@ -19,8 +19,10 @@ data InternalEvent
     | MoveProject { _oldPath :: FilePath, _newPath :: FilePath }
     | OpenFile    { _path :: FilePath }
     | Paste       { _selections :: [(Int, Int)], _content :: [Text] }
+    | Redo
     | SaveFile    { _path :: FilePath }
     | SetProject  { _path :: FilePath }
+    | Undo
     deriving (Generic, NFData, Show, Typeable)
 
 makeLenses ''InternalEvent

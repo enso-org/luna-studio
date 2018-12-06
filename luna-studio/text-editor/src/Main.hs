@@ -7,6 +7,7 @@ import qualified Control.Concurrent.Chan as Chan
 import           Control.Concurrent.MVar
 import           System.Random           (newStdGen)
 
+import Data.UUID (nil)
 import           JS.Lexer                (installLexer)
 import           JS.UUID                 (generateUUID)
 import           TextEditor.Event.Engine (LoopRef (LoopRef))
@@ -17,11 +18,11 @@ import           WebSocket               (WebSocket)
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     random       <- newStdGen
-    clientId             <- generateUUID
+    -- clientId             <- generateUUID
     mdo
         let loop = LoopRef chan state
         Engine.scheduleInit loop
-        let initState = mkState clientId random
+        let initState = mkState nil random
         state <- newMVar initState
         Engine.connectEventSources socket loop
 

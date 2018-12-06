@@ -186,7 +186,7 @@ type instance ResultOf  SetNodesMeta.Request = Diff
 type instance InverseOf SetPortDefault.Request = SetPortDefault.Request
 type instance ResultOf  SetPortDefault.Request = Diff
 
-type instance InverseOf Substitute.Request = ()
+type instance InverseOf Substitute.Request = SetCode.Request
 type instance ResultOf  Substitute.Request = Diff
 
 type instance InverseOf TypeCheck.Request = ()

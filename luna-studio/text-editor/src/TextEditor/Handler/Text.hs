@@ -27,6 +27,8 @@ handle (Atom (Copy filepath selections)) = Just $ ActBatch.copy filepath $ conve
 handle (Atom (Paste selections content)) = Just $
     withJustM_ JS.activeLocation $ \location ->
         ActBatch.paste location (convert selections) content
+handle (Atom Undo) = Just ActBatch.undo
+handle (Atom Redo) = Just ActBatch.redo
 
 handle (Batch (SubstituteResponse response)) = Just $ handleResponse response doNothing doNothing2
 handle (Batch (BufferGetResponse  response)) = Just $ handleResponse response success doNothing2 where

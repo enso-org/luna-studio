@@ -20,6 +20,7 @@ import           Data.Map.Strict                         (Map)
 import qualified Data.Map.Strict                         as Map
 import           Data.Maybe
 import           Data.UUID                               as UUID (nil)
+import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
 import qualified LunaStudio.API.Graph.AddPort            as AddPort
@@ -80,6 +81,7 @@ handlersMap = fromList
     , makeHandler $ autoHandle @SetNodeExpression.Request
     , makeHandler $ autoHandle @SetNodesMeta.Request
     , makeHandler $ autoHandle @SetPortDefault.Request
+    , makeHandler $ autoHandle @Substitute.Request
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)

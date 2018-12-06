@@ -318,7 +318,12 @@ instance Modification Substitute.Request where
         let file = location ^. GraphLocation.filePath
         withDiff location $ do
             Graph.substituteCodeFromPoints file diffs
+            Graph.resendCode location
             Graph.typecheck location
+    buildInverse (Substitute.Request location _) = do
+        code  <- Graph.withUnit (GraphLocation.top location) $ use Graph.code
+        cache <- Graph.prepareNodeCache (GraphLocation.top location)
+        pure $ SetCode.Request location code cache
 
 instance Modification GetBuffer.Request where
     perform (GetBuffer.Request file) = do
@@ -339,12 +344,16 @@ catchAllExceptions act = try act
 
 withDiff ::  GraphLocation -> Empire a -> Empire Diff
 withDiff location action = do
-    oldGraph <- (_Left %~ Graph.prepareGraphError)
-        <$> catchAllExceptions (Graph.getGraphNoTC location)
+    oldGraph <- catchAllExceptions (Graph.getGraphNoTC location)
+    oldGraph' <- case oldGraph of
+        Left err -> Left <$> liftIO (Graph.prepareGraphError err)
+        Right a -> pure $ Right a
     void action
-    newGraph <- (_Left %~ Graph.prepareGraphError)
-        <$> catchAllExceptions (Graph.getGraphNoTC location)
-    pure $ diff oldGraph newGraph
+    newGraph <- catchAllExceptions (Graph.getGraphNoTC location)
+    newGraph' <- case newGraph of
+        Left err -> Left <$> liftIO (Graph.prepareGraphError err)
+        Right a  -> pure $ Right a
+    pure $ diff oldGraph' newGraph'
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

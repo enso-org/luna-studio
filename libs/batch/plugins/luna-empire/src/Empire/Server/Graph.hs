@@ -152,13 +152,13 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 || isJust (join $ view Project.visMap . snd <$> mayPrevSettings)
             makeError :: MonadIO m
                 => SomeASTException -> m (GraphLocation, GUIState)
-            makeError e = pure $ (location', GUIState
+            makeError e = liftIO (Graph.prepareGraphError (toException e)) >>= \err -> pure (location', GUIState
                 (Breadcrumb [])
                 mempty
                 def
                 def
                 mempty
-                . Left . Graph.prepareGraphError $ toException e)
+                (Left err))
         (location, guiState) <- handle makeError $ do
             let filePath      = location' ^. GraphLocation.filePath
                 closestBc loc = Api.getClosestBcLocation

@@ -52,6 +52,7 @@ dependencies:
   - text-processing
   - time
   - transformers
+  - uuid
   - uuid-types
   - vector-text
 

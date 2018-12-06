@@ -61,3 +61,9 @@ interpreterPause = withUUID BatchCmd.interpreterPause
 
 interpreterReload :: Command State ()
 interpreterReload = withUUID BatchCmd.interpreterReload
+
+undo :: Command State ()
+undo = withUUID BatchCmd.undo
+
+redo :: Command State ()
+redo = withUUID BatchCmd.redo

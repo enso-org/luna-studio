@@ -1586,9 +1586,9 @@ makeWhole srcAst dst = do
         dstPointer <- ASTRead.getASTPointer dst
         Code.gossipLengthsChangedBy lenDiff dstPointer
 
-prepareGraphError :: SomeException -> ErrorAPI.Error ErrorAPI.GraphError
-prepareGraphError e | Just (BH.BreadcrumbDoesNotExistException content) <- fromException e = ErrorAPI.Error ErrorAPI.BreadcrumbDoesNotExist . convert $ show content
-                    | otherwise                                                            = ErrorAPI.Error ErrorAPI.OtherGraphError        . convert $ displayException e
+prepareGraphError :: SomeException -> IO (ErrorAPI.Error ErrorAPI.GraphError)
+prepareGraphError e | Just (BH.BreadcrumbDoesNotExistException content) <- fromException e = pure $ ErrorAPI.Error ErrorAPI.BreadcrumbDoesNotExist . convert $ show content
+                    | otherwise                                                            = pure . ErrorAPI.Error ErrorAPI.OtherGraphError        . convert =<< prettyException e
 
 prettyException :: Exception e => e -> IO String
 prettyException e = do
@@ -1596,7 +1596,9 @@ prettyException e = do
     return $ displayException e ++ "\n" ++ renderStack stack
 
 prepareLunaError :: SomeException -> IO (ErrorAPI.Error ErrorAPI.LunaError)
-prepareLunaError e = case prepareGraphError e of
-    ErrorAPI.Error ErrorAPI.OtherGraphError _ -> (ErrorAPI.Error ErrorAPI.OtherLunaError . convert) <$> prettyException e
-    ErrorAPI.Error tpe content                -> return $ ErrorAPI.Error (ErrorAPI.Graph tpe) content
+prepareLunaError e = do
+    err <- prepareGraphError e
+    case err of
+        ErrorAPI.Error ErrorAPI.OtherGraphError _ -> (ErrorAPI.Error ErrorAPI.OtherLunaError . convert) <$> prettyException e
+        ErrorAPI.Error tpe content                -> return $ ErrorAPI.Error (ErrorAPI.Graph tpe) content
 

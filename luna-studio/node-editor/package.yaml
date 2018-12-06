@@ -86,6 +86,7 @@ dependencies:
   - time
   - transformers
   - unordered-containers
+  - uuid
   - uuid-types
   - vector
   - vector-text

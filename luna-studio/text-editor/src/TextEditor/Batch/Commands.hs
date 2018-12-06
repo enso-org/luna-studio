@@ -17,6 +17,8 @@ import qualified LunaStudio.API.Atom.SaveFile       as SaveFile
 import qualified LunaStudio.API.Atom.SetProject     as SetProject
 import qualified LunaStudio.API.Atom.Substitute     as Substitute
 import qualified LunaStudio.API.Control.Interpreter as Interpreter
+import qualified LunaStudio.API.Graph.Redo          as Redo
+import qualified LunaStudio.API.Graph.Undo          as Undo
 import           LunaStudio.Data.GraphLocation      (GraphLocation (..))
 import           LunaStudio.Data.Range              (Range)
 import           LunaStudio.Data.TextDiff           (TextDiff)
@@ -70,6 +72,12 @@ copy path spans uuid guiID = sendRequest $ Message uuid guiID
 paste :: GraphLocation -> [Range] -> [Text] -> UUID -> Maybe UUID -> IO ()
 paste location spans content uuid guiID = sendRequest $ Message uuid guiID
     $ Paste.Request location spans content
+
+undo :: UUID -> Maybe UUID -> IO ()
+undo uuid guiID = sendRequest $ Message uuid guiID $ Undo.Request Undo.UndoRequest
+
+redo :: UUID -> Maybe UUID -> IO ()
+redo uuid guiID = sendRequest $ Message uuid guiID $ Redo.Request Redo.RedoRequest
 
 interpreterPause :: UUID -> Maybe UUID -> IO ()
 interpreterPause uuid guiID = do

@@ -106,6 +106,8 @@ module.exports =
                 'core:cut':   (e) => @handleCut   e
                 'core:paste': (e) => @handlePaste e
                 'core:save':  (e) => @handleSave  e
+                'core:undo':  (e) => @handleUndo e
+                'core:redo':  (e) => @handleRedo e
 
         __spans: (markWholeLines) =>
             for s in @getSelections()
@@ -154,6 +156,18 @@ module.exports =
         forceStopChanging: (action) =>
             @afterCodeChanged.push action
             @getBuffer().scheduleDidStopChangingEvent()
+
+        handleUndo: (e) =>
+            e.preventDefault()
+            e.stopImmediatePropagation()
+            @forceStopChanging =>
+                @codeEditor.pushInternalEvent(tag: "Undo")
+
+        handleRedo: (e) =>
+            e.preventDefault()
+            e.stopImmediatePropagation()
+            @forceStopChanging =>
+                @codeEditor.pushInternalEvent(tag: "Redo")
 
         handleCopy: (e) =>
             e.preventDefault()

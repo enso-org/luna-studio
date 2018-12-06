@@ -40,7 +40,7 @@ data BatchEvent
         | ProjectSet                             SetProject.Response
         | SubstituteResponse         (ResponseOf Substitute.Request)
         | SubstituteUpdate                       Substitute.Update
-        deriving (Eq, Show, Generic, NFData)
+        deriving (Show, Generic, NFData)
 
 instance EventName BatchEvent
 instance ToJSON BatchEvent
