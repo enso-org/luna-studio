@@ -6,6 +6,7 @@ import qualified LunaStudio.API.Graph.Request  as G
 import qualified LunaStudio.API.Topic          as T
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.NodeCache     (NodeCache)
+import           LunaStudio.Data.Point         (Point)
 import           Prologue
 
 
@@ -13,6 +14,7 @@ data Request = Request
     { _location :: GraphLocation
     , _code     :: Text
     , _cache    :: NodeCache
+    , _cursor   :: Maybe Point
     } deriving (Generic, Show)
 
 makeLenses ''Request

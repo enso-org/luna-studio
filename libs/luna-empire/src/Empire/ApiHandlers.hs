@@ -48,6 +48,7 @@ import qualified LunaStudio.Data.Node             as Node
 import qualified LunaStudio.Data.NodeLoc                 as NodeLoc
 import qualified LunaStudio.Data.PortRef          as PortRef
 import qualified LunaStudio.Data.Project                 as Project
+import qualified LunaStudio.Data.TextDiff                as TextDiff
 import qualified Path
 import qualified System.Log.MLogger                      as Logger
 
@@ -194,7 +195,7 @@ instance Modification CollapseToFunction.Request where
     buildInverse (CollapseToFunction.Request loc@(GraphLocation file _) _) = do
         code <- Graph.withUnit (GraphLocation file def) $ use Graph.code
         cache <- Graph.prepareNodeCache (GraphLocation file def)
-        pure $ SetCode.Request loc code cache
+        pure $ SetCode.Request loc code cache Nothing
 
 instance Modification Copy.Request where
     perform (Copy.Request location nodeLocs) = do
@@ -277,16 +278,16 @@ instance Modification RemovePort.Request where
             (Just oldName)
 
 instance Modification SetCode.Request where
-    perform (SetCode.Request location@(GraphLocation file _) code cache)
+    perform (SetCode.Request location@(GraphLocation file _) code cache cursor)
         = withDiff location $ do
             Graph.withUnit (GraphLocation file def) $ Graph.nodeCache .= cache
             Graph.loadCode location code
-            Graph.resendCode location
+            Graph.resendCodeWithCursor location cursor
             Graph.typecheck location
-    buildInverse (SetCode.Request location@(GraphLocation file _) _ _) = do
+    buildInverse (SetCode.Request location@(GraphLocation file _) _ _ cursor) = do
         cache <- Graph.prepareNodeCache location
         code  <- Graph.withUnit (GraphLocation file def) $ use Graph.code
-        pure $ SetCode.Request location code cache
+        pure $ SetCode.Request location code cache cursor
 
 instance Modification SaveSettings.Request where
     perform (SaveSettings.Request gl settings) = saveSettings gl settings gl
@@ -318,12 +319,14 @@ instance Modification Substitute.Request where
         let file = location ^. GraphLocation.filePath
         withDiff location $ do
             Graph.substituteCodeFromPoints file diffs
-            Graph.resendCode location
+            let cursor = asum $ map (view TextDiff.cursor) diffs
+            Graph.resendCodeWithCursor location cursor
             Graph.typecheck location
-    buildInverse (Substitute.Request location _) = do
+    buildInverse (Substitute.Request location diffs) = do
         code  <- Graph.withUnit (GraphLocation.top location) $ use Graph.code
         cache <- Graph.prepareNodeCache (GraphLocation.top location)
-        pure $ SetCode.Request location code cache
+        let cursor = asum $ map (view TextDiff.cursor) diffs
+        pure $ SetCode.Request location code cache cursor
 
 instance Modification GetBuffer.Request where
     perform (GetBuffer.Request file) = do
