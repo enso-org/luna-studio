@@ -37,6 +37,7 @@ import qualified LunaStudio.API.Graph.SetCode               as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression     as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta          as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault        as SetPortDefault
+import qualified LunaStudio.API.Graph.Transaction           as Transaction
 import qualified LunaStudio.API.Graph.TypeCheck             as TypeCheck
 import qualified LunaStudio.API.Graph.Undo                  as Undo
 
@@ -78,6 +79,7 @@ data Event = UnknownEvent                                                String
            | SetNodesMetaResponse             (ResponseOf SetNodesMeta.Request)
            | SetPortDefaultResponse         (ResponseOf SetPortDefault.Request)
            | SubstituteResponse                 (ResponseOf Substitute.Request)
+           | TransactionResponse               (ResponseOf Transaction.Request)
            | TypeCheckResponse                   (ResponseOf TypeCheck.Request)
            | UndoResponse                                         Undo.Response
            deriving (Show, Generic, NFData)

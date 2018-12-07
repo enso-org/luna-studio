@@ -195,8 +195,10 @@ prepareNodeCache gl = do
     previousPortMappings
         <- forM funs $ \fun -> withGraph (toGraphLocation fun) $ runASTOp $ do
             hierarchy <- use Graph.breadcrumbHierarchy
+
             let lamItems = BH.getLamItems hierarchy
-                elems    = map lamItemToMapping lamItems
+                elems    = lamItemToMapping ((fun, Nothing), hierarchy)
+                            : map lamItemToMapping lamItems
             pure $ Map.fromList elems
     let previousNodeIds = Map.unions
             $ (Map.mapMaybe snd topMarkers)

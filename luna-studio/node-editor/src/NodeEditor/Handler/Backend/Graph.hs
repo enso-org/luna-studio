@@ -37,6 +37,7 @@ import qualified LunaStudio.API.Graph.SetCode               as SetCode
 import qualified LunaStudio.API.Graph.SetNodeExpression     as SetNodeExpression
 import qualified LunaStudio.API.Graph.SetNodesMeta          as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault        as SetPortDefault
+import qualified LunaStudio.API.Graph.Transaction           as Transaction
 import qualified LunaStudio.API.Response                    as Response
 import qualified LunaStudio.Data.Connection                 as API
 import qualified LunaStudio.Data.Diff                       as Diff
@@ -515,6 +516,11 @@ handle (Event.Batch ev) = Just $ case ev of
         location      = response ^. Response.request . Substitute.location
         success       = applyDiff location mempty
         failure err _ = logError response err
+
+    TransactionResponse response -> handleResponse response success failure where
+        location = response ^. Response.request . Transaction.location
+        success  = applyDiff location mempty
+        failure err inverse = logError response err
 
     TypeCheckResponse response -> handleResponse response doNothing failure where
         failure err _ = logError response err

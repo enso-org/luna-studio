@@ -498,7 +498,7 @@ addPortNoTC loc (OutPortRef nl pid) name = runASTOp $ do
     let nid      = convert nl
         position = getPortNumber (pid)
     (inE, _) <- GraphBuilder.getEdgePortMapping
-    when (inE /= nid) $ throwM NotInputEdgeException
+    when (inE /= nid) $ throwM $ NotInputEdgeException inE nid
     ref <- ASTRead.getCurrentASTTarget
     ASTBuilder.detachNodeMarkersForArgs ref
     ids      <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
@@ -647,7 +647,7 @@ removePort loc portRef = do
         ASTBuilder.detachNodeMarkersForArgs ref
         (inE, _) <- GraphBuilder.getEdgePortMapping
         if nodeId == inE then ASTModify.removeLambdaArg (portRef ^. PortRef.srcPortId) ref
-                         else throwM NotInputEdgeException
+                         else throwM $ NotInputEdgeException inE nodeId
         newLam <- ASTRead.getCurrentASTTarget
         ASTBuilder.attachNodeMarkersForArgs nodeId [] newLam
         GraphBuilder.buildInputSidebar nodeId
@@ -660,7 +660,7 @@ movePort loc portRef newPosition = do
         ref        <- ASTRead.getCurrentASTTarget
         (input, _) <- GraphBuilder.getEdgePortMapping
         if nodeId == input then ASTModify.moveLambdaArg (portRef ^. PortRef.srcPortId) newPosition ref
-                           else throwM NotInputEdgeException
+                           else throwM $ NotInputEdgeException input nodeId
         ref        <- ASTRead.getCurrentASTTarget
         ASTBuilder.attachNodeMarkersForArgs nodeId [] ref
         GraphBuilder.buildInputSidebar nodeId
@@ -673,7 +673,7 @@ renamePort loc portRef newName = do
         ref        <- ASTRead.getCurrentASTTarget
         (input, _) <- GraphBuilder.getEdgePortMapping
         if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.srcPortId) (Text.unpack newName) ref
-                           else throwM NotInputEdgeException
+                           else throwM $ NotInputEdgeException input nodeId
         GraphBuilder.buildInputSidebar nodeId
     resendCode loc
 
@@ -688,7 +688,7 @@ getPortName loc portRef = do
         portsNames <- GraphBuilder.getPortsNames ref Nothing
         if nodeId == input
             then maybe (throwM $ PortDoesNotExistException portId) (return . convert) $ Safe.atMay portsNames arg
-            else throwM NotInputEdgeException
+            else throwM $ NotInputEdgeException input nodeId
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node.Node
 setNodeExpression loc@(GraphLocation file _) nodeId expr' = do

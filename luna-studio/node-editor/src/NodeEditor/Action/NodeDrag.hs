@@ -15,7 +15,7 @@ import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import qualified LunaStudio.Data.PortRef                    as PortRef
 import           LunaStudio.Data.Position                   (Position, move, vector)
-import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortsModeForNode)
+import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodeOnConnection, moveNodes, selectNodes, updatePortsModeForNode, localSetNodesMeta, toMetaUpdate)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.Model              (createConnectionModel, getIntersectingConnections)
@@ -146,12 +146,13 @@ handleNodeDragMouseUp evt nodeDrag = do
     else do
         metaUpdate <- Map.fromList . fmap (view nodeLoc &&& view position)
             <$> getSelectedNodes
-        moveNodes metaUpdate
-        withJust (nodeDrag ^. nodeDragSnappedConnId) $ \connId -> do
-            mayConn <- getConnection connId
-            withJust mayConn $ \conn -> do
-                connect (Left $ conn ^. src) $ Right nl
-                connect (Right nl)           $ Left $ conn ^. dst
+        localSetNodesMeta =<< toMetaUpdate metaUpdate
+        case (nodeDrag ^. nodeDragSnappedConnId) of
+            Just connId -> do
+                mayConn <- getConnection connId
+                withJust mayConn $ \conn ->
+                    moveNodeOnConnection nl conn metaUpdate
+            _           -> moveNodes metaUpdate
     continue stopNodeDrag
 
 

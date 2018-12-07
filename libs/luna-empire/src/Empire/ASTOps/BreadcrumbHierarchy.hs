@@ -151,11 +151,11 @@ prepareExprChild marked ref = do
           _       -> par
     return $ BH.ExprChild $ foldl addItem bareItem $ zip [0..] items
 
-restorePortMappings :: Map (NodeId, Maybe Int) (NodeId, NodeId) -> GraphOp ()
-restorePortMappings previousPortMappings = do
+restorePortMappings :: NodeId -> Map (NodeId, Maybe Int) (NodeId, NodeId) -> GraphOp ()
+restorePortMappings funId previousPortMappings = do
     hierarchy <- use breadcrumbHierarchy
 
-    let goParent lamItem = goLamItem Nothing lamItem
+    let goParent lamItem = goLamItem (Just (funId, Nothing)) lamItem
 
         goBChild nodeId (BH.ExprChild exprItem)  = BH.ExprChild <$> goExprItem nodeId exprItem
         goBChild nodeId (BH.LambdaChild lamItem) = BH.LambdaChild <$> goLamItem (Just (nodeId, Nothing)) lamItem

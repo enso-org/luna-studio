@@ -1,9 +1,12 @@
 module NodeEditor.Action.Batch  where
 
 import Common.Prelude
+import Prelude (error)
 
 import qualified Data.Map                            as Map
 import qualified Data.Set                            as Set
+import qualified LunaStudio.API.Graph.AddConnection  as AddConnection
+import qualified LunaStudio.API.Graph.SetNodesMeta   as SetNodesMeta
 import qualified NodeEditor.Batch.Connector.Commands as BatchCmd
 
 import Common.Action.Command             (Command)
@@ -75,6 +78,19 @@ addConnection src dst = do
     collaborativeModify [nl]
     withWorkspace $ BatchCmd.addConnection src dst
 
+addConnectionRequest :: Either OutPortRef NodeLoc -> Either AnyPortRef NodeLoc
+    -> Command State AddConnection.Request
+addConnectionRequest src dst = do
+    let nl = case dst of
+            Left (OutPortRef' (OutPortRef nl' _)) -> nl'
+            Left (InPortRef'  (InPortRef  nl' _)) -> nl'
+            Right nl'                             -> nl'
+    collaborativeModify [nl]
+    mayWorkspace <- getWorkspace
+    case mayWorkspace of
+        Just w -> pure $ BatchCmd.addConnectionRequest src dst w
+        _      -> error "no workspace"
+
 addImport :: LibraryName -> Command State ()
 addImport = addImports . Set.singleton
 
@@ -111,6 +127,13 @@ getSubgraph nl = withWorkspace (BatchCmd.getSubgraph nl)
 
 movePort :: OutPortRef -> Int -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
+
+moveNodeRequest :: Map NodeLoc NodeMeta -> Command State SetNodesMeta.Request
+moveNodeRequest updates = do
+    mayWorkspace <- getWorkspace
+    case mayWorkspace of
+        Just w -> pure $ BatchCmd.setNodesMetaRequest updates w
+        _      -> error "no workspace"
 
 redo :: Command State ()
 redo = withUUID BatchCmd.redo
