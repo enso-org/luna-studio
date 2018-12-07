@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes       #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE OverloadedStrings         #-}
@@ -12,7 +13,8 @@ import           UndoState
 
 import           Control.Exception                       (Exception)
 import           Control.Exception.Safe                  (throwM)
-import           Control.Lens                            ((%=), (^..), _Right, to)
+import           Control.Lens                            ((.=), (%=), (^..),
+                                                            _Right, to)
 import           Data.Binary                             (Binary, decode)
 import           Data.ByteString.Lazy                    (ByteString, fromStrict)
 import qualified Data.List                               as List
@@ -20,6 +22,7 @@ import           Data.Map.Strict                         (Map)
 import qualified Data.Map.Strict                         as Map
 import           Data.Maybe
 import           Data.UUID                               as UUID (nil)
+import qualified LunaStudio.API.Atom.SetProject          as SetProject
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Graph.AddConnection      as AddConnection
 import qualified LunaStudio.API.Graph.AddNode            as AddNode
@@ -82,6 +85,7 @@ handlersMap = fromList
     , makeHandler $ autoHandle @SetNodesMeta.Request
     , makeHandler $ autoHandle @SetPortDefault.Request
     , makeHandler $ autoHandle @Substitute.Request
+    , makeResetHandler @SetProject.Request
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
@@ -127,6 +131,13 @@ makeHandler h = (Topic.topic @(Response.Response req inv res), process) where
                 r
                 (Topic.topic' (Request.Request UUID.nil Nothing q))
                 q
+
+makeResetHandler :: forall a. Topic.MessageTopic a => (String, Handler)
+makeResetHandler = (Topic.topic @(Request a), clearState) where
+    clearState _ = do
+        undo    .= []
+        redo    .= []
+        history .= []
 
 compareMsgByUserId :: UndoMessage -> UndoMessage -> Bool
 compareMsgByUserId msg1 msg2 = case msg1 of
