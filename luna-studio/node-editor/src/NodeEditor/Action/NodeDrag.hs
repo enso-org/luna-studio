@@ -147,7 +147,6 @@ handleNodeDragMouseUp evt nodeDrag = do
         metaUpdate <- Map.fromList . fmap (view nodeLoc &&& view position)
             <$> getSelectedNodes
         localSetNodesMeta =<< toMetaUpdate metaUpdate
-        print (nodeDrag ^. nodeDragSnappedConnId) 
         case (nodeDrag ^. nodeDragSnappedConnId) of
             Just connId -> do
                 mayConn <- getConnection connId
