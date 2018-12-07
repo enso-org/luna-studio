@@ -2,10 +2,10 @@
 module Main where
 
 import           Common.Prelude
+import           Common.ClientId            (clientId)
 import           Control.Concurrent.Chan    (Chan)
 import qualified Control.Concurrent.Chan    as Chan
 import           Control.Concurrent.MVar
-import Data.UUID (nil)
 import qualified JS.Mount                   as Mount
 import           JS.UUID                    (generateUUID)
 import           NodeEditor.Event.Engine    (LoopRef (LoopRef))
@@ -22,14 +22,13 @@ import           WebSocket                  (WebSocket)
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     random         <- newStdGen
-    -- clientId       <- generateUUID
     let openedFile = Mount.openedFile
     mdo
         let loop = LoopRef chan state
         Engine.scheduleInit loop
         appRef <- Store.createApp (App.mk openedFile) $ Engine.scheduleEvent loop
         React.reactRender Mount.mountPoint (App.app appRef) ()
-        let initState = mkState appRef nil random
+        let initState = mkState appRef clientId random
         state <- newMVar initState
         Engine.connectEventSources socket loop
     App.focus
