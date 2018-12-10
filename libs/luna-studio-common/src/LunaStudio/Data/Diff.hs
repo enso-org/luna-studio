@@ -422,7 +422,7 @@ instance Diffable ExpressionNode where
     diff n1 n2 = Diff mods where
         nl   = convert $ n2 ^. Node.nodeId
         mods = catMaybes
-            [ justIf (n1 ^. Node.expression   /= n2 ^. Node.expression)   $ toModification . ModificationSetExpression   nl $ n2 ^. Node.expression
+            [ justIf (n1 ^. Node.code         /= n2 ^. Node.code)         $ toModification . ModificationSetExpression   nl $ n2 ^. Node.expression
             , justIf (n1 ^. Node.isDefinition /= n2 ^. Node.isDefinition) $ toModification . ModificationSetIsDefinition nl $ n2 ^. Node.isDefinition
             , justIf (n1 ^. Node.name         /= n2 ^. Node.name)         $ toModification . ModificationRenameNode      nl $ n2 ^. Node.name
             , justIf (n1 ^. Node.code         /= n2 ^. Node.code)         $ toModification . ModificationSetNodeCode     nl $ n2 ^. Node.code
