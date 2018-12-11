@@ -17,32 +17,35 @@ backend_dir  = atom_prepare.prep_path('../build-config/backend')
 frontend_dir = atom_prepare.prep_path('../luna-studio')
 
 
-def build_app (backend_args, frontend_args, runner_args, gui_url, dev_mode=False):
+def build_app (backend_args, frontend_args, runner_args,
+               gui_url, dev_mode=False, dry_run=False):
     try:
-        build_runner(runner_args)
-        build_backend (backend_args)
-        build_frontend (frontend_args, gui_url, dev_mode)
+        build_runner(runner_args, dry_run)
+        build_backend (backend_args, dry_run)
+        build_frontend (frontend_args, gui_url, dev_mode, dry_run)
 
     except subprocess.CalledProcessError:
         print("Status : FAIL")
         sys.exit(1)
 
-def build_backend (backend_args):
+def build_backend (backend_args, dry_run=False):
     try:
         print ("Building backend")
         stack_build.create_bin_dirs()
-        stack_build.build_backend(backend_args)
+        if not dry_run:
+            stack_build.build_backend(backend_args)
         stack_build.copy_std_lib()
 
     except subprocess.CalledProcessError:
         print("Status : FAIL")
         sys.exit(1)
 
-def build_frontend (frontend_args, gui_url, dev_mode):
+def build_frontend (frontend_args, gui_url, dev_mode=False, dry_run=False):
     try:
         print("Building frontend")
         stack_build.create_bin_dirs()
-        stack_build.build_ghcjs(frontend_args, dev_mode)
+        if not dry_run:
+            stack_build.build_ghcjs(frontend_args, dev_mode)
         atom_prepare.run(dev_mode)
         atom_apm.run(gui_url, frontend_args, dev_mode)
         copy_configs.run()
@@ -51,10 +54,11 @@ def build_frontend (frontend_args, gui_url, dev_mode):
         print("Status : FAIL")
         sys.exit(1)
 
-def build_runner(runner_args):
+def build_runner(runner_args, dry_run=False):
     try:
         stack_build.create_bin_dirs()
-        stack_build.build_runner(runner_args)
+        if not dry_run:
+            stack_build.build_runner(runner_args)
         stack_build.link_main_bin()
     except subprocess.CalledProcessError:
         print("Status : FAIL")
@@ -70,14 +74,20 @@ def main ():
     parser.add_argument("--backend-stack", help="Additional options passed to stack while building backend", action="append", dest="stack_backend_args", default=['--copy-bins', '--install-ghc'])
     parser.add_argument("--frontend-stack", help="Additional options passed to stack while building frontend", action="append", dest="stack_frontend_args", default=['--install-ghc'])
     parser.add_argument("--runner-stack", help="Additional options passed to stack while building runner", action="append", dest="stack_runner_args", default=['--copy-bins', '--install-ghc'])
+    parser.add_argument("--dry-run", help="Do not build, only copy files", action="store_true")
     args = parser.parse_args()
 
     if args.backend:
-        build_backend (args.stack_backend_args)
+        build_backend(args.stack_backend_args, dry_run=args.dry_run)
     elif args.runner:
-        build_runner (args.stack_runner_args)
+        build_runner(args.stack_runner_args, dry_run=args.dry_run)
     elif args.frontend:
-        build_frontend (args.stack_frontend_args, args.gui_url, dev_mode=args.release)
-    else: build_app (args.stack_backend_args, args.stack_frontend_args, args.stack_runner_args, args.gui_url, dev_mode=args.release)
+        build_frontend(args.stack_frontend_args, args.gui_url,
+                       dev_mode=args.release, dry_run=args.dry_run)
+    else:
+        build_app(args.stack_backend_args, args.stack_frontend_args,
+                  args.stack_runner_args, args.gui_url,
+                  dev_mode=args.release, dry_run=args.dry_run)
 
-main()
+if __name__ == '__main__':
+    main()
