@@ -82,7 +82,8 @@ def main ():
     parser.add_argument("--frontend-stack", help="Additional options passed to stack while building frontend", action="append", dest="stack_frontend_args", default=['--install-ghc'])
     parser.add_argument("--runner-stack", help="Additional options passed to stack while building runner", action="append", dest="stack_runner_args", default=['--copy-bins', '--install-ghc'])
     parser.add_argument("--dry-run", help="Do not build, only copy files", action="store_true", dest="dry_run")
-    parser.add_argument("--frontend-retries", action="store", dest="frontend_retries", default="3")
+    parser.add_argument("--frontend-retries", help="Retry the frontend build the given number of times",
+                        action="store", dest="frontend_retries", default="3")
     args = parser.parse_args()
 
     try:
