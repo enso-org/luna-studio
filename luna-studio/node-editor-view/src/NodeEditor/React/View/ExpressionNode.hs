@@ -51,8 +51,9 @@ import           NodeEditor.React.Model.Port                          (isAll,
                                                                        isSelf,
                                                                        withOut)
 import qualified NodeEditor.React.Model.Port                          as Port
-import           NodeEditor.React.Model.SearcherProperties            (SearcherProperties)
-import qualified NodeEditor.React.Model.SearcherProperties            as Searcher
+import qualified NodeEditor.React.Model.Searcher                      as Searcher
+import qualified NodeEditor.React.Model.Searcher.Mode                 as SearcherMode
+import qualified NodeEditor.React.Model.Searcher.Mode.Node            as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization                 as Vis
 import           NodeEditor.React.View.ColorizedExpression            (colorizedExpression_)
 import           NodeEditor.React.View.ExpressionNode.NodeValue       (nodeValue_)
@@ -92,18 +93,22 @@ handleMouseDown ref nodeLoc e m =
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.Event nodeLoc $ Node.MouseDown m)
     else []
 
-nodeName_ :: IsRef ref => ref -> NodeLoc -> Maybe Text -> Bool -> Maybe SearcherProperties -> Bool -> ReactElementM ViewEventHandler ()
+nodeName_ :: IsRef ref => ref -> NodeLoc -> Maybe Text -> Bool -> Maybe Searcher.Properties -> Bool -> ReactElementM ViewEventHandler ()
 nodeName_ ref nl name' visVisible mayS blockVisInBc = React.viewWithSKey nodeName  "node-name" (ref, nl, name', visVisible, mayS, blockVisInBc) mempty
 
-nodeName :: IsRef ref => ReactView (ref, NodeLoc, Maybe Text, Bool, Maybe SearcherProperties, Bool)
+nodeName :: IsRef ref => ReactView (ref, NodeLoc, Maybe Text, Bool, Maybe Searcher.Properties, Bool)
 nodeName = React.defineView "node-name" $ \(ref, nl, name', visualizationVisible, mayS, blockVisInBc) -> do
     let regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.Event nl Node.EditName)]
                                  , elemString . convert $ fromMaybe def name' )
-        (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
-            Searcher.NodeSearcher ns -> case ns ^. Searcher.modeData of
-                Searcher.NodeNameMode {} -> if (ns ^. Searcher.nodeLoc) /= nl then regularHandlersAndElem else ([], searcher_ ref s)
-                _ -> regularHandlersAndElem
-            _                       -> regularHandlersAndElem
+        (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s 
+            -> case s ^. Searcher.searcher . Searcher.mode of
+                SearcherMode.Node ns -> case ns ^. NodeSearcher.mode of
+                    NodeSearcher.NodeNameMode {} 
+                        -> if (ns ^. NodeSearcher.nodeLoc) /= nl 
+                            then regularHandlersAndElem 
+                            else ([], searcher_ ref s)
+                    _ -> regularHandlersAndElem
+                _     -> regularHandlersAndElem
     div_
         ([ "className" $= Style.prefixFromList ["node__name", "noselect"]
         , "key" $= "nodeName"
@@ -128,31 +133,35 @@ nodeName = React.defineView "node-name" $ \(ref, nl, name', visualizationVisible
                                ] mempty
 
 
-nodeExpression_ :: IsRef ref => ref -> NodeLoc -> Text -> Maybe SearcherProperties -> ReactElementM ViewEventHandler ()
+nodeExpression_ :: IsRef ref => ref -> NodeLoc -> Text -> Maybe Searcher.Properties -> ReactElementM ViewEventHandler ()
 nodeExpression_ ref nl expr mayS = React.viewWithSKey nodeExpression "node-expression" (ref, nl, expr, mayS) mempty
 
-nodeExpression :: IsRef ref => ReactView (ref, NodeLoc, Text, Maybe SearcherProperties)
+nodeExpression :: IsRef ref => ReactView (ref, NodeLoc, Text, Maybe Searcher.Properties)
 nodeExpression = React.defineView "node-expression" $ \(ref, nl, expr, mayS) -> do
     let isLong = Text.length expr > 64
 
         regularHandlersAndElem  = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.Event nl Node.EditExpression)]
                                   , colorizedExpression_ expr )
-        (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
-            Searcher.NodeSearcher ns -> case ns ^. Searcher.modeData of
-                Searcher.ExpressionMode {} -> if (ns ^. Searcher.nodeLoc) /= nl then regularHandlersAndElem else ([], searcher_ ref s)
-                _ -> regularHandlersAndElem
-            _                     -> regularHandlersAndElem
+        (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s
+            -> case s ^. Searcher.searcher . Searcher.mode of
+                SearcherMode.Node ns -> case ns ^. NodeSearcher.mode of
+                    NodeSearcher.ExpressionMode {}
+                        -> if (ns ^. NodeSearcher.nodeLoc) /= nl
+                            then regularHandlersAndElem
+                            else ([], searcher_ ref s)
+                    _ -> regularHandlersAndElem
+                _     -> regularHandlersAndElem
     div_
         (
         [ "className" $= Style.prefixFromList (["node__expression", "noselect"] <> (if isLong then ["node__expression--long"] else []))
         , "key"       $= "nodeExpression" ] <> handlers
         ) nameElement
 
-node_ :: IsRef ref => ref -> ExpressionNode -> Bool -> Bool -> Maybe SearcherProperties -> Maybe InPortRef -> Set NodeLoc -> Bool -> ReactElementM ViewEventHandler ()
+node_ :: IsRef ref => ref -> ExpressionNode -> Bool -> Bool -> Maybe Searcher.Properties -> Maybe InPortRef -> Set NodeLoc -> Bool -> ReactElementM ViewEventHandler ()
 node_ ref model isTopLevel performConnect s mayEditedTextPortControlPortRef relatedNodesWithVis blockVisInBc =
     React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, isTopLevel, performConnect, s, mayEditedTextPortControlPortRef, relatedNodesWithVis, blockVisInBc) mempty
 
-node :: IsRef ref => ReactView (ref, ExpressionNode, Bool, Bool, Maybe SearcherProperties, Maybe InPortRef, Set NodeLoc, Bool)
+node :: IsRef ref => ReactView (ref, ExpressionNode, Bool, Bool, Maybe Searcher.Properties, Maybe InPortRef, Set NodeLoc, Bool)
 node = React.defineView name $ \(ref, n, isTopLevel, performConnect, maySearcher, mayEditedTextPortControlPortRef, relatedNodesWithVis, blockVisInBc) -> case n ^. Node.mode of
     Node.Expanded (Node.Function fs) -> nodeContainer_ ref isTopLevel performConnect maySearcher mayEditedTextPortControlPortRef relatedNodesWithVis (Map.elems fs) blockVisInBc
     _ -> do
@@ -299,11 +308,11 @@ nodePorts = React.defineView objNamePorts $ \(ref, n, hasAlias, hasSelf, isTopLe
 
             argumentConstructor_ ref (argumentConstructorRef n) (countVisibleInPorts n) (n ^. Node.argConstructorMode == Port.Highlighted) hasAlias hasSelf
 
-nodeContainer_ :: IsRef ref => ref -> Bool -> Bool -> Maybe SearcherProperties -> Maybe InPortRef -> Set NodeLoc -> [Subgraph] -> Bool -> ReactElementM ViewEventHandler ()
+nodeContainer_ :: IsRef ref => ref -> Bool -> Bool -> Maybe Searcher.Properties -> Maybe InPortRef -> Set NodeLoc -> [Subgraph] -> Bool -> ReactElementM ViewEventHandler ()
 nodeContainer_ ref isTopLevel performConnect maySearcher mayEditedTextPortControlPortRef nodesWithVis subgraphs blockVisInBc =
     React.viewWithSKey nodeContainer "node-container" (ref, isTopLevel, performConnect, maySearcher, mayEditedTextPortControlPortRef, nodesWithVis, subgraphs, blockVisInBc) mempty
 
-nodeContainer :: IsRef ref => ReactView (ref, Bool, Bool, Maybe SearcherProperties, Maybe InPortRef, Set NodeLoc, [Subgraph], Bool)
+nodeContainer :: IsRef ref => ReactView (ref, Bool, Bool, Maybe Searcher.Properties, Maybe InPortRef, Set NodeLoc, [Subgraph], Bool)
 nodeContainer = React.defineView name $ \(ref, isTopLevel, performConnect, maySearcher, mayEditedTextPortControlPortRef, nodesWithVis, subgraphs, blockVisInBc) -> do
     div_
         [ "className" $= Style.prefix "subgraphs"
@@ -325,12 +334,17 @@ nodeContainer = React.defineView name $ \(ref, isTopLevel, performConnect, maySe
                                       blockVisInBc
             planeMonads_ $ monads_ monads
 
-filterOutSearcherIfNotRelated :: NodeLoc -> Maybe SearcherProperties -> Maybe SearcherProperties
+filterOutSearcherIfNotRelated :: NodeLoc -> Maybe Searcher.Properties
+    -> Maybe Searcher.Properties
 filterOutSearcherIfNotRelated _  Nothing  = Nothing
-filterOutSearcherIfNotRelated nl (Just s) = if Searcher.isSearcherRelated nl s then return s else Nothing
-
-filterOutEditedTextControlIfNotRelated :: NodeLoc -> Maybe InPortRef -> Maybe InPortRef
-filterOutEditedTextControlIfNotRelated _  Nothing        = Nothing
-filterOutEditedTextControlIfNotRelated nl (Just portRef) = if isPrefixOf (toNodeIdList nl) (toNodeIdList $ portRef ^. PortRef.nodeLoc)
-    then Just portRef
+filterOutSearcherIfNotRelated nl (Just s) = if Searcher.isRelated nl s
+    then return s
     else Nothing
+
+filterOutEditedTextControlIfNotRelated :: NodeLoc -> Maybe InPortRef
+    -> Maybe InPortRef
+filterOutEditedTextControlIfNotRelated _  Nothing = Nothing
+filterOutEditedTextControlIfNotRelated nl (Just portRef)
+    = if isPrefixOf (toNodeIdList nl) (toNodeIdList $ portRef ^. PortRef.nodeLoc)
+        then Just portRef
+        else Nothing

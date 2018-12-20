@@ -9,7 +9,6 @@ import qualified Data.Map.Lazy                               as Map
 import qualified Data.Set                                    as Set
 import qualified JS.Visualizers                              as JS
 import qualified LunaStudio.Data.PortRef                     as PortRef
-import qualified LunaStudio.Data.Searcher.Node               as NS
 import qualified NodeEditor.Action.Batch                     as Batch
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
 import qualified NodeEditor.React.Model.Layout               as Scene
@@ -34,7 +33,6 @@ import LunaStudio.Data.PortRef                    (AnyPortRef (..),
                                                    InPortRef (..),
                                                    OutPortRef (..))
 import LunaStudio.Data.Position                   (Position)
-import LunaStudio.Data.Searcher.Node              (LibrariesHintsMap)
 import LunaStudio.Data.TypeRep                    (TypeRep (TStar),
                                                    toConstructorRep)
 import LunaStudio.Data.Visualizer                 (applyType,
@@ -80,7 +78,7 @@ import NodeEditor.React.Model.Visualization       (ExternalVisualizers,
                                                    visualizerId, visualizerType,
                                                    _InternalVisualizer)
 import NodeEditor.State.Global                    (State, internalVisualizers,
-                                                   nodeSearcherData,
+                                                   searcherDatabase,
                                                    preferedVisualizers,
                                                    visualizers)
 
@@ -324,11 +322,11 @@ setScreenTransform :: CameraTransformation -> Command State ()
 setScreenTransform camera
     = modifyNodeEditor $ NE.layout . Scene.screenTransform .= camera
 
-getNodeSearcherData :: Command State LibrariesHintsMap
-getNodeSearcherData = getAvailableImports <$> use nodeSearcherData where
-    getAvailableImports nsd = Map.filterWithKey
-        (\k _ -> Set.member k $ nsd ^. NS.importedLibraries)
-        $ nsd ^. NS.libraries
+-- getNodeSearcherData :: Command State LibrariesHintsMap
+-- getNodeSearcherData = getAvailableImports <$> use nodeSearcherData where
+--     getAvailableImports nsd = Map.filterWithKey
+--         (\k _ -> Set.member k $ nsd ^. NS.importedLibraries)
+--         $ nsd ^. NS.libraries
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
@@ -368,16 +366,16 @@ getPortDefault portRef = maybe
     (\mayPort -> mayPort ^? state . _WithDefault)
     <$> (NE.getPort portRef <$> getNodeEditor)
 
-getLocalFunctions :: Command State [Text]
-getLocalFunctions = do
-    functionsNames <- toList . Set.fromList
-        . fmap (view Port.name) . concatMap outPortsList <$> getAllNodes
-    let getLambdaArgsNames s = fromMaybe mempty
-            $ s ^? Searcher.mode . Searcher._NodeSearcher
-                . Searcher.modeData . Searcher._ExpressionMode
-                . Searcher.argumentsNames
-    lambdaArgsNames <- maybe mempty getLambdaArgsNames <$> getSearcher
-    pure $ functionsNames <> lambdaArgsNames
+-- getLocalFunctions :: Command State [Text]
+-- getLocalFunctions = do
+--     functionsNames <- toList . Set.fromList
+--         . fmap (view Port.name) . concatMap outPortsList <$> getAllNodes
+--     let getLambdaArgsNames s = fromMaybe mempty
+--             $ s ^? Searcher.mode . Searcher._NodeSearcher
+--                 . Searcher.modeData . Searcher._ExpressionMode
+--                 . Searcher.argumentsNames
+--     lambdaArgsNames <- maybe mempty getLambdaArgsNames <$> getSearcher
+--     pure $ functionsNames <> lambdaArgsNames
 
 getVisualizationsBackupMap :: Command State (Map NodeLoc VisualizationBackup)
 getVisualizationsBackupMap

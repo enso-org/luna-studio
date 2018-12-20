@@ -10,110 +10,111 @@ import Empire.Commands.Graph.NodeMeta   as X
 
 import Empire.Prelude hiding (head, toList)
 
-import qualified Data.Bimap                           as Bimap
-import qualified Data.Graph.Data.Component.Vector     as PtrList
-import qualified Data.Graph.Data.Layer.Class          as Layer
-import qualified Data.Graph.Store                     as Store
-import qualified Data.List                            as List
-import qualified Data.Map                             as Map
-import qualified Data.Mutable.Class                   as Mutable
-import qualified Data.Set                             as Set
-import qualified Data.Text                            as Text
-import qualified Data.Text.IO                         as Text
-import qualified Data.Text.Span                       as Span
-import qualified Empire.ASTOps.Builder                as ASTBuilder
-import qualified Empire.ASTOps.Modify                 as ASTModify
-import qualified Empire.ASTOps.Parse                  as ASTParse
-import qualified Empire.ASTOps.Print                  as ASTPrint
-import qualified Empire.ASTOps.Read                   as ASTRead
-import qualified Empire.Commands.AST                  as AST
-import qualified Empire.Commands.Code                 as Code
-import qualified Empire.Commands.GraphBuilder         as GraphBuilder
-import qualified Empire.Commands.GraphUtils           as GraphUtils
-import qualified Empire.Commands.Library              as Library
-import qualified Empire.Commands.Publisher            as Publisher
-import qualified Empire.Data.BreadcrumbHierarchy      as BH
-import qualified Empire.Data.FileMetadata             as FileMetadata
-import qualified Empire.Data.Graph                    as Graph
-import qualified Luna.IR                              as IR
-import qualified Luna.IR.Term.Ast.Class               as Term
-import qualified Luna.Package                         as Package
-import qualified Luna.Pass.Scheduler                  as Scheduler
-import qualified Luna.Pass.Sourcing.Data.Class        as Class
-import qualified Luna.Pass.Sourcing.Data.Def          as Def
-import qualified Luna.Pass.Sourcing.Data.Unit         as Unit
-import qualified Luna.Pass.Sourcing.UnitLoader        as ModLoader
-import qualified Luna.Pass.Sourcing.UnitMapper        as UnitMapper
-import qualified Luna.Std                             as Std
-import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan as CodeSpan
-import qualified LunaStudio.Data.Breadcrumb           as Breadcrumb
-import qualified LunaStudio.Data.Error                as ErrorAPI
-import qualified LunaStudio.Data.Graph                as APIGraph
-import qualified LunaStudio.Data.GraphLocation        as GraphLocation
-import qualified LunaStudio.Data.Node                 as Node
-import qualified LunaStudio.Data.NodeMeta             as NodeMeta
-import qualified LunaStudio.Data.Port                 as Port
-import qualified LunaStudio.Data.PortRef              as PortRef
-import qualified LunaStudio.Data.Position             as Position
+import qualified Data.Bimap                            as Bimap
+import qualified Data.Graph.Data.Component.Vector      as PtrList
+import qualified Data.Graph.Data.Layer.Class           as Layer
+import qualified Data.Graph.Store                      as Store
+import qualified Data.List                             as List
+import qualified Data.Map                              as Map
+import qualified Data.Mutable.Class                    as Mutable
+import qualified Data.Set                              as Set
+import qualified Data.Text                             as Text
+import qualified Data.Text.IO                          as Text
+import qualified Data.Text.Span                        as Span
+import qualified Empire.ASTOps.Builder                 as ASTBuilder
+import qualified Empire.ASTOps.Modify                  as ASTModify
+import qualified Empire.ASTOps.Parse                   as ASTParse
+import qualified Empire.ASTOps.Print                   as ASTPrint
+import qualified Empire.ASTOps.Read                    as ASTRead
+import qualified Empire.Commands.AST                   as AST
+import qualified Empire.Commands.Code                  as Code
+import qualified Empire.Commands.GraphBuilder          as GraphBuilder
+import qualified Empire.Commands.GraphUtils            as GraphUtils
+import qualified Empire.Commands.Library               as Library
+import qualified Empire.Commands.Publisher             as Publisher
+import qualified Empire.Data.BreadcrumbHierarchy       as BH
+import qualified Empire.Data.FileMetadata              as FileMetadata
+import qualified Empire.Data.Graph                     as Graph
+import qualified Luna.IR                               as IR
+import qualified Luna.IR.Term.Ast.Class                as Term
+import qualified Luna.Package                          as Package
+import qualified Luna.Pass.Scheduler                   as Scheduler
+import qualified Luna.Pass.Sourcing.Data.Class         as Class
+import qualified Luna.Pass.Sourcing.Data.Def           as Def
+import qualified Luna.Pass.Sourcing.Data.Unit          as Unit
+import qualified Luna.Pass.Sourcing.UnitLoader         as ModLoader
+import qualified Luna.Pass.Sourcing.UnitMapper         as UnitMapper
+import qualified Luna.Std                              as Std
+import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan  as CodeSpan
+import qualified LunaStudio.Data.Breadcrumb            as Breadcrumb
+import qualified LunaStudio.Data.Error                 as ErrorAPI
+import qualified LunaStudio.Data.Graph                 as APIGraph
+import qualified LunaStudio.Data.GraphLocation         as GraphLocation
+import qualified LunaStudio.Data.Node                  as Node
+import qualified LunaStudio.Data.NodeMeta              as NodeMeta
+import qualified LunaStudio.Data.Port                  as Port
+import qualified LunaStudio.Data.PortRef               as PortRef
+import qualified LunaStudio.Data.Position              as Position
+import qualified LunaStudio.Data.Searcher.Hint         as Hint
+import qualified LunaStudio.Data.Searcher.Hint.Class   as Hint
+import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
 import qualified Path
 import qualified Safe
 
-import Control.Arrow                        ((***))
-import Control.Lens                         (re, traverseOf_, uses, (^..))
-import Control.Monad                        (forM)
-import Control.Monad.Catch                  (handle, try)
-import Control.Monad.State                  hiding (forM_, void, when)
-import Data.Char                            (isSeparator, isUpper)
-import Data.Coerce                          (coerce)
-import Data.Foldable                        (toList)
-import Data.List                            (find, nub, sortBy, sortOn, (++))
-import Data.Map                             (Map)
-import Data.Maybe                           (fromMaybe, maybeToList)
-import Data.Set                             (Set)
-import Data.Text                            (Text)
-import Data.Text.Position                   (Delta)
-import Data.Text.Span                       (SpacedSpan (..), leftSpacedSpan)
-import Data.Text.Strict.Lens                (packed)
+import Control.Arrow                         ((***))
+import Control.Lens                          (re, traverseOf_, uses, (^..))
+import Control.Monad                         (forM)
+import Control.Monad.Catch                   (handle, try)
+import Control.Monad.State                   hiding (forM_, void, when)
+import Data.Char                             (isSeparator, isUpper)
+import Data.Coerce                           (coerce)
+import Data.Foldable                         (toList)
+import Data.List                             (find, nub, sortBy, sortOn, (++))
+import Data.Map                              (Map)
+import Data.Maybe                            (fromMaybe, maybeToList)
+import Data.Set                              (Set)
+import Data.Text                             (Text)
+import Data.Text.Position                    (Delta)
+import Data.Text.Span                        (SpacedSpan (..), leftSpacedSpan)
+import Data.Text.Strict.Lens                 (packed)
 import Debug
-import Empire.ASTOp                         (ClassOp, GraphOp, liftScheduler,
-                                             runASTOp, runAliasAnalysis)
-import Empire.ASTOps.BreadcrumbHierarchy    (prepareChild)
-import Empire.ASTOps.Parse                  (FunctionParsing (..))
-import Empire.Commands.Code                 (addExprMapping, getExprMap,
-                                             getNextExprMarker, setExprMap)
-import Empire.Data.AST                      (ConnectionException (..), EdgeRef,
-                                             InvalidConnectionException (..),
-                                             NodeRef,
-                                             NotInputEdgeException (..),
-                                             NotUnifyException,
-                                             PortDoesNotExistException (..),
-                                             SomeASTException,
-                                             astExceptionFromException,
-                                             astExceptionToException)
-import Empire.Data.FileMetadata             (MarkerNodeMeta (MarkerNodeMeta))
-import Empire.Data.Graph                    (ClsGraph, Graph)
-import Empire.Data.Layers                   (SpanLength, SpanOffset)
+import Empire.ASTOp                          (ClassOp, GraphOp, liftScheduler,
+                                              runASTOp, runAliasAnalysis)
+import Empire.ASTOps.BreadcrumbHierarchy     (prepareChild)
+import Empire.ASTOps.Parse                   (FunctionParsing (..))
+import Empire.Commands.Code                  (addExprMapping, getExprMap,
+                                              getNextExprMarker, setExprMap)
+import Empire.Data.AST                       (ConnectionException (..), EdgeRef,
+                                              InvalidConnectionException (..),
+                                              NodeRef,
+                                              NotInputEdgeException (..),
+                                              NotUnifyException,
+                                              PortDoesNotExistException (..),
+                                              SomeASTException,
+                                              astExceptionFromException,
+                                              astExceptionToException)
+import Empire.Data.FileMetadata              (MarkerNodeMeta (MarkerNodeMeta))
+import Empire.Data.Graph                     (ClsGraph, Graph)
+import Empire.Data.Layers                    (SpanLength, SpanOffset)
 import Empire.Empire
-import GHC.Stack                            (renderStack, whoCreated)
-import Luna.Pass.Data.Stage                 (Stage)
-import Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
-import LunaStudio.Data.Breadcrumb           (Breadcrumb (..), BreadcrumbItem,
-                                             Named)
-import LunaStudio.Data.Connection           (Connection (..))
-import LunaStudio.Data.GraphLocation        (GraphLocation (..), (|>))
-import LunaStudio.Data.Node                 (ExpressionNode (..), NodeId)
-import LunaStudio.Data.NodeLoc              (NodeLoc (..))
-import LunaStudio.Data.NodeMeta             (NodeMeta)
-import LunaStudio.Data.Port                 (InPortId, InPortIndex (..),
-                                             getPortNumber)
-import LunaStudio.Data.PortDefault          (PortDefault)
-import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
-                                             OutPortRef (..))
-import LunaStudio.Data.Position             (Position)
-import LunaStudio.Data.Range                (Range (..))
-import LunaStudio.Data.Searcher.Node        (ClassHints (..), LibrariesHintsMap,
-                                             LibraryHints (LibraryHints),
-                                             LibraryName)
+import GHC.Stack                             (renderStack, whoCreated)
+import Luna.Pass.Data.Stage                  (Stage)
+import Luna.Syntax.Text.Parser.Ast.CodeSpan  (CodeSpan)
+import LunaStudio.Data.Breadcrumb            (Breadcrumb (..), BreadcrumbItem,
+                                              Named)
+import LunaStudio.Data.Connection            (Connection (..))
+import LunaStudio.Data.GraphLocation         (GraphLocation (..), (|>))
+import LunaStudio.Data.Node                  (ExpressionNode (..), NodeId)
+import LunaStudio.Data.NodeLoc               (NodeLoc (..))
+import LunaStudio.Data.NodeMeta              (NodeMeta)
+import LunaStudio.Data.Port                  (InPortId, InPortIndex (..),
+                                              getPortNumber)
+import LunaStudio.Data.PortDefault           (PortDefault)
+import LunaStudio.Data.PortRef               (AnyPortRef (..), InPortRef (..),
+                                              OutPortRef (..))
+import LunaStudio.Data.Position              (Position)
+import LunaStudio.Data.Range                 (Range (..))
+import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 
 
 addImports :: GraphLocation -> Set Text -> Empire ()
@@ -1391,29 +1392,36 @@ getImportsInFile = do
     imports <- matchUnit unit
     return $ catMaybes imports
 
-getAvailableImports :: GraphLocation -> Empire (Set LibraryName)
+getAvailableImports :: GraphLocation -> Empire (Set SearcherLibrary.Name)
 getAvailableImports gl = withUnit pureGl mkImports where
     pureGl = GraphLocation (gl ^. GraphLocation.filePath) mempty
     implicitImports = [nativeModuleName, "Std.Base"]
     mkImports = fromList . (implicitImports <>) <$> runASTOp getImportsInFile
 
-classToHints :: Class.Class -> ClassHints
-classToHints (Class.Class constructors methods _)
-    = ClassHints constructorsHints methodsHints where
-        getDocumentation  = fromMaybe mempty . view Def.documentation
-        constructorsHints = ((, mempty) . convert) <$> Map.keys constructors
-        methodsHints      = (convert *** getDocumentation) <$>
-            filter (isPublicMethod . fst) (Map.toList $ unwrap methods)
+classToHints :: Class.Class -> Hint.Class
+classToHints (Class.Class constructors methods _) = let
+    getDocumentation    = fromMaybe mempty . view Def.documentation
+    constructorsNames   = Map.keys constructors
+    constructorToHint   = flip Hint.Raw mempty . convert
+    constructorsHints   = constructorToHint <$> constructorsNames
+    methods'            = filter 
+        (isPublicMethod . fst) 
+        $ Map.toList $ unwrap methods
+    methodToHint (n, d) = Hint.Raw (convert n) $ getDocumentation d
+    methodsHints        = methodToHint <$> methods'
+    in Hint.Class constructorsHints methodsHints
 
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (nameToString -> n) = Safe.headMay n /= Just '_'
 
-importsToHints :: Unit.Unit -> LibraryHints
-importsToHints (Unit.Unit definitions classes)
-    = LibraryHints funHints $ Map.mapKeys convert classHints where
-        funHints   = (convert *** (fromMaybe "" . view Def.documentation))
-            <$> Map.toList (unwrap definitions)
-        classHints = (classToHints . view Def.documented) <$> classes
+importsToHints :: Unit.Unit -> SearcherLibrary.Library
+importsToHints (Unit.Unit definitions classes) = let
+    funToHint (n,d) = Hint.Raw 
+        (convert n) 
+        $ fromMaybe mempty $ d ^. Def.documentation
+    funHints   = funToHint <$> Map.toList (unwrap definitions)
+    classHints = (classToHints . view Def.documented) <$> classes
+    in SearcherLibrary.Library funHints $ Map.mapKeys convert classHints
 
 data ModuleCompilationException = ModuleCompilationException ModLoader.UnitLoadingError
     deriving (Show)
@@ -1438,7 +1446,7 @@ getImportPaths (GraphLocation file _) = do
     importPaths     <- Package.packageImportPaths currentProjPath
     return $ map (view _2) importPaths
 
-getSearcherHints :: GraphLocation -> Empire LibrariesHintsMap
+getSearcherHints :: GraphLocation -> Empire SearcherLibraries
 getSearcherHints loc = do
     importPaths     <- liftIO $ getImportPaths loc
     availableSource <- liftIO $ forM importPaths $ \path -> do

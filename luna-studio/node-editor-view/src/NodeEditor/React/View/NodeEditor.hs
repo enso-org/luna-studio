@@ -13,10 +13,15 @@ import qualified NodeEditor.React.Model.Node                as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
-import qualified NodeEditor.React.Model.SearcherProperties  as Searcher
+import qualified NodeEditor.React.Model.Searcher            as Searcher
+import qualified NodeEditor.React.Model.Searcher.Hint       as Hint
+import qualified NodeEditor.React.Model.Searcher.Hint.Node  as Hint
+import qualified NodeEditor.React.Model.Searcher.Mode       as SearcherMode
+import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeSearcher
 import qualified NodeEditor.React.View.Sidebar              as Sidebar
 import qualified NodeEditor.React.View.Style                as Style
 import qualified React.Flux                                 as React
+import qualified Searcher.Engine.Data.Result                as Searcher
 
 import Data.Matrix                                (Matrix)
 import Data.Maybe                                 (mapMaybe)
@@ -31,8 +36,6 @@ import NodeEditor.React.Model.Constants           (nodeRadius)
 import NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, mkExprNode)
 import NodeEditor.React.Model.NodeEditor          (GraphStatus (..), NodeEditor)
 import NodeEditor.React.Model.Port                (InPortIndex (Self))
-import NodeEditor.React.Model.SearcherProperties  (Searcher, SearcherProperties,
-                                                   toSearcherProperties)
 import NodeEditor.React.Model.Visualization       (VisualizationMode (Focused, FullScreen, Preview),
                                                    visPropNodeLoc,
                                                    visPropVisualization,
@@ -74,18 +77,18 @@ show4 :: Double -> String
 show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: remove before the release
 
 mockSearcherNode :: NodeEditor -> NodeEditor
-mockSearcherNode ne = maybe ne withSearcher $ ne ^. NodeEditor.searcherProperties where
-    withSearcher s =
-        let mayNodeSearcher = s ^? Searcher.mode . Searcher._NodeSearcher
+mockSearcherNode ne = maybe ne withSearcher maySearcher where
+    maySearcher = ne ^? NodeEditor.searcherProperties . _Just . Searcher.searcher
+    withSearcher s = let
+        mayNodeSearcher = s ^? Searcher.mode . SearcherMode._Node
         in maybe ne (withNodeSearcher s) mayNodeSearcher
-    withNodeSearcher s ns =
-        let mayNewNodeData = ns ^? Searcher.modeData . Searcher._ExpressionMode
-                . Searcher.newNodeData . _Just
-            nl       = ns ^. Searcher.nodeLoc
-            hint = s  ^? Searcher.selectedHint . _Just . Searcher._NodeHint
+    withNodeSearcher s ns = let
+        mayNewNodeData = ns ^? NodeSearcher.mode 
+            . NodeSearcher._ExpressionMode . NodeSearcher.newNode . _Just
+        nl   = ns ^. NodeSearcher.nodeLoc
+        hint = s ^? Searcher.selectedResult . _Just . Searcher.hint . Hint._Node
         in maybe (updateNode nl hint) (mockNewNode nl hint) mayNewNodeData
-    updateNode
-        :: NodeLoc -> Maybe (Searcher.Match Searcher.Symbol) -> NodeEditor
+    updateNode :: NodeLoc -> Maybe Hint.Node -> NodeEditor
     updateNode nl mayHint = maybe
         ne
         (uncurry updateWithHint)
@@ -94,19 +97,19 @@ mockSearcherNode ne = maybe ne withSearcher $ ne ^. NodeEditor.searcherPropertie
             <*> mayHint
     updateWithHint
         :: ExpressionNode
-        -> Searcher.Match Searcher.Symbol
+        -> Hint.Node
         -> NodeEditor
     updateWithHint n hint
         = NodeEditor.updateExpressionNode (applyHint n hint) ne
     mockNewNode
         :: NodeLoc
-        -> Maybe (Searcher.Match Searcher.Symbol)
-        -> Searcher.NewNodeData
+        -> Maybe Hint.Node
+        -> NodeSearcher.New
         -> NodeEditor
     mockNewNode nl mayHint newNodeData = do
-        let defNode = mkExprNode nl def (newNodeData ^. Searcher.position)
+        let defNode = mkExprNode nl def (newNodeData ^. NodeSearcher.position)
             node = maybe defNode (applyHint defNode) mayHint
-            maySrcPortRef = newNodeData ^. Searcher.connectionSource
+            maySrcPortRef = newNodeData ^. NodeSearcher.connectionSource
             dstPortRef = InPortRef nl [Self]
             mkConnection srcPortRef = Connection.Connection
                 srcPortRef
@@ -116,8 +119,7 @@ mockSearcherNode ne = maybe ne withSearcher $ ne ^. NodeEditor.searcherPropertie
             mayConnection = mkConnection <$> maySrcPortRef
         NodeEditor.updateExpressionNode node ne
             & NodeEditor.connections . at dstPortRef .~ mayConnection
-    applyHint
-        :: ExpressionNode -> Searcher.Match Searcher.Symbol -> ExpressionNode
+    applyHint :: ExpressionNode -> Hint.Node -> ExpressionNode
     applyHint n hint = n --TODO[LJK]: Mock new node here once searcher knows about ports
 
 nodeEditor_ :: IsRef r => r -> NodeEditor -> Bool -> ReactElementM ViewEventHandler ()
@@ -210,8 +212,9 @@ graph = React.defineView name $ \(ref, (mockSearcherNode -> ne), isTopLevel) -> 
             let maySearcher = ne ^. NodeEditor.searcherProperties
                 maySidebarSearcher
                     = if has
-                        (_Just . Searcher.mode . Searcher._NodeSearcher
-                            . Searcher.modeData . Searcher._PortNameMode)
+                        (_Just . Searcher.searcher . Searcher.mode
+                            . SearcherMode._Node . NodeSearcher.mode
+                            . NodeSearcher._PortNameMode)
                         maySearcher
                             then maySearcher
                             else Nothing

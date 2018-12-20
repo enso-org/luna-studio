@@ -12,6 +12,7 @@ import qualified NodeEditor.React.Model.Connection          as Connection
 import qualified NodeEditor.React.Model.Layout              as Layout
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.Port                as Port
+import qualified NodeEditor.React.Model.Searcher            as Searcher
 import qualified NodeEditor.React.Model.Visualization       as Visualization
 
 
@@ -41,37 +42,37 @@ import NodeEditor.React.Model.SelectionBox  (SelectionBox)
 import NodeEditor.React.Model.Visualization (NodeVisualizations, VisualizationProperties (VisualizationProperties),
                                              VisualizationsBackupMap,
                                              Visualizers)
-import NodeEditor.React.Model.SearcherProperties (SearcherProperties,
-                                                  toSearcherProperties)
 
 
-data GraphStatus = GraphLoaded
-                 | GraphLoading
-                 | NoGraph
-                 | GraphError (Error.Error Error.GraphError)
-                 deriving (Eq, Generic)
+data GraphStatus
+    = GraphLoaded
+    | GraphLoading
+    | NoGraph
+    | GraphError (Error.Error Error.GraphError)
+    deriving (Eq, Generic)
 
 makePrisms ''GraphStatus
 
-data NodeEditor = NodeEditor { _expressionNodes          :: ExpressionNodesMap
-                             , _inputNode                :: Maybe InputNode
-                             , _outputNode               :: Maybe OutputNode
-                             , _monads                   :: [MonadPath]
-                             , _connections              :: ConnectionsMap
-                             , _visualizersLibPaths      :: Visualizers FilePath
-                             , _nodeVisualizations       :: Map NodeLoc NodeVisualizations
-                             , _visualizationsBackup     :: VisualizationsBackupMap
+data NodeEditor = NodeEditor
+    { _expressionNodes          :: ExpressionNodesMap
+    , _inputNode                :: Maybe InputNode
+    , _outputNode               :: Maybe OutputNode
+    , _monads                   :: [MonadPath]
+    , _connections              :: ConnectionsMap
+    , _visualizersLibPaths      :: Visualizers FilePath
+    , _nodeVisualizations       :: Map NodeLoc NodeVisualizations
+    , _visualizationsBackup     :: VisualizationsBackupMap
 
-                             , _halfConnections          :: [HalfConnection]
-                             , _connectionPen            :: Maybe ConnectionPen
-                             , _selectionBox             :: Maybe SelectionBox
-                             , _searcher                 :: Maybe Searcher
-                             , _textControlEditedPortRef :: Maybe InPortRef
+    , _halfConnections          :: [HalfConnection]
+    , _connectionPen            :: Maybe ConnectionPen
+    , _selectionBox             :: Maybe SelectionBox
+    , _searcher                 :: Maybe Searcher
+    , _textControlEditedPortRef :: Maybe InPortRef
 
-                             , _graphStatus              :: GraphStatus
-                             , _layout                   :: Layout
-                             , _topZIndex                :: Int
-                             } deriving (Eq, Generic)
+    , _graphStatus              :: GraphStatus
+    , _layout                   :: Layout
+    , _topZIndex                :: Int
+    } deriving (Eq, Generic)
 
 instance Default NodeEditor where
     def = NodeEditor
@@ -103,9 +104,12 @@ returnsGraphError = to (has (graphStatus . _GraphError))
 screenTransform :: Lens' NodeEditor CameraTransformation
 screenTransform = layout . Layout.screenTransform
 
-searcherProperties :: Getter NodeEditor (Maybe SearcherProperties)
-searcherProperties = to $ \ne -> flip
-    toSearcherProperties (ne ^. visualizersLibPaths) <$> ne ^. searcher
+searcherProperties :: Getter NodeEditor (Maybe Searcher.Properties)
+searcherProperties = to $ \ne -> let
+    lunaVisPath = ne ^. visualizersLibPaths . Visualization.lunaVisualizers
+    maySearcher = ne ^. searcher
+    toProps     = \s -> Searcher.mkProperties s lunaVisPath
+    in toProps <$> maySearcher
 
 expressionNodesRecursive :: Getter NodeEditor [ExpressionNode]
 expressionNodesRecursive = to (concatMap expressionNodesRecursive' . HashMap.elems . view expressionNodes) where

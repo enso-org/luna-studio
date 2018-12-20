@@ -1,3 +1,8 @@
+-- INFO FOR @pmlodawski from dead soldier:
+-- This module should be trimmed from any low level logic of searcher. It should
+-- be basically a wrapper in action concept (so implement class Action and use
+-- its like other files do) just as it was before.
+
 module NodeEditor.Action.Searcher where
 
 import Common.Prelude

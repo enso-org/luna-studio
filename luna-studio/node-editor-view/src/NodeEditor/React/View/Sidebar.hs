@@ -6,45 +6,44 @@ module NodeEditor.React.View.Sidebar
 import Common.Prelude
 import React.Flux     as React hiding (view)
 
-import qualified Data.Aeson                                as Aeson
-import qualified JS.Mount                                  as Mount
-import qualified JS.UI                                     as UI
-import qualified LunaStudio.Data.PortRef                   as PortRef
-import qualified NodeEditor.Event.UI                       as UI
-import qualified NodeEditor.React.Event.Sidebar            as Sidebar
-import qualified NodeEditor.React.Model.Node.SidebarNode   as SidebarNode
-import qualified NodeEditor.React.Model.Port               as Port
-import qualified NodeEditor.React.Model.SearcherProperties as Searcher
-import qualified NodeEditor.React.View.Style               as Style
+import qualified Data.Aeson                              as Aeson
+import qualified JS.Mount                                as Mount
+import qualified JS.UI                                   as UI
+import qualified LunaStudio.Data.PortRef                 as PortRef
+import qualified NodeEditor.Event.UI                     as UI
+import qualified NodeEditor.React.Event.Sidebar          as Sidebar
+import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
+import qualified NodeEditor.React.Model.Port             as Port
+import qualified NodeEditor.React.Model.Searcher         as Searcher
+import qualified NodeEditor.React.Model.Searcher.Mode.Node         as NodeSearcher
+import qualified NodeEditor.React.Model.Searcher.Mode         as SearcherMode
+import qualified NodeEditor.React.View.Style             as Style
 
-import Data.Timestamp                            (Timestamp (Timestamp))
-import JS.Scene                                  (inputSidebarId,
-                                                  outputSidebarId)
-import LunaStudio.Data.PortRef                   (AnyPortRef (OutPortRef'),
-                                                  OutPortRef (OutPortRef),
-                                                  toAnyPortRef)
-import LunaStudio.Data.Position                  (y)
-import NodeEditor.React.IsRef                    (IsRef, dispatch)
-import NodeEditor.React.Model.Node.SidebarNode   (NodeLoc, SidebarMode (AddRemove, MoveConnect),
-                                                  SidebarNode,
-                                                  countProjectionPorts,
-                                                  isInputSidebar,
-                                                  minimalNumberOfPorts)
-import NodeEditor.React.Model.Port               (AnyPort,
-                                                  OutPortIndex (Projection),
-                                                  getPortNumber,
-                                                  getPositionInSidebar,
-                                                  isHighlighted, isInMovedMode,
-                                                  isInNameEditMode, isInPort,
-                                                  isOutPort)
-import NodeEditor.React.Model.SearcherProperties (SearcherProperties)
-import NodeEditor.React.View.Port                (handleClick, handleMouseDown,
-                                                  handleMouseEnter,
-                                                  handleMouseLeave,
-                                                  handleMouseUp, handlers,
-                                                  jsShow2, modeClass)
-import NodeEditor.React.View.Searcher            (searcher_)
-import NodeEditor.React.View.Style               (plainPath_, plainRect_)
+import Data.Timestamp                          (Timestamp (Timestamp))
+import JS.Scene                                (inputSidebarId, outputSidebarId)
+import LunaStudio.Data.PortRef                 (AnyPortRef (OutPortRef'),
+                                                OutPortRef (OutPortRef),
+                                                toAnyPortRef)
+import LunaStudio.Data.Position                (y)
+import NodeEditor.React.IsRef                  (IsRef, dispatch)
+import NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect),
+                                                SidebarNode,
+                                                countProjectionPorts,
+                                                isInputSidebar,
+                                                minimalNumberOfPorts)
+import NodeEditor.React.Model.Port             (AnyPort,
+                                                OutPortIndex (Projection),
+                                                getPortNumber,
+                                                getPositionInSidebar,
+                                                isHighlighted, isInMovedMode,
+                                                isInNameEditMode, isInPort,
+                                                isOutPort)
+import NodeEditor.React.View.Port              (handleClick, handleMouseDown,
+                                                handleMouseEnter,
+                                                handleMouseLeave, handleMouseUp,
+                                                handlers, jsShow2, modeClass)
+import NodeEditor.React.View.Searcher          (searcher_)
+import NodeEditor.React.View.Style             (plainPath_, plainRect_)
 
 
 name :: SidebarNode node => node -> JSString
@@ -72,10 +71,10 @@ portHandlers ref MoveConnect False _ portRef =
     ]
 portHandlers _ _ _ _ _ = []
 
-sidebar_ :: (IsRef ref, SidebarNode node) => ref -> Maybe SearcherProperties -> node ->  ReactElementM ViewEventHandler ()
+sidebar_ :: (IsRef ref, SidebarNode node) => ref -> Maybe Searcher.Properties -> node ->  ReactElementM ViewEventHandler ()
 sidebar_ ref maySearcher node = React.viewWithSKey sidebar (name node) (ref, maySearcher, node) mempty
 
-sidebar :: (IsRef ref, SidebarNode node) => ReactView (ref, Maybe SearcherProperties, node)
+sidebar :: (IsRef ref, SidebarNode node) => ReactView (ref, Maybe Searcher.Properties, node)
 sidebar = React.defineView "sidebar" $ \(ref, maySearcher, node) -> do
     let ports          = SidebarNode.portsList node
         nodeLoc        = node ^. SidebarNode.nodeLoc
@@ -152,22 +151,29 @@ sidebar = React.defineView "sidebar" $ \(ref, maySearcher, node) -> do
                             ] mempty
 
 
-sidebarPortName_ :: IsRef ref => ref -> AnyPortRef -> Text -> Maybe SearcherProperties -> ReactElementM ViewEventHandler ()
+sidebarPortName_ :: IsRef ref => ref -> AnyPortRef -> Text -> Maybe Searcher.Properties -> ReactElementM ViewEventHandler ()
 sidebarPortName_ ref portRef portName mayS = div_ ([ "className" $= Style.prefixFromList [ "port-sidebar__port__name", "noselect"] ] <> handlers') nameElement where
     regularName              = elemString $ convert portName
     (handlers', nameElement) = case portRef of
         OutPortRef' outPortRef -> do
             let outPortRefRegularHandler = [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.EditPortName outPortRef) ]
                 regularHandlersAndElem   = (outPortRefRegularHandler, regularName)
-            flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
-                Searcher.NodeSearcher ns -> case ns ^. Searcher.modeData of
-                    Searcher.PortNameMode d -> let sPortRef = OutPortRef (ns ^. Searcher.nodeLoc) (d ^. Searcher.portId)
-                        in if sPortRef == outPortRef then ([], searcher_ ref s) else regularHandlersAndElem
-                    _ -> regularHandlersAndElem
-                _                            -> regularHandlersAndElem
+            flip (maybe regularHandlersAndElem) mayS $ \s 
+                -> case s ^. Searcher.searcher . Searcher.mode of
+                    SearcherMode.Node ns 
+                        -> case ns ^. NodeSearcher.mode of
+                            NodeSearcher.PortNameMode d -> let 
+                                sPortRef = OutPortRef 
+                                    (ns ^. NodeSearcher.nodeLoc) 
+                                    (d  ^. NodeSearcher.portId)
+                                in if sPortRef == outPortRef 
+                                        then ([], searcher_ ref s) 
+                                        else regularHandlersAndElem
+                            _ -> regularHandlersAndElem
+                    _     -> regularHandlersAndElem
         _ -> ([], regularName)
 
-sidebarPort_ :: IsRef ref => ref -> NodeLoc -> AnyPort -> SidebarMode -> Bool -> Bool -> Maybe SearcherProperties -> ReactElementM ViewEventHandler ()
+sidebarPort_ :: IsRef ref => ref -> NodeLoc -> AnyPort -> SidebarMode -> Bool -> Bool -> Maybe Searcher.Properties -> ReactElementM ViewEventHandler ()
 sidebarPort_ ref nl p mode isPortDragged canBeRemoved maySearcher = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
@@ -245,11 +251,16 @@ portLabelId = Mount.prefix "focus-portLabel"
 focusPortLabel :: IO ()
 focusPortLabel = UI.focus portLabelId
 
-filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe SearcherProperties -> Maybe SearcherProperties
-filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just s) = case s ^. Searcher.mode of
-    Searcher.NodeSearcher ns -> case ns ^. Searcher.modeData of
-        Searcher.PortNameMode d -> let sPortRef = OutPortRef (ns ^. Searcher.nodeLoc) (d ^. Searcher.portId)
-            in if portRef == sPortRef then Just s else Nothing
-        _ -> Nothing
-    _                            -> Nothing
+filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe Searcher.Properties 
+    -> Maybe Searcher.Properties
+filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just s) 
+    = case s ^. Searcher.searcher . Searcher.mode of
+        SearcherMode.Node ns -> case ns ^. NodeSearcher.mode of
+            NodeSearcher.PortNameMode d -> let 
+                sPortRef = OutPortRef 
+                    (ns ^. NodeSearcher.nodeLoc) 
+                    (d  ^. NodeSearcher.portId)
+                in if portRef == sPortRef then Just s else Nothing
+            _ -> Nothing
+        _     -> Nothing
 filterOutSearcherIfNotRelated _ _ = Nothing

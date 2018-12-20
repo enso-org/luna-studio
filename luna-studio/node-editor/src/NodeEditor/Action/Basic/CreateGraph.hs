@@ -2,32 +2,31 @@ module NodeEditor.Action.Basic.CreateGraph where
 
 import Common.Prelude
 
-import qualified Data.Set                          as Set
-import qualified LunaStudio.Data.Connection        as Connection
-import qualified LunaStudio.Data.Graph             as API
-import qualified NodeEditor.React.Model.NodeEditor as NE
+import qualified Data.Set                              as Set
+import qualified LunaStudio.Data.Connection            as Connection
+import qualified LunaStudio.Data.Graph                 as API
+import qualified LunaStudio.Data.Searcher.Hint.Library as Library
+import qualified NodeEditor.React.Model.NodeEditor     as NE
 
-import Common.Action.Command                       (Command)
-import Data.Set                                    (Set)
-import LunaStudio.Data.Connection                  (Connection)
-import LunaStudio.Data.Graph                       (Graph)
-import LunaStudio.Data.MonadPath                   (MonadPath)
-import LunaStudio.Data.NodeLoc                     (NodePath)
-import NodeEditor.Action.Basic.AddConnection       (localAddConnections)
-import NodeEditor.Action.Basic.FocusNode           (updateNodeZOrder)
-import NodeEditor.Action.Basic.RemoveNode          (localRemoveNodes)
-import NodeEditor.Action.Basic.UpdateNode          (localUpdateOrAddExpressionNode,
-                                                    localUpdateOrAddInputNode,
-                                                    localUpdateOrAddOutputNode)
-import NodeEditor.Action.Basic.UpdateSearcherHints (setImportedLibraries)
-import NodeEditor.Action.State.NodeEditor          (getExpressionNodes,
-                                                    modifyNodeEditor,
-                                                    setGraphStatus,
-                                                    updateMonads)
-import NodeEditor.React.Model.Node                 (ExpressionNode, InputNode,
-                                                    OutputNode, nodeLoc)
-import NodeEditor.React.Model.Searcher             (LibraryName)
-import NodeEditor.State.Global                     (State)
+import Common.Action.Command                 (Command)
+import Data.Set                              (Set)
+import LunaStudio.Data.Connection            (Connection)
+import LunaStudio.Data.Graph                 (Graph)
+import LunaStudio.Data.MonadPath             (MonadPath)
+import LunaStudio.Data.NodeLoc               (NodePath)
+import NodeEditor.Action.Basic.AddConnection (localAddConnections)
+import NodeEditor.Action.Basic.FocusNode     (updateNodeZOrder)
+import NodeEditor.Action.Basic.RemoveNode    (localRemoveNodes)
+import NodeEditor.Action.Basic.Searcher      (setImportedLibraries)
+import NodeEditor.Action.Basic.UpdateNode    (localUpdateOrAddExpressionNode,
+                                              localUpdateOrAddInputNode,
+                                              localUpdateOrAddOutputNode)
+import NodeEditor.Action.State.NodeEditor    (getExpressionNodes,
+                                              modifyNodeEditor, setGraphStatus,
+                                              updateMonads)
+import NodeEditor.React.Model.Node           (ExpressionNode, InputNode,
+                                              OutputNode, nodeLoc)
+import NodeEditor.State.Global               (State)
 
 
 
@@ -43,7 +42,7 @@ updateWithAPIGraph p g = updateGraph nodes input output conns monads imports
 
 
 updateGraph :: [ExpressionNode] -> Maybe InputNode -> Maybe OutputNode
-    -> [Connection] -> [MonadPath] -> Set LibraryName -> Command State ()
+    -> [Connection] -> [MonadPath] -> Set Library.Name -> Command State ()
 updateGraph nodes input output connections monads imports = do
     let nlsSet = Set.fromList $ map (view nodeLoc) nodes
     nlsToRemove <- filter (not . flip Set.member nlsSet) . map (view nodeLoc)

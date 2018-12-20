@@ -1,57 +1,50 @@
-module NodeEditor.React.Model.Searcher.Hint
-    ( module NodeEditor.React.Model.Searcher.Hint
-    , module X
-    ) where
-
-import Searcher.Engine            as X (Command, Match, MatchKind (AllCharsMatched, CaseInsensitiveEquality, CaseSensitiveEquality, NotFullyMatched),
-                                        Name, Prefix, Range, Symbol)
-import Searcher.Engine.Data.Match as X (IsMatch (matchKind, matchedCharacters), SearcherData (documentation, hintTextSeparator, name, prefix, rawDocumentation, score))
+{-# LANGUAGE Strict #-}
+module NodeEditor.React.Model.Searcher.Hint where
 
 import Common.Prelude
 
+import qualified LunaStudio.Data.Searcher.Hint as Hint
+import qualified Searcher.Engine.Data.Result   as Result
+
+import LunaStudio.Data.Searcher.Hint                (SearcherHint (documentation, prefix))
+import NodeEditor.React.Model.Searcher.Hint.Command (Command)
+import NodeEditor.React.Model.Searcher.Hint.Node    (Node)
+import Searcher.Engine.Data.Database                (SearcherData (fixedScore, text))
+import Searcher.Engine.Data.Result                  (Result)
+
+
+
+------------------
+-- === Hint === --
+------------------
+
+
+-- === Definition === --
 
 data Hint
-    = CommandHint (Match Command)
-    | NodeHint    (Match Symbol)
+    = Command Command
+    | Node    Node
     deriving (Eq, Generic, Show)
 
 makePrisms ''Hint
 
-
+instance NFData Hint
 instance SearcherData Hint where
-    name =
-        let getter (CommandHint h) = h ^. name
-            getter (NodeHint    h) = h ^. name
-            setter (CommandHint h) n = CommandHint $ h & name .~ n
-            setter (NodeHint    h) n = NodeHint    $ h & name .~ n
-        in lens getter setter
-    rawDocumentation =
-        let getter (CommandHint h) = h ^. rawDocumentation
-            getter (NodeHint    h) = h ^. rawDocumentation
-            setter (CommandHint h) d
-                = CommandHint $ h & rawDocumentation .~ d
-            setter (NodeHint   h) d
-                = NodeHint   $ h & rawDocumentation .~ d
-        in lens getter setter
-    prefix =
-        let getter (CommandHint h) = h ^. prefix
-            getter (NodeHint    h) = h ^. prefix
-        in to getter
-    score =
-        let getter (CommandHint h) = h ^. score
-            getter (NodeHint    h) = h ^. score
-        in to getter
-    hintTextSeparator =
-        let getter (CommandHint h) = h ^. hintTextSeparator
-            getter (NodeHint    h) = h ^. hintTextSeparator
-        in to getter
+    text = to $! \case
+        Command h -> h ^. text
+        Node    h -> h ^. text
+    fixedScore = to $! \case
+        Command h -> h ^. fixedScore
+        Node    h -> h ^. fixedScore
 
-instance IsMatch Hint where
-    matchKind =
-        let getter (CommandHint h) = h ^. matchKind
-            getter (NodeHint    h) = h ^. matchKind
-        in to getter
-    matchedCharacters =
-        let getter (CommandHint h) = h ^. matchedCharacters
-            getter (NodeHint    h) = h ^. matchedCharacters
-        in to getter
+instance SearcherHint Hint where
+    prefix = to $! \case
+        Command h -> h ^. prefix
+        Node    h -> h ^. prefix
+    documentation = to $! \case
+        Command h -> h ^. documentation
+        Node    h -> h ^. documentation
+
+instance SearcherHint a => SearcherHint (Result a) where
+    prefix        = Result.hint . prefix
+    documentation = Result.hint . documentation

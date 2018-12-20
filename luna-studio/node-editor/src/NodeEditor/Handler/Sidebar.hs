@@ -3,8 +3,7 @@ module NodeEditor.Handler.Sidebar where
 import           Common.Action.Command             (Command)
 import           Common.Prelude
 import qualified NodeEditor.Action.Batch           as Batch
-import           NodeEditor.Action.Searcher        (editPortName)
-import           NodeEditor.Action.Sidebar         (escapeAddRemoveMode, handleAppMove, handleMouseUp, handleSidebarMove, toggleSidebarMode)
+import           NodeEditor.Action.Sidebar         (escapeAddRemoveMode, handleAppMove, handleMouseUp, handleSidebarMove, toggleSidebarMode) --, editPortName)
 import           NodeEditor.Event.Event            (Event (UI))
 import           NodeEditor.Event.UI               (UIEvent (AppEvent, ConnectionEvent, NodeEvent, PortEvent, SearcherEvent, SidebarEvent, VisualizationEvent))
 import qualified NodeEditor.React.Event.App        as App
@@ -31,5 +30,5 @@ handle (UI (SidebarEvent       (Sidebar.AddPort      (OutPortRef' portRef)))) = 
 handle (UI (AppEvent           (App.MouseMove        evt _)))                 = Just $ handleAppMove evt
 handle (UI (SidebarEvent       (Sidebar.MouseMove    evt nodeLoc _)))         = Just $ handleSidebarMove evt nodeLoc
 handle (UI (AppEvent           (App.MouseUp          evt)))                   = Just $ continue $ handleMouseUp evt
-handle (UI (SidebarEvent       (Sidebar.EditPortName portRef)))               = Just $ editPortName portRef
+-- handle (UI (SidebarEvent       (Sidebar.EditPortName portRef)))               = Just $ editPortName portRef
 handle _                                                                      = Nothing

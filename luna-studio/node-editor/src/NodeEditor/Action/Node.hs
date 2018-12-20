@@ -5,8 +5,6 @@ module NodeEditor.Action.Node
     , handleMouseLeave
     , nodesDrag
     , startNodeDrag
-    , editExpression
-    , editName
     , snap
     , snapCoord
     ) where
@@ -16,8 +14,6 @@ import           Common.Prelude
 import           LunaStudio.Data.Geometry                   (snap, snapCoord)
 import           NodeEditor.Action.Basic                    (isArgConstructorConnectSrc, updateArgConstructorMode)
 import           NodeEditor.Action.NodeDrag                 (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
-import           NodeEditor.Action.Searcher                 (editExpression)
-import           NodeEditor.Action.Searcher                 (editName)
 import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
 import           NodeEditor.React.Model.Node                (NodeLoc)
 import           NodeEditor.React.Model.Node.ExpressionNode (argConstructorMode, isMouseOver)

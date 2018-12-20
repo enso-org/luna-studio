@@ -1,14 +1,9 @@
 module NodeEditor.Batch.Connector.Commands where
 
-import           Common.Batch.Connector.Connection        (Message (Message),
-                                                           sendRequest,
-                                                           sendUpdate)
-import           Common.Prelude
-import           Data.Map                                 (Map)
+import Common.Prelude
+
 import qualified Data.Map                                 as Map
-import           Data.Set                                 (Set)
 import qualified Data.Text                                as Text
-import           Data.UUID.Types                          (UUID)
 import qualified LunaStudio.API.Atom.OpenFile             as OpenFile
 import qualified LunaStudio.API.Graph.AddConnection       as AddConnection
 import qualified LunaStudio.API.Graph.AddImports          as AddImports
@@ -16,7 +11,6 @@ import qualified LunaStudio.API.Graph.AddNode             as AddNode
 import qualified LunaStudio.API.Graph.AddPort             as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph         as AddSubgraph
 import qualified LunaStudio.API.Graph.AutolayoutNodes     as AutolayoutNodes
-import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import qualified LunaStudio.API.Graph.CollaborationUpdate as CollaborationUpdate
 import qualified LunaStudio.API.Graph.CollapseToFunction  as CollapseToFunction
 import qualified LunaStudio.API.Graph.Copy                as Copy
@@ -39,26 +33,31 @@ import qualified LunaStudio.API.Graph.SetPortDefault      as SetPortDefault
 import qualified LunaStudio.API.Graph.Undo                as Undo
 import qualified LunaStudio.API.Library.CreateLibrary     as CreateLibrary
 import qualified LunaStudio.API.Library.ListLibraries     as ListLibraries
-import           LunaStudio.Data.Connection               (Connection)
-import           LunaStudio.Data.GraphLocation            (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation            as GraphLocation
-import           LunaStudio.Data.Node                     (ExpressionNode)
-import           LunaStudio.Data.NodeLoc                  (NodeLoc, normalise,
-                                                           normalise',
-                                                           normalise_)
 import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
-import           LunaStudio.Data.NodeMeta                 (NodeMeta)
-import           LunaStudio.Data.PortDefault              (PortDefault)
-import           LunaStudio.Data.PortRef                  (AnyPortRef (InPortRef'),
-                                                           InPortRef,
-                                                           OutPortRef)
-import           LunaStudio.Data.Position                 (Position)
-import           LunaStudio.Data.Project                  (LocationSettings,
-                                                           ProjectId)
-import           LunaStudio.Data.Searcher.Node            (LibraryName)
-import           NodeEditor.Batch.Workspace               (Workspace)
-import           NodeEditor.Batch.Workspace               (currentLocation)
-import           NodeEditor.React.Model.Connection        (ConnectionId)
+import qualified LunaStudio.Data.Searcher.Hint.Library    as Library
+
+import Common.Batch.Connector.Connection        (Message (Message), sendRequest,
+                                                 sendUpdate)
+import Data.Map                                 (Map)
+import Data.Set                                 (Set)
+import Data.UUID.Types                          (UUID)
+import LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import LunaStudio.Data.Connection               (Connection)
+import LunaStudio.Data.GraphLocation            (GraphLocation)
+import LunaStudio.Data.Node                     (ExpressionNode)
+import LunaStudio.Data.NodeLoc                  (NodeLoc, normalise, normalise',
+                                                 normalise_)
+import LunaStudio.Data.NodeMeta                 (NodeMeta)
+import LunaStudio.Data.PortDefault              (PortDefault)
+import LunaStudio.Data.PortRef                  (AnyPortRef (InPortRef'),
+                                                 InPortRef, OutPortRef)
+import LunaStudio.Data.Position                 (Position)
+import LunaStudio.Data.Project                  (LocationSettings, ProjectId)
+import NodeEditor.Batch.Workspace               (Workspace)
+import NodeEditor.Batch.Workspace               (currentLocation)
+import NodeEditor.React.Model.Connection        (ConnectionId)
+
 
 
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
@@ -103,7 +102,7 @@ addConnectionRequest src dst workspace = withLibrary workspace $ \location ->
         conv (Left a)  = Left a --TODO normalise
         conv (Right a) = Right $ a ^. NodeLoc.nodeId
 
-addImports :: Set LibraryName -> Workspace -> UUID -> Maybe UUID -> IO ()
+addImports :: Set Library.Name -> Workspace -> UUID -> Maybe UUID -> IO ()
 addImports libs workspace uuid guiID = sendRequest . Message uuid guiID
     . withLibrary workspace AddImports.Request $ libs
 
@@ -193,7 +192,7 @@ saveSettings :: LocationSettings -> Workspace -> UUID -> Maybe UUID -> IO ()
 saveSettings settings workspace uuid guiID = sendRequest $ Message uuid guiID
     $ withLibrary workspace SaveSettings.Request settings
 
-searchNodes :: Set LibraryName -> Workspace -> UUID -> Maybe UUID -> IO ()
+searchNodes :: Set Library.Name -> Workspace -> UUID -> Maybe UUID -> IO ()
 searchNodes libsNames workspace uuid guiID = sendRequest $ Message uuid guiID
     $ withLibrary workspace SearchNodes.Request libsNames
 

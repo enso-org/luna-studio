@@ -10,18 +10,21 @@ import qualified Luna.Pass.Sourcing.Data.Unit      as Unit
 import qualified Luna.Pass.Typing.Data.Typed       as Typed
 import qualified Luna.Runtime.Data.Evaluated       as Runtime
 
-import Control.Concurrent.Async      (Async)
-import Control.Concurrent.MVar       (MVar)
-import Control.Concurrent.STM.TChan  (TChan)
-import Control.Monad.Reader          (ReaderT (ReaderT), ask, runReaderT)
-import Control.Monad.State           (StateT (StateT), get, put, runStateT)
-import Data.Map.Lazy                 (Map)
-import Empire.Data.AST               (NodeRef)
-import Empire.Data.Graph             (ClsGraph, CommandState (CommandState))
-import Empire.Data.Library           (Library)
-import LunaStudio.API.AsyncUpdate    (AsyncUpdate)
-import LunaStudio.Data.GraphLocation (GraphLocation)
-import LunaStudio.Data.Searcher.Node (LibrariesHintsMap)
+import Control.Concurrent.Async              (Async)
+import Control.Concurrent.MVar               (MVar)
+import Control.Concurrent.STM.TChan          (TChan)
+import Control.Monad.Reader                  (ReaderT (ReaderT), ask,
+                                              runReaderT)
+import Control.Monad.State                   (StateT (StateT), get, put,
+                                              runStateT)
+import Data.Map.Lazy                         (Map)
+import Empire.Data.AST                       (NodeRef)
+import Empire.Data.Graph                     (ClsGraph,
+                                              CommandState (CommandState))
+import Empire.Data.Library                   (Library)
+import LunaStudio.API.AsyncUpdate            (AsyncUpdate)
+import LunaStudio.Data.GraphLocation         (GraphLocation)
+import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 
 
 type Error = String
@@ -60,7 +63,7 @@ makeLenses ''TCRequest
 data CommunicationEnv = CommunicationEnv
     { _updatesChan   :: TChan AsyncUpdate
     , _typecheckChan :: MVar TCRequest
-    , _searcherHints :: MVar LibrariesHintsMap
+    , _searcherHints :: MVar SearcherLibraries
     } deriving Generic
 makeLenses ''CommunicationEnv
 

@@ -1,77 +1,99 @@
-module NodeEditor.React.Model.Searcher
-    ( module NodeEditor.React.Model.Searcher
-    , module X
-    ) where
+-- INFO FOR @pmlodawski from dead soldier:
+-- The biggest change here is selecetedPosition changed to Maybe Int type.
+-- I was just thinking about it logically and this model looks more natural to
+-- me and also gets rid of +/-1 when referring to the list or to selectedPosition
+-- field. Simply now `selected input = selected Nothing` and that is it. 
+-- Also I moved results to top level of searcher, because for some reason we
+-- call it searcher, we expect it to search some results. The fact that we are
+-- not doing it now for port or node names is because we do not have good hints
+-- there yet (or you should consider to introduce new datatype Input and don't
+-- run them as searcher).
+-- All other changes comes directly from API change or are simple improvements.
 
-import NodeEditor.React.Model.Searcher.Hint  as X
-import NodeEditor.React.Model.Searcher.Input as X (Input (DividedInput, RawInput),
-                                                   _DividedInput, _RawInput)
-import NodeEditor.React.Model.Searcher.Mode  as X hiding (connectedPortRef,
-                                                   documentationVisualization)
-import Searcher.Engine                       as X (IsMatch, Match, Range,
-                                                   SearcherData)
+{-# LANGUAGE Strict #-}
+module NodeEditor.React.Model.Searcher where
 
 import Common.Prelude
 
-import qualified Data.Text                            as Text
-import qualified Data.UUID.Types                      as UUID
-import qualified Data.Vector.Unboxed                  as Vector
-import qualified Luna.Syntax.Text.Lexer               as Lexer
-import qualified LunaStudio.Data.PortRef              as PortRef
-import qualified NodeEditor.Event.Shortcut            as Shortcut
-import qualified NodeEditor.React.Model.Searcher.Mode as Mode
+import qualified LunaStudio.Data.NodeLoc                   as NodeLoc
+import qualified NodeEditor.React.Model.Searcher.Mode      as Mode
+import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
 
-import Data.Text32                          (Text32)
-import LunaStudio.Data.NodeLoc              (NodeId, NodeLoc)
-import LunaStudio.Data.Port                 (AnyPortId)
-import LunaStudio.Data.PortRef              (OutPortRef)
-import LunaStudio.Data.Position             (Position)
-import NodeEditor.React.Model.Visualization (RunningVisualization)
+import LunaStudio.Data.NodeLoc               (NodeLoc)
+import NodeEditor.React.Model.Searcher.Hint  (Hint)
+import NodeEditor.React.Model.Searcher.Input (Input)
+import NodeEditor.React.Model.Searcher.Mode  (Mode)
+import Searcher.Engine.Data.Result           (Result)
 
+
+
+----------------------
+-- === Searcher === --
+----------------------
+
+
+-- === Definition === --
 
 data Searcher = Searcher
-    { _selected      :: Int
-    , _searcherMode  :: Mode
-    , _input         :: Input
-    , _replaceInput  :: Bool
-    , _rollbackReady :: Bool
-    , _waitingForTc  :: Bool
-    , _searcherError :: Maybe Text
+    { _input            :: Input
+    , _replaceInput     :: Bool
+    , _results          :: [Result Hint]
+    , _selectedPosition :: Maybe Int
+    , _mode             :: Mode
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Searcher
 
+instance NFData Searcher
 
-class SearcherView s where
-    selectedPosition :: Lens' s Int
-    mode             :: Lens' s Mode
-    inputText        :: Getter s Text
-    hints            :: Getter s [Hint]
-    hints = to $ getHints . view mode
-    selectedHint     :: Getter s (Maybe Hint)
-    selectedHint = to $ \s ->
-        s ^? hints . ix (s ^. selectedPosition - 1)
-    connectedPortRef :: Getter s (Maybe OutPortRef)
-    connectedPortRef = to (^. mode . Mode.connectedPortRef)
-    documentationVisualization :: Lens' s (Maybe RunningVisualization)
-    documentationVisualization = mode . Mode.documentationVisualization
 
-instance SearcherView Searcher where
-    selectedPosition = selected
-    mode             = searcherMode
-    inputText        = to $ convert . view input
+selectedResult :: Getter Searcher (Maybe (Result Hint))
+selectedResult = to $ \s -> let
+    mayPosition = s ^. selectedPosition
+    atPosition  = \p -> s ^? results . ix p
+    in join $! atPosition <$> mayPosition
+{-# INLINE selectedResult #-}
 
-getHints :: Mode -> [Hint]
-getHints (CommandSearcher m) = CommandHint <$> m
-getHints (NodeSearcher    m) = NodeHint    <$> m ^. nodes
+inputText :: Getter Searcher Text
+inputText = input . to convert
+{-# INLINE inputText #-}
 
-getHint :: Int -> Mode -> Maybe Hint
-getHint i m = m ^? to getHints . ix i
 
-takeHints :: Int -> Mode -> Mode
-takeHints limit (CommandSearcher cs) = CommandSearcher $ take limit cs
-takeHints limit (NodeSearcher    ns) = NodeSearcher $ ns & nodes %~ take limit
+------------------------
+-- === Properties === --
+------------------------
 
-dropHints :: Int -> Mode -> Mode
-dropHints offset (CommandSearcher cs) = CommandSearcher $ drop offset cs
-dropHints offset (NodeSearcher    ns) = NodeSearcher $ ns & nodes %~ drop offset
+
+-- === Definition === --
+
+data Properties = Properties
+    { _searcher              :: Searcher
+    , _visualizerLibraryPath :: FilePath
+    } deriving (Eq, Generic, Show)
+
+makeLenses ''Properties
+
+instance NFData Properties
+
+
+-- === API === --
+
+visibleHintsNumber :: Int
+visibleHintsNumber = 10
+{-# INLINE visibleHintsNumber #-}
+
+mkProperties :: Searcher -> FilePath -> Properties
+mkProperties = \s vlp -> let
+    selected        = fromJust def $! s ^. selectedPosition
+    limitResults    = \r -> take visibleHintsNumber $! drop selected r
+    visibleSearcher = s & results %~ limitResults
+    in Properties visibleSearcher vlp
+{-# INLINE mkProperties #-}
+
+isRelated :: NodeLoc -> Properties -> Bool
+isRelated nl s = let
+    nlIdPath = NodeLoc.toNodeIdList nl
+    mayNl    = s ^? searcher . mode . Mode._Node . Node.nodeLoc
+    sIdPath  = maybe mempty NodeLoc.toNodeIdList mayNl
+    in isPrefixOf nlIdPath sIdPath
+{-# INLINE isRelated #-}
