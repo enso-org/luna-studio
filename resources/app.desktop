@@ -3,3 +3,4 @@ Name=luna-studio
 Exec=bin/public/luna-studio/luna-studio %F
 Icon=luna-studio
 Type=Application
+Categories=luna-studio;development
