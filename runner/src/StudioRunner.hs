@@ -123,9 +123,21 @@ instance Monad m => MonadHostConfig RunnerConfig 'Windows arch m where
         reconfig cfg = cfg & atomBinPath .~ ("Atom" </> "atom.exe")
 
 -- path helpers --
-scriptDir, mainAppDir :: MonadIO m => m FilePath
-scriptDir  = (directory . decodeString) <$> liftIO getExecutablePath
-mainAppDir = (parent . parent . parent) <$> scriptDir
+runnerDir :: MonadIO m => m FilePath
+runnerDir = (directory . decodeString) <$> liftIO getExecutablePath
+
+mainAppDir :: MonadIO m => m FilePath
+mainAppDir = do
+    runnerDir <- runnerDir
+    -- Due to certain issues, two copies of luna-studio might be shipped:
+    -- `bin/main/luna-studio` and `bin/public/luna-studio/luna-studio`
+    -- Thus, we need to check where are we, to say where is the package root.
+    -- This workaround should be removed once this issue is addressed:
+    -- https://github.com/luna/luna-manager/issues/226
+    let stepUp = if dirname runnerDir == "main"
+        then parent . parent          -- drop bin/main/
+        else parent . parent . parent -- drop bin/public/luna-studio/
+    pure $ stepUp runnerDir
 
 mainHomeFolder ::  MonadRun m => m FilePath
 mainHomeFolder = do
