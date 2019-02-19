@@ -58,7 +58,6 @@ import NodeEditor.Action.Basic.RenameNode          as X (localRenameNode,
 import NodeEditor.Action.Basic.RenamePort          as X (localRenamePort,
                                                          renamePort)
 import NodeEditor.Action.Basic.Scene               as X (getScene, updateScene)
-import NodeEditor.Action.Basic.Searcher            as X (setImportedLibraries)
 import NodeEditor.Action.Basic.SelectNode          as X (dropSelectionHistory,
                                                          modifySelectionHistory,
                                                          selectAll, selectNode,
@@ -100,6 +99,12 @@ import NodeEditor.Action.Basic.UpdateNode          as X (NodeUpdateModification 
                                                          localUpdateOrAddOutputNode,
                                                          localUpdateOutputNode)
 import NodeEditor.Action.Basic.UpdateNodeValue     as X (updateNodeValueAndVisualization)
+import NodeEditor.Action.Basic.UpdateSearcherHints as X (localAddSearcherHints,
+                                                         localClearSearcherHints,
+                                                         localUpdateSearcherHints,
+                                                         selectHint,
+                                                         setImportedLibraries,
+                                                         updateDocumentation)
 import NodeEditor.Action.State.Model               as X (isArgConstructorConnectSrc,
                                                          updateAllPortsMode,
                                                          updateArgConstructorMode,

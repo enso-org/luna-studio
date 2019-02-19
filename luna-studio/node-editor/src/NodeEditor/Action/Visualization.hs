@@ -5,7 +5,6 @@ import Common.Prelude
 import qualified Data.Map                             as Map
 import qualified NodeEditor.React.Model.Searcher      as Searcher
 import qualified NodeEditor.React.Model.Visualization as Vis
-import qualified NodeEditor.Action.Basic.Searcher     as Searcher
 
 import Common.Action.Command                      (Command)
 import JS.Visualizers                             (notifyStreamRestart,
@@ -97,12 +96,13 @@ instance Action (Command State) VisualizationActive where
 instance Action (Command State) DocVisualizationActive where
     begin action = do
         beginActionWithKey docVisualizationActiveAction action
-        let visMode = action ^. docVisualizationActiveSelectedMode
-        Searcher.updateVisualizationMode visMode
+        modifySearcher $ Searcher.documentationVisualization . _Just
+            . visualizationMode .= action ^. docVisualizationActiveSelectedMode
     continue     = continueActionWithKey docVisualizationActiveAction
     update       = updateActionWithKey   docVisualizationActiveAction
     end action   = do
-        Searcher.updateVisualizationMode def
+        modifySearcher $ Searcher.documentationVisualization . _Just
+            . visualizationMode .= def
         removeActionFromState docVisualizationActiveAction
         when (action ^. docVisualizationActiveTriggeredByVis) $ begin $ action
             & docVisualizationActiveSelectedMode   .~ Focused
