@@ -72,10 +72,10 @@ oniguruma_path = get_path('oniguruma')
 
 
 atom_packages = {
-    'luna-syntax': 'git@github.com:luna/luna-studio-syntax-theme.git',
-    'luna-dark-ui': 'git@github.com:luna/luna-studio-ui-theme.git',
-    'luna-dpi': 'git@github.com:luna/luna-studio-dpi.git',
-    'settings-view': 'git@github.com:luna/atom-settings-view.git',
+    'luna-syntax': 'https://github.com/luna/luna-studio-syntax-theme.git',
+    'luna-dark-ui': 'https://github.com/luna/luna-studio-ui-theme.git',
+    'luna-dpi': 'https://github.com/luna/luna-studio-dpi.git',
+    'settings-view': 'https://github.com/luna/atom-settings-view.git',
 }
 
 #########################################################

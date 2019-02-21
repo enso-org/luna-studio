@@ -9,30 +9,30 @@ local-bin-path:
 packages:
 - location: ./
 - extra-dep: true
-  location: {commit: 64179d2492e68016fb34d09b6faf966f3b9f91bd, git: 'git@github.com:luna/prologue.git'}
+  location: {commit: 64179d2492e68016fb34d09b6faf966f3b9f91bd, git: 'https://github.com/luna/prologue.git'}
 - extra-dep: true
-  location: {commit: 4d4914483e7f207c94fcadf8f7f2736367165451, git: 'git@github.com:luna/container.git'}
+  location: {commit: 4d4914483e7f207c94fcadf8f7f2736367165451, git: 'https://github.com/luna/container.git'}
 - extra-dep: true
-  location: {commit: 2371dec86a94f2e50ad8bdb8cad4e9afa2a9291a, git: 'git@github.com:luna/convert.git'}
+  location: {commit: 2371dec86a94f2e50ad8bdb8cad4e9afa2a9291a, git: 'https://github.com/luna/convert.git'}
 - extra-dep: true
-  location: {commit: 62aebd5ecb6ea873ce8db4cc230d156126cd82ee, git: 'git@github.com:luna/data-layer.git'}
+  location: {commit: 62aebd5ecb6ea873ce8db4cc230d156126cd82ee, git: 'https://github.com/luna/data-layer.git'}
 - extra-dep: true
-  location: {commit: 7a0eb39c82acb212a50c028143458ae7ce93745c, git: 'git@github.com:luna/functor-utils.git'}
+  location: {commit: 7a0eb39c82acb212a50c028143458ae7ce93745c, git: 'https://github.com/luna/functor-utils.git'}
 - extra-dep: true
-  location: {commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56, git: 'git@github.com:luna/impossible.git'}
+  location: {commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56, git: 'https://github.com/luna/impossible.git'}
 - extra-dep: true
-  location: {commit: 3bd224d169262af9f473e9b1bd691fd12caec8e2, git: 'git@github.com:luna/lens-utils.git'}
+  location: {commit: 3bd224d169262af9f473e9b1bd691fd12caec8e2, git: 'https://github.com/luna/lens-utils.git'}
 - extra-dep: true
-  location: {commit: d5c2a68df9b34b8370c98a84f8bcaf311869daa9, git: 'git@github.com:luna/typelevel.git'}
+  location: {commit: d5c2a68df9b34b8370c98a84f8bcaf311869daa9, git: 'https://github.com/luna/typelevel.git'}
 - extra-dep: true
-  location: {commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae, git: 'git@github.com:luna/data-construction.git'}
+  location: {commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae, git: 'https://github.com/luna/data-construction.git'}
 - extra-dep: true
-  location: {commit: c20f35c8e2f25fd84df385e8646b125d9fca8ac4, git: 'git@github.com:luna/data-repr.git'}
+  location: {commit: c20f35c8e2f25fd84df385e8646b125d9fca8ac4, git: 'https://github.com/luna/data-repr.git'}
 - extra-dep: true
-  location: {commit: 0f86d4dff7192db7b4f4001f427126a889ff311f, git: 'git@github.com:luna/data-rtuple.git'}
+  location: {commit: 0f86d4dff7192db7b4f4001f427126a889ff311f, git: 'https://github.com/luna/data-rtuple.git'}
 - extra-dep: true
-  location: {commit: adb894846d34ceaa005961bd8fe676023cf1b036, git: 'git@github.com:luna/data-prop.git'}
+  location: {commit: adb894846d34ceaa005961bd8fe676023cf1b036, git: 'https://github.com/luna/data-prop.git'}
 - extra-dep: true
-  location: {commit: ffd97a6ec0eab065cebf06663a37362c1e13a05b, git: 'git@github.com:luna/monoid'}
+  location: {commit: ffd97a6ec0eab065cebf06663a37362c1e13a05b, git: 'https://github.com/luna/monoid'}
 - extra-dep: true
-  location: {commit: 896f4472b64ab23e610db74991de0af3b1ec0e17, git: 'git@github.com:luna/dependent-state.git'}
+  location: {commit: 896f4472b64ab23e610db74991de0af3b1ec0e17, git: 'https://github.com/luna/dependent-state.git'}

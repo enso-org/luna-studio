@@ -62,7 +62,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 1f5f7194f371ea17df3c2f56f1c85a8eb6f3a320, git: 'git@github.com:luna/luna.git'}
+  location: {commit: 1f5f7194f371ea17df3c2f56f1c85a8eb6f3a320, git: 'https://github.com/luna/luna.git'}
   subdirs:
     - core
     - syntax/text/parser
@@ -97,8 +97,8 @@ packages:
     - lib/type-cache
     - lib/typelevel
 - extra-dep: true
-  location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'git@github.com:luna/visualization-api.git'}
+  location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'https://github.com/luna/visualization-api.git'}
 - extra-dep: true
-  location: {commit: a846dd3481b24ff1933db1e121db9c511f4c6edf, git: 'git@github.com:luna/fuzzy-text.git'}
+  location: {commit: a846dd3481b24ff1933db1e121db9c511f4c6edf, git: 'https://github.com/luna/fuzzy-text.git'}
 - extra-dep: true
-  location: {commit: 4c71b554d738021b51723dbec6d1f1c823e73579, git: 'git@github.com:TomMD/entropy.git'}
+  location: {commit: 4c71b554d738021b51723dbec6d1f1c823e73579, git: 'https://github.com/TomMD/entropy.git'}
