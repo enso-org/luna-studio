@@ -3,9 +3,10 @@ module LunaStudio.Data.Searcher.Hint where
 
 import Prologue
 
-import Data.Aeson  (ToJSON)
-import Data.Binary (Binary)
-import Data.Text   (Text)
+import Control.Lens                  (Getter, to)
+import Data.Aeson                    (ToJSON)
+import Data.Binary                   (Binary)
+import Data.Text                     (Text)
 import Searcher.Engine.Data.Database (SearcherData (text, fixedScore))
 
 

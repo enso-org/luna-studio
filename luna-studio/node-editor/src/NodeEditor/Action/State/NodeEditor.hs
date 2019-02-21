@@ -9,7 +9,6 @@ import qualified Data.Map.Lazy                               as Map
 import qualified Data.Set                                    as Set
 import qualified JS.Visualizers                              as JS
 import qualified LunaStudio.Data.PortRef                     as PortRef
-import qualified LunaStudio.Data.Searcher.Node               as NS
 import qualified NodeEditor.Action.Batch                     as Batch
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
 import qualified NodeEditor.React.Model.Layout               as Scene
@@ -17,6 +16,9 @@ import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
 import qualified NodeEditor.React.Model.NodeEditor           as NE
 import qualified NodeEditor.React.Model.Port                 as Port
 import qualified NodeEditor.React.Model.Searcher             as Searcher
+import qualified NodeEditor.React.Model.Searcher.Hint.Node   as SearcherHint
+import qualified NodeEditor.React.Model.Searcher.Mode.Node   as SearcherModeNode
+import qualified NodeEditor.React.Model.Searcher.Mode        as SearcherMode
 import qualified NodeEditor.React.Model.Visualization        as Visualization
 import qualified NodeEditor.State.Global                     as Global
 
@@ -34,7 +36,7 @@ import LunaStudio.Data.PortRef                    (AnyPortRef (..),
                                                    InPortRef (..),
                                                    OutPortRef (..))
 import LunaStudio.Data.Position                   (Position)
-import LunaStudio.Data.Searcher.Node              (LibrariesHintsMap)
+{-import LunaStudio.Data.Searcher.Node              (LibrariesHintsMap)-}
 import LunaStudio.Data.TypeRep                    (TypeRep (TStar),
                                                    toConstructorRep)
 import LunaStudio.Data.Visualizer                 (applyType,
@@ -80,7 +82,7 @@ import NodeEditor.React.Model.Visualization       (ExternalVisualizers,
                                                    visualizerId, visualizerType,
                                                    _InternalVisualizer)
 import NodeEditor.State.Global                    (State, internalVisualizers,
-                                                   nodeSearcherData,
+                                                   searcherDatabase,
                                                    preferedVisualizers,
                                                    visualizers)
 
@@ -324,11 +326,14 @@ setScreenTransform :: CameraTransformation -> Command State ()
 setScreenTransform camera
     = modifyNodeEditor $ NE.layout . Scene.screenTransform .= camera
 
-getNodeSearcherData :: Command State LibrariesHintsMap
-getNodeSearcherData = getAvailableImports <$> use nodeSearcherData where
-    getAvailableImports nsd = Map.filterWithKey
-        (\k _ -> Set.member k $ nsd ^. NS.importedLibraries)
-        $ nsd ^. NS.libraries
+{-getNodeSearcherData :: Command State LibrariesHintsMap-}
+{-getNodeSearcherData = getAvailableImports <$> use nodeSearcherData where-}
+    {-getAvailableImports nsd = Map.filterWithKey-}
+        {-(\k _ -> Set.member k $ nsd ^. NS.importedLibraries)-}
+        {-$ nsd ^. NS.libraries-}
+
+getNodeSearcherData :: Command State SearcherHint.Database
+getNodeSearcherData = use Global.searcherDatabase
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
@@ -373,9 +378,9 @@ getLocalFunctions = do
     functionsNames <- toList . Set.fromList
         . fmap (view Port.name) . concatMap outPortsList <$> getAllNodes
     let getLambdaArgsNames s = fromMaybe mempty
-            $ s ^? Searcher.mode . Searcher._NodeSearcher
-                . Searcher.modeData . Searcher._ExpressionMode
-                . Searcher.argumentsNames
+            $ s ^? Searcher.mode . SearcherMode._Node
+                . SearcherModeNode.mode . SearcherModeNode._ExpressionMode
+                . SearcherModeNode.arguments
     lambdaArgsNames <- maybe mempty getLambdaArgsNames <$> getSearcher
     pure $ functionsNames <> lambdaArgsNames
 

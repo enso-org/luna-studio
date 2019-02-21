@@ -72,7 +72,7 @@ instance SearcherData Node where
         importBonus = if libImported then libraryImportedBonus else 0
         in fixed + importBonus
 instance SearcherHint Node where
-    prefix        = kind . className . to (fromJust mempty)
+    prefix        = kind . className . to (fromMaybe mempty)
     documentation = documentationText
 
 

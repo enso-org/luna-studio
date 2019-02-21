@@ -23,6 +23,7 @@ import LunaStudio.Data.NodeLoc               (NodeLoc)
 import NodeEditor.React.Model.Searcher.Hint  (Hint)
 import NodeEditor.React.Model.Searcher.Input (Input)
 import NodeEditor.React.Model.Searcher.Mode  (Mode)
+import NodeEditor.React.Model.Visualization  (RunningVisualization)
 import Searcher.Engine.Data.Result           (Result)
 
 
@@ -58,6 +59,9 @@ inputText :: Getter Searcher Text
 inputText = input . to convert
 {-# INLINE inputText #-}
 
+documentationVisualization :: Traversal' Searcher RunningVisualization
+documentationVisualization = mode . Mode._Node . Node.documentationVisualization . _Just
+
 
 ------------------------
 -- === Properties === --
@@ -84,7 +88,7 @@ visibleHintsNumber = 10
 
 mkProperties :: Searcher -> FilePath -> Properties
 mkProperties = \s vlp -> let
-    selected        = fromJust def $! s ^. selectedPosition
+    selected        = fromMaybe def $! s ^. selectedPosition
     limitResults    = \r -> take visibleHintsNumber $! drop selected r
     visibleSearcher = s & results %~ limitResults
     in Properties visibleSearcher vlp

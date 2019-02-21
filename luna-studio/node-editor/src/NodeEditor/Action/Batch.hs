@@ -3,11 +3,12 @@ module NodeEditor.Action.Batch  where
 import Common.Prelude
 import Prelude (error)
 
-import qualified Data.Map                            as Map
-import qualified Data.Set                            as Set
-import qualified LunaStudio.API.Graph.AddConnection  as AddConnection
-import qualified LunaStudio.API.Graph.SetNodesMeta   as SetNodesMeta
-import qualified NodeEditor.Batch.Connector.Commands as BatchCmd
+import qualified Data.Map                              as Map
+import qualified Data.Set                              as Set
+import qualified LunaStudio.API.Graph.AddConnection    as AddConnection
+import qualified LunaStudio.API.Graph.SetNodesMeta     as SetNodesMeta
+import qualified LunaStudio.Data.Searcher.Hint.Library as Library
+import qualified NodeEditor.Batch.Connector.Commands   as BatchCmd
 
 import Common.Action.Command             (Command)
 import Data.Map                          (Map)
@@ -23,7 +24,6 @@ import LunaStudio.Data.PortRef           (AnyPortRef (InPortRef', OutPortRef'),
                                           nodeLoc)
 import LunaStudio.Data.Position          (Position)
 import LunaStudio.Data.Project           (LocationSettings)
-import LunaStudio.Data.Searcher.Node     (LibraryName)
 import NodeEditor.Action.State.App       (getWorkspace)
 import NodeEditor.Action.UUID            (registerRequest)
 import NodeEditor.Batch.Workspace        (Workspace)
@@ -91,10 +91,10 @@ addConnectionRequest src dst = do
         Just w -> pure $ BatchCmd.addConnectionRequest src dst w
         _      -> error "no workspace"
 
-addImport :: LibraryName -> Command State ()
+addImport :: Library.Name -> Command State ()
 addImport = addImports . Set.singleton
 
-addImports :: Set LibraryName -> Command State ()
+addImports :: Set Library.Name -> Command State ()
 addImports = withWorkspace . BatchCmd.addImports
 
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Command State ()
@@ -162,7 +162,7 @@ paste = withWorkspace .: BatchCmd.paste
 saveSettings :: LocationSettings -> Command State ()
 saveSettings = withWorkspace . BatchCmd.saveSettings
 
-searchNodes :: Set LibraryName -> Command State ()
+searchNodes :: Set Library.Name -> Command State ()
 searchNodes = withWorkspace . BatchCmd.searchNodes
 
 setNodeExpression :: NodeLoc -> Text -> Command State ()

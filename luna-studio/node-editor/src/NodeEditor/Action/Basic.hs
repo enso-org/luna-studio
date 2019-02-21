@@ -103,6 +103,8 @@ import NodeEditor.Action.Basic.UpdateSearcherHints as X (localAddSearcherHints,
                                                          localClearSearcherHints,
                                                          localUpdateSearcherHints,
                                                          selectHint,
+                                                         selectNextHint,
+                                                         selectPreviousHint,
                                                          setImportedLibraries,
                                                          updateDocumentation)
 import NodeEditor.Action.State.Model               as X (isArgConstructorConnectSrc,
