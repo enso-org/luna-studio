@@ -1,3 +1,12 @@
+#!/usr/bin/env stack
+{- stack
+  script
+  --resolver lts-11.22
+  --package base,exceptions,shelly,text,directory,system-filepath
+-}
+
+-- ^^^ NOTE: resolvers from lts-12 onwards don' work, because shelly 1.8.1 is broken on Windows
+
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric #-}
