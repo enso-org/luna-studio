@@ -25,12 +25,7 @@ For a tutorial, documentation, explanation of the ideas behind Luna please visit
 ## Hacking on Luna Studio
 Luna's build system is nice and simple, allowing you to bootstrap the compiler
 as long as you have an installation of 
-
-[The Haskell Stack](https://docs.haskellstack.org/en/stable/README/) and the
-Haskell parser generator `happy`. 
-
-You can install the latter just by running `stack install happy`, which should
-build the tool for your system and put it in your `stack` binary folder. 
+[The Haskell Stack](https://docs.haskellstack.org/en/stable/README/). 
 
 ### System Requirements
 While Luna Studio supports Windows as a target operating system, it is not 
