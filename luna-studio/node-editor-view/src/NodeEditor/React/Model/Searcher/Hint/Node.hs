@@ -117,15 +117,19 @@ fromClass className klass libInfo = constructorsHints <> methodsHints where
 fromLibrary :: Library -> Library.Info -> [Node]
 fromLibrary lib libInfo = functionsHints <> classesHints where
     functionsHints = flip fromFunction libInfo <$> lib ^. Library.functions
-    appendClass acc className klass = acc <> fromClass className klass libInfo
-    classesHints = Map.foldlWithKey appendClass mempty $! lib ^. Library.classes
+    {-appendClass acc className klass = acc <> fromClass className klass libInfo-}
+    processClass className klass = fromClass className klass libInfo
+    {-classesHints = Map.foldlWithKey appendClass mempty $! lib ^. Library.classes-}
+    classesHints = concat $ fmap (uncurry processClass) $ Map.toList $ lib ^. Library.classes
 {-# INLINE fromLibrary #-}
 
 fromSearcherLibraries :: SearcherLibraries -> Set Library.Name -> [Node]
 fromSearcherLibraries libs importedLibs = let
     toLibInfo libName = Library.Info libName $! Set.member libName importedLibs
-    appendLib acc libName lib = acc <> fromLibrary lib (toLibInfo libName)
-    in Map.foldlWithKey appendLib mempty libs
+    {-appendLib acc libName lib = acc <> fromLibrary lib (toLibInfo libName)-}
+    processLib libName lib = fromLibrary lib (toLibInfo libName)
+    {-in Map.foldlWithKey appendLib mempty libs-}
+    in concat $ fmap (uncurry processLib) $ Map.toList libs
 {-# INLINE fromSearcherLibraries #-}
 
 

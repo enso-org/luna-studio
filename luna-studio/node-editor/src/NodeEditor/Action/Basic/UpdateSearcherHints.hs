@@ -25,6 +25,9 @@ import qualified Searcher.Engine.Data.Result                  as Result
 import qualified Searcher.Engine.Search                       as Search
 
 import Common.Action.Command              (Command)
+import Common.Debug                       (timeAction)
+import Control.DeepSeq                    (force)
+import Control.Exception.Base             (evaluate)
 import Data.Map                           (Map)
 import Data.Set                           (Set)
 import Data.Text                          (Text)
@@ -112,7 +115,7 @@ localUpdateSearcherHints :: Command State ()
 localUpdateSearcherHints = localUpdateSearcherHints' >> updateDocumentation
 
 localUpdateSearcherHints' :: Command State ()
-localUpdateSearcherHints' = do -- return () -- unlessM inTopLevelBreadcrumb $ do
+localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ do -- return () -- unlessM inTopLevelBreadcrumb $ do
     nsData        <- use Global.searcherDatabase
     {-localFunctions <- getLocalFunctions-}
     {-let nsData :: NodeSearcherData-}
@@ -121,11 +124,12 @@ localUpdateSearcherHints' = do -- return () -- unlessM inTopLevelBreadcrumb $ do
                 {-localFunctionsLibraryName-}
                 {-(Searcher.mkLocalFunctionsLibrary localFunctions)-}
             {-& Searcher.importedLibraries %~ Set.insert localFunctionsLibraryName-}
-    modifySearcher $ do
-        mayQuery <- preuse $ Searcher.input . Input._DividedInput
-        let query = fromMaybe def mayQuery
-            results = search query nsData Nothing
-        Searcher.results .= results
+    withJustM getSearcher $ \searcher -> do
+        let mayQuery = searcher ^? Searcher.input . Input._DividedInput
+            query    = fromMaybe def mayQuery
+        results <- timeAction "search" $ liftIO $ evaluate
+                                       $ force $ search query nsData Nothing
+        modifySearcher $ Searcher.results .= results
         {-let updateCommands s = do-}
                 {-let hints input = CommandSearcher.search-}
                         {-(input ^. Input.query)-}

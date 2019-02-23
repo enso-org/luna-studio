@@ -32,11 +32,8 @@ modifyApp action = do
 renderIfNeeded :: Command State ()
 renderIfNeeded = do
     whenM (use $ ui . renderNeeded) $ timeIt "render" $ do
-        print "RIN 1"
         withApp commit
-        print "RIN 2"
         ui . renderNeeded .= False
-        print "RIN 3"
 
 setBreadcrumbs :: Breadcrumb (Named BreadcrumbItem) -> Command State ()
 setBreadcrumbs bc = modifyApp $ breadcrumbs .= bc

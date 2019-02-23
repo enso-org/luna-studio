@@ -57,7 +57,7 @@ ghc-options:
   - -Wall
   - -O2
   - -fsimpl-tick-factor=1000
-  # - -DDEBUG_PERF
+  - -DDEBUG_PERF
 
 dependencies:
   - "base >= 4.9 && < 4.10"

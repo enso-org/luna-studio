@@ -54,6 +54,9 @@ import qualified Searcher.Engine.Data.Database                as Database
 import qualified Searcher.Engine.Data.Result                  as Result
 
 import Common.Action.Command                 (Command)
+import Common.Debug                          (timeAction)
+import Control.DeepSeq                       (force)
+import Control.Exception.Base                (evaluate)
 import Data.Set                              (Set)
 import LunaStudio.Data.Matrix                (invertedTranslationMatrix,
                                               translationMatrix)
@@ -110,7 +113,10 @@ updateVisualizationMode visMode = NodeEditor.modifySearcher
 
 updateDatabase :: SearcherLibraries -> Command State ()
 updateDatabase libs = do
-    Global.searcherDatabase %= NodeHint.insertSearcherLibraries libs
+    oldHints <- use Global.searcherDatabase
+    newHints <- timeAction "Insert Searcher Hints" $ liftIO
+        $ evaluate $ force $ NodeHint.insertSearcherLibraries libs oldHints
+    Global.searcherDatabase .= newHints
     preserveSelection searchHints
     updateDocumentation
 {-# INLINE updateDatabase #-}

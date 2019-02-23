@@ -26,6 +26,7 @@ import qualified Searcher.Engine.Data.Result                as Result
 {-import qualified Searcher.Engine.Data.Symbol.Library        as Library-}
 
 import Common.Action.Command                (Command)
+import Common.Debug                         (timeAction)
 import Common.Report                        (warning)
 import Control.Arrow                        ((&&&))
 import JS.Visualizers                       (registerVisualizerFrame)

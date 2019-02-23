@@ -2,13 +2,13 @@
 module Debug.Safe
 ( (<!!>)
 , timeIt
+, withLevel
 ) where
 
 import           Prologue hiding (print, putStrLn, printLn)
 
 import           Debug.Console
 
-#ifdef DEBUG_PERF
 import           Control.Concurrent
 import           Data.IORef         (IORef)
 import qualified Data.IORef         as IORef
@@ -17,9 +17,9 @@ import           System.CPUTime     (getCPUTime)
 import           System.IO.Unsafe   (unsafePerformIO)
 
 
-{-# NOINLINE levelRef #-}
 levelRef :: IORef Int
 levelRef = unsafePerformIO $ IORef.newIORef 0
+{-# NOINLINE levelRef #-}
 
 withLevel :: MonadIO m => (Int -> m a) -> m a
 withLevel action = do
@@ -28,7 +28,6 @@ withLevel action = do
     r <- action level
     liftIO $ IORef.writeIORef levelRef level
     pure r
-#endif
 
 {-# INLINE timeIt #-}
 timeIt :: MonadIO m => String -> m a -> m a
