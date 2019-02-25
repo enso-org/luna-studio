@@ -6,6 +6,7 @@ import qualified Data.Text                                  as Text
 import qualified JS.Searcher                                as Searcher
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import qualified LunaStudio.Data.PortRef                    as PortRef
+import qualified LunaStudio.Data.Searcher.Hint.Library      as Library
 import qualified LunaStudio.Data.TypeRep                    as TypeRep
 import qualified NodeEditor.Action.Basic                    as Basic
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
@@ -14,6 +15,7 @@ import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import qualified NodeEditor.React.Model.Port                as Port
 import qualified NodeEditor.React.Model.Searcher            as Searcher
 import qualified NodeEditor.React.Model.Searcher.Hint       as Hint
+import qualified NodeEditor.React.Model.Searcher.Hint.Node  as NodeHint
 import qualified NodeEditor.React.Model.Searcher.Input      as Input
 import qualified NodeEditor.React.Model.Searcher.Mode       as Mode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeMode
@@ -391,9 +393,9 @@ withHint entryNumber perform action = withJustM getSearcher $ \s ->
         newSelected = max selected 1 + hintNumber
     in whenM (selectHint newSelected action) $ perform action
 
-includeImport :: a {- Result Hint -} -> Command State ()
-includeImport _ = pure () --(view (Match.hint . Symbol.library) -> lib) =
-    {-unless (lib ^. Library.imported) $ addImport (lib ^. Library.name)-}
+includeImport :: NodeHint.Node -> Command State ()
+includeImport hint = let lib = hint ^. NodeHint.library
+    in unless (lib ^. Library.imported) $ addImport (lib ^. Library.name)
 
 selectHint :: Int -> Searcher -> Command State Bool
 selectHint i _ = do
