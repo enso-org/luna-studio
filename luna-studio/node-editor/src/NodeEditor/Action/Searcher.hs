@@ -102,19 +102,6 @@ mkDocumentationVisualization = getUUID >>= \uuid -> do
         liftIO $ registerVisualizerFrame uuid
         pure $ RunningVisualization uuid def vp
 
-emptyInputError :: Mode -> Text
-emptyInputError m = fieldName <> errSuffix where
-    errSuffix = " cannot be empty."
-    fieldName = case m of
-        Mode.Command {} -> "Command"
-        Mode.Node    ns -> case ns ^. NodeMode.mode of
-            NodeMode.ExpressionMode {} -> "Node expression"
-            NodeMode.NodeNameMode   {} -> "Node name"
-            NodeMode.PortNameMode   {} -> "Port name"
-
-clearSearcherError :: Command State ()
-clearSearcherError = pure () -- modifySearcher $ Searcher.searcherError .= def
-
 editSelectedNodeExpression :: Command State ()
 editSelectedNodeExpression = getSelectedNodes >>= \case
     [n] -> editExpression $ n ^. Node.nodeLoc
@@ -270,7 +257,6 @@ openWith input mode = do
 
 updateInput :: Text -> Int -> Int -> Searcher -> Command State ()
 updateInput input selectionStart selectionEnd action = do
-    clearSearcherError
     let inputStream = evalDefLexer $ convert input
         searcherInput
             = if selectionStart /= selectionEnd then Input.RawInput input
@@ -357,7 +343,7 @@ accept scheduleEvent action = do
             nodeSearcherAccept nl (NodeMode.PortNameMode sd)
                 = renamePort (OutPortRef nl $ sd ^. NodeMode.portId) inputText
         if Text.null inputText
-            then pure () {-modifySearcher $ Searcher.searcherError ?= emptyInputError mode-}
+            then pure ()
             else case mode of
                 Mode.Command {} -> commandSearcherAccept
                 Mode.Node ns    -> do
@@ -389,19 +375,10 @@ close _ = do
 selectNextHint :: Searcher -> Command State ()
 selectNextHint s = do
     Basic.selectNextHint
-
-    {-modifySearcher $ do-}
-        {-hintsLength <- use $ Searcher.hints . to length-}
-        {-Searcher.selectedPosition %= min hintsLength . succ-}
     updateDocumentation
-    withJustM getSearcher $ \s -> when
-        (isJust $ s ^. Searcher.selectedPosition)
-        clearSearcherError
 
 selectPreviousHint :: Searcher -> Command State ()
 selectPreviousHint s = do
-    withJustM getSearcher $ \s ->
-        when (isJust $ s ^. Searcher.selectedPosition) clearSearcherError
     Basic.selectPreviousHint
     updateDocumentation
 
