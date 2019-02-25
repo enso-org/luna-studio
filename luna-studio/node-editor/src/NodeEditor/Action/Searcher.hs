@@ -110,38 +110,35 @@ editSelectedNodeExpression = getSelectedNodes >>= \case
     _   -> pure ()
 
 editExpression :: NodeLoc -> Command State ()
-editExpression nl = pure ()
-    {-let getClassName n = convert <$> n ^? Node.inPortAt [Port.Self]-}
-            {-. Port.valueType . TypeRep._TCons . _1-}
-        {-mkExpressionData n = Searcher.ExpressionMode $ Searcher.ExpressionData-}
-            {-Nothing-}
-            {-(getClassName n)-}
-            {-mempty-}
-        {-mkExpressionNodesDataM n = Searcher.NodesData-}
-            {-nl-}
-            {-def-}
-            {-(mkExpressionData n)-}
-            {-<$> mkDocumentationVisualization-}
-        {-mkExpressionSearcherModeM n-}
-            {-= Searcher.NodeSearcher <$> mkExpressionNodesDataM n-}
-    {-in withJustM (getExpressionNode nl) $ \n -> openWith-}
-        {-(n ^. Node.code)-}
-        {-=<< mkExpressionSearcherModeM n-}
+editExpression nl =
+    let getClassName n = convert <$> n ^? Node.inPortAt [Port.Self]
+            . Port.valueType . TypeRep._TCons . _1
+        mkExpressionData n = NodeMode.ExpressionMode $ NodeMode.Expression
+            Nothing
+            (getClassName n)
+            mempty
+        mkExpressionNodesDataM n = do
+            docVis <- mkDocumentationVisualization
+            pure $ NodeMode.Node nl docVis $ mkExpressionData n
+        mkExpressionSearcherModeM n
+            = Mode.Node <$> mkExpressionNodesDataM n
+    in withJustM (getExpressionNode nl) $ \n -> openWith
+        (n ^. Node.code)
+        =<< mkExpressionSearcherModeM n
 
 editName :: NodeLoc -> Command State ()
-editName nl = pure () -- withJustM (getExpressionNode nl) $ \n -> openWith
-    {-(maybe mempty id $ n ^. Node.name)-}
-    {-$ Searcher.NodeSearcher $ Searcher.NodesData nl def Searcher.NodeNameMode def-}
+editName nl = withJustM (getExpressionNode nl) $ \n -> openWith
+    (maybe mempty id $ n ^. Node.name)
+    $ Mode.Node $ NodeMode.Node nl def NodeMode.NodeNameMode
 
 editPortName :: OutPortRef -> Command State ()
-editPortName portRef = pure () -- withJustM (getPort portRef) $ \p -> openWith
-    {-(p ^. Port.name)-}
-    {-$ Searcher.NodeSearcher $ Searcher.NodesData-}
-        {-(portRef ^. PortRef.nodeLoc)-}
-        {-def-}
-        {-(Searcher.PortNameMode-}
-            {-$ Searcher.PortNameData $ portRef ^. PortRef.srcPortId)-}
-        {-def-}
+editPortName portRef = withJustM (getPort portRef) $ \p -> openWith
+    (p ^. Port.name)
+    $ Mode.Node $ NodeMode.Node
+        (portRef ^. PortRef.nodeLoc)
+        def
+        (NodeMode.PortNameMode
+            $ NodeMode.PortName $ portRef ^. PortRef.srcPortId)
 
 open :: Maybe Position -> Command State ()
 open mayPosition = do
@@ -359,14 +356,8 @@ execCommand action scheduleEvent (convert -> input) =
     let fromCommand command = do
             liftIO $ scheduleEvent $ Shortcut $ Shortcut.Event command def
             close action
-        {-fromOtherCommands Searcher.AddNode = modifySearcher $ do-}
-            {-Searcher.selectedPosition .= def-}
-            {-Searcher.mode             %= Searcher.clearHints-}
-            {-Searcher.input            .= Searcher.RawInput def-}
-            {-Searcher.rollbackReady    .= False-}
     in do
         withJust (readMaybe input) fromCommand
-        {-withJust (readMaybe input) fromOtherCommands-}
 
 close :: Searcher -> Command State ()
 close _ = do
