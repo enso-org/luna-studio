@@ -65,7 +65,7 @@ positionPred = \case
 selectNextHint :: Command State ()
 selectNextHint = modifySearcher $ do
     hintsLen <- use (Searcher.results . to length)
-    Searcher.selectedPosition %= fmap (min hintsLen) . positionPred
+    Searcher.selectedPosition %= fmap (min hintsLen) . positionSucc
 
 selectPreviousHint :: Command State ()
 selectPreviousHint = modifySearcher $ Searcher.selectedPosition %= positionPred
