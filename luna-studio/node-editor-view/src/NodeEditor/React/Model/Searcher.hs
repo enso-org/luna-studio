@@ -91,6 +91,7 @@ mkProperties = \s vlp -> let
     selected        = fromMaybe def $! s ^. selectedPosition
     limitResults    = \r -> take visibleHintsNumber $! drop selected r
     visibleSearcher = s & results %~ limitResults
+                        & selectedPosition %~ fmap (subtract selected)
     in Properties visibleSearcher vlp
 {-# INLINE mkProperties #-}
 
