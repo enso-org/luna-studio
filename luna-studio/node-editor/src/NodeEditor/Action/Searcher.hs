@@ -185,62 +185,62 @@ open mayPosition = do
     openWith mempty =<< mkNodeSearcherM nl
 
 adjustCameraToSearcher :: Mode.Mode -> Command State ()
-adjustCameraToSearcher mode = pure () -- do
-    {-let mayNodesData      = mode         ^? Searcher._NodeSearcher-}
-        {-mayModeData       = mayNodesData ^? _Just . Searcher.modeData-}
-        {-maySearcherNl     = mayNodesData ^? _Just . Searcher.nodeLoc-}
-        {-mayExpressionMode = mayModeData  ^? _Just . Searcher._ExpressionMode-}
-        {-mayNodeNameMode   = mayModeData  ^? _Just . Searcher._NodeNameMode-}
-        {-mayNewNodeData-}
-            {-= mayExpressionMode ^? _Just . Searcher.newNodeData . _Just-}
-        {-mayNewNodePosition  = mayNewNodeData    ^? _Just . Searcher.position-}
-        {-getNodeTop nl       = view Node.topPosition `fmap2` getExpressionNode nl-}
-        {-mayNodeTopPositionM = maybe (pure Nothing) getNodeTop maySearcherNl-}
-        {-mayWorkspaceSearcherBottomM = maybe-}
-            {-mayNodeTopPositionM-}
-            {-(pure . Just . Node.toNodeTopPosition)-}
-            {-mayNewNodePosition-}
-        {-searcherRows = if isJust mayExpressionMode then 11-}
-            {-else if isJust mayNodeNameMode then 2-}
-            {-else 0-}
-        {-bottomToTopYShift = -1 * searcherRows * searcherHeight-}
-        {-bottomToTop       = move (Vector2 0 bottomToTopYShift)-}
+adjustCameraToSearcher mode = do
+    let mayNodesData      = mode         ^? Mode._Node
+        mayModeData       = mayNodesData ^? _Just . NodeMode.mode
+        maySearcherNl     = mayNodesData ^? _Just . NodeMode.nodeLoc
+        mayExpressionMode = mayModeData  ^? _Just . NodeMode._ExpressionMode
+        mayNodeNameMode   = mayModeData  ^? _Just . NodeMode._NodeNameMode
+        mayNewNodeData
+            = mayExpressionMode ^? _Just . NodeMode.newNode . _Just
+        mayNewNodePosition  = mayNewNodeData    ^? _Just . NodeMode.position
+        getNodeTop nl       = view Node.topPosition `fmap2` getExpressionNode nl
+        mayNodeTopPositionM = maybe (pure Nothing) getNodeTop maySearcherNl
+        mayWorkspaceSearcherBottomM = maybe
+            mayNodeTopPositionM
+            (pure . Just . Node.toNodeTopPosition)
+            mayNewNodePosition
+        searcherRows = if isJust mayExpressionMode then 11
+            else if isJust mayNodeNameMode then 2
+            else 0
+        bottomToTopYShift = -1 * searcherRows * searcherHeight
+        bottomToTop       = move (Vector2 0 bottomToTopYShift)
 
-    {-mayScreenSize     <- getScreenSize-}
-    {-maySearcherBottom <- mapM translateToScreen =<< mayWorkspaceSearcherBottomM-}
-    {-let maySearcherTop = bottomToTop <$> maySearcherBottom-}
-        {-getCameraDelta searcherBottom searcherTop screenSize =-}
-            {-let topX                = searcherTop ^. x-}
-                {-topY                = searcherTop ^. y-}
-                {-bottomY             = searcherBottom ^. y-}
-                {-screenWidth         = screenSize ^. width-}
-                {-screenHeight        = screenSize ^. height-}
-                {-overRightEdge       = topX + searcherWidth / 2 > screenWidth-}
-                {-overLeftEdge        = topX - searcherWidth / 2 < 0-}
-                {-overTopEdge         = topY < 0-}
-                {-xShift = if searcherWidth > screenWidth-}
-                        {-then Nothing-}
-                    {-else if overRightEdge-}
-                        {-then Just $ topX + searcherWidth / 2 - screenWidth-}
-                    {-else if overLeftEdge-}
-                        {-then Just $ topX - searcherWidth / 2-}
-                        {-else Nothing-}
-                {-yShift = if bottomY - topY > screenHeight-}
-                        {-then Just $ bottomY - screenHeight-}
-                    {-else if overTopEdge-}
-                        {-then Just topY-}
-                        {-else Nothing-}
-            {-in if isNothing xShift && isNothing yShift-}
-                {-then Nothing-}
-                {-else Just $ Vector2 (fromMaybe def xShift) (fromMaybe def yShift)-}
-        {-mayCameraDelta = join $ getCameraDelta-}
-            {-<$> maySearcherBottom-}
-            {-<*> maySearcherTop-}
-            {-<*> mayScreenSize-}
+    mayScreenSize     <- getScreenSize
+    maySearcherBottom <- mapM translateToScreen =<< mayWorkspaceSearcherBottomM
+    let maySearcherTop = bottomToTop <$> maySearcherBottom
+        getCameraDelta searcherBottom searcherTop screenSize =
+            let topX                = searcherTop ^. x
+                topY                = searcherTop ^. y
+                bottomY             = searcherBottom ^. y
+                screenWidth         = screenSize ^. width
+                screenHeight        = screenSize ^. height
+                overRightEdge       = topX + searcherWidth / 2 > screenWidth
+                overLeftEdge        = topX - searcherWidth / 2 < 0
+                overTopEdge         = topY < 0
+                xShift = if searcherWidth > screenWidth
+                        then Nothing
+                    else if overRightEdge
+                        then Just $ topX + searcherWidth / 2 - screenWidth
+                    else if overLeftEdge
+                        then Just $ topX - searcherWidth / 2
+                        else Nothing
+                yShift = if bottomY - topY > screenHeight
+                        then Just $ bottomY - screenHeight
+                    else if overTopEdge
+                        then Just topY
+                        else Nothing
+            in if isNothing xShift && isNothing yShift
+                then Nothing
+                else Just $ Vector2 (fromMaybe def xShift) (fromMaybe def yShift)
+        mayCameraDelta = join $ getCameraDelta
+            <$> maySearcherBottom
+            <*> maySearcherTop
+            <*> mayScreenSize
 
-    {-withJust mayCameraDelta $ \delta -> modifyCamera-}
-        {-(invertedTranslationMatrix delta)-}
-        {-(translationMatrix delta)-}
+    withJust mayCameraDelta $ \delta -> modifyCamera
+        (invertedTranslationMatrix delta)
+        (translationMatrix delta)
 
 openWith :: Text -> Mode.Mode -> Command State ()
 openWith input mode = do
