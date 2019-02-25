@@ -38,6 +38,7 @@ import qualified Luna.Pass.Typing.Data.Target       as Target
 import qualified Luna.Pass.Typing.Typechecker       as TC
 import qualified Luna.Runtime                       as Runtime
 import qualified Luna.Std                           as Std
+import qualified LunaStudio.Data.Breadcrumb         as Breadcrumb
 import qualified LunaStudio.Data.Error              as APIError
 import qualified LunaStudio.Data.GraphLocation      as GraphLocation
 import qualified Memory                             as Memory
@@ -45,15 +46,15 @@ import qualified Path
 
 import Control.Concurrent.Async         (Async)
 import Control.Exception.Safe           (mask_, tryAny)
-import Control.Lens                     (uses)
+import Control.Lens                     (_head, uses)
 import Control.Monad.Reader             (ask, runReaderT)
 import Data.Graph.Component.Node.Class  (Nodes)
 import Data.Graph.Data.Component.Class  (Component (Component))
 import Data.Map                         (Map)
 import Data.Maybe                       (catMaybes)
 import Empire.ASTOp                     (liftScheduler, runASTOp)
-import Empire.Commands.Graph.Breadcrumb (runInternalBreadcrumb,
-                                         withRootedFunction)
+import Empire.Commands.Breadcrumb (runInternalBreadcrumb,
+                                         withRootedFunction, zoomBreadcrumb')
 import Empire.Data.AST                  (NodeRef)
 import Empire.Data.BreadcrumbHierarchy  (topLevelIDs)
 import Empire.Data.Graph                (Graph)
@@ -64,14 +65,15 @@ import Foreign.Ptr                      (plusPtr)
 import Luna.Pass.Data.Stage             (Stage)
 import Luna.Pass.Evaluation.Data.Scope  (LocalScope)
 import LunaStudio.Data.Breadcrumb       (Breadcrumb (Breadcrumb),
-                                         BreadcrumbItem (Definition))
+                                         BreadcrumbItem (Definition),
+                                         _Definition)
 import LunaStudio.Data.GraphLocation    (GraphLocation (GraphLocation))
 import LunaStudio.Data.NodeValue        (NodeValue (NodeError, NodeValue))
 import LunaStudio.Data.Visualization    (VisualizationValue (StreamDataPoint, StreamStart, Value))
 import System.Directory                 (canonicalizePath, withCurrentDirectory)
 import System.Environment               (getEnv)
 import System.FilePath                  (takeDirectory)
-
+import qualified System.IO as IO
 
 
 runTC :: IR.Qualified -> GraphLocation -> Command InterpreterEnv ()
@@ -84,13 +86,28 @@ runTC modName (GraphLocation _ br) = do
             (Set.fromList $ essentialImports <> [modName] <> imps)
         resolver          = mconcat . Map.elems $ relevantResolvers
     zoomCommand Empire.clsGraph $ case br of
-        Breadcrumb (Definition uuid:_) -> do
-            root <- preuse $ Graph.userState . Graph.clsFuns . ix uuid . Graph.funGraph . Graph.breadcrumbHierarchy . BH.self
-            case root of
-                Just r -> liftScheduler $ do
-                    Prep.preprocessDef resolver r
-                    TC.runTypechecker def r typed
-                _      -> error $ "runTC: wrong breadcrumb " <> show br
+        Breadcrumb (Definition uuid:rest) -> do
+            topLevelGraph <- preuse $ Graph.userState . Graph.clsFuns
+                . ix uuid
+            case topLevelGraph of
+                Just (Graph.FunctionDefinition funGraph) -> do
+                    let root = funGraph ^. Graph.funGraph . Graph.breadcrumbHierarchy . BH.self
+                    liftScheduler $ do
+                        Prep.preprocessDef resolver root
+                        TC.runTypechecker def root typed
+                Just (Graph.ClassDefinition clsGraph) -> do
+                    let meth = rest ^? _head . _Definition
+                    case meth of
+                        Just uuid -> do
+                            let root = clsGraph ^? Graph.classMethods . ix uuid . Graph.funGraph . Graph.breadcrumbHierarchy . BH.self
+                            case root of
+                                Just r -> do
+                                    liftScheduler $ do
+                                        Prep.preprocessDef resolver r
+                                        TC.runTypechecker def r typed
+                                _ -> error $ "runTC: wrong breadcrumb4 " <> show br
+                        _ -> error $ "runTC: wrong breadcrumb3 " <> show br
+                _ -> error $ "runTC: wrong breadcrumb2 " <> show br
             pure ()
         Breadcrumb _                   -> pure ()
  -- do
@@ -163,11 +180,10 @@ makeError err =
                 (err ^. Error.contents)
     in nodeError
 
-updateNodes :: GraphLocation -> Command InterpreterEnv ()
-updateNodes loc@(GraphLocation _ br) = case br of
-    Breadcrumb (Definition uuid:rest) -> do
-        units <- use $ Graph.userState . Empire.mappedUnits
-        zoomCommand Empire.clsGraph $ withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
+updateNodes :: GraphLocation -> GraphLocation -> Command InterpreterEnv ()
+updateNodes loc@(GraphLocation _ br) updateLoc = do
+    units <- use $ Graph.userState . Empire.mappedUnits
+    let act = do
             (inEdge, outEdge) <- use $ Graph.userState . Graph.breadcrumbHierarchy . BH.portMapping
             (updates, errors) <- runASTOp $ do
                 inputUpdate  <-
@@ -184,10 +200,10 @@ updateNodes loc@(GraphLocation _ br) = case br of
                     pure (tcUpdate, nodeError))
                 pure (inputUpdate : outputUpdate : updates, errors)
             mask_ $ do
-                traverse_ (Publisher.notifyNodeTypecheck loc) updates
+                traverse_ (Publisher.notifyNodeTypecheck updateLoc) updates
                 for_ (catMaybes errors) $ \(nid, e) ->
                     Publisher.notifyResultUpdate loc nid e 0
-    Breadcrumb _ -> pure ()
+    zoomCommand Empire.clsGraph $ zoomBreadcrumb' br act (error "updateNodes: clsGraph")
 
 updateValues :: GraphLocation
              -> LocalScope
@@ -334,23 +350,25 @@ compileCurrentScope modName path root = do
     Graph.userState . Empire.resolvers    .= newResolvers
 
 run :: GraphLocation
+    -> GraphLocation
     -> Graph.ClsGraph
     -> Store.RootedWithRedirects NodeRef
     -> Bool
     -> Bool
     -> Command InterpreterEnv ()
-run gl clsGraph rooted interpret recompute = do
-    root <- runNoCleanUp gl clsGraph rooted interpret recompute
+run gl updateLoc clsGraph rooted interpret recompute = do
+    root <- runNoCleanUp gl updateLoc clsGraph rooted interpret recompute
     zoomCommand Empire.clsGraph . runASTOp $ IR.deleteSubtree root
 
 runNoCleanUp
     :: GraphLocation
+    -> GraphLocation
     -> Graph.ClsGraph
     -> Store.RootedWithRedirects NodeRef
     -> Bool
     -> Bool
     -> Command InterpreterEnv (Component Nodes ())
-runNoCleanUp gl clsGraph rooted interpret recompute = do
+runNoCleanUp gl updateGl clsGraph rooted interpret recompute = do
     stop
     (root, redirects)
         <- runASTOp . Store.deserializeWithRedirects $ rooted ^. Store.rooted
@@ -364,14 +382,12 @@ runNoCleanUp gl clsGraph rooted interpret recompute = do
     makePrimStdIfMissing
     ensureCurrentScope recompute modName filePath root
     runTC modName gl
-    updateNodes gl
-    let processBC evald (Breadcrumb (Definition uuid:r))
+    updateNodes gl updateGl
+    let processBC evald br
             = zoomCommand Empire.clsGraph
-            . withRootedFunction uuid
-            . runInternalBreadcrumb (Breadcrumb r) $ do
+            $ zoomBreadcrumb' br (do
                 scope <- runInterpreter filePath evald
-                traverse (updateValues gl) scope
-        processBC _ _ = pure Nothing
+                traverse (updateValues gl) scope) (error "processBC: clsGraph")
     when interpret $ do
         evald  <- use $ Graph.userState . Empire.runtimeUnits
         asyncs <- processBC evald $ gl ^. GraphLocation.breadcrumb

@@ -90,8 +90,8 @@ spec = runTests "list ports tests" $ do
             tcUpdate <- Graph.withGraph gl . runASTOp $
                 GraphBuilder.buildNodeTypecheckUpdate resolver l
             case tcUpdate of
-                Node.ExpressionUpdate _id inPorts _ -> pure inPorts
-                _                                   -> error "wrong TC update"
+                Node.ExpressionUpdate _id inPorts _ _ -> pure inPorts
+                _                                     -> error "wrong TC update"
         in testCaseWithTC code code noAction $ \gl resolver -> do
             ports <- prepare gl resolver
             ports `shouldBe` expectedPorts

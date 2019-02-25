@@ -2,7 +2,7 @@ module Test.Code.MarkerSanitizerSpec (spec) where
 
 import Empire.Prelude
 
-import Empire.Commands.Graph.Code (sanitizeMarkers)
+import Empire.Commands.Graph (sanitizeMarkers)
 import Test.Hspec                 (Spec, describe, it, parallel, shouldBe)
 import Test.Hspec.Empire          (normalizeLunaCode)
 import Text.RawString.QQ          (r)

@@ -121,7 +121,7 @@ spec = around withChannels $ parallel $ do
                 node ^. Node.name       `shouldBe` Just "foo"
                 node ^. Node.code       `shouldBe` "a: a"
                 node ^. Node.expression `shouldBe` "Ⓕ"
-                node ^. Node.canEnter   `shouldBe` True
+                node ^. Node.toEnter    `shouldSatisfy` isJust
         it "returns connections for deeply nested uses of node" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -278,7 +278,7 @@ spec = around withChannels $ parallel $ do
                 Graph.getGraph top
             withResult res $ \g -> do
                 let Just lambdaNode = find ((== u1) . view Node.nodeId) $ Graph._nodes g
-                lambdaNode ^. Node.canEnter `shouldBe` False
+                lambdaNode ^. Node.toEnter `shouldSatisfy` isNothing
         it "has no null node inside `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -376,7 +376,7 @@ spec = around withChannels $ parallel $ do
                     pmState <- Graph.defaultPMState
                     let interpreterEnv = InterpreterEnv (return ()) g [] def def def def
                     (_, (extractGraph -> g')) <- runEmpire env (Graph.CommandState pmState interpreterEnv) $
-                        Typecheck.run loc g rooted False False
+                        Typecheck.run loc loc g rooted False False
                     _ <- runEmp' env st g' $ do
                         Graph.withGraph loc $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
                     -- withResult res'' $ \(n1, n2) -> do
@@ -705,7 +705,7 @@ spec = around withChannels $ parallel $ do
                 node ^. Node.expression `shouldBe` "Ⓕ"
                 node ^. Node.code       `shouldBe` "a: a"
                 node ^. Node.nodeId     `shouldBe` u1
-                node ^. Node.canEnter   `shouldBe` True
+                node ^. Node.toEnter    `shouldSatisfy` isJust
                 nodes `shouldSatisfy` ((== 1) . length)
         xit "does not allow to change expression to assignment" $ \env -> do
             u1 <- mkUUID

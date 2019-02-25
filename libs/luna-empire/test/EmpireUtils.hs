@@ -27,7 +27,7 @@ runEmp env act = defaultPMState >>= \pm ->
     runEmpire env (CommandState pm def) $ do
         let testFile = "/TestFile"
             topGl    = GraphLocation testFile def
-        void $ createLibrary (Just testFile) testFile
+        void $ createLibrary (Just $ convert testFile) testFile
         Graph.loadCode topGl "def main:\n    None"
         [node] <- Graph.getNodes topGl
         give (topGl |>= (node ^. Node.nodeId)) act

@@ -47,7 +47,7 @@ data ExpressionNode = ExpressionNode { _nodeLoc'                  :: NodeLoc
                                      , _inPorts                   :: InPortTree InPort
                                      , _outPorts                  :: OutPortTree OutPort
                                      , _argConstructorMode        :: Port.Mode
-                                     , _canEnter                  :: Bool
+                                     , _toEnter                   :: Maybe BreadcrumbItem
                                      , _position                  :: Position
                                      , _defaultVisualizer         :: Maybe Visualizer
                                      , _visEnabled                :: Bool
@@ -108,7 +108,7 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- inPorts                   -} (convert <$> n ^. Empire.inPorts)
         {- outPorts                  -} (convert <$> n ^. Empire.outPorts)
         {- argConstructorHighlighted -} Port.Invisible
-        {- canEnter                  -} (n ^. Empire.canEnter)
+        {- toEnter                  -} (n ^. Empire.toEnter)
         {- position                  -} (n ^. Empire.position)
         {- defaultVisualizer         -} (Project.fromOldAPI <$> n ^. Empire.nodeMeta . NodeMeta.selectedVisualizer)
         {- visEnabled                -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
@@ -132,7 +132,7 @@ instance Convertible ExpressionNode Empire.ExpressionNode where
         {- inPorts      -} (convert <$> n ^. inPorts)
         {- outPorts     -} (convert <$> n ^. outPorts)
         {- nodeMeta     -} (NodeMeta.NodeMeta (n ^. position) (n ^. visEnabled) (Project.toOldAPI <$> n ^. defaultVisualizer))
-        {- canEnter     -} (n ^. canEnter)
+        {- toEnter     -} (n ^. toEnter)
 
 instance Default Mode where def = Collapsed
 

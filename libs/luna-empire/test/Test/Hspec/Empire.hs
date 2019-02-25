@@ -139,7 +139,7 @@ testCaseWithTC initialCode expectedCode action tcResultCheck env = let
         let commandState = CommandState pmState
                 $ InterpreterEnv (pure ()) clsGraph mempty def def def def
         updatedState <- execEmpire env commandState $
-            Typecheck.runNoCleanUp gl clsGraph rooted False False
+            Typecheck.runNoCleanUp gl gl clsGraph rooted False False
         let updatedClsGraph
                 = updatedState ^. Graph.userState . Empire.clsGraph
             mappedUnits = updatedState ^. Graph.userState . Empire.mappedUnits
@@ -178,7 +178,7 @@ prepareTestEnvironmentWithCustomPath filePath initialCode = let
         mockNodesLayout gl
         pure gl
     in do
-        createLibrary Nothing filePath
+        createLibrary (Just "TestProject.Main") filePath
         Graph.loadCode topGl $ normalizeLunaCode initialCode
         mainNodeId <- findNodeIdByName topGl mainNodeName
         maybe (pure topGl) withMain mainNodeId

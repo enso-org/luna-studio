@@ -85,7 +85,7 @@ import NodeEditor.Action.Basic.Undo                as X (redo, undo)
 import NodeEditor.Action.Basic.UpdateCollaboration as X (updateClient,
                                                          updateCollaboration)
 import NodeEditor.Action.Basic.UpdateNode          as X (NodeUpdateModification (KeepNodeMeta, KeepPorts, MergePorts),
-                                                         localUpdateCanEnterExpressionNode,
+                                                         localUpdateToEnterExpressionNode,
                                                          localUpdateExpressionNode,
                                                          localUpdateExpressionNodeInPorts,
                                                          localUpdateExpressionNodeOutPorts,

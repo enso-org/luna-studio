@@ -33,7 +33,7 @@ handleCreateLibrary req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary
-        (request ^. CreateLibrary.libraryName)
+        (request ^. CreateLibrary.libraryName . to convert)
         (fromString $ request ^. CreateLibrary.path)
     case result of
         Left (exc :: SomeASTException) -> do

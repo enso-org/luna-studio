@@ -16,7 +16,7 @@ import           Prologue
 import           React.Flux
 import           React.Flux.Store             (ReactStoreRef)
 
-import           LunaStudio.Data.Breadcrumb   (Breadcrumb, BreadcrumbItem)
+import           LunaStudio.Data.Breadcrumb   (Breadcrumb, BreadcrumbItem, CodeTarget)
 import           LunaStudio.Data.NodeLoc      (NodeLoc, NodePath)
 import           LunaStudio.Data.Port         (InPortIndex, OutPortIndex)
 import           LunaStudio.Data.PortRef      (AnyPortRef, InPortRef, OutPortRef)
@@ -55,6 +55,7 @@ instance Convertible JSString String where
 instance Default (HashMap a b) where def = HashMap.empty
 instance Hashable a => Hashable (Breadcrumb a)
 instance Hashable AnyPortRef
+instance Hashable CodeTarget
 instance Hashable BreadcrumbItem
 instance Hashable InPortIndex
 instance Hashable InPortRef

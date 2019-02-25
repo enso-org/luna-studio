@@ -8,7 +8,7 @@ import           Empire.Data.Graph              (ClsGraph)
 import           Empire.Prelude
 
 
-data Library = Library { _name    :: Maybe String
+data Library = Library { _name    :: Maybe Text
                        , _path    :: FilePath --TODO use smarter type
                        , _body    :: ClsGraph
                        } deriving (Show)
@@ -16,7 +16,7 @@ data Library = Library { _name    :: Maybe String
 makeLenses ''Library
 
 toAPI :: Library -> API.Library
-toAPI (Library n p _) = API.Library n p
+toAPI (Library n p _) = API.Library (convert n) p
 
 toPersistent :: Library -> API.Graph -> Persistence.Library
-toPersistent (Library n p _) = Persistence.Library n p
+toPersistent (Library n p _) = Persistence.Library (convert n) p

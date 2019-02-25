@@ -14,11 +14,15 @@ import Data.Monoid            (Monoid (..))
 import Data.Semigroup         (Semigroup (..))
 import LunaStudio.Data.NodeId (NodeId)
 
+data CodeTarget = Function Text Text
+                | Method Text Text Text
+    deriving (Eq, Generic, Ord, Show)
 
 data BreadcrumbItem
-    = Definition { _nodeId  :: NodeId }
-    | Lambda     { _nodeId  :: NodeId }
-    | Arg        { _nodeId  :: NodeId, _arg :: Int }
+    = Definition  { _nodeId :: NodeId }
+    | Lambda      { _nodeId :: NodeId }
+    | Redirection { _nodeId :: NodeId, _target :: CodeTarget }
+    | Arg         { _nodeId :: NodeId, _arg :: Int }
     deriving (Eq, Generic, Ord, Show)
 
 data Named a = Named
@@ -39,8 +43,12 @@ instance Binary a => Binary (Breadcrumb a)
 instance Binary a => Binary (Named a)
 instance NFData a => NFData (Breadcrumb a)
 instance NFData a => NFData (Named a)
+instance Binary CodeTarget
+instance NFData CodeTarget
 instance Binary BreadcrumbItem
 instance NFData BreadcrumbItem
+instance FromJSON CodeTarget
+instance ToJSON CodeTarget
 
 instance Monoid (Breadcrumb a) where
     mappend bc1 bc2 = Breadcrumb $ (bc1 ^. items) <> (bc2 ^. items)

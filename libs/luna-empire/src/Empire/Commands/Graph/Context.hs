@@ -7,29 +7,24 @@ import Empire.Commands.Library as X (withLibrary)
 
 import Empire.Prelude
 
+import qualified Data.Bimap as Bimap
+import qualified Data.Map as Map
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
+import qualified Luna.Package as Package
+import qualified Luna.IR as IR
+import qualified Empire.Data.BreadcrumbHierarchy as BH
+import qualified Empire.Data.Graph as Graph
+import qualified Empire.Commands.Library as Library
+import qualified Empire.Data.Library as Library
+import qualified Path
 
-import Empire.Commands.Graph.Breadcrumb (zoomBreadcrumb)
+import Data.List (find)
+-- import Empire.Commands.Graph.Breadcrumb (zoomBreadcrumb)
 import Empire.Data.AST                  (astExceptionFromException,
                                          astExceptionToException)
+import Empire.Data.Library (Library)
 import Empire.Data.Graph                (ClsGraph, Graph)
-import Empire.Empire                    (Command, Empire)
-import LunaStudio.Data.GraphLocation    (GraphLocation)
+import Empire.Empire                    (Command, Empire, activeFiles)
+import LunaStudio.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(..), _Redirection)
+import LunaStudio.Data.GraphLocation    (GraphLocation(..))
 
-
-data UnsupportedOperation = UnsupportedOperation deriving Show
-
-instance Exception UnsupportedOperation where
-    fromException = astExceptionFromException
-    toException   = astExceptionToException
-
-withGraph :: GraphLocation -> Command Graph a -> Empire a
-withGraph gl act = withBreadcrumb gl act (throwM UnsupportedOperation)
-
-withUnit :: GraphLocation -> Command ClsGraph a -> Empire a
-withUnit gl act = withBreadcrumb gl (throwM UnsupportedOperation) act
-
-withBreadcrumb
-    :: GraphLocation -> Command Graph a -> Command ClsGraph a -> Empire a
-withBreadcrumb gl = withLibrary (gl ^. GraphLocation.filePath)
-    .: zoomBreadcrumb (gl ^. GraphLocation.breadcrumb)

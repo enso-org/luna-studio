@@ -11,6 +11,7 @@ import           Data.Map                  (Map)
 import qualified Data.Map                  as Map
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
+import           LunaStudio.Data.Breadcrumb (BreadcrumbItem)
 import           LunaStudio.Data.Constants (gapBetweenNodes)
 import           LunaStudio.Data.NodeId    as X
 import           LunaStudio.Data.NodeLoc   (NodeLoc)
@@ -38,7 +39,7 @@ data ExpressionNode = ExpressionNode
     , _inPorts          :: InPortTree  InPort
     , _outPorts         :: OutPortTree OutPort
     , _nodeMeta         :: NodeMeta
-    , _canEnter         :: Bool
+    , _toEnter          :: Maybe BreadcrumbItem
     } deriving (Eq, Generic, Show, Typeable)
 
 data InputSidebar = InputSidebar
@@ -54,7 +55,10 @@ data OutputSidebar = OutputSidebar
 
 --FIXME: Invalid lenses!!!
 data NodeTypecheckerUpdate
-    = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort     , _tcOutPorts :: OutPortTree OutPort }
+    = ExpressionUpdate    { _tcNodeId   :: NodeId
+                          , _tcInPorts  :: InPortTree InPort
+                          , _tcOutPorts :: OutPortTree OutPort
+                          , _tcToEnter  :: Maybe BreadcrumbItem }
     | OutputSidebarUpdate { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort     }
     | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree OutPort] }
     deriving (Eq, Generic, Show, Typeable)
@@ -122,7 +126,7 @@ mkExprNode nid expr pos = ExpressionNode
     )
     (Port.LabeledTree def $ Port.Port [] (Text.pack "") TStar Port.NotConnected)
     (NodeMeta.NodeMeta pos False def)
-    False
+    Nothing
 
 findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findPredecessorPosition node nodes = fromDoubles xPos yPos where

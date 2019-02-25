@@ -57,15 +57,15 @@ sendUpdate upd = do
     chan <- asks $ view updatesChan
     liftIO $ atomically $ writeTChan chan upd
 
-requestTC :: GraphLocation -> ClsGraph -> Store.RootedWithRedirects NodeRef -> Bool -> Bool -> Bool -> Command s ()
-requestTC loc g rooted flush runInterpreter recompute = do
+requestTC :: GraphLocation -> GraphLocation -> ClsGraph -> Store.RootedWithRedirects NodeRef -> Bool -> Bool -> Bool -> Command s ()
+requestTC loc updateLoc g rooted flush runInterpreter recompute = do
     chan <- view typecheckChan
     liftIO $ do
         a <- tryTakeMVar chan
         let recompute' = case a of
                 Just h -> if h ^. tcRecompute then True else recompute
                 _      -> recompute
-        putMVar chan $ TCRequest loc g rooted flush runInterpreter recompute' False
+        putMVar chan $ TCRequest loc updateLoc g rooted flush runInterpreter recompute' False
 
 stopTC :: Command s ()
 stopTC = do
@@ -73,4 +73,4 @@ stopTC = do
     liftIO $ do
         g <- defaultClsGraph
         tryTakeMVar chan
-        putMVar chan $ TCRequest (GraphLocation "" def) g (error "stopTC: rooted") False False False True
+        putMVar chan $ TCRequest (GraphLocation "" def) (GraphLocation "" def) g (error "stopTC: rooted") False False False True

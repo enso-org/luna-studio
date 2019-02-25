@@ -227,9 +227,10 @@ instance Arbitrary Graph where
                 (elements allOutPortsRefs)
                 (\src -> dst ^. PortRef.nodeLoc /= src ^. PortRef.nodeLoc)
             genConn dst = flip Connection dst <$> genSrc dst
-        conns  <- mapM genConn connIds
-        monads <- genMonadPaths =<< sublistOf (view Node.nodeId <$> nodes)
-        pure $ Graph nodes conns (Just inSidebar) (Just outSidebar) monads
+        conns   <- mapM genConn connIds
+        monads  <- genMonadPaths =<< sublistOf (view Node.nodeId <$> nodes)
+        imports <- pure $ Set.singleton "Std.Base"
+        pure $ Graph nodes conns (Just inSidebar) (Just outSidebar) monads imports
 
 instance Arbitrary (Error GraphError) where
     arbitrary = do
@@ -243,14 +244,12 @@ instance Arbitrary Code where
 instance Arbitrary GUIState where
     arbitrary = do
         bc          <- arbitrary
-        impsLen     <- choose (0, 10)
-        imps        <- Set.fromList <$> vectorOf impsLen arbitrary
         defVis      <- arbitrary
         cam         <- arbitrary
         projVisPath <- arbitrary
         code        <- arbitrary
         graph       <- arbitrary
-        pure $ GUIState bc imps defVis cam projVisPath code graph
+        pure $ GUIState bc defVis cam projVisPath code graph
 
 testExactCopies :: GUIState -> Diff
 testExactCopies p = diff p p

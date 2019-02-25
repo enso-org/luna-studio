@@ -87,6 +87,55 @@ spec = runTests "pattern match tests" $ do
             in testCaseWithMarkers emptyCodeTemplate expectedCode $ \gl ->
                 addNode gl "foo = (Just x): y: z: x + y"
 
+        it "marks class" $ let
+            initialCode = [r|
+                def baz:
+                    "foo"
+
+                class AAA:
+                    def foo:
+                        4
+
+                    def bar:
+                        "bar"
+
+                class B:
+                    B
+                    C
+                    D
+
+                    def quux:
+                        C
+
+                def main:
+                    None
+                |]
+            expectedCode = [r|
+                «0»def baz:
+                    «7»"foo"
+
+                «1»class AAA:
+                    «2»def foo:
+                        «8»4
+
+                    «3»def bar:
+                        «9»"bar"
+
+                «4»class B:
+                    B
+                    C
+                    D
+
+                    «5»def quux:
+                        «10»C
+
+                «6»def main:
+                    None
+                |]
+            in testCaseWithMarkers initialCode expectedCode $ \gl ->
+                -- addNode gl "foo = (Just x): y: z: x + y"
+                pure ()
+
         it "adds a marker in proper place in lambda pattern-matching on an argument with nested value" $ let
             expectedCode = [r|
                 import Std.Base

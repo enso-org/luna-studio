@@ -73,7 +73,7 @@ import NodeEditor.Action.Basic                     (NodeUpdateModification (Keep
                                                     localSetNodeExpression,
                                                     localSetNodeMeta,
                                                     localSetOutputSidebar,
-                                                    localUpdateCanEnterExpressionNode,
+                                                    localUpdateToEnterExpressionNode,
                                                     localUpdateExpressionNodeInPorts,
                                                     localUpdateExpressionNodeOutPorts,
                                                     localUpdateIsDefinition,
@@ -142,10 +142,10 @@ applyModification p nm = \case
         setBreadcrumbs $ m ^. Diff.newBreadcrumb
     SetCamera m ->
         setScreenTransform $ m ^. Diff.newCameraTransformation
-    SetCanEnterNode m ->
-        localUpdateCanEnterExpressionNode
-        (convert (p, m ^. Diff.setCanEnterNodeLoc . NodeLoc.nodeId))
-        $ m ^. Diff.newCanEnter
+    SetToEnterNode m ->
+        localUpdateToEnterExpressionNode
+        (convert (p, m ^. Diff.setToEnterNodeLoc . NodeLoc.nodeId))
+        $ m ^. Diff.newToEnter
     SetCode _ ->
         return ()
     SetDefaultVisualizers m ->

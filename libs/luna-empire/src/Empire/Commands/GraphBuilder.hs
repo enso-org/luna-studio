@@ -106,13 +106,12 @@ buildGraph = do
 buildClassGraph :: ClassOp API.Graph
 buildClassGraph = do
     funs <- use Graph.clsFuns
-    nodes' <- mapM (\(uuid, funGraph)
-        -> buildClassNode uuid (funGraph ^. Graph.funName)) $ Map.assocs funs
+    nodes' <- mapM (uncurry buildClassNode) $ Map.assocs funs
     pure $ API.Graph nodes' mempty mempty mempty mempty mempty
 
 
-buildClassNode :: NodeId -> String -> ClassOp API.ExpressionNode
-buildClassNode uuid name = do
+buildClassNode :: NodeId -> Graph.TopLevelGraph -> ClassOp API.ExpressionNode
+buildClassNode uuid (Graph.FunctionDefinition (view Graph.funName -> name)) = do
     f    <- ASTRead.getFunByNodeId uuid
     codeStart <- Code.functionBlockStartRef f
     (nameOff, nameLen) <- ASTRead.cutThroughDocAndMarked f >>= \a -> matchExpr a $ \case
@@ -139,7 +138,21 @@ buildClassNode uuid name = do
             (LabeledTree def (Port [] "base" TStar NotConnected))
             (LabeledTree (OutPorts []) (Port [] "base" TStar NotConnected))
             meta
-            True
+            (Just $ Breadcrumb.Definition uuid)
+buildClassNode uuid (Graph.ClassDefinition g) = do
+    f    <- ASTRead.getFunByNodeId uuid
+    meta <- fromMaybe def <$> AST.readMeta f
+    let name = g ^. Graph.className
+    pure $ API.ExpressionNode
+        uuid
+        ""
+        True
+        (Just $ convert name)
+        ""
+        (LabeledTree def (Port [] "base" TStar NotConnected))
+        (LabeledTree (OutPorts []) (Port [] "base" TStar NotConnected))
+        meta
+        (Just $ Breadcrumb.Definition uuid)
 
 buildNodes :: GraphOp [API.ExpressionNode]
 buildNodes = do
@@ -232,16 +245,20 @@ buildNode :: NodeId -> GraphOp API.ExpressionNode
 buildNode nid = do
     root      <- GraphUtils.getASTPointer nid
     ref       <- GraphUtils.getASTTarget  nid
-    expr      <- Text.pack <$> Print.printExpression ref
+    expr      <- Text.pack <$> (Print.printExpression ref `catch` (\(e::SomeException) -> pure $ displayException e))
     marked    <- ASTRead.getASTRef nid
     meta      <- fromMaybe def <$> AST.readMeta marked
     name      <- getNodeName nid
     canEnter  <- ASTRead.isEnterable ref
+    let breadcrumbToEnter =
+            if canEnter
+            then Just (Breadcrumb.Lambda nid)
+            else Nothing
     inports   <- buildInPorts nid ref [] aliasPortName Nothing
     outports  <- buildOutPorts root
-    code      <- Code.removeMarkers <$> getNodeCode nid
+    code      <- Code.removeMarkers <$> (getNodeCode nid `catch` (\(e::SomeException) -> pure $ convert $ displayException e))
     pure $ API.ExpressionNode
-        nid expr False name code inports outports meta canEnter
+        nid expr False name code inports outports meta breadcrumbToEnter
 
 type TCFunResolver = Target.Target -> Maybe (IR.Term IR.Function)
 
@@ -250,11 +267,22 @@ buildNodeTypecheckUpdate
     -> NodeId
     -> GraphOp API.NodeTypecheckerUpdate
 buildNodeTypecheckUpdate funResolver nid = do
-  root     <- GraphUtils.getASTPointer nid
-  ref      <- GraphUtils.getASTTarget  nid
-  inPorts  <- buildInPorts nid ref [] aliasPortName (Just funResolver)
-  outPorts <- buildOutPorts root
-  pure $ API.ExpressionUpdate nid inPorts outPorts
+    root        <- GraphUtils.getASTPointer nid
+    ref         <- GraphUtils.getASTTarget  nid
+    inPorts     <- buildInPorts nid ref [] aliasPortName (Just funResolver)
+    outPorts    <- buildOutPorts root
+    resolvedDef <- extractResolvedDef ref (Just funResolver)
+    let breadcrumbToEnter = join $ forM resolvedDef $
+            \x -> case x of
+                Breadcrumb.Function mod _ ->
+                    if mod == "Std.Primitive"
+                    then Nothing
+                    else return $ Breadcrumb.Redirection nid x
+                Breadcrumb.Method mod _ _ ->
+                    if mod == "Std.Primitive"
+                    then Nothing
+                    else return $ Breadcrumb.Redirection nid x
+    pure $ API.ExpressionUpdate nid inPorts outPorts breadcrumbToEnter
 
 getUniName :: NodeRef -> GraphOp (Maybe Text)
 getUniName root = do
@@ -325,7 +353,7 @@ getPortState node = do
             else WithDefault . Expression . Text.unpack
                 <$> Print.printFullExpression node
         _ -> WithDefault . Expression . Text.unpack
-            <$> Print.printFullExpression node
+            <$> (Print.printFullExpression node `catch` (\(e::SomeException) -> pure $ convert $ displayException e))
 
 extractArgTypes :: NodeRef -> GraphOp [TypeRep]
 extractArgTypes node = do
@@ -401,6 +429,33 @@ extractAppArgNames node funResolve = go [] node where
             names  <- resolveNames tgt funResolve
             pure $ Safe.tailSafe names
         _       -> pure []
+
+extractResolvedDef :: NodeRef -> Maybe TCFunResolver -> GraphOp (Maybe Breadcrumb.CodeTarget)
+extractResolvedDef node funResolve = do
+    match node $ \case
+        Grouped g -> source g >>= \a -> extractResolvedDef a funResolve
+        -- App is Lam that has some args applied
+        App{}  -> extractAppResolvedDef node funResolve
+        ResolvedDef mod n -> return . Just $ Breadcrumb.Function (convertVia @String mod) (convertVia @String n)
+        Acc t a -> do
+            argTp  <- source t >>= getLayer @TypeLayer >>= source
+            method <- source a >>= ASTRead.getVarName'
+            tgt    <- targetForType argTp method
+            case tgt of
+                Target.Method mod cls met -> pure $ Just $ Breadcrumb.Method (convertVia @String mod) (convertVia @String cls) (convertVia @String met)
+                Target.Function mod fun -> pure $ Just $ Breadcrumb.Function (convertVia @String mod) (convertVia @String fun)
+                Target.Unknown -> pure Nothing
+        _ -> pure Nothing
+
+extractAppResolvedDef :: NodeRef -> Maybe TCFunResolver -> GraphOp (Maybe Breadcrumb.CodeTarget)
+extractAppResolvedDef node funResolve = go node
+    where
+        go :: NodeRef -> GraphOp (Maybe Breadcrumb.CodeTarget)
+        go node = match node $ \case
+            ResolvedDef mod n -> return . Just $ Breadcrumb.Function (convertVia @String mod) (convertVia @String n)
+            App f a -> go =<< source f
+            Lam{}   -> extractResolvedDef node funResolve
+            _       -> pure Nothing
 
 insideThisNode :: NodeRef -> GraphOp Bool
 insideThisNode node = (== node) <$> ASTRead.getCurrentASTTarget

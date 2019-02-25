@@ -6,7 +6,7 @@
 
 module Empire.Commands.Code where
 
-import           Empire.Prelude          hiding (id, from, lens, span, to)
+import           Empire.Prelude          hiding (from, lens, span, to)
 import           Control.Monad.State     (MonadState)
 import           Control.Monad           (filterM, forM)
 import qualified Data.Set                as Set
@@ -222,7 +222,7 @@ invalidateMarker index = do
     Graph.nodeCache . NodeCache.nodeMetaMap . at index .= Nothing
     Graph.nodeCache . NodeCache.portMappingMap %= Map.filterWithKey (\(nid,_) _ -> Just nid /= oldId)
 
-addCodeMarker :: Delta -> EdgeRef -> GraphOp NodeRef
+addCodeMarker :: Delta -> EdgeRef -> GraphOp Delta
 addCodeMarker beg edge = do
     ref    <- source edge
     index  <- getNextExprMarker
@@ -236,7 +236,7 @@ addCodeMarker beg edge = do
     insertAt beg (makeMarker index)
     replaceSource markedNode $ generalize edge
     gossipUsesChangedBy (fromIntegral $ Text.length $ makeMarker index) markedNode
-    return markedNode
+    return markerLength
 
 getOffsetRelativeToFile :: NodeRef -> GraphOp (Maybe Delta)
 getOffsetRelativeToFile ref = do
@@ -323,7 +323,7 @@ getOffset ref = do
             let leftInputs = takeWhile (/= ref) realInputs
             moreOffset     <- getOffset =<< target more
             lefts          <- mapM (fmap (view CodeSpan.realSpan) . getLayer @CodeSpan) leftInputs
-            return $ moreOffset <> (mconcat lefts)
+            return $ moreOffset <> mconcat lefts
         _ -> ASTPrint.printFullExpression ref >>= error . ("getOffset: " <>) . convert
     LeftSpacedSpan (SpacedSpan off _) <- view CodeSpan.realSpan <$> getLayer @CodeSpan ref
     return $ leftSpan <> LeftSpacedSpan (SpacedSpan off 0)
@@ -387,12 +387,12 @@ gossipLengthsChangedBy delta ref = do
     succNodes <- mapM target succs
     mapM_ (gossipLengthsChangedBy delta) succNodes
 
-addToLengthCls :: NodeRef -> Delta -> ClassOp ()
+addToLengthCls :: NodeRef -> Delta -> ASTOp g ()
 addToLengthCls ref delta = do
     LeftSpacedSpan (SpacedSpan off len) <- view CodeSpan.realSpan <$> getLayer @CodeSpan ref
     putLayer @CodeSpan ref $ CodeSpan.mkRealSpan (LeftSpacedSpan (SpacedSpan off (len + delta)))
 
-gossipLengthsChangedByCls :: Delta -> NodeRef -> ClassOp ()
+gossipLengthsChangedByCls :: Delta -> NodeRef -> ASTOp g ()
 gossipLengthsChangedByCls delta ref = do
     addToLengthCls ref delta
     succs     <- ociSetToList =<< getLayer @IR.Users ref

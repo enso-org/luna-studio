@@ -258,11 +258,13 @@ getTargetEdge nid = do
                 _         -> return $ generalize expr
         _ -> throwM $ MalformedASTRef ref
 
-getNameOf :: NodeRef -> GraphOp (Maybe Text)
+getNameOf :: NodeRef -> ASTOp g (Maybe Text)
 getNameOf ref = match ref $ \case
     Marked _ e -> getNameOf =<< source e
     Unify  l _ -> getNameOf =<< source l
     Var    n   -> return $ Just $ convert $ convertTo @String n
+    ASGFunction n _ _ -> pure . Just . convert =<< getVarName =<< source n
+    ClsASG _ n _ _ _ -> pure $ Just $ convert n
     _             -> return Nothing
 
 getASTMarkerPosition :: NodeId -> GraphOp NodeRef
@@ -399,7 +401,7 @@ isASGFunction expr = match expr $ \case
     ASGFunction{} -> return True
     _     -> return False
 
-isRecord :: NodeRef -> GraphOp Bool
+isRecord :: NodeRef -> ASTOp g Bool
 -- isRecord expr = isJust <$> narrowTerm @IR.Record expr
 isRecord expr = match expr $ \case
     ClsASG{} -> return True
@@ -452,8 +454,8 @@ canEnterNode ref = do
     match' <- isMatch ref
     if match' then rhsIsLambda ref else return False
 
-classFunctions :: NodeRef -> ClassOp [NodeRef]
-classFunctions unit = do
+unitDefinitions :: NodeRef -> ClassOp [NodeRef]
+unitDefinitions unit = do
     klass' <- classFromUnit unit
     match klass' $ \case
         ClsASG _ _ _ _ funs'' -> do
@@ -461,6 +463,7 @@ classFunctions unit = do
             funs' <- mapM source funs
             catMaybes <$> forM funs' (\f -> cutThroughDocAndMarked f >>= \fun -> match fun $ \case
                 ASGFunction{} -> return (Just f)
+                ClsASG{}      -> return (Just f)
                 _             -> return Nothing)
 
 classFromUnit :: NodeRef -> ClassOp NodeRef
@@ -482,7 +485,7 @@ getMetadataRef unit = do
 getFunByNodeId :: NodeId -> ClassOp NodeRef
 getFunByNodeId nodeId = do
     cls  <- use Graph.clsClass
-    funs <- classFunctions cls
+    funs <- unitDefinitions cls
     fs   <- forM funs $ \fun -> do
         nid <- getNodeId fun
         return $ if nid == Just nodeId then Just fun else Nothing

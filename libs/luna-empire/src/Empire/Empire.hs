@@ -48,6 +48,7 @@ instance Default Env where
 
 data TCRequest = TCRequest
     { _tcLocation       :: GraphLocation
+    , _tcUpdateLocation :: GraphLocation
     , _tcGraph          :: ClsGraph
     , _rooted           :: Store.RootedWithRedirects NodeRef
     , _tcFlush          :: Bool

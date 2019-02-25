@@ -77,11 +77,23 @@ data FunctionGraph = FunctionGraph { _funName    :: String
                                    , _funMarkers :: Map MarkerId NodeRef
                                    } deriving Show
 
+data TopLevelGraph =
+      ClassDefinition ClassGraph
+    | FunctionDefinition FunctionGraph
+    deriving Show
+
+data ClassGraph =
+    ClassGraph {
+        _className    :: String
+      , _classMethods :: Map NodeId FunctionGraph
+    } deriving Show
+
+
 data ClsGraph = ClsGraph { _clsClass       :: NodeRef
                          , _clsCodeMarkers :: Map MarkerId NodeRef
                          , _clsCode        :: Text
                          , _clsParseError  :: Maybe SomeException
-                         , _clsFuns        :: Map NodeId FunctionGraph
+                         , _clsFuns        :: Map NodeId TopLevelGraph
                          , _clsNodeCache   :: NodeCache
                          } deriving Show
 
@@ -91,6 +103,13 @@ instance HasRefs Graph where
 instance HasRefs FunctionGraph where
     refs fun (FunctionGraph a b c) = FunctionGraph a <$> refs fun b <*> traverse fun c
 
+instance HasRefs TopLevelGraph where
+    refs fun (ClassDefinition g) = ClassDefinition <$> refs fun g
+    refs fun (FunctionDefinition g) = FunctionDefinition <$> refs fun g
+
+instance HasRefs ClassGraph where
+    refs fun (ClassGraph n ms) = ClassGraph n <$> refs fun ms
+
 instance HasRefs ClsGraph where
     refs fun (ClsGraph a b c d e f) = ClsGraph <$> fun a <*> traverse fun b <*> pure c <*> pure d <*> (traverse.refs) fun e <*> pure f
 
@@ -99,8 +118,11 @@ instance MonadState s m => MonadState s (DepState.StateT b m) where
     put = lift . put
 
 makeLenses ''Graph
+makePrisms ''TopLevelGraph
+makeLenses ''ClassGraph
 makeLenses ''FunctionGraph
 makeLenses ''ClsGraph
+
 
 -- unescapeUnaryMinus :: Vis.Node -> Vis.Node
 -- unescapeUnaryMinus n = if n ^. Vis.name == "Var \"#uminus#\""

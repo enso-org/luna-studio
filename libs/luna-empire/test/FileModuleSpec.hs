@@ -782,9 +782,9 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode (loc |>= foo) u1 "5" (atXPos (-10))
                 offsets <- Graph.withUnit loc $ do
                     funs <- use $ Graph.userState . Graph.clsFuns
-                    return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
+                    return $ map (\fun -> (fun ^. Graph._FunctionDefinition . Graph.funName, fun ^? Graph._FunctionDefinition . Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",10), ("bar",58), ("main",91)]
+            offsets `shouldMatchList` [("foo",Just 10), ("bar",Just 58), ("main",Just 91)]
         it "maintains proper function file offsets after adding a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -794,9 +794,9 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode loc u1 "def aaa" (atXPos $ 1.5 * gapBetweenNodes)
                 offsets <- Graph.withUnit loc $ do
                     funs <- use $ Graph.userState . Graph.clsFuns
-                    return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
+                    return $ map (\fun -> (fun ^. Graph._FunctionDefinition . Graph.funName, fun ^? Graph._FunctionDefinition . Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",10), ("bar",39), ("aaa",65), ("main",94)]
+            offsets `shouldMatchList` [("foo",Just 10), ("bar",Just 39), ("aaa",Just 65), ("main",Just 94)]
         it "maintains proper function file offsets after removing a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -807,9 +807,9 @@ spec = around withChannels $ parallel $ do
                 Graph.removeNodes loc [bar]
                 offsets <- Graph.withUnit loc $ do
                     funs <- use $ Graph.userState . Graph.clsFuns
-                    return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
+                    return $ map (\fun -> (fun ^. Graph._FunctionDefinition . Graph.funName, fun ^? Graph._FunctionDefinition . Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo",10), ("main",39)]
+            offsets `shouldMatchList` [("foo",Just 10), ("main",Just 39)]
         it "maintains proper function file offsets after renaming a function" $ \env -> do
             offsets <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath"
@@ -820,9 +820,9 @@ spec = around withChannels $ parallel $ do
                 Graph.renameNode loc (bar ^. Node.nodeId) "qwerty"
                 offsets <- Graph.withUnit loc $ do
                     funs <- use $ Graph.userState . Graph.clsFuns
-                    return $ map (\fun -> (fun ^. Graph.funName, fun ^. Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
+                    return $ map (\fun -> (fun ^. Graph._FunctionDefinition . Graph.funName, fun ^? Graph._FunctionDefinition . Graph.funGraph . Graph.fileOffset)) $ Map.elems funs
                 return offsets
-            offsets `shouldMatchList` [("foo", 10), ("qwerty", 39), ("main", 75)]
+            offsets `shouldMatchList` [("foo", Just 10), ("qwerty", Just 39), ("main", Just 75)]
         it "adds the first function in a file" $ \env -> do
             u1 <- mkUUID
             (nodes, code) <- evalEmp env $ do
@@ -1053,7 +1053,9 @@ spec = around withChannels $ parallel $ do
                 u1 <- mkUUID
                 Graph.addNode loc u1 "def 4" def
                 Graph.renameNode loc u1 "foo"
-                node <- Graph.withUnit loc $ runASTOp $ GraphBuilder.buildClassNode u1 ""
+                let funGraph = Graph.FunctionGraph "foo" (error "FileModuleSpec:1056") def
+                    funDef   = Graph.FunctionDefinition funGraph
+                node <- Graph.withUnit loc $ runASTOp $ GraphBuilder.buildClassNode u1 funDef
                 liftIO $ node ^. Node.name `shouldBe` Just "foo"
                 return ()
         it "adds invalid def, another node inside and connects to output" $ \env -> do
@@ -1106,7 +1108,7 @@ spec = around withChannels $ parallel $ do
                         None
                     |]
             in specifyCodeChange initialCode expectedCode $ \(GraphLocation file _) -> do
-                Graph.substituteCode file [(102, 102, "\n    Foo.baz")]
+                Graph.substituteCode file [(111, 111, "\n    Foo.baz")]
         it "uses defined class with list of fields in main" $
             let initialCode = [r|
                     class Foo:
@@ -1132,7 +1134,7 @@ spec = around withChannels $ parallel $ do
                         None
                     |]
             in specifyCodeChange initialCode expectedCode $ \(GraphLocation file _) -> do
-                Graph.substituteCode file [(111, 111, "\n    Foo.baz")]
+                Graph.substituteCode file [(120, 120, "\n    Foo.baz")]
         it "does not error on incomplete import" $
             let initialCode = [r|
                     import Std.Base

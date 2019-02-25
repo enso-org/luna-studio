@@ -41,7 +41,7 @@ createNode parentPath nodePos expr isDefinition = do
                       then view nodeLoc <$> listToMaybe selected
                       else Nothing
         empireNode  = Empire.ExpressionNode nid expr isDefinition def def
-            def def nodeMeta False
+            def def nodeMeta Nothing
         node        = convert (parentPath, empireNode)
         nl          = NodeLoc parentPath nid
     localAddExpressionNode node

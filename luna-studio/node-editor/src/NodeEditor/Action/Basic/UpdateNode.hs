@@ -15,6 +15,7 @@ import qualified NodeEditor.React.Model.Searcher            as Searcher
 
 import Common.Action.Command                       (Command)
 import Data.Set                                    (Set)
+import LunaStudio.Data.Breadcrumb                  (BreadcrumbItem (Definition))
 import LunaStudio.Data.Node                        (NodeTypecheckerUpdate,
                                                     tcNodeId)
 import LunaStudio.Data.NodeLoc                     (NodeLoc)
@@ -165,19 +166,20 @@ localUpdateExpressionNode mods node
                     True
             return True
 
-localUpdateCanEnterExpressionNode :: NodeLoc -> Bool -> Command State ()
-localUpdateCanEnterExpressionNode nl update = NodeEditor.modifyExpressionNode nl
-    $ ExpressionNode.canEnter .= update
+localUpdateToEnterExpressionNode :: NodeLoc -> Maybe BreadcrumbItem -> Command State ()
+localUpdateToEnterExpressionNode nl update = NodeEditor.modifyExpressionNode nl
+    $ ExpressionNode.toEnter .= update
 
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
 localUpdateNodeTypecheck path update = do
     let nl = convert (path, update ^. tcNodeId)
     case update of
-        API.ExpressionUpdate _ inPorts outPorts ->
+        API.ExpressionUpdate _ inPorts outPorts toEnter ->
             withJustM (NodeEditor.getExpressionNode nl)
                 $ \node -> void . localUpdateExpressionNode def $ node
                     & ExpressionNode.inPorts  .~ convert `fmap` inPorts
                     & ExpressionNode.outPorts .~ convert `fmap` outPorts
+                    & ExpressionNode.toEnter  .~ toEnter
                     & ExpressionNode.value    %~ (\value ->
                         if  value == ExpressionNode.AwaitingTypecheck
                             || ExpressionNode.returnsError node

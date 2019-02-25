@@ -73,7 +73,8 @@ childrenFromSeq currentFun tgtBeg edge = do
             pure $ Map.singleton uid child
         Invalid{} -> pure def
         _ -> do
-            void $ Code.addCodeMarker beg edge
+            markerLen <- Code.addCodeMarker beg edge
+            Code.gossipLengthsChangedByCls markerLen currentFun
             childrenFromSeq currentFun tgtBeg edge
 
 lambdaChildren :: NodeRef -> Delta -> EdgeRef -> GraphOp (Map NodeId BH.BChild)

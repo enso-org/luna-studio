@@ -7,7 +7,7 @@ import           LunaStudio.Data.GraphLocation              (breadcrumb)
 import           NodeEditor.Action.Basic.ProjectManager     (navigateToGraph)
 import           NodeEditor.Action.State.App                (getWorkspace)
 import           NodeEditor.Batch.Workspace                 (currentLocation)
-import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, canEnter, isDefinition, nodeId)
+import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, toEnter, isDefinition, nodeId)
 import           NodeEditor.State.Global                    (State)
 
 
@@ -32,5 +32,6 @@ exitBreadcrumb =
             bc -> navigateToGraph $ location & breadcrumb . items .~ init bc
 
 enterNode :: ExpressionNode -> Command State ()
-enterNode node = when (node ^. canEnter) $ enterBreadcrumb $ mkBcItem (node ^. nodeId) where
-    mkBcItem = if node ^. isDefinition then Definition else Lambda
+enterNode node = case node ^. toEnter of
+    Just breadcrumb -> enterBreadcrumb breadcrumb
+    _               -> return ()

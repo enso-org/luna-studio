@@ -89,9 +89,9 @@ data ModificationSetCamera = ModificationSetCamera
     { _newCameraTransformation :: CameraTransformation
     } deriving (Eq, Generic, Show)
 
-data ModificationSetCanEnterNode = ModificationSetCanEnterNode
-    { _setCanEnterNodeLoc :: NodeLoc
-    , _newCanEnter        :: Bool
+data ModificationSetToEnterNode = ModificationSetToEnterNode
+    { _setToEnterNodeLoc :: NodeLoc
+    , _newToEnter        :: Maybe BreadcrumbItem
     } deriving (Eq, Generic, Show)
 
 data ModificationSetCode = ModificationSetCode
@@ -167,7 +167,7 @@ makeLenses ''ModificationRemoveNode
 makeLenses ''ModificationRenameNode
 makeLenses ''ModificationSetBreadcrumb
 makeLenses ''ModificationSetCamera
-makeLenses ''ModificationSetCanEnterNode
+makeLenses ''ModificationSetToEnterNode
 makeLenses ''ModificationSetCode
 makeLenses ''ModificationSetDefaultVisualizers
 makeLenses ''ModificationSetExpression
@@ -205,9 +205,9 @@ instance ToJSON ModificationSetBreadcrumb
 instance Binary ModificationSetCamera
 instance NFData ModificationSetCamera
 instance ToJSON ModificationSetCamera
-instance Binary ModificationSetCanEnterNode
-instance NFData ModificationSetCanEnterNode
-instance ToJSON ModificationSetCanEnterNode
+instance Binary ModificationSetToEnterNode
+instance NFData ModificationSetToEnterNode
+instance ToJSON ModificationSetToEnterNode
 instance Binary ModificationSetCode
 instance NFData ModificationSetCode
 instance ToJSON ModificationSetCode
@@ -263,7 +263,7 @@ data Modification
     | RenameNode            ModificationRenameNode
     | SetBreadcrumb         ModificationSetBreadcrumb
     | SetCamera             ModificationSetCamera
-    | SetCanEnterNode       ModificationSetCanEnterNode
+    | SetToEnterNode       ModificationSetToEnterNode
     | SetCode               ModificationSetCode
     | SetDefaultVisualizers ModificationSetDefaultVisualizers
     | SetExpression         ModificationSetExpression
@@ -314,8 +314,8 @@ instance IsModification ModificationSetBreadcrumb         where
     toModification = SetBreadcrumb
 instance IsModification ModificationSetCamera             where
     toModification = SetCamera
-instance IsModification ModificationSetCanEnterNode       where
-    toModification = SetCanEnterNode
+instance IsModification ModificationSetToEnterNode       where
+    toModification = SetToEnterNode
 instance IsModification ModificationSetCode               where
     toModification = SetCode
 instance IsModification ModificationSetDefaultVisualizers where
@@ -352,8 +352,8 @@ instance HasNodeLoc ModificationRemoveNode      where
     nodeLoc = removeNodeLoc
 instance HasNodeLoc ModificationRenameNode      where
     nodeLoc = renameNodeLoc
-instance HasNodeLoc ModificationSetCanEnterNode where
-    nodeLoc = setCanEnterNodeLoc
+instance HasNodeLoc ModificationSetToEnterNode where
+    nodeLoc = setToEnterNodeLoc
 instance HasNodeLoc ModificationSetExpression   where
     nodeLoc = setExpressionNodeLoc
 instance HasNodeLoc ModificationSetInPorts      where
@@ -370,7 +370,7 @@ instance HasNodeLoc ModificationSetOutPorts     where
 -- TODO: with Wojtek
 getNodeModificationNodeLoc :: Modification -> Maybe NodeLoc
 getNodeModificationNodeLoc (RenameNode      m) = Just $ m ^. nodeLoc
-getNodeModificationNodeLoc (SetCanEnterNode m) = Just $ m ^. nodeLoc
+getNodeModificationNodeLoc (SetToEnterNode  m) = Just $ m ^. nodeLoc
 getNodeModificationNodeLoc (SetExpression   m) = Just $ m ^. nodeLoc
 getNodeModificationNodeLoc (SetInPorts      m) = Just $ m ^. nodeLoc
 getNodeModificationNodeLoc (SetIsDefinition m) = Just $ m ^. nodeLoc
@@ -411,7 +411,7 @@ class Diffable a where
 
 instance Diffable ExpressionNode where
     patch (RenameNode      m) n = n & Node.name         .~ m ^. newName
-    patch (SetCanEnterNode m) n = n & Node.canEnter     .~ m ^. newCanEnter
+    patch (SetToEnterNode m) n = n & Node.toEnter      .~ m ^. newToEnter
     patch (SetExpression   m) n = n & Node.expression   .~ m ^. newExpression
     patch (SetInPorts      m) n = n & Node.inPorts      .~ m ^. newInPortTree
     patch (SetIsDefinition m) n = n & Node.isDefinition .~ m ^. newIsDefinition
@@ -429,7 +429,7 @@ instance Diffable ExpressionNode where
             , justIf (n1 ^. Node.inPorts      /= n2 ^. Node.inPorts)      $ toModification . ModificationSetInPorts      nl $ n2 ^. Node.inPorts
             , justIf (n1 ^. Node.outPorts     /= n2 ^. Node.outPorts)     $ toModification . ModificationSetOutPorts     nl $ n2 ^. Node.outPorts
             , justIf (n1 ^. Node.nodeMeta     /= n2 ^. Node.nodeMeta)     $ toModification . ModificationSetNodeMeta     nl $ n2 ^. Node.nodeMeta
-            , justIf (n1 ^. Node.canEnter     /= n2 ^. Node.canEnter)     $ toModification . ModificationSetCanEnterNode nl $ n2 ^. Node.canEnter
+            , justIf (n1 ^. Node.toEnter      /= n2 ^. Node.toEnter)      $ toModification . ModificationSetToEnterNode nl $ n2 ^. Node.toEnter
             ]
 
 instance Diffable (Map NodeLoc ExpressionNode) where
@@ -465,7 +465,7 @@ instance Diffable Graph where
     patch mod@(RemoveConnection _) g = g & Graph.connections   %~ patch mod
     patch mod@(RemoveNode       _) g = g & Graph.nodes         %~ patch mod
     patch mod@(RenameNode       _) g = g & Graph.nodes         %~ patch mod
-    patch mod@(SetCanEnterNode  _) g = g & Graph.nodes         %~ patch mod
+    patch mod@(SetToEnterNode  _) g = g & Graph.nodes         %~ patch mod
     patch mod@(SetExpression    _) g = g & Graph.nodes         %~ patch mod
     patch mod@(SetImports       _) g = g & Graph.imports       %~ patch mod
     patch mod@(SetInPorts       _) g = g & Graph.nodes         %~ patch mod
@@ -554,7 +554,7 @@ instance Diffable GUIState where
     patch mod@(RenameNode            _) s = s & GUIState.graph . _Right           %~ patch mod
     patch     (SetBreadcrumb         m) s = s & GUIState.breadcrumb               .~ m ^. newBreadcrumb
     patch     (SetCamera             m) s = s & GUIState.camera                   .~ m ^. newCameraTransformation
-    patch mod@(SetCanEnterNode       _) s = s & GUIState.graph . _Right           %~ patch mod
+    patch mod@(SetToEnterNode        _) s = s & GUIState.graph . _Right           %~ patch mod
     patch     (SetCode               m) s = s & GUIState.code                     .~ m ^. newCode
     patch     (SetDefaultVisualizers m) s = s & GUIState.defaultVisualizers       .~ m ^. newDefaultVisualizers
     patch mod@(SetExpression         _) s = s & GUIState.graph . _Right           %~ patch mod

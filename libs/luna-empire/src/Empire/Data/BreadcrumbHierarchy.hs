@@ -83,6 +83,10 @@ getBreadcrumbItems item (Breadcrumb bc) = go bc item where
         Just (LambdaChild c) -> LambdaChild c : go crumbs c
         Just (ExprChild   c) -> ExprChild   c : []
         Nothing              -> []
+    go (Redirection id _ : crumbs) b = case b ^? children . ix id of
+        Just (LambdaChild c) -> LambdaChild c : go crumbs c
+        Just (ExprChild   c) -> ExprChild   c : []
+        Nothing              -> []
     go (a : _) _ = error $ unexpectedBreadcrumbError a
 
 navigateTo :: LamItem -> Breadcrumb BreadcrumbItem -> Maybe LamItem
