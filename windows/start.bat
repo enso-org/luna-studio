@@ -1,4 +1,4 @@
-s-luna-empire start
-s-luna-undo-redo start
-s-luna-ws-connector start
-s-luna-broker start
+"%~dp0\s-luna-empire" start
+"%~dp0\s-luna-undo-redo" start
+"%~dp0\s-luna-ws-connector" start
+"%~dp0\s-luna-broker" start
