@@ -198,7 +198,7 @@ def apm_packages():
 
 def sed_inplace(filename, pattern, repl):
     pattern_compiled = re.compile(pattern)
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as tmp_file:
         with open(filename, 'rb') as src_file:
             data = src_file.read()
             line = None
