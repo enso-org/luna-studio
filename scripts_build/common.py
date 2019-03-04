@@ -20,7 +20,7 @@ def working_directory(path):
 #  work currently on Windows. Even if we created them here, 7z archive format
 #  would replace them with copied files anyway.
 #  So as a provisional workaround, we now allow copying files when symlinking
-#  fails - that allows packaging without root privilages on Windows.
+#  fails - that allows packaging without root privileges on Windows.
 #  To be sorted out as part of https://github.com/luna/luna-manager/issues/236
 def create_symlink_or_copy(link, target):
     try:
