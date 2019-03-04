@@ -24,7 +24,8 @@ import qualified NodeEditor.React.View.App                  as App
 import qualified NodeEditor.State.Global                    as Global
 import qualified NodeEditor.State.UI                        as UI
 import qualified Searcher.Engine.Data.Database              as SearcherDB
-import qualified Searcher.Engine.Data.Result                as Result
+{-import qualified Searcher.Engine.Data.Result                as Result-}
+import qualified JS.SearcherEngine as Result
 {-import qualified Searcher.Engine.Data.Symbol.Library        as Library-}
 
 import Common.Action.Command                (Command)

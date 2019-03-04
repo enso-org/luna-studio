@@ -3,12 +3,14 @@ module NodeEditor.Action.Basic.UpdateSearcherHints where
 import Common.Prelude
 
 import qualified Data.Aeson                                   as Aeson
+import qualified Data.Array                                   as Array
 import qualified Data.ByteString.Lazy.Char8                   as BS
 import qualified Data.JSString                                as JSString
 import qualified Data.Map                                     as Map
 import qualified Data.Set                                     as Set
 import qualified Data.Text                                    as Text
 import qualified IdentityString                               as IS
+import qualified JS.SearcherEngine                            as SearcherEngine
 import qualified LunaStudio.Data.Searcher.Hint                as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Library        as Library
 {-import qualified LunaStudio.Data.Searcher.Hint.Node           as NodeHint-}
@@ -21,8 +23,8 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node    as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization         as Visualization
 import qualified NodeEditor.State.Global                      as Global
 import qualified Searcher.Engine.Data.Match                   as Match
-import qualified Searcher.Engine.Data.Result                  as Result
-import qualified Searcher.Engine.Search                       as Search
+{-import qualified Searcher.Engine.Data.Result                  as Result-}
+{-import qualified Searcher.Engine.Search                       as Search-}
 
 import Common.Action.Command              (Command)
 import Common.Debug                       (timeAction)
@@ -44,7 +46,8 @@ import NodeEditor.React.Model.Searcher    (Searcher)
                                            {-localFunctionsLibraryName)-}
 import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 import NodeEditor.State.Global            (State)
-import Searcher.Engine.Data.Result        (Result)
+{-import Searcher.Engine.Data.Result        (Result)-}
+import JS.SearcherEngine (Result)
 import Searcher.Engine.Metric.DefaultMetric (DefaultMetric)
 
 
@@ -77,7 +80,9 @@ selectHint i = modifySearcher $ do
 
 localAddSearcherHints :: SearcherLibraries -> Command State ()
 localAddSearcherHints libHints = do
-    Global.searcherDatabase %= NodeHint.insertSearcherLibraries libHints
+    oldDb <- use Global.searcherDatabase
+    newDb <- NodeHint.insertSearcherLibraries libHints oldDb
+    Global.searcherDatabase .= newDb
     localUpdateSearcherHintsPreservingSelection
 
 setImportedLibraries :: Set Library.Name -> Command State ()
@@ -115,7 +120,7 @@ localUpdateSearcherHints :: Command State ()
 localUpdateSearcherHints = localUpdateSearcherHints' >> updateDocumentation
 
 localUpdateSearcherHints' :: Command State ()
-localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ do -- return () -- unlessM inTopLevelBreadcrumb $ do
+localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inTopLevelBreadcrumb $ do
     nsData        <- use Global.searcherDatabase
     {-localFunctions <- getLocalFunctions-}
     {-let nsData :: NodeSearcherData-}
@@ -127,8 +132,7 @@ localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ do -- retur
     withJustM getSearcher $ \searcher -> do
         let mayQuery = searcher ^? Searcher.input . Input._DividedInput
             query    = fromMaybe def mayQuery
-        results <- timeAction "search" $ liftIO $ evaluate
-                                       $ force $ search query nsData Nothing
+        results <- timeAction "search" $ search query nsData Nothing
         modifySearcher $ Searcher.results .= results
         {-let updateCommands s = do-}
                 {-let hints input = CommandSearcher.search-}
@@ -161,18 +165,21 @@ localClearSearcherHints = do
     updateDocumentation
 
 
-search :: Input.Divided -> NodeHint.Database -> Maybe () -> [Result Hint.Hint]
+search :: Input.Divided -> NodeHint.Database -> Maybe () -> Command State [Result Hint.Hint]
 search input nsData mayClassName = do
     let query          = input ^. Input.query
-        metric         = def :: DefaultMetric
+        db = nsData ^. NodeHint.database
+        mapping = nsData ^. NodeHint.nodes
         {-strippedPrefix = Text.strip $ input ^. Input.prefix-}
         {-notNullInput   = not . Text.null $ convert input-}
         {-weights        = Just $ getWeights input mayClassName-}
         {-searchResult   = if notNullInput || isJust mayClassName-}
             {-then NodeSearcher.search                       query nsData weights-}
             {-else NodeSearcher.notConnectedEmptyInputSearch query nsData weights-}
-        res = Search.search query (nsData ^. NodeHint.database) (const 1) metric
-    (Result.hint %~ Hint.Node) <$> res
+    res <- if Text.length query > 0 then SearcherEngine.query db query else pure []
+    let mappedRes = fmap (mapping Array.!) <$> res
+    let final = if Text.null query then (\r -> SearcherEngine.Result r 1 $ SearcherEngine.Match []) <$> Array.elems mapping else mappedRes
+    pure $ fmap Hint.Node <$> final
     {-if strippedPrefix == "def" then mempty-}
         {-else if query == "_"   then Searcher.wildcardMatch : searchResult-}
         {-else searchResult-}

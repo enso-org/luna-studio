@@ -24,7 +24,7 @@ import NodeEditor.React.Model.Searcher.Hint  (Hint)
 import NodeEditor.React.Model.Searcher.Input (Input)
 import NodeEditor.React.Model.Searcher.Mode  (Mode)
 import NodeEditor.React.Model.Visualization  (RunningVisualization)
-import Searcher.Engine.Data.Result           (Result)
+import JS.SearcherEngine                     (Result)
 
 
 

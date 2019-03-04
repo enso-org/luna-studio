@@ -4,13 +4,16 @@ module NodeEditor.React.Model.Searcher.Hint.Node where
 
 import Common.Prelude
 
+import qualified Data.Array                            as Array
 import qualified Data.Map.Strict                       as Map
 import qualified Data.Set                              as Set
+import qualified JS.SearcherEngine                     as Searcher
 import qualified LunaStudio.Data.Searcher.Hint         as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Class   as Class
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
 import qualified Searcher.Engine.Data.Database         as Database
 
+import Data.Array                            (Array)
 import Data.Map.Strict                       (Map)
 import Data.Set                              (Set)
 import LunaStudio.Data.Searcher.Hint         (SearcherHint)
@@ -142,21 +145,22 @@ fromSearcherLibraries libs importedLibs = let
 -- === Definition === --
 
 data Database = Database
-    { _database :: Database.Database Node
+    { _database :: Searcher.Database
     , _imported :: Set Library.Name
-    } deriving (Eq, Generic, Show)
+    , _bareLibs :: SearcherLibraries
+    , _nodes    :: Array Int Node
+    } deriving (Generic)
 
 makeLenses ''Database
 
-instance NFData  Database
-instance Default Database where def = Database def def
-
+instance Default Database where
+    def = Database def def def (Array.listArray (0, -1) [])
 
 -- === API === --
 
 missingLibraries :: Getter Database (Set Library.Name)
 missingLibraries = to $ \d -> let
-    allHints         = d ^. database . Database.hints . to Map.elems . to concat
+    allHints         = Array.elems $ d ^. nodes
     addLibName acc h = Set.insert (h ^. library . Library.name) acc
     presentLibs      = foldl addLibName mempty allHints
     importedLibs     = d ^. imported
@@ -167,14 +171,16 @@ localFunctionsLibraryName :: Text
 localFunctionsLibraryName = "Local"
 {-# INLINE localFunctionsLibraryName #-}
 
-insertHints :: [Node] -> Database -> Database
-insertHints v d = d & database %~ Database.insertMultiple v
-{-# INLINE insertHints #-}
-
-insertSearcherLibraries :: SearcherLibraries -> Database -> Database
-insertSearcherLibraries libs d = let
-    importedLibs = d ^. imported
-    nodeHints    = fromSearcherLibraries libs importedLibs
-    in d & database %~ Database.insertMultiple nodeHints
+insertSearcherLibraries :: MonadIO m => SearcherLibraries -> Database -> m Database
+insertSearcherLibraries libs d = do
+    let oldLibraries = d ^. bareLibs
+        importedLibs = d ^. imported
+        libs'        = Map.union libs oldLibraries
+        nodeHints    = fromSearcherLibraries libs' importedLibs
+        nodeHintsLen = length nodeHints
+        nodesArr     = Array.listArray (0, nodeHintsLen - 1) nodeHints
+        nodesAssocs  = (_2 %~ view expression) <$> Array.assocs nodesArr
+    db <- liftIO $ Searcher.createDatabase nodesAssocs
+    pure $ Database db importedLibs libs' nodesArr
 {-# INLINE insertSearcherLibraries #-}
 

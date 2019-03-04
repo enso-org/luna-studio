@@ -62,6 +62,7 @@ ghc-options:
 dependencies:
   - "base >= 4.9 && < 4.10"
   - aeson
+  - array
   - binary
   - bytestring
   - common

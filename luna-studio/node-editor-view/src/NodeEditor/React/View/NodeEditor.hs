@@ -5,6 +5,7 @@ import React.Flux     hiding (transform)
 
 import qualified Data.HashMap.Strict                        as HashMap
 import qualified Data.Set                                   as Set
+import qualified JS.SearcherEngine                          as Searcher
 import qualified LunaStudio.Data.CameraTransformation       as CameraTransformation
 import qualified LunaStudio.Data.Matrix                     as Matrix
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
@@ -21,7 +22,6 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeSearcher
 import qualified NodeEditor.React.View.Sidebar              as Sidebar
 import qualified NodeEditor.React.View.Style                as Style
 import qualified React.Flux                                 as React
-import qualified Searcher.Engine.Data.Result                as Searcher
 
 import Data.Matrix                                (Matrix)
 import Data.Maybe                                 (mapMaybe)
