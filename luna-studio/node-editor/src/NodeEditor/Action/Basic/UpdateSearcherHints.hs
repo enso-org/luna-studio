@@ -122,40 +122,24 @@ localUpdateSearcherHints = localUpdateSearcherHints' >> updateDocumentation
 
 localUpdateSearcherHints' :: Command State ()
 localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inTopLevelBreadcrumb $ do
-    nsData           <- use Global.searcherDatabase
-    localFunctions   <- getLocalFunctions
-    localFunctionsDb <- NodeHint.mkLocalFunctionsDb localFunctions
     withJustM getSearcher $ \searcher -> do
         let mayQuery = searcher ^? Searcher.input . Input._DividedInput
             query    = fromMaybe def mayQuery
-        let mayClassName = searcher ^? Searcher.mode
-                . Mode._Node . NodeMode.mode . NodeMode._ExpressionMode
-                . NodeMode.parent . _Just
-        results <- timeAction "search" $ search query localFunctionsDb nsData mayClassName
+        newHints <- case Mode.isExpressionSearcher $ searcher ^. Searcher.mode of
+            True -> do
+                nsData           <- use Global.searcherDatabase
+                localFunctions   <- getLocalFunctions
+                localFunctionsDb <- NodeHint.mkLocalFunctionsDb localFunctions
+                let mayClassName = searcher ^? Searcher.mode
+                        . Mode._Node . NodeMode.mode . NodeMode._ExpressionMode
+                        . NodeMode.parent . _Just
+                timeAction "search" $ search query localFunctionsDb nsData mayClassName
+            False -> pure mempty
         modifySearcher $ do
-            Searcher.results .= results
-        {-let updateCommands s = do-}
-                {-let hints input = CommandSearcher.search-}
-                        {-(input ^. Input.query)-}
-                        {-allCommands-}
-                {-maybe mempty hints mayQuery-}
-            {-updateNodeSearcher s = do-}
-                {-let mayClassName = s ^? Searcher.modeData-}
-                        {-. Searcher._ExpressionMode . Searcher.className . _Just-}
-                    {-hints input-}
-                        {-= if has (Searcher.modeData . Searcher._ExpressionMode) s-}
-                            {-then search input nsData mayClassName-}
-                            {-else mempty-}
-                {-s & Searcher.nodes .~ maybe mempty hints mayQuery-}
-            {-updateMode (Searcher.CommandSearcher s)-}
-                {-= Searcher.CommandSearcher $ updateCommands s-}
-            {-updateMode (Searcher.NodeSearcher s)-}
-                {-= Searcher.NodeSearcher $ updateNodeSearcher s-}
+            Searcher.results .= newHints
             let selectInput = maybe True (Text.null . view Input.query) mayQuery
-        {-Searcher.mode          %= updateMode-}
             hintsLen <- use $ Searcher.results . to length
             Searcher.selectedPosition .= if selectInput || hintsLen == 0 then Nothing else Just 0
-        {-Searcher.rollbackReady .= False-}
 
 localClearSearcherHints :: Command State ()
 localClearSearcherHints = do
@@ -203,6 +187,6 @@ fullDbSearch input localDb nsData mayClassName = do
 
 search :: Input.Divided -> NodeHint.Database -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
 search input localDb nsData mayClassName =
-    if Text.strip (input ^. Input.prefix)  == "def"
+    if Text.strip (input ^. Input.prefix) == "def"
         then pure mempty
         else fullDbSearch input localDb nsData mayClassName
