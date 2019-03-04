@@ -39,6 +39,7 @@ import Data.Ord                           (comparing)
 import Data.Set                           (Set)
 import Data.Text                          (Text)
 import JS.Visualizers                     (sendVisualizationData)
+import LunaStudio.Data.PortRef              (OutPortRef)
 import LunaStudio.Data.TypeRep            (ConstructorRep (ConstructorRep))
 import NodeEditor.Action.Batch            (searchNodes)
 import NodeEditor.Action.State.NodeEditor (getLocalFunctions, getSearcher,
@@ -147,6 +148,19 @@ localClearSearcherHints = do
         Searcher.selectedPosition .= def
         Searcher.results          .= mempty
     updateDocumentation
+
+getConnectedPortRef :: Command State (Maybe OutPortRef)
+getConnectedPortRef = do
+    s <- getSearcher
+    pure $ s ^? _Just . Searcher.mode . Mode._Node . NodeMode.mode
+              . NodeMode._ExpressionMode . NodeMode.newNode . _Just
+              . NodeMode.connectionSource . _Just
+
+updateClassName :: Maybe Class.Name -> Command State ()
+updateClassName cl = do
+    modifySearcher $ do
+        Searcher.mode . Mode._Node . NodeMode.mode . NodeMode._ExpressionMode . NodeMode.parent .= cl
+    localUpdateSearcherHintsPreservingSelection
 
 scoreTextMatch :: Text -> NodeHint.Database -> Command State [Result NodeHint.Node]
 scoreTextMatch query nsData = do

@@ -12,6 +12,7 @@ import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
 import qualified NodeEditor.React.Model.Port                as Port
 import qualified NodeEditor.React.Model.Searcher            as Searcher
+import qualified NodeEditor.Action.Basic.UpdateSearcherHints as Searcher
 
 import Common.Action.Command                       (Command)
 import Data.Set                                    (Set)
@@ -188,19 +189,13 @@ localUpdateNodeTypecheck path update = do
             SidebarNode.inputSidebarPorts .= convert `fmap2` outPorts
 
 updateSearcherClassName :: ExpressionNode -> Command State ()
-updateSearcherClassName updatedNode = return () -- do
-    {-mayConnectedPortRef <- maybe-}
-        {-Nothing-}
-        {-(view Searcher.connectedPortRef)-}
-        {-<$> NodeEditor.getSearcher-}
-    {-let mayConnectedNL   = view PortRef.nodeLoc <$> mayConnectedPortRef-}
-        {-nl               = updatedNode ^. ExpressionNode.nodeLoc-}
-        {-mayConnectedPort = listToMaybe $ ExpressionNode.outPortsList updatedNode-}
-        {-className        = maybe mempty toClassName mayConnectedPort-}
-        {-toClassName p    = convert <$> p ^? Port.valueType . TypeRep._TCons . _1-}
+updateSearcherClassName updatedNode = do
+    mayConnectedPortRef <- Searcher.getConnectedPortRef
+    let mayConnectedNL   = view PortRef.nodeLoc <$> mayConnectedPortRef
+        nl               = updatedNode ^. ExpressionNode.nodeLoc
+        mayConnectedPort = listToMaybe $ ExpressionNode.outPortsList updatedNode
+        className        = toClassName =<< mayConnectedPort
+        toClassName p    = convert <$> p ^? Port.valueType . TypeRep._TCons . _1
 
-    {-when (mayConnectedNL == Just nl) $ do-}
-        {-NodeEditor.modifySearcher $ Searcher.mode-}
-            {-. Searcher._NodeSearcher . Searcher.modeData-}
-            {-. Searcher._ExpressionMode . Searcher.className .= className-}
-        {-localUpdateSearcherHintsPreservingSelection-}
+    when (mayConnectedNL == Just nl) $
+        Searcher.updateClassName className
