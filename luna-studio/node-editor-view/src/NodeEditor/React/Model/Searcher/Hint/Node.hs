@@ -168,8 +168,14 @@ missingLibraries = to $ \d -> let
 {-# INLINE missingLibraries #-}
 
 localFunctionsLibraryName :: Text
-localFunctionsLibraryName = "Local"
+localFunctionsLibraryName = "#local"
 {-# INLINE localFunctionsLibraryName #-}
+
+mkLocalFunctionsDb :: MonadIO m => [Text] -> m Database
+mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
+    libs    = Map.singleton localFunctionsLibraryName library
+    library = Library.Library hints def
+    hints   = flip Hint.Raw mempty <$> syms
 
 insertSearcherLibraries :: MonadIO m => SearcherLibraries -> Database -> m Database
 insertSearcherLibraries libs d = do
@@ -183,4 +189,3 @@ insertSearcherLibraries libs d = do
     db <- liftIO $ Searcher.createDatabase nodesAssocs
     pure $ Database db importedLibs libs' nodesArr
 {-# INLINE insertSearcherLibraries #-}
-

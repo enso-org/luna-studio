@@ -122,21 +122,16 @@ localUpdateSearcherHints = localUpdateSearcherHints' >> updateDocumentation
 
 localUpdateSearcherHints' :: Command State ()
 localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inTopLevelBreadcrumb $ do
-    nsData        <- use Global.searcherDatabase
-    {-localFunctions <- getLocalFunctions-}
-    {-let nsData :: NodeSearcherData-}
-        {-nsData = nsData'-}
-            {-& Searcher.libraries %~ Map.insert-}
-                {-localFunctionsLibraryName-}
-                {-(Searcher.mkLocalFunctionsLibrary localFunctions)-}
-            {-& Searcher.importedLibraries %~ Set.insert localFunctionsLibraryName-}
+    nsData           <- use Global.searcherDatabase
+    localFunctions   <- getLocalFunctions
+    localFunctionsDb <- NodeHint.mkLocalFunctionsDb localFunctions
     withJustM getSearcher $ \searcher -> do
         let mayQuery = searcher ^? Searcher.input . Input._DividedInput
             query    = fromMaybe def mayQuery
         let mayClassName = searcher ^? Searcher.mode
                 . Mode._Node . NodeMode.mode . NodeMode._ExpressionMode
                 . NodeMode.parent . _Just
-        results <- timeAction "search" $ search query nsData mayClassName
+        results <- timeAction "search" $ search query localFunctionsDb nsData mayClassName
         modifySearcher $ do
             Searcher.results .= results
         {-let updateCommands s = do-}
@@ -191,40 +186,23 @@ scoreClassMembership (Just clName) = fmap adjustMethodScore where
                       then 1
                       else 0
 
+scoreLocalFuns :: Maybe Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
+scoreLocalFuns Nothing   = fmap (SearcherEngine.score +~ 1)
+scoreLocalFuns (Just cl) = id
 
-search :: Input.Divided -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
-search input nsData mayClassName = do
+fullDbSearch :: Input.Divided -> NodeHint.Database -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
+fullDbSearch input localDb nsData mayClassName = do
     let query = input ^. Input.query
-    scoredText <- scoreTextMatch query nsData
-    let classBonus = scoreClassMembership mayClassName scoredText
-        sorted = sortBy (comparing $ negate . view SearcherEngine.score) classBonus
+    scoredText  <- scoreTextMatch query nsData
+    scoredLocal <- scoreTextMatch query localDb
+    let classBonus    = scoreClassMembership mayClassName scoredText
+        localFunBonus = scoreLocalFuns mayClassName scoredLocal
+        allHints      = localFunBonus <> classBonus
+        sorted        = sortBy (comparing $ negate . view SearcherEngine.score) allHints
     pure $ Hint.Node <<$>> sorted
-    {-let query          = input ^. Input.query-}
-        {-db = nsData ^. NodeHint.database-}
-        {-mapping = nsData ^. NodeHint.nodes-}
-        {-{-strippedPrefix = Text.strip $ input ^. Input.prefix-}-}
-        {-{-notNullInput   = not . Text.null $ convert input-}-}
-        {-{-weights        = Just $ getWeights input mayClassName-}-}
-        {-{-searchResult   = if notNullInput || isJust mayClassName-}-}
-            {-{-then NodeSearcher.search                       query nsData weights-}-}
-            {-{-else NodeSearcher.notConnectedEmptyInputSearch query nsData weights-}-}
-    {-res <- if Text.length query > 0 then SearcherEngine.query db query else pure []-}
-    {-let mappedRes = fmap (mapping Array.!) <$> res-}
-    {-let final = if Text.null query then (\r -> SearcherEngine.Result r 1 $ SearcherEngine.Match []) <$> Array.elems mapping else mappedRes-}
-    {-if strippedPrefix == "def" then mempty-}
-        {-else if query == "_"   then Searcher.wildcardMatch : searchResult-}
-        {-else searchResult-}
 
-{-getWeights :: Input.Divided -> Maybe ClassName  -> TypePreference-}
-{-getWeights input mayClassName = do-}
-    {-let query = input ^. Input.query-}
-        {-strippedPrefix = Text.strip $ input ^. Input.prefix-}
-        {-isFirstQuery = Text.null strippedPrefix-}
-        {-searchForMethodsOnly = not (Text.null strippedPrefix)-}
-            {-&& Text.last strippedPrefix == '.'-}
-    {-Searcher.getWeights isFirstQuery searchForMethodsOnly mayClassName query-}
-
-
-
-
-
+search :: Input.Divided -> NodeHint.Database -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
+search input localDb nsData mayClassName =
+    if Text.strip (input ^. Input.prefix)  == "def"
+        then pure mempty
+        else fullDbSearch input localDb nsData mayClassName
