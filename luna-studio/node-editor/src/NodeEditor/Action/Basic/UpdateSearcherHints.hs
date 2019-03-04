@@ -13,12 +13,15 @@ import qualified IdentityString                               as IS
 import qualified JS.SearcherEngine                            as SearcherEngine
 import qualified LunaStudio.Data.Searcher.Hint                as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Library        as Library
+import qualified LunaStudio.Data.Searcher.Hint.Class          as Class
 {-import qualified LunaStudio.Data.Searcher.Hint.Node           as NodeHint-}
 import qualified NodeEditor.React.Model.Searcher              as Searcher
 import qualified NodeEditor.React.Model.Searcher.Hint.Node    as NodeHint
 import qualified NodeEditor.React.Model.Searcher.Hint         as Hint
 import qualified NodeEditor.React.Model.Searcher.Input        as Input
 {-import qualified NodeEditor.React.Model.Searcher.Mode.Command as CommandSearcher-}
+import qualified NodeEditor.React.Model.Searcher.Mode       as Mode
+import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeMode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node    as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization         as Visualization
 import qualified NodeEditor.State.Global                      as Global
@@ -32,6 +35,7 @@ import Common.Debug                       (timeAction)
 import Control.DeepSeq                    (force)
 import Control.Exception.Base             (evaluate)
 import Data.Map                           (Map)
+import Data.Ord                           (comparing)
 import Data.Set                           (Set)
 import Data.Text                          (Text)
 import JS.Visualizers                     (sendVisualizationData)
@@ -129,7 +133,10 @@ localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inT
     withJustM getSearcher $ \searcher -> do
         let mayQuery = searcher ^? Searcher.input . Input._DividedInput
             query    = fromMaybe def mayQuery
-        results <- timeAction "search" $ search query nsData Nothing
+        let mayClassName = searcher ^? Searcher.mode
+                . Mode._Node . NodeMode.mode . NodeMode._ExpressionMode
+                . NodeMode.parent . _Just
+        results <- timeAction "search" $ search query nsData mayClassName
         modifySearcher $ do
             Searcher.results .= results
         {-let updateCommands s = do-}
@@ -162,22 +169,48 @@ localClearSearcherHints = do
         Searcher.results          .= mempty
     updateDocumentation
 
+scoreTextMatch :: Text -> NodeHint.Database -> Command State [Result NodeHint.Node]
+scoreTextMatch query nsData = do
+    let nodesMapping = nsData ^. NodeHint.nodes
+    case Text.null query of
+        True ->
+            let mkResult r = SearcherEngine.Result r 0 $ SearcherEngine.Match []
+            in pure $ mkResult <$> Array.elems nodesMapping
+        False -> do
+            let db = nsData ^. NodeHint.database
+            res <- SearcherEngine.query db query
+            pure $ (nodesMapping Array.!) <<$>> res
 
-search :: Input.Divided -> NodeHint.Database -> Maybe () -> Command State [Result Hint.Hint]
+scoreClassMembership :: Maybe Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
+scoreClassMembership Nothing = id
+scoreClassMembership (Just clName) = fmap adjustMethodScore where
+    adjustMethodScore result
+        = result & SearcherEngine.score
+            +~ classScore (result ^. SearcherEngine.hint)
+    classScore node = if node ^. NodeHint.kind == NodeHint.Method clName
+                      then 1
+                      else 0
+
+
+search :: Input.Divided -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
 search input nsData mayClassName = do
-    let query          = input ^. Input.query
-        db = nsData ^. NodeHint.database
-        mapping = nsData ^. NodeHint.nodes
-        {-strippedPrefix = Text.strip $ input ^. Input.prefix-}
-        {-notNullInput   = not . Text.null $ convert input-}
-        {-weights        = Just $ getWeights input mayClassName-}
-        {-searchResult   = if notNullInput || isJust mayClassName-}
-            {-then NodeSearcher.search                       query nsData weights-}
-            {-else NodeSearcher.notConnectedEmptyInputSearch query nsData weights-}
-    res <- if Text.length query > 0 then SearcherEngine.query db query else pure []
-    let mappedRes = fmap (mapping Array.!) <$> res
-    let final = if Text.null query then (\r -> SearcherEngine.Result r 1 $ SearcherEngine.Match []) <$> Array.elems mapping else mappedRes
-    pure $ fmap Hint.Node <$> final
+    let query = input ^. Input.query
+    scoredText <- scoreTextMatch query nsData
+    let classBonus = scoreClassMembership mayClassName scoredText
+        sorted = sortBy (comparing $ negate . view SearcherEngine.score) classBonus
+    pure $ Hint.Node <<$>> sorted
+    {-let query          = input ^. Input.query-}
+        {-db = nsData ^. NodeHint.database-}
+        {-mapping = nsData ^. NodeHint.nodes-}
+        {-{-strippedPrefix = Text.strip $ input ^. Input.prefix-}-}
+        {-{-notNullInput   = not . Text.null $ convert input-}-}
+        {-{-weights        = Just $ getWeights input mayClassName-}-}
+        {-{-searchResult   = if notNullInput || isJust mayClassName-}-}
+            {-{-then NodeSearcher.search                       query nsData weights-}-}
+            {-{-else NodeSearcher.notConnectedEmptyInputSearch query nsData weights-}-}
+    {-res <- if Text.length query > 0 then SearcherEngine.query db query else pure []-}
+    {-let mappedRes = fmap (mapping Array.!) <$> res-}
+    {-let final = if Text.null query then (\r -> SearcherEngine.Result r 1 $ SearcherEngine.Match []) <$> Array.elems mapping else mappedRes-}
     {-if strippedPrefix == "def" then mempty-}
         {-else if query == "_"   then Searcher.wildcardMatch : searchResult-}
         {-else searchResult-}
