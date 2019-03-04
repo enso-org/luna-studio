@@ -1,5 +1,6 @@
 import contextlib
 import os
+import shutil
 
 
 @contextlib.contextmanager
@@ -14,3 +15,19 @@ def working_directory(path):
         yield
     finally:
         os.chdir(prev_cwd)
+
+# FIXME Current package structure requires using symlinks. However, they do not
+#  work currently on Windows. Even if we created them here, 7z archive format
+#  would replace them with copied files anyway.
+#  So as a provisional workaround, we now allow copying files when symlinking
+#  fails - that allows packaging without root privilages on Windows.
+#  To be sorted out as part of https://github.com/luna/luna-manager/issues/236
+def create_symlink_or_copy(link, target):
+    try:
+        link_dir = os.path.dirname(link)
+        link_relative_path = os.path.relpath(link_dir, target)
+        os.symlink(link_relative_path, link)
+    except OSError as e:
+        print("failed to create symlink {} => {}: {}".format(link, target, e))
+        print("falling back to copy")
+        shutil.copy(target, link)

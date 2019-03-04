@@ -5,7 +5,7 @@ from glob import glob
 import os
 import subprocess
 import system as system
-from common import working_directory
+from common import create_symlink_or_copy, working_directory
 
 app_dir      = ap.prep_path('..')
 backend_dir  = ap.prep_path('../build-config/backend')
@@ -54,7 +54,6 @@ def mv_runner(runner):
         runner_dst = ap.prep_path('../dist/bin/public/luna-studio/luna-studio.exe')
         os.replace(runner_src, runner_dst)
 
-
 def link_main_bin ():
     with working_directory(ap.prep_path('../dist/bin')):
         os.makedirs('main', exist_ok=True)
@@ -63,8 +62,7 @@ def link_main_bin ():
             if os.path.isfile(dst_path):
                 os.remove(dst_path)
             if os.path.isfile(src_path):
-                    os.symlink(os.path.relpath(src_path,'main/'), dst_path)
-
+                create_symlink_or_copy(dst_path, src_path)
 
     # os.symlink('./public/luna-studio', 'main', target_is_directory=True)
 def copy_std_lib ():

@@ -2,6 +2,7 @@
 
 import atom_prepare as ap
 import os
+from common import create_symlink_or_copy
 from distutils import dir_util
 from glob import glob
 import shutil
@@ -40,8 +41,7 @@ def link_resources ():
             if os.path.isfile(dst_path):
                 os.remove(dst_path)
             if os.path.isfile(src_path2):
-                os.symlink(os.path.relpath(src_path2,'main/resources/'), dst_path)
-
+                create_symlink_or_copy(dst_path, src_path2)
 
 def copy_atom_configs ():
     dst_path = ap.prep_path('../dist/user-config/atom')
