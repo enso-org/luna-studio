@@ -23,6 +23,7 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node    as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization         as Visualization
 import qualified NodeEditor.State.Global                      as Global
 import qualified Searcher.Engine.Data.Match                   as Match
+import qualified Searcher.Engine.Data.Database                as DB
 {-import qualified Searcher.Engine.Data.Result                  as Result-}
 {-import qualified Searcher.Engine.Search                       as Search-}
 
@@ -103,18 +104,14 @@ updateDocumentation = withJustM getSearcher $ \s -> do
         =<< (IS.fromJSString . JSString.pack . BS.unpack $ Aeson.encode doc)
 
 localUpdateSearcherHintsPreservingSelection :: Command State ()
-localUpdateSearcherHintsPreservingSelection = localUpdateSearcherHints -- return () -- do
-    {-maySelected <- maybe def (view Searcher.selectedHint) <$> getSearcher-}
-    {-localUpdateSearcherHints'-}
-    {-withJust maySelected $ \selected -> do-}
-        {-let equalsType (Searcher.CommandHint _) (Searcher.CommandHint _) = True-}
-            {-equalsType (Searcher.NodeHint    _) (Searcher.NodeHint    _) = True-}
-            {-equalsType _                       _                         = False-}
-            {-equalsName h1 h2 = h1 ^. Match.name == h2 ^. Match.name-}
-            {-equals h1 h2 = equalsType h1 h2 && equalsName h1 h2-}
-        {-hints <- maybe def (view Searcher.hints) <$> getSearcher-}
-        {-withJust (findIndex (equals selected) hints) $ selectHint . (+1)-}
-    {-updateDocumentation-}
+localUpdateSearcherHintsPreservingSelection = do
+    maySelected <- maybe def (view Searcher.selectedResult) <$> getSearcher
+    localUpdateSearcherHints'
+    withJust maySelected $ \selected -> do
+        let equals h1 h2 = h1 ^. DB.text == h2 ^. DB.text
+        hints <- maybe def (view Searcher.results) <$> getSearcher
+        withJust (findIndex (equals selected) hints) $ selectHint . Just
+    updateDocumentation
 
 localUpdateSearcherHints :: Command State ()
 localUpdateSearcherHints = localUpdateSearcherHints' >> updateDocumentation
@@ -133,7 +130,8 @@ localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inT
         let mayQuery = searcher ^? Searcher.input . Input._DividedInput
             query    = fromMaybe def mayQuery
         results <- timeAction "search" $ search query nsData Nothing
-        modifySearcher $ Searcher.results .= results
+        modifySearcher $ do
+            Searcher.results .= results
         {-let updateCommands s = do-}
                 {-let hints input = CommandSearcher.search-}
                         {-(input ^. Input.query)-}
@@ -151,10 +149,10 @@ localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inT
                 {-= Searcher.CommandSearcher $ updateCommands s-}
             {-updateMode (Searcher.NodeSearcher s)-}
                 {-= Searcher.NodeSearcher $ updateNodeSearcher s-}
-            {-selectInput = maybe True (Text.null . view Input.query) mayQuery-}
+            let selectInput = maybe True (Text.null . view Input.query) mayQuery
         {-Searcher.mode          %= updateMode-}
-        {-hintsLen <- use $ Searcher.hints . to length-}
-        {-Searcher.selected      .= if selectInput then 0 else min 1 hintsLen-}
+            hintsLen <- use $ Searcher.results . to length
+            Searcher.selectedPosition .= if selectInput || hintsLen == 0 then Nothing else Just 0
         {-Searcher.rollbackReady .= False-}
 
 localClearSearcherHints :: Command State ()
