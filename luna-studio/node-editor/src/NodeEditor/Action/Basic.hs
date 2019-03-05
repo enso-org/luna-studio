@@ -143,5 +143,3 @@ moveNodeOnConnection nl conn metaUpdate = do
          (Topic.topic' leftConnect, Binary.encode leftConnect),
          (Topic.topic' rightConnect, Binary.encode rightConnect)
          ]
-  -- connect (Left $ conn ^. src) $ Right nl
-  -- connect (Right nl)           $ Left $ conn ^. dst

@@ -2,10 +2,10 @@ module NodeEditor.Action.Basic.CreateGraph where
 
 import Common.Prelude
 
-import qualified Data.Set                          as Set
-import qualified LunaStudio.Data.Connection        as Connection
-import qualified LunaStudio.Data.Graph             as API
-import qualified NodeEditor.React.Model.NodeEditor as NE
+import qualified Data.Set                              as Set
+import qualified LunaStudio.Data.Connection            as Connection
+import qualified LunaStudio.Data.Graph                 as API
+import qualified NodeEditor.React.Model.NodeEditor     as NE
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
 
 import Common.Action.Command                       (Command)

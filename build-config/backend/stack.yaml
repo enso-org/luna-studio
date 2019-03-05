@@ -99,6 +99,4 @@ packages:
 - extra-dep: true
   location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'git@github.com:luna/visualization-api.git'}
 - extra-dep: true
-  location: {commit: 3c705415bc4e558f48aac13e73debcc290f4781f, git: 'git@github.com:luna/luna-studio-layered-state.git'}
-- extra-dep: true
   location: {commit: 4c71b554d738021b51723dbec6d1f1c823e73579, git: 'git@github.com:TomMD/entropy.git'}

@@ -4,20 +4,20 @@ module NodeEditor.React.View.Sidebar
     ) where
 
 import Common.Prelude
-import React.Flux     as React hiding (view)
+import React.Flux as React hiding (view)
 
-import qualified Data.Aeson                              as Aeson
-import qualified JS.Mount                                as Mount
-import qualified JS.UI                                   as UI
-import qualified LunaStudio.Data.PortRef                 as PortRef
-import qualified NodeEditor.Event.UI                     as UI
-import qualified NodeEditor.React.Event.Sidebar          as Sidebar
-import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
-import qualified NodeEditor.React.Model.Port             as Port
-import qualified NodeEditor.React.Model.Searcher         as Searcher
-import qualified NodeEditor.React.Model.Searcher.Mode.Node         as NodeSearcher
-import qualified NodeEditor.React.Model.Searcher.Mode         as SearcherMode
-import qualified NodeEditor.React.View.Style             as Style
+import qualified Data.Aeson                                as Aeson
+import qualified JS.Mount                                  as Mount
+import qualified JS.UI                                     as UI
+import qualified LunaStudio.Data.PortRef                   as PortRef
+import qualified NodeEditor.Event.UI                       as UI
+import qualified NodeEditor.React.Event.Sidebar            as Sidebar
+import qualified NodeEditor.React.Model.Node.SidebarNode   as SidebarNode
+import qualified NodeEditor.React.Model.Port               as Port
+import qualified NodeEditor.React.Model.Searcher           as Searcher
+import qualified NodeEditor.React.Model.Searcher.Mode.Node as NodeSearcher
+import qualified NodeEditor.React.Model.Searcher.Mode      as SearcherMode
+import qualified NodeEditor.React.View.Style               as Style
 
 import Data.Timestamp                          (Timestamp (Timestamp))
 import JS.Scene                                (inputSidebarId, outputSidebarId)
