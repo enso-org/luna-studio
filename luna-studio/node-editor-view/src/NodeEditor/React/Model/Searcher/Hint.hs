@@ -4,13 +4,14 @@ module NodeEditor.React.Model.Searcher.Hint where
 import Common.Prelude
 
 import qualified LunaStudio.Data.Searcher.Hint as Hint
-import qualified Searcher.Engine.Data.Result   as Result
+import qualified Searcher.Data.Result          as Result
 
-import LunaStudio.Data.Searcher.Hint                (SearcherHint (documentation, prefix))
 import NodeEditor.React.Model.Searcher.Hint.Command (Command)
 import NodeEditor.React.Model.Searcher.Hint.Node    (Node)
-import Searcher.Engine.Data.Database                (SearcherData (fixedScore, text))
-import Searcher.Engine.Data.Result                  (Result)
+import Searcher.Data.Class                          (SearcherData (text),
+                                                     SearcherHint
+                                                        (prefix, documentation))
+import Searcher.Data.Result                         (Result)
 
 
 
@@ -33,9 +34,6 @@ instance SearcherData Hint where
     text = to $! \case
         Command h -> h ^. text
         Node    h -> h ^. text
-    fixedScore = to $! \case
-        Command h -> h ^. fixedScore
-        Node    h -> h ^. fixedScore
 
 instance SearcherHint Hint where
     prefix = to $! \case
@@ -44,7 +42,3 @@ instance SearcherHint Hint where
     documentation = to $! \case
         Command h -> h ^. documentation
         Node    h -> h ^. documentation
-
-instance SearcherHint a => SearcherHint (Result a) where
-    prefix        = Result.hint . prefix
-    documentation = Result.hint . documentation

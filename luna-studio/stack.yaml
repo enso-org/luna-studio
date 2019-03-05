@@ -46,9 +46,6 @@ packages:
 - extra-dep: true
   location: {commit: 3c705415bc4e558f48aac13e73debcc290f4781f, git: 'git@github.com:luna/luna-studio-layered-state.git'}
 - extra-dep: true
-  location: ../../fuzzy-text
-  # location: {commit: e5bab69c1e95ad116b31146c0dba3a3c71637390, git: 'git@github.com:luna/fuzzy-text.git'}
-- extra-dep: true
   location: {commit: a1606cccc12cb521acbc598e52c481b9054b42a7, git: 'git@github.com:luna/impossible.git'}
 - extra-dep: true
   location: {commit: 3ba7d5da78aab023fc74c44fc7445ffab0bc18e0, git: 'git@github.com:luna/lens-utils.git'}

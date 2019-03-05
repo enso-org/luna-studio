@@ -101,7 +101,4 @@ packages:
 - extra-dep: true
   location: {commit: 3c705415bc4e558f48aac13e73debcc290f4781f, git: 'git@github.com:luna/luna-studio-layered-state.git'}
 - extra-dep: true
-  location: ../../../fuzzy-text
-  # location: {commit: e5bab69c1e95ad116b31146c0dba3a3c71637390, git: 'git@github.com:luna/fuzzy-text.git'}
-- extra-dep: true
   location: {commit: 4c71b554d738021b51723dbec6d1f1c823e73579, git: 'git@github.com:TomMD/entropy.git'}

@@ -3,14 +3,12 @@ module NodeEditor.Action.Basic.UpdateSearcherHints where
 import Common.Prelude
 
 import qualified Data.Aeson                                   as Aeson
-import qualified Data.Array                                   as Array
 import qualified Data.ByteString.Lazy.Char8                   as BS
 import qualified Data.JSString                                as JSString
 import qualified Data.Map                                     as Map
 import qualified Data.Set                                     as Set
 import qualified Data.Text                                    as Text
 import qualified IdentityString                               as IS
-import qualified JS.SearcherEngine                            as SearcherEngine
 import qualified LunaStudio.Data.Searcher.Hint                as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Library        as Library
 import qualified LunaStudio.Data.Searcher.Hint.Class          as Class
@@ -25,8 +23,10 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeMode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node    as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization         as Visualization
 import qualified NodeEditor.State.Global                      as Global
-import qualified Searcher.Engine.Data.Match                   as Match
-import qualified Searcher.Engine.Data.Database                as DB
+import qualified Searcher.Data.Class                          as Searcher
+import qualified Searcher.Data.Database                       as Database
+import qualified Searcher.Data.Result                         as Result
+import qualified Searcher.Engine                              as SearcherEngine
 {-import qualified Searcher.Engine.Data.Result                  as Result-}
 {-import qualified Searcher.Engine.Search                       as Search-}
 
@@ -53,8 +53,7 @@ import NodeEditor.React.Model.Searcher    (Searcher)
 import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 import NodeEditor.State.Global            (State)
 {-import Searcher.Engine.Data.Result        (Result)-}
-import JS.SearcherEngine (Result)
-import Searcher.Engine.Metric.DefaultMetric (DefaultMetric)
+import Searcher.Data.Result (Result (Result), Match (Match))
 
 
 type IsFirstQuery         = Bool
@@ -87,7 +86,7 @@ selectHint i = modifySearcher $ do
 localAddSearcherHints :: SearcherLibraries -> Command State ()
 localAddSearcherHints libHints = do
     oldDb <- use Global.searcherDatabase
-    newDb <- NodeHint.insertSearcherLibraries libHints oldDb
+    let newDb = NodeHint.insertSearcherLibraries libHints oldDb
     Global.searcherDatabase .= newDb
     localUpdateSearcherHintsPreservingSelection
 
@@ -101,7 +100,7 @@ setImportedLibraries libs = do
 updateDocumentation :: Command State ()
 updateDocumentation = withJustM getSearcher $ \s -> do
     let mayDocVis = s ^? Searcher.documentationVisualization
-        mayDoc = s ^? Searcher.selectedResult . _Just . Hint.documentation
+        mayDoc = s ^? Searcher.selectedResult . _Just . Searcher.documentation
         mayDocData = (,) <$> mayDocVis <*> mayDoc
     withJust mayDocData $ \(docVis, doc) -> liftIO $ sendVisualizationData
         (docVis ^. Visualization.visualizationId)
@@ -113,7 +112,7 @@ localUpdateSearcherHintsPreservingSelection = do
     maySelected <- maybe def (view Searcher.selectedResult) <$> getSearcher
     localUpdateSearcherHints'
     withJust maySelected $ \selected -> do
-        let equals h1 h2 = h1 ^. DB.text == h2 ^. DB.text
+        let equals h1 h2 = h1 ^. Searcher.text == h2 ^. Searcher.text
         hints <- maybe def (view Searcher.results) <$> getSearcher
         withJust (findIndex (equals selected) hints) $ selectHint . Just
     updateDocumentation
@@ -130,7 +129,7 @@ localUpdateSearcherHints' = timeAction "localUpdateSearcherHints'" $ unlessM inT
             True -> do
                 nsData           <- use Global.searcherDatabase
                 localFunctions   <- getLocalFunctions
-                localFunctionsDb <- NodeHint.mkLocalFunctionsDb localFunctions
+                let localFunctionsDb = NodeHint.mkLocalFunctionsDb localFunctions
                 let mayClassName = searcher ^? Searcher.mode
                         . Mode._Node . NodeMode.mode . NodeMode._ExpressionMode
                         . NodeMode.parent . _Just
@@ -163,29 +162,28 @@ updateClassName cl = do
     localUpdateSearcherHintsPreservingSelection
 
 scoreTextMatch :: Text -> NodeHint.Database -> Command State [Result NodeHint.Node]
-scoreTextMatch query nsData = do
-    let nodesMapping = nsData ^. NodeHint.nodes
+scoreTextMatch query nsData = pure $
     case Text.null query of
         True ->
-            let mkResult r = SearcherEngine.Result r 0 $ SearcherEngine.Match []
-            in pure $ mkResult <$> Array.elems nodesMapping
-        False -> do
+            let mkResult r = Result r 0 $ Match []
+                db = nsData ^. NodeHint.database
+            in mkResult <$> Database.elems db
+        False ->
             let db = nsData ^. NodeHint.database
-            res <- SearcherEngine.query db query
-            pure $ (nodesMapping Array.!) <<$>> res
+            in SearcherEngine.query db query
 
 scoreClassMembership :: Maybe Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
 scoreClassMembership Nothing = id
 scoreClassMembership (Just clName) = fmap adjustMethodScore where
     adjustMethodScore result
-        = result & SearcherEngine.score
-            +~ classScore (result ^. SearcherEngine.hint)
+        = result & Result.score
+            +~ classScore (result ^. Result.hint)
     classScore node = if node ^. NodeHint.kind == NodeHint.Method clName
                       then 1
                       else 0
 
 scoreLocalFuns :: Maybe Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
-scoreLocalFuns Nothing   = fmap (SearcherEngine.score +~ 1)
+scoreLocalFuns Nothing   = fmap (Result.score +~ 1)
 scoreLocalFuns (Just cl) = id
 
 fullDbSearch :: Input.Divided -> NodeHint.Database -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
@@ -196,7 +194,7 @@ fullDbSearch input localDb nsData mayClassName = do
     let classBonus    = scoreClassMembership mayClassName scoredText
         localFunBonus = scoreLocalFuns mayClassName scoredLocal
         allHints      = localFunBonus <> classBonus
-        sorted        = sortBy (comparing $ negate . view SearcherEngine.score) allHints
+        sorted        = sortBy (comparing $ negate . view Result.score) allHints
     pure $ Hint.Node <<$>> sorted
 
 search :: Input.Divided -> NodeHint.Database -> NodeHint.Database -> Maybe Class.Name -> Command State [Result Hint.Hint]
@@ -204,3 +202,4 @@ search input localDb nsData mayClassName =
     if Text.strip (input ^. Input.prefix) == "def"
         then pure mempty
         else fullDbSearch input localDb nsData mayClassName
+

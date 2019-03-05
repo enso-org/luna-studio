@@ -15,19 +15,14 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
 import qualified NodeEditor.React.Model.Searcher.Mode.Node as NodeSearcher
 import qualified NodeEditor.React.View.Style               as Style
 import qualified React.Flux                                as React
-import qualified Searcher.Engine.Data.Database             as Data
-import qualified Searcher.Engine.Data.Match                as Match
-{-import qualified Searcher.Engine.Data.Result               as Result-}
-import qualified Searcher.Engine.Data.Substring            as Substring
+import qualified Searcher.Data.Class                       as SearcherData
 
 import JS.Searcher                         (searcherId)
-import JS.SearcherEngine                   (Result, match)
-import LunaStudio.Data.Searcher.Hint       (SearcherHint)
 import NodeEditor.React.Event.Searcher
 import NodeEditor.React.IsRef              (IsRef, dispatch)
 import NodeEditor.React.View.Visualization (docVisualization_)
-{-import Searcher.Engine.Data.Result         (Result)-}
-import Searcher.Engine.Data.Substring      (Range)
+import Searcher.Data.Class                 (SearcherHint)
+import Searcher.Data.Result                (Result, match)
 
 
 name :: JSString
@@ -59,7 +54,7 @@ searcher =  React.defineView name $ \(ref, properties) -> do
             then ["value" $= convert (s ^. Searcher.inputText)] 
             else []
         docPresent = maybe False (not . Text.null) 
-            $ s ^? Searcher.selectedResult . _Just . Hint.documentation
+            $ s ^? Searcher.selectedResult . _Just . SearcherData.documentation
     div_
         [ "key"       $= name
         , "className" $= className
@@ -129,17 +124,17 @@ results_ ref selected results = if null results then return () else
 
 highlighted_ :: SearcherHint a => Result a -> ReactElementM ViewEventHandler ()
 highlighted_ result = prefixElem >> highlighted_' 0 highlights where
-    prefix     = convert $ result ^. Hint.prefix
+    prefix     = convert $ result ^. SearcherData.prefix
     prefixElem = span_ [ "className" $= Style.prefix "searcher__pre"
                        , "key"       $= "searcherPre"]
                        $ elemString $ if prefix == "" then prefix else prefix <> " . "
     highlights = result ^. match . wrapped
-    name'      = convert $ result ^. Data.text
-    highlighted_' :: Int -> [Int] {-[Range]-} -> ReactElementM ViewEventHandler ()
+    name'      = convert $ result ^. SearcherData.text
+    highlighted_' :: Int -> [Int] -> ReactElementM ViewEventHandler ()
     highlighted_' omit [] = span_ [ "key" $= "l" ] $ elemString $ snd $ splitAt omit name'
     highlighted_' omit (h:rest) = do
-        let start                 = h -- ^. Substring.begin
-            len                   = 1 -- h ^. Substring.len
+        let start                 = h
+            len                   = 1
             (r1         , r2    ) = splitAt start name'
             (_          , normal) = splitAt omit r1
             (highlighted, _     ) = splitAt len r2

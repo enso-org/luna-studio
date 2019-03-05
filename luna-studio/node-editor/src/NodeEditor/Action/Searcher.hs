@@ -23,9 +23,9 @@ import qualified NodeEditor.React.Model.Visualization       as Visualization
 import qualified NodeEditor.React.View.App                  as App
 import qualified NodeEditor.State.Global                    as Global
 import qualified NodeEditor.State.UI                        as UI
-import qualified Searcher.Engine.Data.Database              as SearcherDB
+import qualified Searcher.Data.Class              as SearcherData
 {-import qualified Searcher.Engine.Data.Result                as Result-}
-import qualified JS.SearcherEngine as Result
+import qualified Searcher.Data.Result as Result
 {-import qualified Searcher.Engine.Data.Symbol.Library        as Library-}
 
 import Common.Action.Command                (Command)
@@ -310,7 +310,7 @@ updateInputWithSelectedHint action =
             let mayNextChar         = input ^? Input.suffix . ix 0
                 needsSpace c        = not $ elem c [' ', ')']
                 trailingSpaceNeeded = maybe True needsSpace mayNextChar
-                updatedQuery        = h ^. SearcherDB.text
+                updatedQuery        = h ^. SearcherData.text
                     <> if trailingSpaceNeeded then " " else mempty
                 updatedInput  = input & Input.query .~ updatedQuery
                 caretPosition

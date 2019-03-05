@@ -4,24 +4,21 @@ module NodeEditor.React.Model.Searcher.Hint.Node where
 
 import Common.Prelude
 
-import qualified Data.Array                            as Array
 import qualified Data.Map.Strict                       as Map
 import qualified Data.Set                              as Set
-import qualified JS.SearcherEngine                     as Searcher
 import qualified LunaStudio.Data.Searcher.Hint         as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Class   as Class
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
-import qualified Searcher.Engine.Data.Database         as Database
+import qualified Searcher.Data.Database                as Database
 
-import Data.Array                            (Array)
 import Data.Map.Strict                       (Map)
 import Data.Set                              (Set)
-import LunaStudio.Data.Searcher.Hint         (SearcherHint)
 import LunaStudio.Data.Searcher.Hint.Class   (Class)
 import LunaStudio.Data.Searcher.Hint.Library (Library (Library),
                                               SearcherLibraries)
-import Searcher.Engine.Data.Database         (SearcherData (fixedScore, text))
-import Searcher.Engine.Data.Score            (Score)
+import Searcher.Data.Class                   (SearcherData (text),
+                                              SearcherHint (prefix,
+                                                            documentation))
 
 
 
@@ -61,7 +58,6 @@ data Node = Node
     , _library           :: Library.Info
     , _kind              :: Kind
     , _documentationText :: Text
-    , _fixedBonus        :: Score
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Node
@@ -69,11 +65,6 @@ makeLenses ''Node
 instance NFData Node
 instance SearcherData Node where
     text       = expression
-    fixedScore = to $ \n -> let
-        fixed       = n ^. fixedBonus
-        libImported = n ^. library . Library.imported
-        importBonus = if libImported then libraryImportedBonus else 0
-        in fixed + importBonus
 instance SearcherHint Node where
     prefix        = kind . className . to (fromMaybe mempty)
     documentation = documentationText
@@ -81,15 +72,11 @@ instance SearcherHint Node where
 
 -- === API === --
 
-libraryImportedBonus :: Score
-libraryImportedBonus = 100
-{-# INLINE libraryImportedBonus #-}
-
 fromRawHint :: Hint.Raw -> Library.Info -> Kind -> Node
 fromRawHint raw libInfo kind' = let
-    expr = raw ^. Database.text
-    doc  = raw ^. Hint.documentation
-    in Node expr libInfo kind' doc def
+    expr = raw ^. Hint.name
+    doc  = raw ^. Hint.documentationText
+    in Node expr libInfo kind' doc
 {-# INLINE fromRawHint #-}
 
 fromFunction :: Hint.Raw -> Library.Info -> Node
@@ -120,18 +107,15 @@ fromClass className klass libInfo = constructorsHints <> methodsHints where
 fromLibrary :: Library -> Library.Info -> [Node]
 fromLibrary lib libInfo = functionsHints <> classesHints where
     functionsHints = flip fromFunction libInfo <$> lib ^. Library.functions
-    {-appendClass acc className klass = acc <> fromClass className klass libInfo-}
     processClass className klass = fromClass className klass libInfo
-    {-classesHints = Map.foldlWithKey appendClass mempty $! lib ^. Library.classes-}
-    classesHints = concat $ fmap (uncurry processClass) $ Map.toList $ lib ^. Library.classes
+    classes = lib ^. Library.classes
+    classesHints = concat $ fmap (uncurry processClass) $ Map.toList $ classes
 {-# INLINE fromLibrary #-}
 
 fromSearcherLibraries :: SearcherLibraries -> Set Library.Name -> [Node]
 fromSearcherLibraries libs importedLibs = let
     toLibInfo libName = Library.Info libName $! Set.member libName importedLibs
-    {-appendLib acc libName lib = acc <> fromLibrary lib (toLibInfo libName)-}
     processLib libName lib = fromLibrary lib (toLibInfo libName)
-    {-in Map.foldlWithKey appendLib mempty libs-}
     in concat $ fmap (uncurry processLib) $ Map.toList libs
 {-# INLINE fromSearcherLibraries #-}
 
@@ -145,22 +129,21 @@ fromSearcherLibraries libs importedLibs = let
 -- === Definition === --
 
 data Database = Database
-    { _database :: Searcher.Database
+    { _database :: Database.Database Node
     , _imported :: Set Library.Name
     , _bareLibs :: SearcherLibraries
-    , _nodes    :: Array Int Node
     } deriving (Generic)
 
 makeLenses ''Database
 
 instance Default Database where
-    def = Database def def def (Array.listArray (0, -1) [])
+    def = Database def def def
 
 -- === API === --
 
 missingLibraries :: Getter Database (Set Library.Name)
 missingLibraries = to $ \d -> let
-    allHints         = Array.elems $ d ^. nodes
+    allHints         = Database.elems $ d ^. database
     addLibName acc h = Set.insert (h ^. library . Library.name) acc
     presentLibs      = foldl addLibName mempty allHints
     importedLibs     = d ^. imported
@@ -171,21 +154,18 @@ localFunctionsLibraryName :: Text
 localFunctionsLibraryName = "#local"
 {-# INLINE localFunctionsLibraryName #-}
 
-mkLocalFunctionsDb :: MonadIO m => [Text] -> m Database
+mkLocalFunctionsDb :: [Text] -> Database
 mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
     libs    = Map.singleton localFunctionsLibraryName library
     library = Library.Library hints def
     hints   = flip Hint.Raw mempty <$> syms
 
-insertSearcherLibraries :: MonadIO m => SearcherLibraries -> Database -> m Database
-insertSearcherLibraries libs d = do
-    let oldLibraries = d ^. bareLibs
-        importedLibs = d ^. imported
-        libs'        = Map.union libs oldLibraries
-        nodeHints    = fromSearcherLibraries libs' importedLibs
-        nodeHintsLen = length nodeHints
-        nodesArr     = Array.listArray (0, nodeHintsLen - 1) nodeHints
-        nodesAssocs  = (_2 %~ view expression) <$> Array.assocs nodesArr
-    db <- liftIO $ Searcher.createDatabase nodesAssocs
-    pure $ Database db importedLibs libs' nodesArr
+insertSearcherLibraries :: SearcherLibraries -> Database -> Database
+insertSearcherLibraries libs d = let
+    oldLibraries = d ^. bareLibs
+    importedLibs = d ^. imported
+    libs'        = Map.union libs oldLibraries
+    nodeHints    = fromSearcherLibraries libs' importedLibs
+    db           = Database.create nodeHints
+    in Database db importedLibs libs'
 {-# INLINE insertSearcherLibraries #-}

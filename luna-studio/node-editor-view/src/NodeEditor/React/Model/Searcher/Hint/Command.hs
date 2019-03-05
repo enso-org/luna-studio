@@ -5,10 +5,10 @@ module NodeEditor.React.Model.Searcher.Hint.Command where
 import Common.Prelude
 
 import qualified NodeEditor.Event.Shortcut     as Shortcut
-import qualified Searcher.Engine.Data.Database as Database
+import qualified Searcher.Data.Database        as Database
 
-import LunaStudio.Data.Searcher.Hint (SearcherHint (documentation, prefix))
-import Searcher.Engine.Data.Database (Database, SearcherData (fixedScore, text))
+import Searcher.Data.Class (SearcherData (text),
+                            SearcherHint (prefix, documentation))
 
 
 
@@ -26,7 +26,6 @@ newtype Command = Command Text deriving (Eq, Generic, Show)
 instance NFData Command
 instance SearcherData Command where
     text       = to $! \(Command txt) -> txt
-    fixedScore = to $! \(Command txt) -> txt ^. fixedScore
 instance SearcherHint Command where
     prefix        = to $! const mempty
     documentation = to $! const mempty
@@ -42,6 +41,6 @@ allCommands = commands <> otherCommands where
     otherCommands = fmap toCommand $! [  minBound :: OtherCommands ]
 {-# INLINE allCommands #-}
 
-database :: Database Command
-database = Database.mk allCommands
+database :: Database.Database Command
+database = Database.create allCommands
 {-# INLINE database #-}

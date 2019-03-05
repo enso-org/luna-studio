@@ -41,7 +41,7 @@ import           GHCJS.Types               as X (JSVal)
 import           Prelude                   hiding (curry, error, print, putStr, putStrLn, uncurry, (++), (.))
 import           Prologue                  as X (FromList, IsList, Item, Mempty, NFData, Semigroup, ToList, convert, curry, fmap1, fmap2,
                                                  fmap3, fmap4, fmap5, fromJustM, fromList, lift2, lift3, pprint, putStr, switch, toList,
-                                                 toString, uncurry, unlessM, unwrap, whenLeft, whenM, whenM_, whenRight, withJust, wrap,
+                                                 toString, uncurry, unlessM, unsafeFromJust, unwrap, whenLeft, whenM, whenM_, whenRight, withJust, wrap,
                                                  wrapped, ($>), (<<$>>), (.), (.:), (.:.), (.::), (.::.))
 import           System.FilePath           as X ((</>))
 

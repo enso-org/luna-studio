@@ -5,7 +5,6 @@ import React.Flux     hiding (transform)
 
 import qualified Data.HashMap.Strict                        as HashMap
 import qualified Data.Set                                   as Set
-import qualified JS.SearcherEngine                          as Searcher
 import qualified LunaStudio.Data.CameraTransformation       as CameraTransformation
 import qualified LunaStudio.Data.Matrix                     as Matrix
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
@@ -22,6 +21,7 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeSearcher
 import qualified NodeEditor.React.View.Sidebar              as Sidebar
 import qualified NodeEditor.React.View.Style                as Style
 import qualified React.Flux                                 as React
+import qualified Searcher.Data.Result                       as Result
 
 import Data.Matrix                                (Matrix)
 import Data.Maybe                                 (mapMaybe)
@@ -86,7 +86,7 @@ mockSearcherNode ne = maybe ne withSearcher maySearcher where
         mayNewNodeData = ns ^? NodeSearcher.mode 
             . NodeSearcher._ExpressionMode . NodeSearcher.newNode . _Just
         nl   = ns ^. NodeSearcher.nodeLoc
-        hint = s ^? Searcher.selectedResult . _Just . Searcher.hint . Hint._Node
+        hint = s ^? Searcher.selectedResult . _Just . Result.hint . Hint._Node
         in maybe (updateNode nl hint) (mockNewNode nl hint) mayNewNodeData
     updateNode :: NodeLoc -> Maybe Hint.Node -> NodeEditor
     updateNode nl mayHint = maybe

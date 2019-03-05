@@ -29,12 +29,14 @@ default-extensions:
   - StandaloneDeriving
   - TemplateHaskell
   - TupleSections
+  - TypeFamilies
   - ViewPatterns
 
 
 dependencies:
   - "base >= 4.9 && < 4.10"
   - aeson
+  - array
   - base64-bytestring
   - binary
   - bytestring

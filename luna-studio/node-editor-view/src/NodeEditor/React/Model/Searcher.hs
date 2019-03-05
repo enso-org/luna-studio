@@ -1,15 +1,3 @@
--- INFO FOR @pmlodawski from dead soldier:
--- The biggest change here is selecetedPosition changed to Maybe Int type.
--- I was just thinking about it logically and this model looks more natural to
--- me and also gets rid of +/-1 when referring to the list or to selectedPosition
--- field. Simply now `selected input = selected Nothing` and that is it. 
--- Also I moved results to top level of searcher, because for some reason we
--- call it searcher, we expect it to search some results. The fact that we are
--- not doing it now for port or node names is because we do not have good hints
--- there yet (or you should consider to introduce new datatype Input and don't
--- run them as searcher).
--- All other changes comes directly from API change or are simple improvements.
-
 {-# LANGUAGE Strict #-}
 module NodeEditor.React.Model.Searcher where
 
@@ -24,8 +12,7 @@ import NodeEditor.React.Model.Searcher.Hint  (Hint)
 import NodeEditor.React.Model.Searcher.Input (Input)
 import NodeEditor.React.Model.Searcher.Mode  (Mode)
 import NodeEditor.React.Model.Visualization  (RunningVisualization)
-import JS.SearcherEngine                     (Result)
-
+import Searcher.Data.Result                  (Result)
 
 
 ----------------------

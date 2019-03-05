@@ -59,7 +59,6 @@ default-extensions:
 dependencies:
   - "base >= 4.9 && < 4.10"
   - aeson
-  - array
   - binary
   - bytestring
   - common
@@ -68,7 +67,6 @@ dependencies:
   - datetime
   - deepseq
   - extra
-  - fuzzy-text
   - ghcjs-base
   - ghcjs-prim
   - hashable

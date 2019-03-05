@@ -13,65 +13,65 @@
 
 module NodeEditor.Action.Basic.Searcher where
 
-import Common.Prelude
+{-import Common.Prelude-}
 
-import qualified Data.Aeson                                   as Aeson
-import qualified Data.ByteString.Lazy.Char8                   as BS
-import qualified Data.JSString                                as JSString
-import qualified Data.Set                                     as Set
-import qualified Data.Text                                    as Text
-import qualified IdentityString                               as IS
-import qualified JS.Searcher                                  as SearcherJS
-import qualified JS.Visualizers                               as VisualizersJS
-import qualified Luna.Syntax.Text.Lexer                       as Lexer
-import qualified LunaStudio.Data.ScreenPosition               as ScreenPosition
-import qualified LunaStudio.Data.Searcher.Hint                as Hint
-import qualified LunaStudio.Data.Searcher.Hint.Class          as Class
-import qualified LunaStudio.Data.Searcher.Hint.Library        as Library
-import qualified LunaStudio.Data.Size                         as Size
-import qualified LunaStudio.Data.TypeRep                      as TypeRep
-import qualified NodeEditor.Action.Basic.ModifyCamera         as Camera
-import qualified NodeEditor.Action.Batch                      as Batch
-import qualified NodeEditor.Action.State.App                  as App
-import qualified NodeEditor.Action.State.NodeEditor           as NodeEditor
-import qualified NodeEditor.Action.State.Scene                as Scene
-import qualified NodeEditor.React.Model.Node                  as Node
-import qualified NodeEditor.React.Model.Node.ExpressionNode   as ExpressionNode
-import qualified NodeEditor.React.Model.Node.ExpressionNode   as Node
-import qualified NodeEditor.React.Model.NodeEditor            as NodeEditor hiding
-                                                                             (getExpressionNode)
-import qualified NodeEditor.React.Model.Port                  as Port
-import qualified NodeEditor.React.Model.Searcher              as Searcher
-import qualified NodeEditor.React.Model.Searcher.Hint         as Hint
-import qualified NodeEditor.React.Model.Searcher.Hint.Command as CommandHint
-import qualified NodeEditor.React.Model.Searcher.Hint.Node    as NodeHint
-import qualified NodeEditor.React.Model.Searcher.Input        as Input
-import qualified NodeEditor.React.Model.Searcher.Mode         as Mode
-import qualified NodeEditor.React.Model.Searcher.Mode.Node    as NodeSearcher
-import qualified NodeEditor.React.Model.Visualization         as Visualization
-import qualified NodeEditor.State.Global                      as Global
-import qualified Searcher.Engine.Data.Database                as Database
-import qualified JS.SearcherEngine as Result
-{-import qualified Searcher.Engine.Data.Result                  as Result-}
+{-import qualified Data.Aeson                                   as Aeson-}
+{-import qualified Data.ByteString.Lazy.Char8                   as BS-}
+{-import qualified Data.JSString                                as JSString-}
+{-import qualified Data.Set                                     as Set-}
+{-import qualified Data.Text                                    as Text-}
+{-import qualified IdentityString                               as IS-}
+{-import qualified JS.Searcher                                  as SearcherJS-}
+{-import qualified JS.Visualizers                               as VisualizersJS-}
+{-import qualified Luna.Syntax.Text.Lexer                       as Lexer-}
+{-import qualified LunaStudio.Data.ScreenPosition               as ScreenPosition-}
+{-import qualified LunaStudio.Data.Searcher.Hint                as Hint-}
+{-import qualified LunaStudio.Data.Searcher.Hint.Class          as Class-}
+{-import qualified LunaStudio.Data.Searcher.Hint.Library        as Library-}
+{-import qualified LunaStudio.Data.Size                         as Size-}
+{-import qualified LunaStudio.Data.TypeRep                      as TypeRep-}
+{-import qualified NodeEditor.Action.Basic.ModifyCamera         as Camera-}
+{-import qualified NodeEditor.Action.Batch                      as Batch-}
+{-import qualified NodeEditor.Action.State.App                  as App-}
+{-import qualified NodeEditor.Action.State.NodeEditor           as NodeEditor-}
+{-import qualified NodeEditor.Action.State.Scene                as Scene-}
+{-import qualified NodeEditor.React.Model.Node                  as Node-}
+{-import qualified NodeEditor.React.Model.Node.ExpressionNode   as ExpressionNode-}
+{-import qualified NodeEditor.React.Model.Node.ExpressionNode   as Node-}
+{-import qualified NodeEditor.React.Model.NodeEditor            as NodeEditor hiding-}
+                                                                             {-(getExpressionNode)-}
+{-import qualified NodeEditor.React.Model.Port                  as Port-}
+{-import qualified NodeEditor.React.Model.Searcher              as Searcher-}
+{-import qualified NodeEditor.React.Model.Searcher.Hint         as Hint-}
+{-import qualified NodeEditor.React.Model.Searcher.Hint.Command as CommandHint-}
+{-import qualified NodeEditor.React.Model.Searcher.Hint.Node    as NodeHint-}
+{-import qualified NodeEditor.React.Model.Searcher.Input        as Input-}
+{-import qualified NodeEditor.React.Model.Searcher.Mode         as Mode-}
+{-import qualified NodeEditor.React.Model.Searcher.Mode.Node    as NodeSearcher-}
+{-import qualified NodeEditor.React.Model.Visualization         as Visualization-}
+{-import qualified NodeEditor.State.Global                      as Global-}
+{-import qualified Searcher.Engine.Data.Database                as Database-}
+{-import qualified JS.SearcherEngine as Result-}
+{-{-import qualified Searcher.Engine.Data.Result                  as Result-}-}
 
-import Common.Action.Command                 (Command)
-import Common.Debug                          (timeAction)
-import Control.DeepSeq                       (force)
-import Control.Exception.Base                (evaluate)
-import Data.Set                              (Set)
-import LunaStudio.Data.Matrix                (invertedTranslationMatrix,
-                                              translationMatrix)
-import LunaStudio.Data.NodeLoc               (NodeLoc)
-import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
-import LunaStudio.Data.TypeRep               (ConstructorRep (ConstructorRep))
-import LunaStudio.Data.Vector2               (Vector2 (Vector2))
-import NodeEditor.React.Model.Constants      (searcherHeight, searcherWidth)
-import NodeEditor.React.Model.Node           (ExpressionNode)
-import NodeEditor.React.Model.Searcher.Hint  (Hint)
-import NodeEditor.React.Model.Searcher.Mode  (Mode)
-import NodeEditor.React.Model.Visualization  (VisualizationMode)
-import NodeEditor.State.Global               (State)
-{-import Searcher.Engine.Data.Result           (Result)-}
+{-import Common.Action.Command                 (Command)-}
+{-import Common.Debug                          (timeAction)-}
+{-import Control.DeepSeq                       (force)-}
+{-import Control.Exception.Base                (evaluate)-}
+{-import Data.Set                              (Set)-}
+{-import LunaStudio.Data.Matrix                (invertedTranslationMatrix,-}
+                                              {-translationMatrix)-}
+{-import LunaStudio.Data.NodeLoc               (NodeLoc)-}
+{-import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)-}
+{-import LunaStudio.Data.TypeRep               (ConstructorRep (ConstructorRep))-}
+{-import LunaStudio.Data.Vector2               (Vector2 (Vector2))-}
+{-import NodeEditor.React.Model.Constants      (searcherHeight, searcherWidth)-}
+{-import NodeEditor.React.Model.Node           (ExpressionNode)-}
+{-import NodeEditor.React.Model.Searcher.Hint  (Hint)-}
+{-import NodeEditor.React.Model.Searcher.Mode  (Mode)-}
+{-import NodeEditor.React.Model.Visualization  (VisualizationMode)-}
+{-import NodeEditor.State.Global               (State)-}
+{-{-import Searcher.Engine.Data.Result           (Result)-}-}
 
 
 {-isSearcherNode :: NodeLoc -> Command State Bool-}
@@ -112,18 +112,8 @@ import NodeEditor.State.Global               (State)
     {-. _Just . Visualization.visualizationMode .= visMode-}
 {-{-# INLINE updateVisualizationMode #-}-}
 
-updateDatabase :: SearcherLibraries -> Command State ()
-updateDatabase libs = do
-    oldHints <- use Global.searcherDatabase
-    newHints <- timeAction "Insert Searcher Hints" $ NodeHint.insertSearcherLibraries libs oldHints
-    let ii = oldHints ^. NodeHint.imported
-        hints = NodeHint.fromSearcherLibraries libs ii
-    print "WOW SO MANY HINTS"
-    print $ length hints
-    Global.searcherDatabase .= newHints
     {-preserveSelection searchHints-}
     {-updateDocumentation-}
-{-# INLINE updateDatabase #-}
 
 {-open :: Text -> Mode -> Command State ()-}
 {-open input mode = do-}
