@@ -48,8 +48,8 @@ import LunaStudio.Data.Size                 (height, width)
 import LunaStudio.Data.TypeRep              (TypeRep (TCons))
 import LunaStudio.Data.Vector2              (Vector2 (Vector2))
 import NodeEditor.Action.Basic              (createNode,
-                                             localClearSearcherHints,
-                                             localUpdateSearcherHints,
+                                             clearHints,
+                                             updateHints,
                                              modifyCamera, renameNode,
                                              renamePort, setNodeExpression,
                                              updateDocumentation)
@@ -270,18 +270,18 @@ updateInput input selectionStart selectionEnd action = do
         mayLambdaEndPos = snd <$> mayLambdaArgsAndEndPos
     modifySearcher $ Searcher.input .= searcherInput
     mayMode <- view Searcher.mode `fmap2` getSearcher
-    if not $ has Input._DividedInput searcherInput    then clearHints action
+    if not $ has Input._DividedInput searcherInput then clearHints
     else if has (_Just . Mode._Node) mayMode then do
         modifySearcher $ Searcher.mode
             . Mode._Node . NodeMode.mode
             . NodeMode._ExpressionMode . NodeMode.arguments .= lambdaArgs
         maybe
-            (updateHints action)
+            updateHints
             (\endPos -> if selectionStart < endPos
-                then clearHints action
-                else updateHints action)
+                then clearHints
+                else updateHints)
             mayLambdaEndPos
-    else updateHints action
+    else updateHints
 
 modifyInput :: Text -> Int -> Int -> Searcher -> Command State ()
 modifyInput input selectionStart selectionEnd action = do
@@ -290,12 +290,6 @@ modifyInput input selectionStart selectionEnd action = do
     renderIfNeeded
     Searcher.setSelection selectionStart selectionEnd
     modifySearcher $ Searcher.replaceInput .= False
-
-updateHints :: Searcher -> Command State ()
-updateHints _ = localUpdateSearcherHints
-
-clearHints :: Searcher -> Command State ()
-clearHints _ = localClearSearcherHints
 
 handleTabPressed :: Searcher -> Command State ()
 handleTabPressed action = withJustM getSearcher $ \s ->

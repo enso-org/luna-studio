@@ -469,9 +469,10 @@ handle (Event.Batch ev) = Just $ case ev of
             logError response err
             whenM (isOwnRequest requestId) $ revertRenamePort request inverse
 
-    SearchNodesResponse response -> handleResponse response success failure where
+    SearchNodesResponse response -> handle where
+        handle      = handleResponse response success failure
         request     = response ^. Response.request
-        success     = Searcher.localAddSearcherHints . view SearchNodes.searcherHints
+        success     = Searcher.addDatabaseHints . view SearchNodes.searcherHints
         failure _ _ = resend request
 
     SetCodeResponse response -> handleResponse response success failure where

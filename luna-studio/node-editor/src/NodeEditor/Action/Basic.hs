@@ -99,9 +99,9 @@ import NodeEditor.Action.Basic.UpdateNode          as X (NodeUpdateModification 
                                                          localUpdateOrAddOutputNode,
                                                          localUpdateOutputNode)
 import NodeEditor.Action.Basic.UpdateNodeValue     as X (updateNodeValueAndVisualization)
-import NodeEditor.Action.Basic.UpdateSearcherHints as X (localAddSearcherHints,
-                                                         localClearSearcherHints,
-                                                         localUpdateSearcherHints,
+import NodeEditor.Action.Basic.UpdateSearcherHints as X (addDatabaseHints,
+                                                         clearHints,
+                                                         updateHints,
                                                          selectHint,
                                                          selectNextHint,
                                                          selectPreviousHint,

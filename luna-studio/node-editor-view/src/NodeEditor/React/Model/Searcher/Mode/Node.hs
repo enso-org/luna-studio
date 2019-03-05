@@ -104,14 +104,3 @@ data Node = Node
 makeLenses ''Node
 
 instance NFData Node
-
-
--- === Utils === --
-
---TODO[LJK]: Replace mockedSearcherNodId with:
--- mockedSearcherNodeId = unsafePerformIO genNewID
--- {-# NOINLINE mockedSearcherNodeId #-}
-
-mockedSearcherNodeId :: NodeId
-mockedSearcherNodeId = unsafeFromJust $! UUID.fromString nodeIdString where
-    nodeIdString = "094f9784-3f07-40a1-84df-f9cf08679a27"

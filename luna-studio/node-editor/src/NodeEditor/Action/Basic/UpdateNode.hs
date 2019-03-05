@@ -23,7 +23,6 @@ import NodeEditor.Action.Basic.AddNode             (localAddExpressionNode,
                                                     localAddInputNode,
                                                     localAddOutputNode)
 import NodeEditor.Action.Basic.Scene               (updateScene)
-import NodeEditor.Action.Basic.UpdateSearcherHints (localUpdateSearcherHintsPreservingSelection)
 import NodeEditor.Action.State.Model               (calculatePortSelfMode)
 import NodeEditor.React.Model.Node                 (ExpressionNode, InputNode,
                                                     NodePath, OutputNode,
