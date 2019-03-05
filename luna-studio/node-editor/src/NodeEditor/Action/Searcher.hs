@@ -381,8 +381,12 @@ withHint entryNumber perform action = withJustM getSearcher $ \s ->
     in whenM (selectHint newSelected action) $ perform action
 
 includeImport :: NodeHint.Node -> Command State ()
-includeImport hint = let lib = hint ^. NodeHint.library
-    in unless (lib ^. Library.imported) $ addImport (lib ^. Library.name)
+includeImport hint = let
+    lib        = hint ^. NodeHint.library
+    isImported = lib  ^. Library.imported
+    name       = lib  ^. Library.name
+    isLocal    = name == NodeHint.localFunctionsLibraryName
+    in unless (isImported || isLocal) $ addImport name
 
 selectHint :: Int -> Searcher -> Command State Bool
 selectHint i _ = do
