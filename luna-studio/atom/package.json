@@ -25,7 +25,7 @@
         "fs-extra": "5.0.x",
         "fs-no-eperm-anymore": "^2.0.2",
         "fuzzaldrin": "^2.1.0",
-        "fuzzly": "file:/Users/marcinkostrzewa/code/fuzzly",
+        "fuzzly": "git+https://github.com/luna/fuzzly.git",
         "jquery": "3.2.x",
         "js-yaml": "3.9.x",
         "luna-logo": "1.1.3",
