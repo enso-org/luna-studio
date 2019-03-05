@@ -61,5 +61,5 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options: -Wall -O2 -DDEBUG_PERF
+  ghc-options: -Wall -O2
   cpp-options: -DCOMPRESS_REQUESTS
