@@ -23,10 +23,8 @@ import qualified NodeEditor.React.Model.Visualization       as Visualization
 import qualified NodeEditor.React.View.App                  as App
 import qualified NodeEditor.State.Global                    as Global
 import qualified NodeEditor.State.UI                        as UI
-import qualified Searcher.Data.Class              as SearcherData
-{-import qualified Searcher.Engine.Data.Result                as Result-}
-import qualified Searcher.Data.Result as Result
-{-import qualified Searcher.Engine.Data.Symbol.Library        as Library-}
+import qualified Searcher.Data.Class                        as SearcherData
+import qualified Searcher.Data.Result                       as Result
 
 import Common.Action.Command                (Command)
 import Common.Debug                         (timeAction)
@@ -68,11 +66,13 @@ import NodeEditor.Action.State.Scene        (getScreenSize, translateToScreen,
 import NodeEditor.Action.UUID               (getUUID)
 import NodeEditor.Event.Event               (Event (Shortcut))
 import NodeEditor.React.Model.Constants     (searcherHeight, searcherWidth)
-{-import NodeEditor.React.Model.Searcher      (Match, Symbol)-}
-import NodeEditor.React.Model.Visualization (RunningVisualization (RunningVisualization),
-                                             VisualizerProperties (VisualizerProperties),
+import NodeEditor.React.Model.Visualization (RunningVisualization
+                                             (RunningVisualization),
+                                             VisualizerProperties
+                                             (VisualizerProperties),
                                              getMdVisualizer)
-import NodeEditor.State.Action              (Action (begin, continue, end, update),
+import NodeEditor.State.Action              (Action
+                                             (begin, continue, end, update),
                                              Searcher (Searcher),
                                              searcherAction)
 import NodeEditor.State.Global              (State, visualizers)
@@ -370,7 +370,8 @@ selectPreviousHint s = do
     Basic.selectPreviousHint
     updateDocumentation
 
-withHint :: Int -> (Searcher -> Command State ()) -> Searcher -> Command State ()
+withHint :: Int -> (Searcher -> Command State ()) -> Searcher
+         -> Command State ()
 withHint entryNumber perform action = withJustM getSearcher $ \s ->
     let selected    = case s ^. Searcher.selectedPosition of
             Nothing -> 0
