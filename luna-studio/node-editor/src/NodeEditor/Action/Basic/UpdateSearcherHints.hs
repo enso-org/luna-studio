@@ -132,7 +132,7 @@ clearHints = do
 getConnectedPortRef :: Command State (Maybe OutPortRef)
 getConnectedPortRef = let
     connectedPortLens = Searcher.mode . Mode._Node . NodeMode.connectedPortRef
-    in join . fmap (preview connectedPortLens) <$> getSearcher where
+    in join . fmap (preview connectedPortLens) <$> getSearcher
 
 updateClassName :: Maybe Class.Name -> Command State ()
 updateClassName cl = do
@@ -152,7 +152,7 @@ scoreTextMatch query nsData = case Text.null query of
 
 bumpIf :: (a -> Bool) -> Double -> [Result a] -> [Result a]
 bumpIf pred amt = fmap bump where
-    bump = \result -> if pred $ result ^. Result.hint
+    bump result = if pred $ result ^. Result.hint
                       then result & Result.score +~ amt
                       else result
 
