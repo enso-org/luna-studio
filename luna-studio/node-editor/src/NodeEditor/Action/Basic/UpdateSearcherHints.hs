@@ -149,32 +149,49 @@ scoreTextMatch query nsData = case Text.null query of
         let db = nsData ^. NodeHint.database
         in SearcherEngine.query db query
 
-scoreClassMembership :: Maybe Class.Name -> [Result NodeHint.Node]
-                     -> [Result NodeHint.Node]
-scoreClassMembership Nothing = id
-scoreClassMembership (Just clName) = fmap adjustMethodScore where
-    adjustMethodScore result
-        = result & Result.score
-            +~ classScore (result ^. Result.hint)
-    classScore node = if node ^. NodeHint.kind == NodeHint.Method clName
-                      then 1
-                      else 0
+bumpIf :: (a -> Bool) -> Double -> [Result a] -> [Result a]
+bumpIf pred amt = fmap bump where
+    bump = \r -> if pred $ r ^. Result.hint
+                 then r & Result.score +~ amt
+                 else r
 
-scoreLocalFuns :: Maybe Class.Name -> [Result NodeHint.Node]
+bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
+              -> [Result NodeHint.Node]
+bumpLocalFuns Input.Argument = bumpIf (const True) 1
+bumpLocalFuns _ = id
+
+bumpMethodsOf :: Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
+bumpMethodsOf cl = bumpIf (\r -> r ^. NodeHint.kind == NodeHint.Method cl) 1
+
+bumpGlobalFuns :: [Result NodeHint.Node] -> [Result NodeHint.Node]
+bumpGlobalFuns = bumpIf (not . has (NodeHint.kind . NodeHint._Method)) 1
+
+bumpAllMethods :: [Result NodeHint.Node] -> [Result NodeHint.Node]
+bumpAllMethods = bumpIf (has $ NodeHint.kind . NodeHint._Method) 1
+
+bumpOperators :: [Result NodeHint.Node] -> [Result NodeHint.Node]
+bumpOperators = id
+
+bumpGlobalSyms :: Input.SymbolKind -> Maybe Class.Name -> [Result NodeHint.Node]
                -> [Result NodeHint.Node]
-scoreLocalFuns Nothing  = fmap (Result.score +~ 1)
-scoreLocalFuns (Just _) = id
+bumpGlobalSyms Input.ExpressionStart (Just cl) = bumpMethodsOf cl
+bumpGlobalSyms Input.ExpressionStart Nothing   = bumpGlobalFuns
+bumpGlobalSyms Input.Function        _         = bumpGlobalFuns
+bumpGlobalSyms Input.Argument        _         = id
+bumpGlobalSyms Input.Method          _         = bumpAllMethods
+bumpGlobalSyms Input.Operator        _         = bumpOperators
 
 fullDbSearch :: Input.Divided -> NodeHint.Database -> NodeHint.Database
              -> Maybe Class.Name -> [Result Hint.Hint]
 fullDbSearch input localDb nsData mayClassName = let
-    query = input ^. Input.query
-    scoredText = scoreTextMatch query nsData
-    scoredLocal = scoreTextMatch query localDb
-    classBonus    = scoreClassMembership mayClassName scoredText
-    localFunBonus = scoreLocalFuns mayClassName scoredLocal
-    allHints      = localFunBonus <> classBonus
-    sorted        = sortBy (comparing $ negate . view Result.score) allHints
+    query          = input ^. Input.query
+    nextSym        = input ^. Input.nextSymbolPrediction
+    scoredGlobal   = scoreTextMatch query nsData
+    scoredLocal    = scoreTextMatch query localDb
+    semanticLocal  = bumpLocalFuns  nextSym scoredLocal
+    semanticGlobal = bumpGlobalSyms nextSym mayClassName scoredGlobal
+    allHints       = semanticLocal <> semanticGlobal
+    sorted         = sortBy (comparing $ negate . view Result.score) allHints
     in Hint.Node <<$>> sorted
 
 search :: Input.Divided -> NodeHint.Database -> NodeHint.Database
