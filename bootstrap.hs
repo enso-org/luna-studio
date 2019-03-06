@@ -1,3 +1,11 @@
+{- stack
+  script
+  --resolver lts-11.22
+  --package base,exceptions,shelly,text,directory,system-filepath
+-}
+
+-- ^^^ NOTE: resolvers from lts-12 onwards don' work, because shelly 1.8.1 is broken on Windows
+
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -161,17 +169,6 @@ installNodeModules = do
 
 -- === Installing Haskell === --
 
-haskellBins :: [T.Text]
-haskellBins = ["happy"]
-
-installHaskellBins :: (MonadSh m, MonadShControl m, MonadIO m) => m ()
-installHaskellBins = do
-    current <- currentPath
-    home    <- liftIO $ System.getHomeDirectory
-    Shelly.appendToPath $ home </> ".local/bin"
-    mapM (Shelly.cmd (current </> stack) "--resolver" "lts-12.16" "install" "--install-ghc") haskellBins
-    sanityCheck "happy" ["--version"]
-
 stackSetupForLunaStudio :: (MonadIO m, MonadSh m, MonadShControl m) => m ()
 stackSetupForLunaStudio = do
     current <- currentPath
@@ -241,4 +238,3 @@ main = do
         downloadLibs
         generateLunaShellScript
         stackSetupForLunaStudio
-        installHaskellBins

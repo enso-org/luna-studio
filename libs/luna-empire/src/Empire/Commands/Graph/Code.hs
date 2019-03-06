@@ -17,7 +17,7 @@ import qualified Luna.Syntax.Text.Lexer        as Lexer
 
 import Control.Monad.Catch                  (handle)
 import Data.Char                            (isDigit, isSpace)
-import Data.List                            (find, findIndices)
+import Data.List                            (find, findIndices, span)
 import Data.Text.Position                   (Delta (Delta))
 import Empire.ASTOp                         (runASTOp)
 import Empire.ASTOps.BreadcrumbHierarchy    (getMarker)
@@ -36,6 +36,44 @@ import LunaStudio.Data.NodeCache            (nodeIdMap, nodeMetaMap)
 import LunaStudio.Data.Point                (Point)
 import LunaStudio.Data.TextDiff             (TextDiff (TextDiff))
 
+-- | minimizeDiff takes the old code and a diff and strips off the longest
+--   common prefix, shortening the diff.
+--   This step is required due to unexpected nature of Atom diffs,
+--   which sometimes contain the whole file instead of just the relevant
+--   changed part. Applying such a diff as-is results in removal of
+--   markers and losing metadata in the files, breaking the natural flow
+--   of text editor.
+minimizeDiff :: Text -> (Delta, Delta, Text) -> (Delta, Delta, Text)
+minimizeDiff oldCode (beg, end, newCode) = (newBeg, end, minimalCode) where
+    iEnd = fromIntegral end
+    iBeg = fromIntegral beg
+    relevantCode = Text.take (iEnd - iBeg)
+        $ Text.drop iBeg oldCode
+    zipped = zip (Text.unpack relevantCode) (Text.unpack newCode)
+    (eqs, diff) = span (uncurry (==)) zipped
+    equalPrefixLengths = length eqs
+    newBeg = fromIntegral $ iBeg + equalPrefixLengths
+    minimalCode = Text.drop equalPrefixLengths newCode
+
+-- | pointsDiffToDeltas translates a diff from standard Atom shape,
+--   consisting of coordinates in a (row, column) shape to a diff
+--   with coordinates reported as the number of character in a file.
+pointsToDeltas :: Text -> TextDiff -> (Delta, Delta, Text)
+pointsToDeltas code (TextDiff range newCode _) = case range of
+    Just (start, end) ->
+        ( Code.pointToDelta start code
+        , Code.pointToDelta end code
+        , newCode)
+    _ -> (0, fromIntegral $ Text.length code, newCode)
+
+-- | viewDeltasToRealDeltas translate coordinates from markerless text
+--   to text with markers, depending on the diff beginning.
+viewDeltasToRealDeltas :: Text -> Text -> (Delta, Delta) -> (Delta, Delta)
+viewDeltasToRealDeltas markerlessCode = case Text.uncons markerlessCode of
+    Nothing        -> Code.viewDeltasToRealBeforeMarker
+    Just (char, _) -> if isSpace char
+        then Code.viewDeltasToRealBeforeMarker
+        else Code.viewDeltasToReal
 
 substituteCodeFromPoints :: FilePath -> [TextDiff] -> Empire ()
 substituteCodeFromPoints path (breakDiffs -> diffs) = do
@@ -43,20 +81,12 @@ substituteCodeFromPoints path (breakDiffs -> diffs) = do
     changes <- withUnit gl $ do
         oldCode <- use Graph.code
         let noMarkers    = Code.removeMarkers oldCode
-            toDelta (TextDiff range code _) = case range of
-                Just (start, end) ->
-                    ( Code.pointToDelta start noMarkers
-                    , Code.pointToDelta end noMarkers
-                    , code)
-                _ -> (0, fromIntegral $ Text.length noMarkers, code)
-            viewToReal c = case Text.uncons c of
-                Nothing        -> Code.viewDeltasToRealBeforeMarker
-                Just (char, _) -> if isSpace char
-                    then Code.viewDeltasToRealBeforeMarker
-                    else Code.viewDeltasToReal
-            toRealDelta (a,b,c) = let (a', b') = (viewToReal c) oldCode (a,b)
-                in (a', b', c)
-        pure $ map (toRealDelta . toDelta) diffs
+            toRealDelta (beg, end, c) =
+                let (beg', end') = viewDeltasToRealDeltas c oldCode (beg, end)
+                in (beg', end', c)
+            processDiff = toRealDelta . minimizeDiff noMarkers
+                        . pointsToDeltas noMarkers
+        pure $ processDiff <$> diffs
     substituteCode path changes
 
 -- | removeMarker removes marker at given position, assuming that marker

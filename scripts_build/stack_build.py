@@ -39,7 +39,14 @@ def build_backend(backend_args):
     with working_directory(backend_dir):
         # subprocess.check_output(['stack', 'build', 'luna-empire', '--test', '--no-run-tests'])
         sys_opts = ['--ghc-options=-fexternal-interpreter'] if system.windows() else []
-        subprocess.check_output(['stack', 'build'] + sys_opts + backend_args)
+        # Note: -fno-omit-interface-pragmas is specific to our backend stack.yaml project.
+        # It adds -fomit-interface-pragmas option that negatively affects performance.
+        # This script wants to create a fully-optimized build, so we need to overwtite the flag.
+        #
+        # TODO: this behaviour should be eventually optional and script should be usable 
+        # for building development packages (that also care about build-speed).
+        args = sys_opts + backend_args + ['--ghc-options=-fno-omit-interface-pragmas']
+        subprocess.check_output(['stack', 'build'] + args)
 
 def mv_runner(runner):
     if system.windows():

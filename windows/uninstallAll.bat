@@ -1,8 +1,8 @@
-s-luna-empire stop
-s-luna-undo-redo stop
-s-luna-ws-connector stop
-s-luna-broker stop
-s-luna-empire uninstall
-s-luna-undo-redo uninstall
-s-luna-ws-connector uninstall
-s-luna-broker uninstall
+"%~dp0\s-luna-empire" stop
+"%~dp0\s-luna-undo-redo" stop
+"%~dp0\s-luna-ws-connector" stop
+"%~dp0\s-luna-broker" stop
+"%~dp0\s-luna-empire" uninstall
+"%~dp0\s-luna-undo-redo" uninstall
+"%~dp0\s-luna-ws-connector" uninstall
+"%~dp0\s-luna-broker" uninstall
