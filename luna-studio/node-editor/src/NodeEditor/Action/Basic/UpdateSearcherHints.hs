@@ -114,7 +114,8 @@ updateHints' = unlessM inTopLevelBreadcrumb $ do
                     . NodeMode.parent . _Just
                 pure $ search query localFunctionsDb nsData mayClassName
             False -> pure mempty
-        Searcher.results .= newHints
+        Searcher.results  .= newHints
+        Searcher.waiting  .= (Database.size (nsData ^. NodeHint.database) == 0)
         let selectInput = maybe True (Text.null . view Input.query) mayQuery
         hintsLen <- use $ Searcher.results . to length
         Searcher.selectedPosition .= if selectInput || hintsLen == 0

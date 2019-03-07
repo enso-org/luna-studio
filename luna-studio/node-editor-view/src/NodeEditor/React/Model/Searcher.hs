@@ -27,6 +27,7 @@ data Searcher = Searcher
     , _results          :: [Result Hint]
     , _selectedPosition :: Maybe Int
     , _mode             :: Mode
+    , _waiting          :: Bool
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Searcher

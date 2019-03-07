@@ -68,7 +68,7 @@ searcher =  React.defineView name $ \(ref, properties) -> do
                     then ["searcher__input--selected"] 
                     else [] )
 
-        results_ ref selected $! s ^. Searcher.results
+        results_ ref selected (s ^. Searcher.waiting) (s ^. Searcher.results)
         withJust (s ^? Searcher.mode . Mode._Node 
             . Node.documentationVisualization . _Just)
                 $ docVisualization_ ref docPresent
@@ -95,9 +95,9 @@ searcher =  React.defineView name $ \(ref, properties) -> do
 searcher_ :: IsRef ref => ref -> Searcher.Properties -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
-results_ :: SearcherHint a => IsRef ref => ref -> Maybe Int -> [Result a]
+results_ :: SearcherHint a => IsRef ref => ref -> Maybe Int -> Bool -> [Result a]
     -> ReactElementM ViewEventHandler ()
-results_ ref selected results = if null results then return () else
+results_ ref selected wait results = when (not (null results) || wait) $ do
     div_
         [ "key"       $= "searcherResults"
         , "className" $= Style.prefix "searcher__results"
@@ -105,21 +105,29 @@ results_ ref selected results = if null results then return () else
         div_
             [ "key"       $= "searcherResultsList"
             , "className" $= Style.prefix "searcher__results__list"
-            ] $ forKeyed_ results $ \(idx, result) -> do
-            let resultClasses i 
-                    = Style.prefixFromList $ "searcher__results__item" 
-                    : (if isJust selected && i == 0 
-                        then [ "searcher__results__item--selected" ] 
-                        else [])
-            div_
-                [ "key"       $= jsShow idx
-                , "className" $= resultClasses idx
-                , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptWithHint (fromMaybe 0 selected + idx))
-                ] $ do
+            ] $ do
+            forKeyed_ results $ \(idx, result) -> do
+                let resultClasses i
+                        = Style.prefixFromList $ "searcher__results__item"
+                        : (if isJust selected && i == 0
+                            then [ "searcher__results__item--selected" ]
+                            else [])
                 div_
-                    ["key" $= "name"
-                    ,"className" $= Style.prefix "searcher__results__item__name"
-                    ] $ highlighted_ result
+                    [ "key"       $= jsShow idx
+                    , "className" $= resultClasses idx
+                    , onClick     $ \e _ -> stopPropagation e :
+                        (dispatch ref $ UI.SearcherEvent $
+                          AcceptWithHint (fromMaybe 0 selected + idx))
+                    ] $ do
+                    div_
+                        ["key" $= "name"
+                        ,"className" $= Style.prefix
+                            "searcher__results__item__name"
+                        ] $ highlighted_ result
+            when wait $ div_
+                [ "key" $= "searcherResultsWaiting"
+                , "className" $= Style.prefix "searcher__results__wait"
+                ] $ elemString "Indexing hints, please wait..."
 
 highlighted_ :: SearcherHint a => Result a -> ReactElementM ViewEventHandler ()
 highlighted_ result = prefixElem >> highlighted_' 0 highlights where

@@ -228,7 +228,7 @@ openWith :: Text -> Mode.Mode -> Command State ()
 openWith input mode = do
     let action   = Searcher
         inputLen = Text.length input
-        searcher = Searcher.Searcher def False def def mode
+        searcher = Searcher.Searcher def False def def mode False
     begin action
     s <- modifySearcher $ (: []) <$> use id
     adjustCameraToSearcher mode
