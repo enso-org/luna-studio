@@ -9,13 +9,12 @@ import qualified Data.Set                              as Set
 import qualified LunaStudio.Data.Searcher.Hint         as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Class   as Class
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
-import qualified Searcher.Data.Database                as Database
+import qualified Searcher.Data.Database                as Searcher
 
 import Data.Map.Strict                       (Map)
 import Data.Set                              (Set)
 import LunaStudio.Data.Searcher.Hint.Class   (Class)
-import LunaStudio.Data.Searcher.Hint.Library (Library (Library),
-                                              SearcherLibraries)
+import LunaStudio.Data.Searcher.Hint.Library (Library (Library))
 import Searcher.Data.Class                   (SearcherData (text),
                                               SearcherHint (prefix,
                                                             documentation))
@@ -92,7 +91,6 @@ fromConstructor raw className libInfo
     = fromRawHint raw libInfo $! Constructor className
 {-# INLINE fromConstructor #-}
 
-
 fromClass :: Class.Name -> Class -> Library.Info -> [Node]
 fromClass className klass libInfo = constructorsHints <> methodsHints where
     constructors = klass ^. Class.constructors
@@ -103,7 +101,6 @@ fromClass className klass libInfo = constructorsHints <> methodsHints where
     methodsHints       = fromMethod'      <$> methods
 {-# INLINE fromClass #-}
 
-
 fromLibrary :: Library -> Library.Info -> [Node]
 fromLibrary lib libInfo = functionsHints <> classesHints where
     functionsHints = flip fromFunction libInfo <$> lib ^. Library.functions
@@ -112,7 +109,7 @@ fromLibrary lib libInfo = functionsHints <> classesHints where
     classesHints = concat $ fmap (uncurry processClass) $ Map.toList $ classes
 {-# INLINE fromLibrary #-}
 
-fromSearcherLibraries :: SearcherLibraries -> Set Library.Name -> [Node]
+fromSearcherLibraries :: Library.Set -> Set Library.Name -> [Node]
 fromSearcherLibraries libs importedLibs = let
     toLibInfo libName = Library.Info libName $! Set.member libName importedLibs
     processLib libName lib = fromLibrary lib (toLibInfo libName)
@@ -129,9 +126,9 @@ fromSearcherLibraries libs importedLibs = let
 -- === Definition === --
 
 data Database = Database
-    { _database :: Database.Database Node
+    { _database :: Searcher.Database Node
     , _imported :: Set Library.Name
-    , _bareLibs :: SearcherLibraries
+    , _bareLibs :: Library.Set
     } deriving (Generic)
 
 makeLenses ''Database
@@ -143,7 +140,7 @@ instance Default Database where
 
 missingLibraries :: Getter Database (Set Library.Name)
 missingLibraries = to $ \d -> let
-    allHints         = Database.elems $ d ^. database
+    allHints         = Searcher.elems $ d ^. database
     addLibName acc h = Set.insert (h ^. library . Library.name) acc
     presentLibs      = foldl addLibName mempty allHints
     importedLibs     = d ^. imported
@@ -160,12 +157,12 @@ mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
     library = Library.Library hints def
     hints   = flip Hint.Raw mempty <$> syms
 
-insertSearcherLibraries :: SearcherLibraries -> Database -> Database
+insertSearcherLibraries :: Library.Set -> Database -> Database
 insertSearcherLibraries libs d = let
     oldLibraries = d ^. bareLibs
     importedLibs = d ^. imported
     libs'        = Map.union libs oldLibraries
     nodeHints    = fromSearcherLibraries libs' importedLibs
-    db           = Database.create nodeHints
+    db           = Searcher.create nodeHints
     in Database db importedLibs libs'
 {-# INLINE insertSearcherLibraries #-}

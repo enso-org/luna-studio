@@ -2,8 +2,8 @@ module LunaStudio.API.Graph.AddImports where
 
 import Prologue
 
-import qualified LunaStudio.API.Graph.Request          as G
-import qualified LunaStudio.API.Topic                  as T
+import qualified LunaStudio.API.Graph.Request          as Graph
+import qualified LunaStudio.API.Topic                  as Topic
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
 
 import Data.Aeson.Types              (ToJSON)
@@ -23,7 +23,7 @@ makeLenses ''Request
 instance Binary Request
 instance NFData Request
 instance ToJSON Request
-instance G.GraphRequest Request where location = location
+instance Graph.GraphRequest Request where location = location
 
-instance T.MessageTopic Request where
+instance Topic.MessageTopic Request where
     topic = "empire.graph.imports.add"

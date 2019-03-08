@@ -1,18 +1,17 @@
 {-# LANGUAGE CPP #-}
 module Common.Debug where
 
-import           Common.Action.Command
 import           Common.Prelude
-import           Data.Map                (Map)
-import           Data.Time.Clock         (UTCTime)
-import           Data.UUID.Types         (UUID)
-import           Debug.Safe              (withLevel)
+import qualified Data.Map                as Map
+import qualified Debug.Safe              as Safe
 import qualified LunaStudio.API.Response as Response
 import qualified LunaStudio.API.Topic    as Topic
-#ifdef DEBUG_PERF
-import qualified Data.Map                as Map
-import           Data.Time.Clock         (diffUTCTime, getCurrentTime)
-#endif
+
+import Common.Action.Command   (Command)
+import Data.Map                (Map)
+import Data.Time.Clock         (UTCTime)
+import Data.Time.Clock         (diffUTCTime, getCurrentTime)
+import Data.UUID.Types         (UUID)
 
 class HasRequestTimes st where
     requestTimes :: Lens' st (Map UUID UTCTime)
@@ -31,18 +30,22 @@ measureResponseTime resp = do
             putStrLn $ "[Request time -- NodeEditor] " <> Topic.topic' resp <> " took " <> timeDiff
         Nothing      -> putStrLn $ "[Request time -- NodeEditor] request uuid doesn't match any known requests."
 #else
-measureResponseTime _ = return ()
+measureResponseTime = const $ pure ()
+{-# INLINE measureResponseTime #-}
 #endif
 
 foreign import javascript safe "window.performance.now()"
-    performanceNow :: IO Double
+    jsPerformanceNow :: IO Double
+
+performanceNow :: MonadIO m => m Double
+performanceNow = liftIO jsPerformanceNow
 
 timeAction :: MonadIO m => String -> m a -> m a
 #ifdef DEBUG_PERF
 timeAction actName act = withLevel $ \l -> do
-    startTime <- liftIO performanceNow
+    startTime <- performanceNow
     result    <- act
-    endTime   <- liftIO performanceNow
+    endTime   <- performanceNow
     let timeDiff = endTime - startTime
     putStrLn $ replicate l ' ' <> actName <> " took: " <> show timeDiff <> "ms"
     pure result

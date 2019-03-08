@@ -4,10 +4,11 @@ module Searcher.Data.Database where
 
 import Common.Prelude
 
-import qualified Data.Array as Array
+import qualified Data.Array          as Array
+import qualified Searcher.Data.Class as SearcherData
 
 import Data.Array          (Array)
-import Searcher.Data.Class (SearcherData (text))
+import Searcher.Data.Class (SearcherData)
 import System.IO.Unsafe    (unsafePerformIO)
 
 data Database a = Database
@@ -24,15 +25,18 @@ instance SearcherData a => Default (Database a) where
 foreign import javascript safe "new window.searcherEngine.Database($1)"
     jsCreate :: JSVal -> JSVal
 
+unsafeToJSVal :: ToJSVal a => a -> JSVal
+unsafeToJSVal = unsafePerformIO . toJSVal
+
 create :: SearcherData a => [a] -> Database a
 create hints = let
     len         = length hints
     hintsArr    = Array.listArray (0, len - 1) hints
-    assocs      = (_2 %~ view text) <$> Array.assocs hintsArr
-    -- Yes, it's an `unsafePerformIO`. It is a pure computation
+    assocs      = (_2 %~ view SearcherData.text) <$> Array.assocs hintsArr
+    -- Yes, it's `unsafeToJSVal`. It is a pure computation
     -- by the virtue of its usage and semantics of the JS library,
     -- so we ruthlessly navigate around GHCJS marshaling constraints.
-    jsValAssocs = unsafePerformIO $ toJSVal assocs
+    jsValAssocs = unsafeToJSVal assocs
     jsDb        = jsCreate jsValAssocs
     in Database jsDb hintsArr
 

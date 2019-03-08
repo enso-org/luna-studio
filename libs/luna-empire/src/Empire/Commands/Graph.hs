@@ -114,7 +114,6 @@ import LunaStudio.Data.PortRef               (AnyPortRef (..), InPortRef (..),
                                               OutPortRef (..))
 import LunaStudio.Data.Position              (Position)
 import LunaStudio.Data.Range                 (Range (..))
-import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 
 
 addImports :: GraphLocation -> Set Text -> Empire ()
@@ -1404,9 +1403,8 @@ classToHints (Class.Class constructors methods _) = let
     constructorsNames   = Map.keys constructors
     constructorToHint   = flip Hint.Raw mempty . convert
     constructorsHints   = constructorToHint <$> constructorsNames
-    methods'            = filter 
-        (isPublicMethod . fst) 
-        $ Map.toList $ unwrap methods
+    methods'            = filter (isPublicMethod . fst)
+                        $ Map.toList $ unwrap methods
     methodToHint (n, d) = Hint.Raw (convert n) $ getDocumentation d
     methodsHints        = methodToHint <$> methods'
     in Hint.Class constructorsHints methodsHints
@@ -1446,7 +1444,7 @@ getImportPaths (GraphLocation file _) = do
     importPaths     <- Package.packageImportPaths currentProjPath
     return $ map (view _2) importPaths
 
-getSearcherHints :: GraphLocation -> Empire SearcherLibraries
+getSearcherHints :: GraphLocation -> Empire SearcherLibrary.Set
 getSearcherHints loc = do
     importPaths     <- liftIO $ getImportPaths loc
     availableSource <- liftIO $ forM importPaths $ \path -> do

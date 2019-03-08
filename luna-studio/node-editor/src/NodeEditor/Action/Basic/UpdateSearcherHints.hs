@@ -36,7 +36,6 @@ import Data.Set                              (Set)
 import Data.Text                             (Text)
 import JS.Visualizers                        (sendVisualizationData)
 import LunaStudio.Data.PortRef               (OutPortRef)
-import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 import LunaStudio.Data.TypeRep               (ConstructorRep (ConstructorRep))
 import NodeEditor.Action.Batch               (searchNodes)
 import NodeEditor.Action.State.NodeEditor    (getLocalFunctions, getSearcher,
@@ -44,8 +43,7 @@ import NodeEditor.Action.State.NodeEditor    (getLocalFunctions, getSearcher,
                                               modifySearcher)
 import NodeEditor.React.Model.Searcher       (Searcher)
 import NodeEditor.State.Global               (State)
-import Searcher.Data.Result                  (Result (Result),
-                                              Match (Match))
+import Searcher.Data.Result                  (Result)
 
 
 positionSucc :: Maybe Int -> Maybe Int
@@ -72,7 +70,7 @@ selectHint i = modifySearcher $ do
     hLen <- fmap Just $ use $ Searcher.results . to length
     when (i <= hLen) $ Searcher.selectedPosition .= i
 
-addDatabaseHints :: SearcherLibraries -> Command State ()
+addDatabaseHints :: Library.Set -> Command State ()
 addDatabaseHints libHints = do
     oldDb <- use Global.searcherDatabase
     let newDb = NodeHint.insertSearcherLibraries libHints oldDb
@@ -156,9 +154,8 @@ updateClassName cl = do
 scoreTextMatch :: Text -> NodeHint.Database -> [Result NodeHint.Node]
 scoreTextMatch query nsData = case Text.null query of
     True ->
-        let mkResult r = Result r 0 $ Match []
-            db = nsData ^. NodeHint.database
-        in mkResult <$> Database.elems db
+        let db = nsData ^. NodeHint.database
+        in Result.make <$> Database.elems db
     False ->
         let db = nsData ^. NodeHint.database
         in SearcherEngine.query db query

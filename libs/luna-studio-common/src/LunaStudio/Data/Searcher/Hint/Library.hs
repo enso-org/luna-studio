@@ -33,8 +33,8 @@ instance NFData Library
 instance ToJSON Library
 
 
-type Name              = Text
-type SearcherLibraries = Map Name Library
+type Name = Text
+type Set  = Map Name Library
 
 ------------------
 -- === Info === --

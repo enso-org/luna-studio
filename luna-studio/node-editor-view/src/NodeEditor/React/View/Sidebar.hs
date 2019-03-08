@@ -10,6 +10,7 @@ import qualified Data.Aeson                                as Aeson
 import qualified JS.Mount                                  as Mount
 import qualified JS.UI                                     as UI
 import qualified LunaStudio.Data.PortRef                   as PortRef
+import qualified LunaStudio.Data.Position                  as Position
 import qualified NodeEditor.Event.UI                       as UI
 import qualified NodeEditor.React.Event.Sidebar            as Sidebar
 import qualified NodeEditor.React.Model.Node.SidebarNode   as SidebarNode
@@ -24,7 +25,6 @@ import JS.Scene                                (inputSidebarId, outputSidebarId)
 import LunaStudio.Data.PortRef                 (AnyPortRef (OutPortRef'),
                                                 OutPortRef (OutPortRef),
                                                 toAnyPortRef)
-import LunaStudio.Data.Position                (y)
 import NodeEditor.React.IsRef                  (IsRef, dispatch)
 import NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect),
                                                 SidebarNode,
@@ -235,7 +235,7 @@ sidebarDraggedPort_ :: IsRef ref => ref -> AnyPort -> ReactElementM ViewEventHan
 sidebarDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
     div_
         [ "className" $= Style.prefixFromList [ "port", "port-sidebar__port", "port-sidebar__port--dragged", "hover" ]
-        , "style"     @= Aeson.object [ "transform"  Aeson..= ("translate(0px, " <> show (pos ^. y) <> "px)") ]
+        , "style"     @= Aeson.object [ "transform"  Aeson..= ("translate(0px, " <> show (pos ^. Position.y) <> "px)") ]
         ] $ do
         div_ [ "className" $= Style.prefix "port-sidebar__port__name" ] $ elemString . convert $ p ^. Port.name
         svg_
@@ -251,16 +251,18 @@ portLabelId = Mount.prefix "focus-portLabel"
 focusPortLabel :: IO ()
 focusPortLabel = UI.focus portLabelId
 
-filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe Searcher.Properties 
+filterOutSearcherIfNotRelated :: AnyPortRef -> Maybe Searcher.Properties
     -> Maybe Searcher.Properties
-filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just s) 
-    = case s ^. Searcher.searcher . Searcher.mode of
-        SearcherMode.Node ns -> case ns ^. NodeSearcher.mode of
-            NodeSearcher.PortNameMode d -> let 
-                sPortRef = OutPortRef 
-                    (ns ^. NodeSearcher.nodeLoc) 
-                    (d  ^. NodeSearcher.portId)
-                in if portRef == sPortRef then Just s else Nothing
+filterOutSearcherIfNotRelated (OutPortRef' portRef) (Just searcherProps)
+    = case searcherProps ^. Searcher.searcher . Searcher.mode of
+        SearcherMode.Node nodesData -> case nodesData ^. NodeSearcher.mode of
+            NodeSearcher.PortNameMode port -> let
+                searcherPortRef = OutPortRef
+                    (nodesData ^. NodeSearcher.nodeLoc)
+                    (port      ^. NodeSearcher.portId)
+                in if portRef == searcherPortRef
+                    then Just searcherProps
+                    else Nothing
             _ -> Nothing
         _     -> Nothing
 filterOutSearcherIfNotRelated _ _ = Nothing

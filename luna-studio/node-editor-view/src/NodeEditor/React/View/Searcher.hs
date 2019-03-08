@@ -16,6 +16,7 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node as NodeSearcher
 import qualified NodeEditor.React.View.Style               as Style
 import qualified React.Flux                                as React
 import qualified Searcher.Data.Class                       as SearcherData
+import qualified Searcher.Data.Match                       as Match
 
 import JS.Searcher                         (searcherId)
 import NodeEditor.React.Event.Searcher
@@ -23,6 +24,7 @@ import NodeEditor.React.IsRef              (IsRef, dispatch)
 import NodeEditor.React.View.Visualization (docVisualization_)
 import Searcher.Data.Class                 (SearcherHint)
 import Searcher.Data.Result                (Result, match)
+import Searcher.Data.Match                 (Range)
 
 
 name :: JSString
@@ -130,14 +132,14 @@ highlighted_ result = prefixElem >> highlighted_' 0 highlights where
                        $ elemString $ if prefix == "" then prefix else prefix <> " . "
     highlights = result ^. match . wrapped
     name'      = convert $ result ^. SearcherData.text
-    highlighted_' :: Int -> [Int] -> ReactElementM ViewEventHandler ()
-    highlighted_' omit [] = span_ [ "key" $= "l" ] $ elemString $ snd $ splitAt omit name'
+    highlighted_' :: Int -> [Range] -> ReactElementM ViewEventHandler ()
+    highlighted_' omit [] = span_ [ "key" $= "l" ] $ elemString $ drop omit name'
     highlighted_' omit (h:rest) = do
-        let start                 = h
-            len                   = 1
-            (r1         , r2    ) = splitAt start name'
-            (_          , normal) = splitAt omit r1
-            (highlighted, _     ) = splitAt len r2
+        let start       = h ^. Match.start
+            len         = h ^. Match.length
+            (r1, r2)    = splitAt start name'
+            normal      = drop omit r1
+            highlighted = take len r2
         span_ [ "key" $= jsShow start ] $ do
             span_ [ "key" $= "n" ]
                 $ elemString normal

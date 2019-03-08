@@ -13,7 +13,6 @@ import Data.Text                     (Text)
 -- === Raw === --
 -----------------
 
-
 -- === Definition === --
 
 data Raw = Raw

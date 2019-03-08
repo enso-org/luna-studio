@@ -2,13 +2,14 @@ module Empire.Empire where
 
 import Empire.Prelude
 
-import qualified Data.Graph.Store                  as Store
-import qualified Data.Map.Lazy                     as Map
-import qualified Luna.IR                           as IR
-import qualified Luna.Pass.Resolve.Data.Resolution as Res
-import qualified Luna.Pass.Sourcing.Data.Unit      as Unit
-import qualified Luna.Pass.Typing.Data.Typed       as Typed
-import qualified Luna.Runtime.Data.Evaluated       as Runtime
+import qualified Data.Graph.Store                      as Store
+import qualified Data.Map.Lazy                         as Map
+import qualified Luna.IR                               as IR
+import qualified Luna.Pass.Resolve.Data.Resolution     as Res
+import qualified Luna.Pass.Sourcing.Data.Unit          as Unit
+import qualified Luna.Pass.Typing.Data.Typed           as Typed
+import qualified Luna.Runtime.Data.Evaluated           as Runtime
+import qualified LunaStudio.Data.Searcher.Hint.Library as Libraries
 
 import Control.Concurrent.Async              (Async)
 import Control.Concurrent.MVar               (MVar)
@@ -24,7 +25,6 @@ import Empire.Data.Graph                     (ClsGraph,
 import Empire.Data.Library                   (Library)
 import LunaStudio.API.AsyncUpdate            (AsyncUpdate)
 import LunaStudio.Data.GraphLocation         (GraphLocation)
-import LunaStudio.Data.Searcher.Hint.Library (SearcherLibraries)
 
 
 type Error = String
@@ -63,7 +63,7 @@ makeLenses ''TCRequest
 data CommunicationEnv = CommunicationEnv
     { _updatesChan   :: TChan AsyncUpdate
     , _typecheckChan :: MVar TCRequest
-    , _searcherHints :: MVar SearcherLibraries
+    , _searcherHints :: MVar Libraries.Set
     } deriving Generic
 makeLenses ''CommunicationEnv
 
