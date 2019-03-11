@@ -19,6 +19,11 @@ import Data.Text32  (Text32)
 
 -- === Definition === ---
 
+-- | This datatype is a result of analysing the tokenized searcher input,
+--   specifying relevant parts of the query.
+--   The query field is the word that is currently being searched, while
+--   prefix and suffix are the remaining bits, not relevant for current search.
+--   Full searcher input can be rebuilt as prefix <> query <> suffix.
 data Divided = Divided
     { _prefix :: Text
     , _query  :: Text
@@ -84,19 +89,19 @@ findLambdaArgsAndEndOfLambdaArgs input' tokens = result where
     getArg   beg t = Vector.slice beg (exprLength t) input'
     tokenLength  t = exprLength t + offsetLength t
     findRecursive []    _                     _      _    res = res
-    findRecursive (h:t) openParanthesisNumber endPos args res = let
+    findRecursive (tok:toks) openParanthesisNumber endPos args res = let
         findR paranthesisModifier arguments res' = findRecursive
-            t
+            toks
             (paranthesisModifier openParanthesisNumber)
-            (endPos + tokenLength h)
+            (endPos + tokenLength tok)
             arguments
             res'
-        updateResult     = Just (fmap convert $! args, endPos + exprLength h)
+        updateResult     = Just (fmap convert $! args, endPos + exprLength tok)
         blockStartResult = if openParanthesisNumber == 0
             then updateResult
             else res
-        varArgs = getArg endPos h : args
-        in case h ^. Lexer.element of
+        varArgs = getArg endPos tok : args
+        in case tok ^. Lexer.element of
             Lexer.BlockStart             -> findR id   args    blockStartResult
             Lexer.Var        {}          -> findR id   varArgs res
             Lexer.Block      Lexer.Begin -> findR succ args    res

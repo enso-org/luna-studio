@@ -334,7 +334,7 @@ filterOutSearcherIfNotRelated :: NodeLoc -> Maybe Searcher.Properties
     -> Maybe Searcher.Properties
 filterOutSearcherIfNotRelated _  Nothing  = Nothing
 filterOutSearcherIfNotRelated nl (Just s) = if Searcher.isRelated nl s
-    then return s
+    then pure s
     else Nothing
 
 filterOutEditedTextControlIfNotRelated :: NodeLoc -> Maybe InPortRef
