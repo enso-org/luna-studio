@@ -11,20 +11,17 @@ import qualified Luna.Pass.Typing.Data.Typed           as Typed
 import qualified Luna.Runtime.Data.Evaluated           as Runtime
 import qualified LunaStudio.Data.Searcher.Hint.Library as Libraries
 
-import Control.Concurrent.Async              (Async)
-import Control.Concurrent.MVar               (MVar)
-import Control.Concurrent.STM.TChan          (TChan)
-import Control.Monad.Reader                  (ReaderT (ReaderT), ask,
-                                              runReaderT)
-import Control.Monad.State                   (StateT (StateT), get, put,
-                                              runStateT)
-import Data.Map.Lazy                         (Map)
-import Empire.Data.AST                       (NodeRef)
-import Empire.Data.Graph                     (ClsGraph,
-                                              CommandState (CommandState))
-import Empire.Data.Library                   (Library)
-import LunaStudio.API.AsyncUpdate            (AsyncUpdate)
-import LunaStudio.Data.GraphLocation         (GraphLocation)
+import Control.Concurrent.Async      (Async)
+import Control.Concurrent.MVar       (MVar)
+import Control.Concurrent.STM.TChan  (TChan)
+import Control.Monad.Reader          (ReaderT (ReaderT), ask, runReaderT)
+import Control.Monad.State           (StateT (StateT), get, put, runStateT)
+import Data.Map.Lazy                 (Map)
+import Empire.Data.AST               (NodeRef)
+import Empire.Data.Graph             (ClsGraph, CommandState (CommandState))
+import Empire.Data.Library           (Library)
+import LunaStudio.API.AsyncUpdate    (AsyncUpdate)
+import LunaStudio.Data.GraphLocation (GraphLocation)
 
 
 type Error = String

@@ -7,11 +7,11 @@ import qualified Debug.Safe              as Safe
 import qualified LunaStudio.API.Response as Response
 import qualified LunaStudio.API.Topic    as Topic
 
-import Common.Action.Command   (Command)
-import Data.Map                (Map)
-import Data.Time.Clock         (UTCTime)
-import Data.Time.Clock         (diffUTCTime, getCurrentTime)
-import Data.UUID.Types         (UUID)
+import Common.Action.Command (Command)
+import Data.Map              (Map)
+import Data.Time.Clock       (UTCTime)
+import Data.Time.Clock       (diffUTCTime, getCurrentTime)
+import Data.UUID.Types       (UUID)
 
 class HasRequestTimes st where
     requestTimes :: Lens' st (Map UUID UTCTime)

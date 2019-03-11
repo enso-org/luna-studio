@@ -8,7 +8,7 @@ import qualified NodeEditor.Event.Shortcut     as Shortcut
 import qualified Searcher.Data.Database        as Database
 
 import Searcher.Data.Class (SearcherData (text),
-                            SearcherHint (prefix, documentation))
+                            SearcherHint (documentation, prefix))
 
 
 

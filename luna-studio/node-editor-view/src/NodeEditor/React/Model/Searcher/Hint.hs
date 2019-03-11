@@ -5,9 +5,7 @@ import Common.Prelude
 
 import NodeEditor.React.Model.Searcher.Hint.Command (Command)
 import NodeEditor.React.Model.Searcher.Hint.Node    (Node)
-import Searcher.Data.Class                          (SearcherData (text),
-                                                     SearcherHint
-                                                        (prefix, documentation))
+import Searcher.Data.Class                          (SearcherData (text), SearcherHint (documentation, prefix))
 
 ------------------
 -- === Hint === --

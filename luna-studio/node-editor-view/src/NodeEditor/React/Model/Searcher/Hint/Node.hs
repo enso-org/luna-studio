@@ -14,9 +14,7 @@ import qualified Searcher.Data.Database                as Searcher
 import Data.Set                              (Set)
 import LunaStudio.Data.Searcher.Hint.Class   (Class)
 import LunaStudio.Data.Searcher.Hint.Library (Library)
-import Searcher.Data.Class                   (SearcherData (text),
-                                              SearcherHint (prefix,
-                                                            documentation))
+import Searcher.Data.Class                   (SearcherData (text), SearcherHint (documentation, prefix))
 
 
 

@@ -39,12 +39,10 @@ import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.ScreenPosition       (move, x, y)
 import LunaStudio.Data.Size                 (height, width)
 import LunaStudio.Data.Vector2              (Vector2 (Vector2))
-import NodeEditor.Action.Basic              (createNode,
-                                             clearHints,
-                                             updateHints,
+import NodeEditor.Action.Basic              (clearHints, createNode,
                                              modifyCamera, renameNode,
                                              renamePort, setNodeExpression,
-                                             updateDocumentation)
+                                             updateDocumentation, updateHints)
 import NodeEditor.Action.Batch              (addImport)
 import NodeEditor.Action.State.Action       (beginActionWithKey,
                                              continueActionWithKey,
@@ -60,13 +58,10 @@ import NodeEditor.Action.State.Scene        (getScreenSize, translateToScreen,
 import NodeEditor.Action.UUID               (getUUID)
 import NodeEditor.Event.Event               (Event (Shortcut))
 import NodeEditor.React.Model.Constants     (searcherHeight, searcherWidth)
-import NodeEditor.React.Model.Visualization (RunningVisualization
-                                             (RunningVisualization),
-                                             VisualizerProperties
-                                             (VisualizerProperties),
+import NodeEditor.React.Model.Visualization (RunningVisualization (RunningVisualization),
+                                             VisualizerProperties (VisualizerProperties),
                                              getMdVisualizer)
-import NodeEditor.State.Action              (Action
-                                             (begin, continue, end, update),
+import NodeEditor.State.Action              (Action (begin, continue, end, update),
                                              Searcher (Searcher),
                                              searcherAction)
 import NodeEditor.State.Global              (State, visualizers)

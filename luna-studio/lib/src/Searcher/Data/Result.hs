@@ -3,7 +3,7 @@ module Searcher.Data.Result where
 import Common.Prelude
 
 import Searcher.Data.Class (SearcherData (text),
-                            SearcherHint (prefix, documentation))
+                            SearcherHint (documentation, prefix))
 import Searcher.Data.Match (Match)
 
 

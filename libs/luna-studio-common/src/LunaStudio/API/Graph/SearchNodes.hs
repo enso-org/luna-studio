@@ -6,11 +6,11 @@ import qualified LunaStudio.API.Graph.Request          as Graph
 import qualified LunaStudio.API.Topic                  as Topic
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
 
-import Data.Aeson.Types                      (ToJSON)
-import Data.Binary                           (Binary)
-import Data.Map                              (Map)
-import Data.Set                              (Set)
-import LunaStudio.Data.GraphLocation         (GraphLocation)
+import Data.Aeson.Types              (ToJSON)
+import Data.Binary                   (Binary)
+import Data.Map                      (Map)
+import Data.Set                      (Set)
+import LunaStudio.Data.GraphLocation (GraphLocation)
 
 
 data Request = Request

@@ -20,8 +20,8 @@ import NodeEditor.React.Event.Searcher
 import NodeEditor.React.IsRef              (IsRef, dispatch)
 import NodeEditor.React.View.Visualization (docVisualization_)
 import Searcher.Data.Class                 (SearcherHint)
-import Searcher.Data.Result                (Result, match)
 import Searcher.Data.Match                 (Range)
+import Searcher.Data.Result                (Result, match)
 
 
 name :: JSString

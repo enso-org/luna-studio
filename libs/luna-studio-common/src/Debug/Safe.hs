@@ -5,16 +5,16 @@ module Debug.Safe
 , withLevel
 ) where
 
-import           Prologue hiding (print, putStrLn, printLn)
+import Prologue hiding (print, printLn, putStrLn)
 
-import           Debug.Console
+import qualified Data.IORef as IORef
 
-import           Control.Concurrent
-import           Data.IORef         (IORef)
-import qualified Data.IORef         as IORef
-import           Data.Time.Clock    (diffUTCTime, getCurrentTime)
-import           System.CPUTime     (getCPUTime)
-import           System.IO.Unsafe   (unsafePerformIO)
+import Control.Concurrent
+import Data.IORef         (IORef)
+import Data.Time.Clock    (diffUTCTime, getCurrentTime)
+import Debug.Console
+import System.CPUTime     (getCPUTime)
+import System.IO.Unsafe   (unsafePerformIO)
 
 
 levelRef :: IORef Int

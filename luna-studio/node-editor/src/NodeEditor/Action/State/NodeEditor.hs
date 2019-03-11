@@ -17,8 +17,8 @@ import qualified NodeEditor.React.Model.NodeEditor           as NE
 import qualified NodeEditor.React.Model.Port                 as Port
 import qualified NodeEditor.React.Model.Searcher             as Searcher
 import qualified NodeEditor.React.Model.Searcher.Hint.Node   as SearcherHint
-import qualified NodeEditor.React.Model.Searcher.Mode.Node   as SearcherModeNode
 import qualified NodeEditor.React.Model.Searcher.Mode        as SearcherMode
+import qualified NodeEditor.React.Model.Searcher.Mode.Node   as SearcherModeNode
 import qualified NodeEditor.React.Model.Visualization        as Visualization
 import qualified NodeEditor.State.Global                     as Global
 

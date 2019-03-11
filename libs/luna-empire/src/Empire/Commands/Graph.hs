@@ -61,59 +61,59 @@ import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
 import qualified Path
 import qualified Safe
 
-import Control.Arrow                         ((***))
-import Control.Lens                          (re, traverseOf_, uses, (^..))
-import Control.Monad                         (forM)
-import Control.Monad.Catch                   (handle, try)
-import Control.Monad.State                   hiding (forM_, void, when)
-import Data.Char                             (isSeparator, isUpper)
-import Data.Coerce                           (coerce)
-import Data.Foldable                         (toList)
-import Data.List                             (find, nub, sortBy, sortOn, (++))
-import Data.Map                              (Map)
-import Data.Maybe                            (fromMaybe, maybeToList)
-import Data.Set                              (Set)
-import Data.Text                             (Text)
-import Data.Text.Position                    (Delta)
-import Data.Text.Span                        (SpacedSpan (..), leftSpacedSpan)
-import Data.Text.Strict.Lens                 (packed)
+import Control.Arrow                        ((***))
+import Control.Lens                         (re, traverseOf_, uses, (^..))
+import Control.Monad                        (forM)
+import Control.Monad.Catch                  (handle, try)
+import Control.Monad.State                  hiding (forM_, void, when)
+import Data.Char                            (isSeparator, isUpper)
+import Data.Coerce                          (coerce)
+import Data.Foldable                        (toList)
+import Data.List                            (find, nub, sortBy, sortOn, (++))
+import Data.Map                             (Map)
+import Data.Maybe                           (fromMaybe, maybeToList)
+import Data.Set                             (Set)
+import Data.Text                            (Text)
+import Data.Text.Position                   (Delta)
+import Data.Text.Span                       (SpacedSpan (..), leftSpacedSpan)
+import Data.Text.Strict.Lens                (packed)
 import Debug
-import Empire.ASTOp                          (ClassOp, GraphOp, liftScheduler,
-                                              runASTOp, runAliasAnalysis)
-import Empire.ASTOps.BreadcrumbHierarchy     (prepareChild)
-import Empire.ASTOps.Parse                   (FunctionParsing (..))
-import Empire.Commands.Code                  (addExprMapping, getExprMap,
-                                              getNextExprMarker, setExprMap)
-import Empire.Data.AST                       (ConnectionException (..), EdgeRef,
-                                              InvalidConnectionException (..),
-                                              NodeRef,
-                                              NotInputEdgeException (..),
-                                              NotUnifyException,
-                                              PortDoesNotExistException (..),
-                                              SomeASTException,
-                                              astExceptionFromException,
-                                              astExceptionToException)
-import Empire.Data.FileMetadata              (MarkerNodeMeta (MarkerNodeMeta))
-import Empire.Data.Graph                     (ClsGraph, Graph)
-import Empire.Data.Layers                    (SpanLength, SpanOffset)
+import Empire.ASTOp                         (ClassOp, GraphOp, liftScheduler,
+                                             runASTOp, runAliasAnalysis)
+import Empire.ASTOps.BreadcrumbHierarchy    (prepareChild)
+import Empire.ASTOps.Parse                  (FunctionParsing (..))
+import Empire.Commands.Code                 (addExprMapping, getExprMap,
+                                             getNextExprMarker, setExprMap)
+import Empire.Data.AST                      (ConnectionException (..), EdgeRef,
+                                             InvalidConnectionException (..),
+                                             NodeRef,
+                                             NotInputEdgeException (..),
+                                             NotUnifyException,
+                                             PortDoesNotExistException (..),
+                                             SomeASTException,
+                                             astExceptionFromException,
+                                             astExceptionToException)
+import Empire.Data.FileMetadata             (MarkerNodeMeta (MarkerNodeMeta))
+import Empire.Data.Graph                    (ClsGraph, Graph)
+import Empire.Data.Layers                   (SpanLength, SpanOffset)
 import Empire.Empire
-import GHC.Stack                             (renderStack, whoCreated)
-import Luna.Pass.Data.Stage                  (Stage)
-import Luna.Syntax.Text.Parser.Ast.CodeSpan  (CodeSpan)
-import LunaStudio.Data.Breadcrumb            (Breadcrumb (..), BreadcrumbItem,
-                                              Named)
-import LunaStudio.Data.Connection            (Connection (..))
-import LunaStudio.Data.GraphLocation         (GraphLocation (..), (|>))
-import LunaStudio.Data.Node                  (ExpressionNode (..), NodeId)
-import LunaStudio.Data.NodeLoc               (NodeLoc (..))
-import LunaStudio.Data.NodeMeta              (NodeMeta)
-import LunaStudio.Data.Port                  (InPortId, InPortIndex (..),
-                                              getPortNumber)
-import LunaStudio.Data.PortDefault           (PortDefault)
-import LunaStudio.Data.PortRef               (AnyPortRef (..), InPortRef (..),
-                                              OutPortRef (..))
-import LunaStudio.Data.Position              (Position)
-import LunaStudio.Data.Range                 (Range (..))
+import GHC.Stack                            (renderStack, whoCreated)
+import Luna.Pass.Data.Stage                 (Stage)
+import Luna.Syntax.Text.Parser.Ast.CodeSpan (CodeSpan)
+import LunaStudio.Data.Breadcrumb           (Breadcrumb (..), BreadcrumbItem,
+                                             Named)
+import LunaStudio.Data.Connection           (Connection (..))
+import LunaStudio.Data.GraphLocation        (GraphLocation (..), (|>))
+import LunaStudio.Data.Node                 (ExpressionNode (..), NodeId)
+import LunaStudio.Data.NodeLoc              (NodeLoc (..))
+import LunaStudio.Data.NodeMeta             (NodeMeta)
+import LunaStudio.Data.Port                 (InPortId, InPortIndex (..),
+                                             getPortNumber)
+import LunaStudio.Data.PortDefault          (PortDefault)
+import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
+                                             OutPortRef (..))
+import LunaStudio.Data.Position             (Position)
+import LunaStudio.Data.Range                (Range (..))
 
 
 addImports :: GraphLocation -> Set Text -> Empire ()

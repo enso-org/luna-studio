@@ -3,13 +3,13 @@
 module Searcher.Engine where
 
 import Common.Prelude
-import Prelude (error)
+import Prelude        (error)
 
 import qualified Data.Array          as Array
 import qualified Searcher.Data.Match as Match
 
 import GHCJS.Marshal.Pure     (pToJSVal)
-import Searcher.Data.Database (Database, jsDatabase, indexMapping)
+import Searcher.Data.Database (Database, indexMapping, jsDatabase)
 import Searcher.Data.Result   (Result (Result))
 import System.IO.Unsafe       (unsafePerformIO)
 

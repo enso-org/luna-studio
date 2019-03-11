@@ -13,27 +13,27 @@ import qualified NodeEditor.React.Model.Node.SidebarNode     as SidebarNode
 import qualified NodeEditor.React.Model.Port                 as Port
 import qualified NodeEditor.Action.Basic.UpdateSearcherHints as Searcher
 
-import Common.Action.Command                       (Command)
-import Data.Set                                    (Set)
-import LunaStudio.Data.Node                        (NodeTypecheckerUpdate,
-                                                    tcNodeId)
-import LunaStudio.Data.NodeLoc                     (NodeLoc)
-import NodeEditor.Action.Basic.AddNode             (localAddExpressionNode,
-                                                    localAddInputNode,
-                                                    localAddOutputNode)
-import NodeEditor.Action.Basic.Scene               (updateScene)
-import NodeEditor.Action.State.Model               (calculatePortSelfMode)
-import NodeEditor.React.Model.Node                 (ExpressionNode, InputNode,
-                                                    NodePath, OutputNode,
-                                                    inPortAt, nodeLoc)
-import NodeEditor.React.Model.Node.ExpressionNode  (inPortsList, isSelected)
-import NodeEditor.React.Model.Port                 (InPort, InPortTree, OutPort,
-                                                    OutPortTree, isSelf, mode,
-                                                    portId)
-import NodeEditor.React.Model.Visualization        (VisualizationBackup (MessageBackup),
-                                                    awaitingDataMsg, noVisMsg,
-                                                    visualizers)
-import NodeEditor.State.Global                     (State)
+import Common.Action.Command                      (Command)
+import Data.Set                                   (Set)
+import LunaStudio.Data.Node                       (NodeTypecheckerUpdate,
+                                                   tcNodeId)
+import LunaStudio.Data.NodeLoc                    (NodeLoc)
+import NodeEditor.Action.Basic.AddNode            (localAddExpressionNode,
+                                                   localAddInputNode,
+                                                   localAddOutputNode)
+import NodeEditor.Action.Basic.Scene              (updateScene)
+import NodeEditor.Action.State.Model              (calculatePortSelfMode)
+import NodeEditor.React.Model.Node                (ExpressionNode, InputNode,
+                                                   NodePath, OutputNode,
+                                                   inPortAt, nodeLoc)
+import NodeEditor.React.Model.Node.ExpressionNode (inPortsList, isSelected)
+import NodeEditor.React.Model.Port                (InPort, InPortTree, OutPort,
+                                                   OutPortTree, isSelf, mode,
+                                                   portId)
+import NodeEditor.React.Model.Visualization       (VisualizationBackup (MessageBackup),
+                                                   awaitingDataMsg, noVisMsg,
+                                                   visualizers)
+import NodeEditor.State.Global                    (State)
 
 
 data NodeUpdateModification

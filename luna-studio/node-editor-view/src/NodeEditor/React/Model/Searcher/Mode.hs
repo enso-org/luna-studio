@@ -4,6 +4,7 @@ module NodeEditor.React.Model.Searcher.Mode where
 import Common.Prelude
 
 import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
+
 import NodeEditor.React.Model.Searcher.Mode.Node (Node)
 
 
