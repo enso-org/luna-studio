@@ -5,20 +5,16 @@ import Common.Prelude
 import qualified Data.Aeson                                 as Aeson
 import qualified Data.ByteString.Lazy.Char8                 as BS
 import qualified Data.JSString                              as JSString
-import qualified Data.Map                                   as Map
-import qualified Data.Set                                   as Set
 import qualified Data.Text                                  as Text
 import qualified IdentityString                             as IS
-import qualified LunaStudio.Data.Searcher.Hint              as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Library      as Library
 import qualified LunaStudio.Data.Searcher.Hint.Class        as Class
 import qualified NodeEditor.React.Model.Searcher            as Searcher
-import qualified NodeEditor.React.Model.Searcher.Hint.Node  as NodeHint
 import qualified NodeEditor.React.Model.Searcher.Hint       as Hint
+import qualified NodeEditor.React.Model.Searcher.Hint.Node  as NodeHint
 import qualified NodeEditor.React.Model.Searcher.Input      as Input
 import qualified NodeEditor.React.Model.Searcher.Mode       as Mode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeMode
-import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization       as Visualization
 import qualified NodeEditor.State.Global                    as Global
 import qualified Searcher.Data.Class                        as Searcher
@@ -26,24 +22,19 @@ import qualified Searcher.Data.Database                     as Database
 import qualified Searcher.Data.Result                       as Result
 import qualified Searcher.Engine                            as SearcherEngine
 
-import Common.Action.Command                 (Command)
-import Common.Debug                          (timeAction)
-import Control.DeepSeq                       (force)
-import Control.Exception.Base                (evaluate)
-import Data.Map                              (Map)
-import Data.Ord                              (comparing)
-import Data.Set                              (Set)
-import Data.Text                             (Text)
-import JS.Visualizers                        (sendVisualizationData)
-import LunaStudio.Data.PortRef               (OutPortRef)
-import LunaStudio.Data.TypeRep               (ConstructorRep (ConstructorRep))
-import NodeEditor.Action.Batch               (searchNodes)
-import NodeEditor.Action.State.NodeEditor    (getLocalFunctions, getSearcher,
-                                              inTopLevelBreadcrumb,
-                                              modifySearcher)
-import NodeEditor.React.Model.Searcher       (Searcher)
-import NodeEditor.State.Global               (State)
-import Searcher.Data.Result                  (Result)
+import Common.Action.Command              (Command)
+import Control.DeepSeq                    (force)
+import Data.Ord                           (comparing)
+import Data.Set                           (Set)
+import Data.Text                          (Text)
+import JS.Visualizers                     (sendVisualizationData)
+import LunaStudio.Data.PortRef            (OutPortRef)
+import LunaStudio.Data.TypeRep            (ConstructorRep (ConstructorRep))
+import NodeEditor.Action.Batch            (searchNodes)
+import NodeEditor.Action.State.NodeEditor (getLocalFunctions, getSearcher,
+                                           inTopLevelBreadcrumb, modifySearcher)
+import NodeEditor.State.Global            (State)
+import Searcher.Data.Result               (Result)
 
 
 positionSucc :: Maybe Int -> Maybe Int
@@ -173,8 +164,8 @@ scoreClassMembership (Just clName) = fmap adjustMethodScore where
 
 scoreLocalFuns :: Maybe Class.Name -> [Result NodeHint.Node]
                -> [Result NodeHint.Node]
-scoreLocalFuns Nothing   = fmap (Result.score +~ 1)
-scoreLocalFuns (Just cl) = id
+scoreLocalFuns Nothing  = fmap (Result.score +~ 1)
+scoreLocalFuns (Just _) = id
 
 fullDbSearch :: Input.Divided -> NodeHint.Database -> NodeHint.Database
              -> Maybe Class.Name -> [Result Hint.Hint]

@@ -3,10 +3,10 @@ module LunaStudio.Data.Searcher.Hint where
 
 import Prologue
 
-import Control.Lens                  (Getter, to)
-import Data.Aeson                    (ToJSON)
-import Data.Binary                   (Binary)
-import Data.Text                     (Text)
+import Control.Lens (Getter, to)
+import Data.Aeson   (ToJSON)
+import Data.Binary  (Binary)
+import Data.Text    (Text)
 
 
 -----------------

@@ -3,17 +3,11 @@ module NodeEditor.React.Model.Searcher.Hint where
 
 import Common.Prelude
 
-import qualified LunaStudio.Data.Searcher.Hint as Hint
-import qualified Searcher.Data.Result          as Result
-
 import NodeEditor.React.Model.Searcher.Hint.Command (Command)
 import NodeEditor.React.Model.Searcher.Hint.Node    (Node)
 import Searcher.Data.Class                          (SearcherData (text),
                                                      SearcherHint
                                                         (prefix, documentation))
-import Searcher.Data.Result                         (Result)
-
-
 
 ------------------
 -- === Hint === --

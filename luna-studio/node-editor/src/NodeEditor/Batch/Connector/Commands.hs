@@ -209,8 +209,8 @@ setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID
 setNodesMetaRequest :: Map NodeLoc NodeMeta -> Workspace -> SetNodesMeta.Request
 setNodesMetaRequest updates workspace = withLibrary workspace $ \location ->
     SetNodesMeta.Request location (Map.mapKeys convert updates') where
-        (workspace', nls) = normalise' workspace $ Map.keys updates
-        updates'          = Map.fromList $ zip nls $ Map.elems updates
+        nls      = snd $ normalise' workspace $ Map.keys updates
+        updates' = Map.fromList $ zip nls $ Map.elems updates
 
 sendNodesMetaUpdate :: Map NodeLoc NodeMeta -> Workspace -> UUID -> Maybe UUID
     -> IO ()

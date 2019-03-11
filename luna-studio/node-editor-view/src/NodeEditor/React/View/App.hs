@@ -2,26 +2,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.App where
 
-import           React.Flux                         hiding (Event)
-import qualified React.Flux                         as React
+import Common.Prelude hiding (on)
 
-import           Common.Prelude                     hiding (on)
-import           Data.Timestamp                     (Timestamp (Timestamp))
-import           JS.Scene                           (appId)
 import qualified JS.UI                              as UI
-import           NodeEditor.Event.KeyMap            (isEventHandled)
-import qualified NodeEditor.Event.Shortcut          as Shortcut
 import qualified NodeEditor.Event.UI                as UI
 import qualified NodeEditor.React.Event.App         as App
 import qualified NodeEditor.React.Event.Breadcrumbs as Breadcrumbs
-import           NodeEditor.React.IsRef             (HasApp, IsRef, dispatch)
 import qualified NodeEditor.React.IsRef             as Ref
-import           NodeEditor.React.Model.App         (App)
 import qualified NodeEditor.React.Model.App         as App
-import           NodeEditor.React.Model.Breadcrumbs (isTopLevel)
-import           NodeEditor.React.View.Breadcrumbs  (breadcrumbs_)
-import           NodeEditor.React.View.NodeEditor   (nodeEditor_)
 import qualified NodeEditor.React.View.Style        as Style
+import qualified React.Flux                         as React
+
+import Data.Timestamp                     (Timestamp (Timestamp))
+import JS.Scene                           (appId)
+import NodeEditor.Event.KeyMap            (isEventHandled)
+import NodeEditor.React.IsRef             (HasApp, IsRef, dispatch)
+import NodeEditor.React.Model.Breadcrumbs (isTopLevel)
+import NodeEditor.React.View.Breadcrumbs  (breadcrumbs_)
+import NodeEditor.React.View.NodeEditor   (nodeEditor_)
+import React.Flux                         hiding (Event)
 
 
 name :: JSString

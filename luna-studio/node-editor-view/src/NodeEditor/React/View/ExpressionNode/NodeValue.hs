@@ -2,16 +2,16 @@
 module NodeEditor.React.View.ExpressionNode.NodeValue where
 
 import           Common.Prelude
+
 import qualified Data.Text                                  as Text
 import qualified LunaStudio.Data.Error                      as LunaError
-import qualified NodeEditor.Event.UI                        as UI
-import qualified NodeEditor.React.Event.Node                as Node
-import           NodeEditor.React.IsRef                     (IsRef, dispatch)
-import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, Value (..))
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import qualified NodeEditor.React.View.Style                as Style
-import           React.Flux                                 hiding (image_)
 import qualified React.Flux                                 as React
+
+import NodeEditor.React.IsRef                     (IsRef)
+import NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, Value (..))
+import React.Flux                                 hiding (image_)
 
 
 nodeValueName :: JSString
@@ -21,7 +21,7 @@ nodeValue_ :: IsRef r => r -> ExpressionNode -> ReactElementM ViewEventHandler (
 nodeValue_ ref n = React.view nodeValue (ref, n) mempty
 
 nodeValue :: IsRef r => ReactView (r, ExpressionNode)
-nodeValue = React.defineView nodeValueName $ \(ref, n) ->
+nodeValue = React.defineView nodeValueName $ \(_, n) ->
     div_
         [ "key"       $= "shortValuePositioner"
         , "className" $= Style.prefixFromList ["node__short-value-positioner", "noselect",  "node-translate"]

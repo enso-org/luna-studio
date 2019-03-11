@@ -4,8 +4,6 @@ module NodeEditor.React.View.Style where
 import           Common.Prelude
 import qualified Data.Aeson                       as Aeson
 import           Data.List                        (intercalate)
-import           LunaStudio.Data.Constants        (gridSize)
-import           NodeEditor.React.Model.Constants (nodeRadius)
 import           React.Flux                       as React
 
 prefix :: JSString -> JSString

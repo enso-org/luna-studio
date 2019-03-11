@@ -12,38 +12,33 @@ import qualified NodeEditor.React.Event.Visualization as Visualization
 import qualified NodeEditor.React.View.Style          as Style
 import qualified React.Flux                           as React
 
-import Data.Map                                   (Map)
-import NodeEditor.React.IsRef                     (IsRef, dispatch)
-import NodeEditor.React.Model.Constants           (lineHeight)
-import NodeEditor.React.Model.Node.ExpressionNode (NodeLoc)
-import NodeEditor.React.Model.Visualization       (RunningVisualization,
-                                                   VisualizationId,
-                                                   VisualizationMode (Default, Focused, FullScreen, Preview),
-                                                   VisualizationParent (Node, Searcher),
-                                                   VisualizationProperties,
-                                                   Visualizer, VisualizerId,
-                                                   VisualizerName,
-                                                   VisualizerPath,
-                                                   VisualizerType (ImportedVisualizer, InternalVisualizer, LunaVisualizer, ProjectVisualizer),
-                                                   Visualizers,
-                                                   externalVisualizers,
-                                                   internalVisualizers,
-                                                   librariesVisualizers,
-                                                   lunaVisualizers,
-                                                   projectVisualizers,
-                                                   runningVisualizer,
-                                                   selectedVisualizerId,
-                                                   visPropArgPortsNumber,
-                                                   visPropIsNodeExpanded,
-                                                   visPropNodeLoc,
-                                                   visPropVisualization,
-                                                   visPropVisualizers,
-                                                   visualizationId,
-                                                   visualizationMode,
-                                                   visualizerId, visualizerName,
-                                                   visualizerProperties,
-                                                   visualizerRelPath,
-                                                   visualizerType)
+import Data.Map                             (Map)
+import NodeEditor.React.IsRef               (IsRef, dispatch)
+import NodeEditor.React.Model.Constants     (lineHeight)
+import NodeEditor.React.Model.Visualization (RunningVisualization,
+                                             VisualizationId,
+                                             VisualizationMode (Default, Focused, FullScreen, Preview),
+                                             VisualizationParent (Node, Searcher),
+                                             VisualizationProperties,
+                                             Visualizer, VisualizerId,
+                                             VisualizerPath,
+                                             VisualizerType (ImportedVisualizer, InternalVisualizer, LunaVisualizer, ProjectVisualizer),
+                                             Visualizers, externalVisualizers,
+                                             internalVisualizers,
+                                             librariesVisualizers,
+                                             lunaVisualizers,
+                                             projectVisualizers,
+                                             runningVisualizer,
+                                             selectedVisualizerId,
+                                             visPropArgPortsNumber,
+                                             visPropIsNodeExpanded,
+                                             visPropNodeLoc,
+                                             visPropVisualization,
+                                             visPropVisualizers,
+                                             visualizationId, visualizationMode,
+                                             visualizerId, visualizerName,
+                                             visualizerProperties,
+                                             visualizerRelPath, visualizerType)
 
 
 nodePrefix :: JSString
@@ -52,7 +47,8 @@ nodePrefix = Mount.prefix "node-"
 visKey :: RunningVisualization -> JSString
 visKey vis = Mount.prefix $ "visualization-" <> (fromString . show $ vis ^. visualizationId)
 
-viewName, iframeName, visMenuName, objNameVis, objNameShortVal :: JSString
+viewName, docViewName, iframeName,
+    visMenuName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
 docViewName     = "doc-visualization"
 iframeName      = "visualization-iframe"

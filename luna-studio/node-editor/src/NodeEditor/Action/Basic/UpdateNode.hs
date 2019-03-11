@@ -2,16 +2,15 @@ module NodeEditor.Action.Basic.UpdateNode where
 
 import Common.Prelude
 
-import qualified Data.Map                                   as Map
-import qualified Data.Set                                   as Set
-import qualified LunaStudio.Data.Node                       as API
-import qualified LunaStudio.Data.PortRef                    as PortRef
-import qualified LunaStudio.Data.TypeRep                    as TypeRep
-import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
-import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
-import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
-import qualified NodeEditor.React.Model.Port                as Port
-import qualified NodeEditor.React.Model.Searcher            as Searcher
+import qualified Data.Map                                    as Map
+import qualified Data.Set                                    as Set
+import qualified LunaStudio.Data.Node                        as API
+import qualified LunaStudio.Data.PortRef                     as PortRef
+import qualified LunaStudio.Data.TypeRep                     as TypeRep
+import qualified NodeEditor.Action.State.NodeEditor          as NodeEditor
+import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
+import qualified NodeEditor.React.Model.Node.SidebarNode     as SidebarNode
+import qualified NodeEditor.React.Model.Port                 as Port
 import qualified NodeEditor.Action.Basic.UpdateSearcherHints as Searcher
 
 import Common.Action.Command                       (Command)

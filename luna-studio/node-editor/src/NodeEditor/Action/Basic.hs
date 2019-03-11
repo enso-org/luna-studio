@@ -4,10 +4,18 @@ module NodeEditor.Action.Basic
     ) where
 
 import Common.Prelude
-import Data.Map (Map)
-import LunaStudio.Data.Position                   (Position)
 
-import NodeEditor.Action.Batch                          (addConnectionRequest, moveNodeRequest)
+import qualified Data.Binary                      as Binary
+import qualified LunaStudio.API.Graph.Transaction as Transaction
+import qualified LunaStudio.API.Topic             as Topic
+
+import Common.Action.Command                       (Command)
+import Common.Batch.Connector.Connection           (Message (Message),
+                                                    sendRequest)
+import Data.Map                                    (Map)
+import LunaStudio.Data.PortRef                     (AnyPortRef (InPortRef'),
+                                                    OutPortRef)
+import LunaStudio.Data.Position                    (Position)
 import NodeEditor.Action.Basic.AddConnection       as X (connect,
                                                          localAddConnection,
                                                          localAddConnections)
@@ -100,32 +108,25 @@ import NodeEditor.Action.Basic.UpdateNode          as X (NodeUpdateModification 
                                                          localUpdateOutputNode)
 import NodeEditor.Action.Basic.UpdateNodeValue     as X (updateNodeValueAndVisualization)
 import NodeEditor.Action.Basic.UpdateSearcherHints as X (addDatabaseHints,
-                                                         clearHints,
-                                                         updateHints,
-                                                         selectHint,
+                                                         clearHints, selectHint,
                                                          selectNextHint,
                                                          selectPreviousHint,
                                                          setImportedLibraries,
-                                                         updateDocumentation)
+                                                         updateDocumentation,
+                                                         updateHints)
+import NodeEditor.Action.Batch                     (addConnectionRequest,
+                                                    moveNodeRequest)
+import NodeEditor.Action.State.App                 (getWorkspace)
 import NodeEditor.Action.State.Model               as X (isArgConstructorConnectSrc,
                                                          updateAllPortsMode,
                                                          updateArgConstructorMode,
                                                          updatePortMode,
                                                          updatePortsModeForNode)
-
-import           Common.Action.Command                      (Command)
-import           NodeEditor.React.Model.Node                (NodeLoc)
-import           NodeEditor.React.Model.Connection          (Connection, src, dst)
-import           NodeEditor.State.Global                    (State, backend, clientId)
-import qualified Data.Binary      as Binary
-import qualified LunaStudio.API.Graph.Transaction      as Transaction
-import qualified LunaStudio.API.Topic     as Topic
-import NodeEditor.Action.State.App       (getWorkspace)
-import NodeEditor.Action.UUID            (registerRequest)
-import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
-import           Common.Batch.Connector.Connection        (Message (Message),
-                                                           sendRequest)
-import           NodeEditor.Batch.Workspace               (currentLocation)
+import NodeEditor.Action.UUID                      (registerRequest)
+import NodeEditor.Batch.Workspace                  (currentLocation)
+import NodeEditor.React.Model.Connection           (Connection, dst, src)
+import NodeEditor.React.Model.Node                 (NodeLoc)
+import NodeEditor.State.Global                     (State, backend, clientId)
 
 moveNodeOnConnection :: NodeLoc -> Connection -> Map NodeLoc Position -> Command State ()
 moveNodeOnConnection nl conn metaUpdate = do

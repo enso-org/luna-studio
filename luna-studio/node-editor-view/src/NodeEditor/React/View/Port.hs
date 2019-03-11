@@ -1,32 +1,32 @@
 module NodeEditor.React.View.Port where
 
-import           Common.Prelude
-import qualified Data.Aeson                       as Aeson
-import           LunaStudio.Data.Angle            (Angle)
-import           LunaStudio.Data.Constants        (nodePropertiesWidth)
-import           LunaStudio.Data.PortRef          (AnyPortRef (InPortRef'),
-                                                   InPortRef, toAnyPortRef)
-import qualified NodeEditor.Event.Mouse           as Mouse
-import qualified NodeEditor.Event.UI              as UI
-import qualified NodeEditor.React.Event.Port      as Port
-import           NodeEditor.React.IsRef           (IsRef, dispatch)
-import           NodeEditor.React.Model.Constants (connectionWidth, lineHeight,
-                                                   nodeRadius, nodeRadius',
-                                                   portAliasRadius, portRadius)
-import           NodeEditor.React.Model.Node      (NodeLoc)
-import           NodeEditor.React.Model.Port      (AnyPort, AnyPortId (InPortId', OutPortId'),
-                                                   InPortIndex (Arg, Self),
-                                                   IsOnly, Mode (..),
-                                                   argumentConstructorOffsetY,
-                                                   getPortNumber, isInPort,
-                                                   isInvisible, isSelf,
-                                                   portAngleStart,
-                                                   portAngleStop)
-import qualified NodeEditor.React.Model.Port      as Port
-import qualified NodeEditor.React.View.Style      as Style
-import           Numeric                          (showFFloat)
-import           React.Flux                       hiding (view)
-import qualified React.Flux                       as React
+import Common.Prelude
+
+import qualified Data.Aeson                  as Aeson
+import qualified NodeEditor.Event.Mouse      as Mouse
+import qualified NodeEditor.Event.UI         as UI
+import qualified NodeEditor.React.Event.Port as Port
+import qualified NodeEditor.React.Model.Port as Port
+import qualified NodeEditor.React.View.Style as Style
+import qualified React.Flux                  as React
+
+import LunaStudio.Data.Angle            (Angle)
+import LunaStudio.Data.Constants        (nodePropertiesWidth)
+import LunaStudio.Data.PortRef          (AnyPortRef (InPortRef'), InPortRef,
+                                         toAnyPortRef)
+import NodeEditor.React.IsRef           (IsRef, dispatch)
+import NodeEditor.React.Model.Constants (connectionWidth, lineHeight,
+                                         nodeRadius, nodeRadius',
+                                         portAliasRadius, portRadius)
+import NodeEditor.React.Model.Node      (NodeLoc)
+import NodeEditor.React.Model.Port      (AnyPort,
+                                         AnyPortId (InPortId', OutPortId'),
+                                         InPortIndex (Self), IsOnly, Mode (..),
+                                         argumentConstructorOffsetY, isInPort,
+                                         isInvisible, portAngleStart,
+                                         portAngleStop)
+import Numeric                          (showFFloat)
+import React.Flux                       hiding (view)
 
 
 name :: JSString

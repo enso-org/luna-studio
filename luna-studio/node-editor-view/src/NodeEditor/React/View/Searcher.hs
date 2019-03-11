@@ -4,15 +4,12 @@ import Common.Prelude
 import React.Flux
 
 import qualified Data.Text                                 as Text
-import qualified LunaStudio.Data.Searcher.Hint             as Hint
 import qualified NodeEditor.Event.Keys                     as Keys
 import qualified NodeEditor.Event.UI                       as UI
 import qualified NodeEditor.React.Event.App                as App
-import qualified NodeEditor.React.Model.NodeEditor         as NE
 import qualified NodeEditor.React.Model.Searcher           as Searcher
 import qualified NodeEditor.React.Model.Searcher.Mode      as Mode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
-import qualified NodeEditor.React.Model.Searcher.Mode.Node as NodeSearcher
 import qualified NodeEditor.React.View.Style               as Style
 import qualified React.Flux                                as React
 import qualified Searcher.Data.Class                       as SearcherData

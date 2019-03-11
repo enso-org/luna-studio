@@ -2,9 +2,7 @@
 module NodeEditor.React.Model.Searcher.Mode.Node where
 
 import Common.Prelude
-import Prologue       (unsafeFromJust)
 
-import qualified Data.UUID.Types                     as UUID
 import qualified LunaStudio.Data.Searcher.Hint.Class as Class
 
 import LunaStudio.Data.NodeLoc              (NodeId, NodeLoc)

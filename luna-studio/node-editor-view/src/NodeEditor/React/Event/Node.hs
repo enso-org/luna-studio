@@ -5,7 +5,6 @@ module NodeEditor.React.Event.Node
     , nodeLoc
     ) where
 
-import           Common.Data.Event       (EventName)
 import           Common.Data.Event       (EventName, eventName)
 import           Common.Prelude
 import           LunaStudio.Data.NodeLoc (HasNodeLoc (nodeLoc), NodeLoc)

@@ -5,32 +5,48 @@ module NodeEditor.React.Model.Connection
     ) where
 
 import           Common.Prelude
-import           Control.Arrow                              ((&&&))
-import           Data.Convert                               (Convertible (convert))
-import           Data.HashMap.Strict                        (HashMap)
+
 import qualified Data.HashMap.Strict                        as HashMap
-import           LunaStudio.Data.Angle                      (Angle)
-import           LunaStudio.Data.Connection                 as X (ConnectionId)
 import qualified LunaStudio.Data.Connection                 as Empire
-import           LunaStudio.Data.Geometry                   (Radius)
 import qualified LunaStudio.Data.LabeledTree                as LT
-import           LunaStudio.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified LunaStudio.Data.PortRef                    as PortRef
-import           LunaStudio.Data.Position                   (Position, move, x, y)
-import           LunaStudio.Data.Vector2                    (Vector2 (Vector2))
-import           NodeEditor.Data.Color                      (Color)
-import           NodeEditor.React.Model.Constants           (lineHeight, nodeExpandedWidth, portAliasRadius, portRadius)
-import           NodeEditor.React.Model.Layout              (Layout, inputSidebarPortPosition, outputSidebarPortPosition)
-import           NodeEditor.React.Model.Node                (ExpressionNode, Node (Expression), NodeLoc)
 import qualified NodeEditor.React.Model.Node                as Node
-import           NodeEditor.React.Model.Node.ExpressionNode (countVisibleArgPorts, countVisibleInPorts, countVisibleOutPorts, inPorts,
-                                                             isCollapsed, position, visibleArgPortNumber, visibleInPortNumber,
-                                                             visibleOutPortNumber)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
-import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, IsAlias, IsOnly, IsSelf, OutPort, OutPortId,
-                                                             argumentConstructorNumber, argumentConstructorOffsetY, isSelf, portAngleStart,
-                                                             portAngleStop, portGap, portId)
 import qualified NodeEditor.React.Model.Port                as Port
+
+import Control.Arrow                              ((&&&))
+import Data.Convert                               (Convertible (convert))
+import Data.HashMap.Strict                        (HashMap)
+import LunaStudio.Data.Angle                      (Angle)
+import LunaStudio.Data.Connection                 as X (ConnectionId)
+import LunaStudio.Data.Geometry                   (Radius)
+import LunaStudio.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'),
+                                                   InPortRef, OutPortRef)
+import LunaStudio.Data.Position                   (Position, move, x, y)
+import LunaStudio.Data.Vector2                    (Vector2 (Vector2))
+import NodeEditor.Data.Color                      (Color)
+import NodeEditor.React.Model.Constants           (lineHeight,
+                                                   nodeExpandedWidth,
+                                                   portAliasRadius, portRadius)
+import NodeEditor.React.Model.Layout              (Layout,
+                                                   inputSidebarPortPosition,
+                                                   outputSidebarPortPosition)
+import NodeEditor.React.Model.Node                (ExpressionNode,
+                                                   Node (Expression), NodeLoc)
+import NodeEditor.React.Model.Node.ExpressionNode (countVisibleArgPorts,
+                                                   countVisibleInPorts,
+                                                   countVisibleOutPorts,
+                                                   inPorts, isCollapsed,
+                                                   position,
+                                                   visibleArgPortNumber,
+                                                   visibleInPortNumber,
+                                                   visibleOutPortNumber)
+import NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId,
+                                                   IsAlias, IsOnly, IsSelf,
+                                                   OutPort, OutPortId,
+                                                   argumentConstructorNumber,
+                                                   isSelf, portAngleStart,
+                                                   portAngleStop, portId)
 
 
 data Mode

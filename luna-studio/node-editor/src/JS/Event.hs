@@ -4,7 +4,6 @@ module JS.Event where
 import           Common.Prelude
 import           Data.Aeson.Types        (ToJSON)
 import           LunaStudio.Data.NodeLoc (NodeLoc)
-import           LunaStudio.Data.Port    (AnyPortId)
 
 
 data PortInfo = PortInfo { portId :: Text

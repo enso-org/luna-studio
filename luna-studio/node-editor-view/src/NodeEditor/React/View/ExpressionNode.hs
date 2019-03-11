@@ -1,75 +1,71 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.ExpressionNode where
 
-import           Common.Prelude
-import           Control.Arrow                                        ((&&&))
+import Common.Prelude
+
 import qualified Data.Aeson                                           as Aeson
 import qualified Data.HashMap.Strict                                  as HashMap
 import qualified Data.Map.Lazy                                        as Map
-import           Data.Matrix                                          (Matrix)
-import           Data.Set                                             (Set)
 import qualified Data.Set                                             as Set
 import qualified Data.Text                                            as Text
 import qualified JS.Mount                                             as Mount
-import           JS.Name                                              (toName)
 import qualified JS.UI                                                as UI
-import           LunaStudio.Data.Constants                            (gridSize)
-import           LunaStudio.Data.Matrix                               (showNodeMatrix,
-                                                                       showNodeTranslate)
 import qualified LunaStudio.Data.MonadPath                            as MonadPath
-import           LunaStudio.Data.NodeLoc                              (toNodeIdList)
-import           LunaStudio.Data.PortRef                              (InPortRef)
 import qualified LunaStudio.Data.PortRef                              as PortRef
 import qualified NodeEditor.Event.Mouse                               as Mouse
 import qualified NodeEditor.Event.UI                                  as UI
-import qualified NodeEditor.React.Event.Node                          as Node hiding
-                                                                               (nodeLoc)
+import qualified NodeEditor.React.Event.Node                          as Node
 import qualified NodeEditor.React.Event.Visualization                 as Visualization
-import           NodeEditor.React.IsRef                               (IsRef,
-                                                                       dispatch)
-import           NodeEditor.React.Model.Constants                     (expandedNodePadding,
-                                                                       nodeRadius,
-                                                                       selectionPadding)
 import qualified NodeEditor.React.Model.Field                         as Field
-import           NodeEditor.React.Model.Node.ExpressionNode           (ExpressionNode,
-                                                                       NodeLoc,
-                                                                       Subgraph,
-                                                                       argumentConstructorRef,
-                                                                       countVisibleArgPorts,
-                                                                       countVisibleInPorts,
-                                                                       countVisibleOutPorts,
-                                                                       isAnyPortHighlighted,
-                                                                       isCollapsed,
-                                                                       returnsError,
-                                                                       visibleArgPortNumber,
-                                                                       visibleInPortNumber,
-                                                                       visibleOutPortNumber)
 import qualified NodeEditor.React.Model.Node.ExpressionNode           as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
-import           NodeEditor.React.Model.Port                          (isAll,
-                                                                       isInPort,
-                                                                       isSelf,
-                                                                       withOut)
 import qualified NodeEditor.React.Model.Port                          as Port
 import qualified NodeEditor.React.Model.Searcher                      as Searcher
 import qualified NodeEditor.React.Model.Searcher.Mode                 as SearcherMode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node            as NodeSearcher
 import qualified NodeEditor.React.Model.Visualization                 as Vis
-import           NodeEditor.React.View.ColorizedExpression            (colorizedExpression_)
-import           NodeEditor.React.View.ExpressionNode.NodeValue       (nodeValue_)
-import           NodeEditor.React.View.ExpressionNode.Properties      (nodeProperties_)
-import           NodeEditor.React.View.Field                          (multilineField_)
-import           NodeEditor.React.View.Monad                          (monads_)
-import           NodeEditor.React.View.Plane                          (planeMonads_)
-import           NodeEditor.React.View.Port                           (argumentConstructor_,
-                                                                       portExpanded_,
-                                                                       port_)
-import           NodeEditor.React.View.Searcher                       (searcher_)
-import           NodeEditor.React.View.Style                          (errorMark_,
-                                                                       selectionMark_)
 import qualified NodeEditor.React.View.Style                          as Style
-import           React.Flux
 import qualified React.Flux                                           as React
+
+import Control.Arrow                                   ((&&&))
+import Data.Matrix                                     (Matrix)
+import Data.Set                                        (Set)
+import JS.Name                                         (toName)
+import LunaStudio.Data.Constants                       (gridSize)
+import LunaStudio.Data.Matrix                          (showNodeMatrix,
+                                                        showNodeTranslate)
+import LunaStudio.Data.NodeLoc                         (toNodeIdList)
+import LunaStudio.Data.PortRef                         (InPortRef)
+import NodeEditor.React.IsRef                          (IsRef, dispatch)
+import NodeEditor.React.Model.Constants                (expandedNodePadding,
+                                                        nodeRadius,
+                                                        selectionPadding)
+import NodeEditor.React.Model.Node.ExpressionNode      (ExpressionNode, NodeLoc,
+                                                        Subgraph,
+                                                        argumentConstructorRef,
+                                                        countVisibleArgPorts,
+                                                        countVisibleInPorts,
+                                                        countVisibleOutPorts,
+                                                        isAnyPortHighlighted,
+                                                        isCollapsed,
+                                                        returnsError,
+                                                        visibleArgPortNumber,
+                                                        visibleInPortNumber,
+                                                        visibleOutPortNumber)
+import NodeEditor.React.Model.Port                     (isAll, isInPort,
+                                                        withOut)
+import NodeEditor.React.View.ColorizedExpression       (colorizedExpression_)
+import NodeEditor.React.View.ExpressionNode.NodeValue  (nodeValue_)
+import NodeEditor.React.View.ExpressionNode.Properties (nodeProperties_)
+import NodeEditor.React.View.Field                     (multilineField_)
+import NodeEditor.React.View.Monad                     (monads_)
+import NodeEditor.React.View.Plane                     (planeMonads_)
+import NodeEditor.React.View.Port                      (argumentConstructor_,
+                                                        portExpanded_, port_)
+import NodeEditor.React.View.Searcher                  (searcher_)
+import NodeEditor.React.View.Style                     (errorMark_,
+                                                        selectionMark_)
+import React.Flux
 
 
 name, objNameBody, objNamePorts, objNameDynStyles :: JSString

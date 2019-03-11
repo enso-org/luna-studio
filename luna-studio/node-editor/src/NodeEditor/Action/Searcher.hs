@@ -27,23 +27,17 @@ import qualified Searcher.Data.Class                        as SearcherData
 import qualified Searcher.Data.Result                       as Result
 
 import Common.Action.Command                (Command)
-import Common.Debug                         (timeAction)
 import Common.Report                        (warning)
-import Control.Arrow                        ((&&&))
 import JS.Visualizers                       (registerVisualizerFrame)
 import Luna.Syntax.Text.Lexer               (evalDefLexer)
 import LunaStudio.Data.Geometry             (snap)
 import LunaStudio.Data.Matrix               (invertedTranslationMatrix,
                                              translationMatrix)
 import LunaStudio.Data.NodeLoc              (NodeLoc, NodePath)
-import LunaStudio.Data.Port                 (AnyPortId (OutPortId'))
-import LunaStudio.Data.PortRef              (AnyPortRef,
-                                             OutPortRef (OutPortRef),
-                                             toAnyPortRef)
+import LunaStudio.Data.PortRef              (OutPortRef (OutPortRef))
 import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.ScreenPosition       (move, x, y)
 import LunaStudio.Data.Size                 (height, width)
-import LunaStudio.Data.TypeRep              (TypeRep (TCons))
 import LunaStudio.Data.Vector2              (Vector2 (Vector2))
 import NodeEditor.Action.Basic              (createNode,
                                              clearHints,
@@ -78,11 +72,6 @@ import NodeEditor.State.Action              (Action
 import NodeEditor.State.Global              (State, visualizers)
 import Text.Read                            (readMaybe)
 
-import LunaStudio.Data.ScreenPosition (ScreenPosition)
-import LunaStudio.Data.Size           (Size)
-
-import NodeEditor.React.Model.Searcher.Mode (Mode)
-
 instance Action (Command State) Searcher where
     begin    = beginActionWithKey    searcherAction
     continue = continueActionWithKey searcherAction
@@ -94,7 +83,7 @@ unavailableDocumentationMsg
     = "Documentation unavailable. Cannot find markdown visualizer."
 
 mkDocumentationVisualization :: Command State (Maybe RunningVisualization)
-mkDocumentationVisualization = getUUID >>= \uuid -> do
+mkDocumentationVisualization = do
     mayVis <- use visualizers >>= getMdVisualizer
     let mayVisId :: Maybe (Visualization.VisualizerId)
         mayVisId   = view Visualization.visualizerId <$> mayVis

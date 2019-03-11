@@ -19,7 +19,6 @@ import qualified NodeEditor.React.Model.Visualization       as Visualization
 import Data.Map                             (Map)
 import LunaStudio.Data.CameraTransformation (CameraTransformation)
 import LunaStudio.Data.MonadPath            (MonadPath)
-import LunaStudio.Data.MonadPath            (MonadPath)
 import NodeEditor.Data.Color                (Color (Color))
 import NodeEditor.React.Model.Connection    (Connection, ConnectionsMap,
                                              HalfConnection (HalfConnection),

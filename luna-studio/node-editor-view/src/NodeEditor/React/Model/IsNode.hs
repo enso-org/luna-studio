@@ -12,7 +12,7 @@ import qualified Data.HashMap.Strict         as HashMap
 import           LunaStudio.Data.NodeId      (NodeId)
 import           LunaStudio.Data.NodeLoc     as X (HasNodeLoc (..), nodeLoc)
 import qualified LunaStudio.Data.NodeLoc     as NodeLoc
-import           LunaStudio.Data.PortRef     (AnyPortRef (..), InPortRef (..))
+import           LunaStudio.Data.PortRef     (InPortRef (..))
 import           NodeEditor.React.Model.Port (AnyPort, AnyPortId (InPortId', OutPortId'), InPort, InPortId, InPortIndex (Arg), OutPort,
                                               OutPortId)
 import qualified NodeEditor.React.Model.Port as Port

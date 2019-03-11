@@ -11,10 +11,9 @@ import qualified LunaStudio.Data.Searcher.Hint.Class   as Class
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
 import qualified Searcher.Data.Database                as Searcher
 
-import Data.Map.Strict                       (Map)
 import Data.Set                              (Set)
 import LunaStudio.Data.Searcher.Hint.Class   (Class)
-import LunaStudio.Data.Searcher.Hint.Library (Library (Library))
+import LunaStudio.Data.Searcher.Hint.Library (Library)
 import Searcher.Data.Class                   (SearcherData (text),
                                               SearcherHint (prefix,
                                                             documentation))
