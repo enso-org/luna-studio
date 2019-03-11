@@ -15,7 +15,6 @@ import Data.Text   (Text)
 -- === Class === --
 -------------------
 
-
 -- === Definition === --
 
 type Name = Text

@@ -12,11 +12,9 @@ import LunaStudio.Data.Position             (Position)
 import NodeEditor.React.Model.Visualization (RunningVisualization)
 
 
-
 -----------------
 -- === New === --
 -----------------
-
 
 -- === Definition === --
 
@@ -30,11 +28,9 @@ makeLenses ''New
 instance NFData New
 
 
-
 ------------------------
 -- === Expression === --
 ------------------------
-
 
 -- === Definition === --
 
@@ -49,11 +45,9 @@ makeLenses ''Expression
 instance NFData Expression
 
 
-
 ----------------------
 -- === PortName === --
 ----------------------
-
 
 -- === Definition === --
 
@@ -66,11 +60,9 @@ makeLenses ''PortName
 instance NFData PortName
 
 
-
 ------------------
 -- === Mode === --
 ------------------
-
 
 -- === Definition === --
 
@@ -85,11 +77,9 @@ makePrisms ''Mode
 instance NFData Mode
 
 
-
 ------------------
 -- === Node === --
 ------------------
-
 
 -- === Definition === --
 

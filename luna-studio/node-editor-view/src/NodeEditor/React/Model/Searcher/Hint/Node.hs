@@ -22,7 +22,6 @@ import Searcher.Data.Class                   (SearcherData (text), SearcherHint 
 -- === Kind === --
 ------------------
 
-
 -- === Definition === --
 
 data Kind
@@ -46,7 +45,6 @@ className = to $! \case
 -- === Node === --
 ------------------
 
-
 -- === Definition === --
 
 data Node = Node
@@ -64,7 +62,6 @@ instance SearcherData Node where
 instance SearcherHint Node where
     prefix        = kind . className . to (fromMaybe mempty)
     documentation = documentationText
-
 
 -- === API === --
 
@@ -114,11 +111,9 @@ fromSearcherLibraries libs importedLibs = let
 {-# INLINE fromSearcherLibraries #-}
 
 
-
 ----------------------
 -- === Database === --
 ----------------------
-
 
 -- === Definition === --
 

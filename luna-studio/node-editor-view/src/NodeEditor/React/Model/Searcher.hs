@@ -19,7 +19,6 @@ import Searcher.Data.Result                  (Result)
 -- === Searcher === --
 ----------------------
 
-
 -- === Definition === --
 
 data Searcher = Searcher
@@ -54,7 +53,6 @@ documentationVisualization = mode . Mode._Node . Node.documentationVisualization
 -- === Properties === --
 ------------------------
 
-
 -- === Definition === --
 
 data Properties = Properties
@@ -65,7 +63,6 @@ data Properties = Properties
 makeLenses ''Properties
 
 instance NFData Properties
-
 
 -- === API === --
 

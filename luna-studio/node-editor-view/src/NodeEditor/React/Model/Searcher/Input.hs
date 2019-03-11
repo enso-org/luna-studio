@@ -11,11 +11,9 @@ import Data.Convert (Convertible (convert))
 import Data.Text32  (Text32)
 
 
-
 ----------------------
 -- === Divided === ---
 ----------------------
-
 
 -- === Definition === ---
 
@@ -47,7 +45,6 @@ instance Convertible Divided Text where
 -- === Input === ---
 --------------------
 
-
 -- === Definition === ---
 
 data Input
@@ -62,7 +59,6 @@ instance NFData      Input
 instance Convertible Input Text where
     convert (RawInput     t) = t
     convert (DividedInput d) = convert d
-
 
 -- === API === --
 

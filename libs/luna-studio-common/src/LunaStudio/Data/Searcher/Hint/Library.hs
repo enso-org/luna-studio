@@ -18,7 +18,6 @@ import LunaStudio.Data.Searcher.Hint.Class (Class)
 -- === Library === --
 ---------------------
 
-
 -- === Definition === --
 
 data Library = Library
@@ -39,7 +38,6 @@ type Set  = Map Name Library
 ------------------
 -- === Info === --
 ------------------
-
 
 -- === Definition === --
 

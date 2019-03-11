@@ -16,7 +16,6 @@ import Searcher.Data.Class (SearcherData (text),
 -- === Command === --
 ---------------------
 
-
 -- === Definition === --
 
 data OtherCommands = AddNode deriving (Bounded, Enum, Eq, Generic, Read, Show)

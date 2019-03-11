@@ -11,7 +11,6 @@ import Searcher.Data.Class                          (SearcherData (text), Search
 -- === Hint === --
 ------------------
 
-
 -- === Definition === --
 
 data Hint

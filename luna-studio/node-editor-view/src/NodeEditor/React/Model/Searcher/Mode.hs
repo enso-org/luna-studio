@@ -8,11 +8,9 @@ import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
 import NodeEditor.React.Model.Searcher.Mode.Node (Node)
 
 
-
 ------------------
 -- === Mode === --
 ------------------
-
 
 -- === Definition === --
 
