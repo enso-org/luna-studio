@@ -25,7 +25,7 @@ def working_directory(path):
 def create_symlink_or_copy(link, target):
     try:
         link_dir = os.path.dirname(link)
-        link_relative_path = os.path.relpath(link_dir, target)
+        link_relative_path = os.path.relpath(target, link_dir)
         os.symlink(link_relative_path, link)
     except OSError as e:
         print("failed to create symlink {} => {}: {}".format(link, target, e))
