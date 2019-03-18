@@ -104,6 +104,11 @@ class LunaNodeEditorTab extends View
             'luna-studio:searcher-move-down':    => @pushSearcherEvent "MoveDown"
             'luna-studio:searcher-move-left':    => @pushSearcherEvent "MoveLeft"
             'luna-studio:searcher-move-up':      => @pushSearcherEvent "MoveUp"
+            'luna-studio:searcher-paren-open':   => @pushSearcherEvent "ParenOpen"
+            'luna-studio:searcher-paren-close':  => @pushSearcherEvent "ParenClose"
+            'luna-studio:searcher-backspace':    => @pushSearcherEvent "Backspace"
+            'luna-studio:searcher-undo':         => @pushSearcherEvent "Undo"
+            'luna-studio:searcher-redo':         => @pushSearcherEvent "Redo"
 
 
     handleClose: (e) =>

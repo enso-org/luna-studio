@@ -36,7 +36,7 @@ handle _ _ = Nothing
 
 handleEvent :: (Event -> IO ()) -> Searcher.Event -> Command State ()
 handleEvent scheduleEvent = \case
-    Searcher.InputChanged input ss se -> continue $ Searcher.updateInput input ss se
+    Searcher.InputChanged input ss se -> continue $ Searcher.modifyInput input ss se
     Searcher.Accept                   -> continue $ Searcher.accept scheduleEvent
     Searcher.AcceptInput              -> continue $ Searcher.withHint 0 (Searcher.accept scheduleEvent)
     Searcher.AcceptWithHint i         -> continue $ Searcher.withHint i (Searcher.accept scheduleEvent)
@@ -46,4 +46,10 @@ handleEvent scheduleEvent = \case
     -- Searcher.KeyUp k                  -> when (Keys.withoutMods k Keys.backspace) $ continue Searcher.enableRollback
     -- Searcher.MoveLeft                 -> continue Searcher.tryRollback
     Searcher.MoveUp                   -> continue Searcher.selectNextHint
+    Searcher.ParenOpen                -> continue $ Searcher.openParen
+    Searcher.ParenClose               -> continue $ Searcher.closeParen
+    Searcher.Backspace                -> continue $ Searcher.backspace
+    Searcher.Undo                     -> continue $ Searcher.undo
+    Searcher.Redo                     -> continue $ Searcher.redo
+    Searcher.SelectionChanged         -> continue $ Searcher.updateSelection
     _                                 -> pure ()

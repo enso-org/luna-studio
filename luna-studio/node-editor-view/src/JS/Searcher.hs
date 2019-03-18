@@ -21,3 +21,7 @@ focus = UI.focus searcherId
 
 setSelection :: MonadIO m => Int -> Int -> m ()
 setSelection = liftIO .: setSelection' searcherId
+
+getSelection :: MonadIO m => m (Int, Int)
+getSelection = liftIO $ (,) <$> selectionStart searcherId
+                            <*> selectionEnd   searcherId

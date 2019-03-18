@@ -7,12 +7,13 @@ import qualified LunaStudio.Data.NodeLoc                   as NodeLoc
 import qualified NodeEditor.React.Model.Searcher.Mode      as Mode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
 
-import LunaStudio.Data.NodeLoc               (NodeLoc)
-import NodeEditor.React.Model.Searcher.Hint  (Hint)
-import NodeEditor.React.Model.Searcher.Input (Input)
-import NodeEditor.React.Model.Searcher.Mode  (Mode)
-import NodeEditor.React.Model.Visualization  (RunningVisualization)
-import Searcher.Data.Result                  (Result)
+import LunaStudio.Data.NodeLoc                  (NodeLoc)
+import NodeEditor.React.Model.Searcher.Hint     (Hint)
+import NodeEditor.React.Model.Searcher.Input    (Input)
+import NodeEditor.React.Model.Searcher.Mode     (Mode)
+import NodeEditor.React.Model.Searcher.UndoRedo (UndoRedoState)
+import NodeEditor.React.Model.Visualization     (RunningVisualization)
+import Searcher.Data.Result                     (Result)
 
 
 ----------------------
@@ -28,6 +29,7 @@ data Searcher = Searcher
     , _selectedPosition :: Maybe Int
     , _mode             :: Mode
     , _waiting          :: Bool
+    , _undoRedo         :: UndoRedoState
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Searcher
@@ -37,8 +39,8 @@ instance NFData Searcher
 
 selectedResult :: Getter Searcher (Maybe (Result Hint))
 selectedResult = to $ \s -> let
-    mayPosition = s ^. selectedPosition
-    atPosition  = \p -> s ^? results . ix p
+    mayPosition  = s ^. selectedPosition
+    atPosition p = s ^? results . ix p
     in join $! atPosition <$> mayPosition
 {-# INLINE selectedResult #-}
 
@@ -74,7 +76,7 @@ visibleHintsNumber = 10
 mkProperties :: Searcher -> FilePath -> Properties
 mkProperties = \s vlp -> let
     selected        = fromMaybe def $! s ^. selectedPosition
-    limitResults    = \r -> take visibleHintsNumber $! drop selected r
+    limitResults r  = take visibleHintsNumber $! drop selected r
     visibleSearcher = s & results %~ limitResults
                         & selectedPosition %~ fmap (subtract selected)
     in Properties visibleSearcher vlp

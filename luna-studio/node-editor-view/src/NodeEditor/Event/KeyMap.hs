@@ -5,7 +5,6 @@ import           React.Flux                      (KeyboardEvent)
 import           Common.Prelude
 import qualified NodeEditor.Event.Keys           as Keys
 import           NodeEditor.Event.Shortcut       (Command (..))
-import qualified NodeEditor.React.Event.Searcher as Searcher
 import qualified React.Flux                      as React
 
 
@@ -65,14 +64,3 @@ handleKeyApp evt
     | Keys.withCtrlShift    evt Keys.m          = Just MockClearMonads
     --
     | otherwise                                 = Nothing
-
-handleKeySearcher :: KeyboardEvent -> Maybe Searcher.Event
-handleKeySearcher evt
-    | Keys.withoutMods   evt Keys.backspace = Just   Searcher.MoveLeft
-    | Keys.withoutMods   evt Keys.downArrow = Just   Searcher.MoveDown
-    | Keys.withoutMods   evt Keys.enter     = Just   Searcher.Accept
-    | Keys.withCtrl      evt Keys.enter     = Just   Searcher.AcceptInput
-    | Keys.digitWithCtrl evt                = Just $ Searcher.HintShortcut $ (React.keyCode evt) - Keys.zero
-    | Keys.withoutMods   evt Keys.tab       = Just   Searcher.TabPressed
-    | Keys.withoutMods   evt Keys.upArrow   = Just   Searcher.MoveUp
-    | otherwise                             = Nothing

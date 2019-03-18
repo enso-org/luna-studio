@@ -21,6 +21,12 @@ data Event = InputChanged Text Int Int
            | MoveLeft
            | KeyDown KeyboardEvent
            | KeyUp   KeyboardEvent
-            deriving (FromJSON, Generic, NFData, Show, Typeable)
+           | ParenOpen
+           | ParenClose
+           | Backspace
+           | Undo
+           | Redo
+           | SelectionChanged
+           deriving (FromJSON, Generic, NFData, Show, Typeable)
 
 instance EventName Event

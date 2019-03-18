@@ -2,6 +2,7 @@ module NodeEditor.Action.Searcher where
 
 import Common.Prelude
 
+import qualified Data.Char                                  as Char
 import qualified Data.Text                                  as Text
 import qualified JS.Searcher                                as Searcher
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
@@ -19,6 +20,7 @@ import qualified NodeEditor.React.Model.Searcher.Hint.Node  as NodeHint
 import qualified NodeEditor.React.Model.Searcher.Input      as Input
 import qualified NodeEditor.React.Model.Searcher.Mode       as Mode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node  as NodeMode
+import qualified NodeEditor.React.Model.Searcher.UndoRedo   as UndoRedo
 import qualified NodeEditor.React.Model.Visualization       as Visualization
 import qualified NodeEditor.React.View.App                  as App
 import qualified NodeEditor.State.Global                    as Global
@@ -228,15 +230,16 @@ openWith :: Text -> Mode.Mode -> Command State ()
 openWith input mode = do
     let action   = Searcher
         inputLen = Text.length input
-        searcher = Searcher.Searcher def False def def mode False
+        inpState = UndoRedo.InputState input inputLen inputLen
+        undoRedo = UndoRedo.mk inpState
+        searcher = Searcher.Searcher def False def def mode False undoRedo
     begin action
     s <- modifySearcher $ (: []) <$> use id
     adjustCameraToSearcher mode
     modifyNodeEditor $ NodeEditor.searcher ?= searcher
-    modifyInput input inputLen inputLen action
+    setInput input inputLen inputLen action
     renderIfNeeded
     Searcher.focus
-
 
 
 updateInput :: Text -> Int -> Int -> Searcher -> Command State ()
@@ -267,13 +270,99 @@ updateInput input selectionStart selectionEnd action = do
             mayLambdaEndPos
     else updateHints
 
-modifyInput :: Text -> Int -> Int -> Searcher -> Command State ()
-modifyInput input selectionStart selectionEnd action = do
+openParen :: Searcher -> Command State ()
+openParen sKey = do
+    (selStart, selEnd) <- Searcher.getSelection
+    setUndoSelection selStart selEnd
+    withJustM getSearcher $ \s -> do
+        let input = convert $ s ^. Searcher.input
+            (beg, rest) = Text.splitAt selStart input
+            (rel, end)  = Text.splitAt (selEnd - selStart) rest
+            closeBefore = [')', ']', ':']
+            nextCharIsSpace = case Text.uncons end of
+                Nothing     -> True
+                Just (c, _) -> Char.isSpace c || elem c closeBefore
+            shouldClose = nextCharIsSpace || selStart /= selEnd
+            rel' = "(" <> rel <> (if shouldClose then ")" else "")
+            newInput = beg <> rel' <> end
+        modifyInput newInput (selStart + 1) (selEnd + 1) sKey
+
+closeParen :: Searcher -> Command State ()
+closeParen sKey = do
+    (selStart, selEnd) <- Searcher.getSelection
+    setUndoSelection selStart selEnd
+    withJustM getSearcher $ \s -> do
+        let input = convert $ s ^. Searcher.input
+            (beg, rest) = Text.splitAt selStart input
+            (rel, end)  = Text.splitAt (selEnd - selStart) rest
+            newInput    = case Text.uncons end of
+                Just (')', _) -> if selStart == selEnd
+                    then beg <> end
+                    else beg <> ")" <> end
+                _ -> beg <> ")" <> end
+        modifyInput newInput (selEnd + 1) (selEnd + 1) sKey
+
+backspace :: Searcher -> Command State ()
+backspace sKey = do
+    (selStart, selEnd) <- Searcher.getSelection
+    setUndoSelection selStart selEnd
+    withJustM getSearcher $ \s -> do
+        let input = convert $ s ^. Searcher.input
+            (removeStart, removeEnd) = if selStart == selEnd
+                then (selStart - 1, selStart)
+                else (selStart, selEnd)
+            (beg, rest) = Text.splitAt removeStart input
+            (rem, end)  = Text.splitAt (removeEnd - removeStart) rest
+            newInput    = case (rem, Text.uncons end) of
+                ("(", Just (')', t)) -> if selStart == selEnd
+                    then beg <> t
+                    else beg <> end
+                _ -> beg <> end
+        modifyInput newInput removeStart removeStart sKey
+
+
+setInput :: Text -> Int -> Int -> Searcher -> Command State ()
+setInput input selectionStart selectionEnd action = do
     updateInput input selectionStart selectionEnd action
     modifySearcher $ Searcher.replaceInput .= True
     renderIfNeeded
     Searcher.setSelection selectionStart selectionEnd
     modifySearcher $ Searcher.replaceInput .= False
+
+setUndoSelection :: Int -> Int -> Command State ()
+setUndoSelection selStart selEnd = do
+    modifySearcher $ Searcher.undoRedo %= UndoRedo.setSelection selStart selEnd
+
+updateSelection :: Searcher -> Command State ()
+updateSelection _ = do
+    (selStart, selEnd) <- Searcher.getSelection
+    setUndoSelection selStart selEnd
+
+modifyInput :: Text -> Int -> Int -> Searcher -> Command State ()
+modifyInput input selStart selEnd action = do
+    let inp = UndoRedo.InputState input selStart selEnd
+    modifySearcher $ Searcher.undoRedo %= UndoRedo.setInput inp
+    setInput input selStart selEnd action
+
+undo :: Searcher -> Command State ()
+undo searcherTag = withJustM getSearcher $ \searcher -> do
+    let newState = UndoRedo.undo $ searcher ^. Searcher.undoRedo
+        newInput = newState ^. UndoRedo.currentInput
+    modifySearcher $ Searcher.undoRedo .= newState
+    setInput (newInput ^. UndoRedo.text)
+             (newInput ^. UndoRedo.selectionStart)
+             (newInput ^. UndoRedo.selectionEnd)
+             searcherTag
+
+redo :: Searcher -> Command State ()
+redo searcherTag = withJustM getSearcher $ \searcher -> do
+    let newState = UndoRedo.redo $ searcher ^. Searcher.undoRedo
+        newInput = newState ^. UndoRedo.currentInput
+    modifySearcher $ Searcher.undoRedo .= newState
+    setInput (newInput ^. UndoRedo.text)
+             (newInput ^. UndoRedo.selectionStart)
+             (newInput ^. UndoRedo.selectionEnd)
+             searcherTag
 
 handleTabPressed :: Searcher -> Command State ()
 handleTabPressed action = withJustM getSearcher $ \s ->

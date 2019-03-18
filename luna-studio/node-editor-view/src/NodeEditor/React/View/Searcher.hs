@@ -27,16 +27,6 @@ import Searcher.Data.Result                (Result, match)
 name :: JSString
 name = "searcher"
 
-handleKeyDown :: IsRef ref => ref -> React.Event -> KeyboardEvent -> [SomeStoreAction]
-handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
-    prevent   = if Keys.withoutMods k Keys.tab
-                || Keys.withoutMods k Keys.upArrow
-                || Keys.withoutMods k Keys.downArrow
-                || Keys.digitWithCtrl k then (preventDefault e :) else id
-    dispatch' = dispatch ref $ if Keys.withoutMods k Keys.esc then
-            UI.AppEvent $ App.KeyDown k
-        else UI.SearcherEvent $ KeyDown k
-
 searcher :: IsRef ref => ReactView (ref, Searcher.Properties)
 searcher =  React.defineView name $ \(ref, properties) -> do
     let s           = properties ^. Searcher.searcher
@@ -79,12 +69,12 @@ searcher =  React.defineView name $ \(ref, properties) -> do
             [ "key"         $= "searchInput"
             , "className"   $= inputClasses
             , "id"          $= searcherId
-            , onKeyDown     $ handleKeyDown ref
             , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
             , onChange      $ \e -> let val = target e "value"
                                         ss  = target e "selectionStart"
                                         se  = target e "selectionEnd"
                                     in dispatch ref $ UI.SearcherEvent $ InputChanged val ss se
+            , onClick       $ \_ _ -> dispatch ref $ UI.SearcherEvent SelectionChanged
             ] <> mayCustomInput )
 
     -- div_
