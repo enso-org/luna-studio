@@ -10,13 +10,13 @@ import qualified NodeEditor.State.UI                       as UI
 import qualified System.Random                             as Random
 
 import Common.Action.Command                    (Command)
-import Common.Debug                             (HasRequestTimes, requestTimes)
 import Data.HashMap.Lazy                        (HashMap)
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import Data.Time.Clock                          (UTCTime)
 import Data.UUID.Types                          (UUID)
 import Data.Word                                (Word8)
+import Luna.Benchmark                           (HasRequestTimes, requestTimes)
 import LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import LunaStudio.Data.NodeLoc                  (NodeLoc)
 import LunaStudio.Data.TypeRep                  (TypeRep)

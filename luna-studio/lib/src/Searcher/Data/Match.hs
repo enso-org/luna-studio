@@ -2,6 +2,12 @@ module Searcher.Data.Match where
 
 import Common.Prelude hiding (length)
 
+-------------------
+-- === Range === --
+-------------------
+
+-- === Definition === --
+
 data Range = Range
     { _start  :: Int
     , _length :: Int
@@ -9,14 +15,24 @@ data Range = Range
 makeLenses ''Range
 instance NFData Range
 
+-- === Construction === --
+
 letterRange :: Int -> Range
 letterRange = flip Range 1
+
+-------------------
+-- === Range === --
+-------------------
+
+-- === Definition === --
 
 newtype Match = Match [Range] deriving (Show, Eq, Generic)
 makeWrapped ''Match
 instance NFData Match
 
 instance Default Match where def = Match []
+
+-- === Construction === --
 
 fromList :: [Int] -> Match
 fromList matchedPositions = Match $ go Nothing matchedPositions where

@@ -92,3 +92,9 @@ data Node = Node
 makeLenses ''Node
 
 instance NFData Node
+
+-- === API === --
+
+connectedPortRef :: Traversal' Node OutPortRef
+connectedPortRef = mode . _ExpressionMode . newNode . _Just
+                 . connectionSource . _Just

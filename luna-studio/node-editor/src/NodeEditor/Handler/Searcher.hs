@@ -8,7 +8,7 @@ import qualified NodeEditor.React.Event.App      as App
 import qualified NodeEditor.React.Event.Searcher as Searcher
 
 import Common.Action.Command              (Command)
-import Common.Debug                       (timeAction)
+import Luna.Benchmark                     (timeAction)
 import LunaStudio.Data.Position           (fromTuple)
 import NodeEditor.Action.State.NodeEditor (whenGraphLoaded)
 import NodeEditor.Event.Event             (Event (Shortcut, UI))

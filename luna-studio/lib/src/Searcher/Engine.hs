@@ -3,7 +3,7 @@
 module Searcher.Engine where
 
 import Common.Prelude
-import Prelude        (error)
+import Prologue.Unsafe (error)
 
 import qualified Data.Array          as Array
 import qualified Searcher.Data.Match as Match
@@ -27,8 +27,7 @@ castResults = unsafeUnwrap . unsafePerformIO . fromJSVal where
     errorMsg = unlines $ [ "Critical Bug in searcher engine."
                          , "API mismatch between JS library and HS binding."
                          ]
-    unsafeUnwrap Nothing  = error errorMsg
-    unsafeUnwrap (Just a) = a
+    unsafeUnwrap = fromMaybe $ error errorMsg
 
 query :: Database a -> Text -> [Result a]
 query db q = let

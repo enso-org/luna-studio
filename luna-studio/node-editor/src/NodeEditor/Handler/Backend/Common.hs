@@ -11,8 +11,8 @@ import qualified LunaStudio.Data.Error        as ErrorAPI
 import Common.Action.Command               (Command)
 import Common.Batch.Connector.Connection   (BinaryRequest, Message (Message),
                                             sendRequest)
-import Common.Debug                        (measureResponseTime)
 import Common.Report                       (error)
+import Luna.Benchmark                      (measureResponseTime)
 import LunaStudio.API.Graph.Request        (GraphRequest)
 import LunaStudio.API.Request              (Request)
 import LunaStudio.Data.Error               (Error, LunaError)

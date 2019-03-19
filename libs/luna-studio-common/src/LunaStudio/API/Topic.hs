@@ -5,6 +5,7 @@ import           Prologue
 
 type Topic = String
 
+-- TODO: Refactor to `Topic` and use always as a qualified import.
 class MessageTopic a where
   topic :: Topic
 

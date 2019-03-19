@@ -20,6 +20,7 @@ makeLenses ''Request
 instance Binary a => Binary (Request a)
 instance ToJSON a => ToJSON (Request a)
 
+-- TODO: Refactor to `Request` and use as qualified name.
 instance GraphRequest a => GraphRequest (Request a) where
     location = request . location
 

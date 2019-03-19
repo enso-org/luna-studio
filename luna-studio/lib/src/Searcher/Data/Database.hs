@@ -4,12 +4,18 @@ module Searcher.Data.Database where
 
 import Common.Prelude
 
+import qualified Common.Marshal      as Marshal
 import qualified Data.Array          as Array
 import qualified Searcher.Data.Class as SearcherData
 
 import Data.Array          (Array)
 import Searcher.Data.Class (SearcherData)
-import System.IO.Unsafe    (unsafePerformIO)
+
+----------------------
+-- === Database === --
+----------------------
+
+-- === Definition === --
 
 data Database a = Database
     { _jsDatabase   :: JSVal
@@ -22,11 +28,12 @@ instance NFData a => NFData (Database a)
 instance SearcherData a => Default (Database a) where
     def = create []
 
+-- === JS Binding === --
+
 foreign import javascript safe "new window.searcherEngine.Database($1)"
     jsCreate :: JSVal -> JSVal
 
-unsafeToJSVal :: ToJSVal a => a -> JSVal
-unsafeToJSVal = unsafePerformIO . toJSVal
+-- === API === --
 
 create :: SearcherData a => [a] -> Database a
 create hints = let
@@ -36,7 +43,7 @@ create hints = let
     -- Yes, it's `unsafeToJSVal`. It is a pure computation
     -- by the virtue of its usage and semantics of the JS library,
     -- so we ruthlessly navigate around GHCJS marshaling constraints.
-    jsValAssocs = unsafeToJSVal assocs
+    jsValAssocs = Marshal.unsafeToJSVal assocs
     jsDb        = jsCreate jsValAssocs
     in Database jsDb hintsArr
 

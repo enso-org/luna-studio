@@ -7,6 +7,12 @@ import Searcher.Data.Class (SearcherData (text),
 import Searcher.Data.Match (Match)
 
 
+--------------------
+-- === Result === --
+--------------------
+
+-- === Definition === --
+
 data Result a = Result
     { _hint :: a
     , _score :: Double
@@ -22,6 +28,8 @@ instance SearcherHint a => SearcherHint (Result a) where
     documentation = hint . documentation
 
 instance NFData a => NFData (Result a)
+
+-- === Construction === --
 
 make :: a -> Result a
 make = \a -> Result a 0 def

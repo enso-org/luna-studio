@@ -2,13 +2,13 @@
 module TextEditor.State.Global where
 
 import           Common.Action.Command                    (Command)
-import           Common.Debug                             (HasRequestTimes, requestTimes)
 import           Common.Prelude
 import           Data.Aeson                               (ToJSON, toJSON)
 import           Data.Map                                 (Map)
 import           Data.Time.Clock                          (UTCTime)
 import           Data.UUID.Types                          (UUID)
 import           Data.Word                                (Word8)
+import           Luna.Benchmark                           (HasRequestTimes, requestTimes)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           System.Random                            (StdGen)
 import qualified System.Random                            as Random

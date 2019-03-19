@@ -5,16 +5,18 @@ module TextEditor.Handler.Backend.Common
     , doNothing2
     ) where
 
-import           Common.Action.Command   (Command)
-import           Common.Debug            (measureResponseTime)
-import           Common.Prelude
-import           Common.Report           (error)
+import Common.Prelude
+
+import Common.Action.Command   (Command)
+import Common.Report           (error)
+import Luna.Benchmark          (measureResponseTime)
+import TextEditor.Action.UUID  (isOwnRequest, unregisterRequest)
+import TextEditor.State.Global (State)
+
 import qualified Data.Text               as Text
 import qualified LunaStudio.API.Response as Response
 import qualified LunaStudio.API.Topic    as Topic
 import qualified LunaStudio.Data.Error   as ErrorAPI
-import           TextEditor.Action.UUID  (isOwnRequest, unregisterRequest)
-import           TextEditor.State.Global (State)
 
 
 whenOk :: Response.Response req inv res -> (res -> Command State ()) -> Command State ()

@@ -1,9 +1,7 @@
+-- TODO: According to WD, this module should be removed. See here: https://github.com/luna/luna-studio/pull/1349#discussion_r266744449
 {-# LANGUAGE CPP #-}
-module Debug.Safe
-( (<!!>)
-, timeIt
-, withLevel
-) where
+
+module Debug.Safe where
 
 import Prologue hiding (print, printLn, putStrLn)
 

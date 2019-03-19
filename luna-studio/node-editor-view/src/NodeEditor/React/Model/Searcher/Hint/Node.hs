@@ -9,12 +9,13 @@ import qualified Data.Set                              as Set
 import qualified LunaStudio.Data.Searcher.Hint         as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Class   as Class
 import qualified LunaStudio.Data.Searcher.Hint.Library as Library
+import qualified Searcher.Data.Class                   as SearcherData
 import qualified Searcher.Data.Database                as Searcher
 
 import Data.Set                              (Set)
 import LunaStudio.Data.Searcher.Hint.Class   (Class)
 import LunaStudio.Data.Searcher.Hint.Library (Library)
-import Searcher.Data.Class                   (SearcherData (text), SearcherHint (documentation, prefix))
+import Searcher.Data.Class                   (SearcherData, SearcherHint)
 
 
 
@@ -35,7 +36,7 @@ makePrisms ''Kind
 instance NFData Kind
 
 className :: Getter Kind (Maybe Class.Name)
-className = to $! \case
+className = to $ \case
     Function       -> Nothing
     Constructor cn -> Just cn
     Method      cn -> Just cn
@@ -48,10 +49,10 @@ className = to $! \case
 -- === Definition === --
 
 data Node = Node
-    { _expression        :: Text
-    , _library           :: Library.Info
-    , _kind              :: Kind
-    , _documentationText :: Text
+    { _expression    :: Text
+    , _library       :: Library.Info
+    , _kind          :: Kind
+    , _documentation :: Text
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Node
@@ -61,14 +62,14 @@ instance SearcherData Node where
     text       = expression
 instance SearcherHint Node where
     prefix        = kind . className . to (fromMaybe mempty)
-    documentation = documentationText
+    documentation = documentation
 
 -- === API === --
 
 fromRawHint :: Hint.Raw -> Library.Info -> Kind -> Node
 fromRawHint raw libInfo kind' = let
     expr = raw ^. Hint.name
-    doc  = raw ^. Hint.documentationText
+    doc  = raw ^. Hint.documentation
     in Node expr libInfo kind' doc
 {-# INLINE fromRawHint #-}
 
@@ -77,12 +78,12 @@ fromFunction raw libInfo = fromRawHint raw libInfo Function
 {-# INLINE fromFunction #-}
 
 fromMethod :: Hint.Raw -> Class.Name -> Library.Info -> Node
-fromMethod raw className libInfo = fromRawHint raw libInfo $! Method className
+fromMethod raw className libInfo = fromRawHint raw libInfo $ Method className
 {-# INLINE fromMethod #-}
 
 fromConstructor :: Hint.Raw -> Class.Name -> Library.Info -> Node
 fromConstructor raw className libInfo
-    = fromRawHint raw libInfo $! Constructor className
+    = fromRawHint raw libInfo $ Constructor className
 {-# INLINE fromConstructor #-}
 
 fromClass :: Class.Name -> Class -> Library.Info -> [Node]
@@ -105,7 +106,7 @@ fromLibrary lib libInfo = functionsHints <> classesHints where
 
 fromSearcherLibraries :: Library.Set -> Set Library.Name -> [Node]
 fromSearcherLibraries libs importedLibs = let
-    toLibInfo libName = Library.Info libName $! Set.member libName importedLibs
+    toLibInfo libName = Library.Info libName $ Set.member libName importedLibs
     processLib libName lib = fromLibrary lib (toLibInfo libName)
     in concat $ fmap (uncurry processLib) $ Map.toList libs
 {-# INLINE fromSearcherLibraries #-}

@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module Common.Debug where
+module Luna.Benchmark.JS where
 
 import           Common.Prelude
 import qualified Data.Map                as Map
@@ -50,6 +50,7 @@ timeAction actName act = withLevel $ \l -> do
     putStrLn $ replicate l ' ' <> actName <> " took: " <> show timeDiff <> "ms"
     pure result
 #else
-timeAction _ = id
+timeAction = const id
 #endif
+{-# INLINE timeAction #-}
 

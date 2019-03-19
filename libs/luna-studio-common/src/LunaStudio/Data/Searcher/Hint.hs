@@ -16,8 +16,8 @@ import Data.Text    (Text)
 -- === Definition === --
 
 data Raw = Raw
-    { _name              :: Text
-    , _documentationText :: Text
+    { _name          :: Text
+    , _documentation :: Text
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Raw

@@ -129,11 +129,9 @@ clearHints = do
     updateDocumentation
 
 getConnectedPortRef :: Command State (Maybe OutPortRef)
-getConnectedPortRef = do
-    s <- getSearcher
-    pure $ s ^? _Just . Searcher.mode . Mode._Node . NodeMode.mode
-              . NodeMode._ExpressionMode . NodeMode.newNode . _Just
-              . NodeMode.connectionSource . _Just
+getConnectedPortRef = let
+    connectedPortLens = Searcher.mode . Mode._Node . NodeMode.connectedPortRef
+    in join . fmap (preview connectedPortLens) <$> getSearcher where
 
 updateClassName :: Maybe Class.Name -> Command State ()
 updateClassName cl = do
