@@ -1404,7 +1404,7 @@ classToHints (Class.Class constructors methods _) = let
     constructorToHint   = flip Hint.Raw mempty . convert
     constructorsHints   = constructorToHint <$> constructorsNames
     methods'            = filter (isPublicMethod . fst)
-                        $ Map.toList $ unwrap methods
+                        . Map.toList $ unwrap methods
     methodToHint (n, d) = Hint.Raw (convert n) $ getDocumentation d
     methodsHints        = methodToHint <$> methods'
     in Hint.Class constructorsHints methodsHints

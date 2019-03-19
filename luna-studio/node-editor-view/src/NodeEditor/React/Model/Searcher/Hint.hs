@@ -22,14 +22,14 @@ makePrisms ''Hint
 
 instance NFData Hint
 instance SearcherData Hint where
-    text = to $! \case
+    text = to $ \case
         Command h -> h ^. text
         Node    h -> h ^. text
 
 instance SearcherHint Hint where
-    prefix = to $! \case
+    prefix = to $ \case
         Command h -> h ^. prefix
         Node    h -> h ^. prefix
-    documentation = to $! \case
+    documentation = to $ \case
         Command h -> h ^. documentation
         Node    h -> h ^. documentation

@@ -80,7 +80,7 @@ unavailableDocumentationMsg
 mkDocumentationVisualization :: Command State (Maybe RunningVisualization)
 mkDocumentationVisualization = do
     mayVis <- use visualizers >>= getMdVisualizer
-    let mayVisId :: Maybe (Visualization.VisualizerId)
+    let mayVisId :: Maybe Visualization.VisualizerId
         mayVisId   = view Visualization.visualizerId <$> mayVis
         mayVisProp :: Maybe Visualization.VisualizerProperties
         mayVisProp = flip VisualizerProperties mayVisId <$> mayVis
@@ -278,7 +278,7 @@ modifyInput input selectionStart selectionEnd action = do
 handleTabPressed :: Searcher -> Command State ()
 handleTabPressed action = withJustM getSearcher $ \s ->
     if Text.null (s ^. Searcher.inputText)
-        && s ^. Searcher.selectedPosition == Nothing
+        && isNothing (s ^. Searcher.selectedPosition)
             then close action
             else void $ updateInputWithSelectedHint action
 
@@ -286,7 +286,7 @@ updateInputWithSelectedHint :: Searcher -> Command State ()
 updateInputWithSelectedHint action =
     let updateDividedInput h input = do
             let mayNextChar         = input ^? Input.suffix . ix 0
-                needsSpace c        = not $ elem c [' ', ')']
+                needsSpace c        = notElem c [' ', ')']
                 trailingSpaceNeeded = maybe True needsSpace mayNextChar
                 updatedQuery        = h ^. SearcherData.text
                     <> if trailingSpaceNeeded then " " else mempty
@@ -316,7 +316,7 @@ accept scheduleEvent action = do
                 (setNodeExpression nl inputText)
                 (\pos -> createNode (nl ^. NodeLoc.path) pos inputText False)
                 $ sd ^? NodeMode.newNode . _Just . NodeMode.position
-            nodeSearcherAccept nl (NodeMode.NodeNameMode {})
+            nodeSearcherAccept nl NodeMode.NodeNameMode {}
                 = renameNode nl inputText
             nodeSearcherAccept nl (NodeMode.PortNameMode sd)
                 = renamePort (OutPortRef nl $ sd ^. NodeMode.portId) inputText
@@ -335,8 +335,7 @@ execCommand action scheduleEvent (convert -> input) =
     let fromCommand command = do
             liftIO $ scheduleEvent $ Shortcut $ Shortcut.Event command def
             close action
-    in do
-        withJust (readMaybe input) fromCommand
+    in withJust (readMaybe input) fromCommand
 
 close :: Searcher -> Command State ()
 close _ = do

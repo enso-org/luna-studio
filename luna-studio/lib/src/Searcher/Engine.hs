@@ -24,9 +24,9 @@ foreign import javascript safe "$1.query($2)"
 --   never be mutated from the JS side, so we can do it.
 castResults :: JSVal -> [([Int], [Int], Double)]
 castResults = unsafeUnwrap . unsafePerformIO . fromJSVal where
-    errorMsg = unlines $ [ "Critical Bug in searcher engine."
-                         , "API mismatch between JS library and HS binding."
-                         ]
+    errorMsg = unlines [ "Critical Bug in searcher engine."
+                       , "API mismatch between JS library and HS binding."
+                       ]
     unsafeUnwrap = fromMaybe $ error errorMsg
 
 query :: Database a -> Text -> [Result a]

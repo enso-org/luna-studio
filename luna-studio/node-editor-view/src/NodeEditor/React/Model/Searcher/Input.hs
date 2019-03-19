@@ -108,23 +108,23 @@ findLambdaArgsAndEndOfLambdaArgs input' tokens = result where
 -- === Utils === --
 
 isQuerySymbol :: Lexer.Symbol -> Bool
-isQuerySymbol (Lexer.Var      {}) = True
-isQuerySymbol (Lexer.Cons     {}) = True
-isQuerySymbol (Lexer.Wildcard {}) = True
-isQuerySymbol (Lexer.KwAll    {}) = True
-isQuerySymbol (Lexer.KwCase   {}) = True
-isQuerySymbol (Lexer.KwClass  {}) = True
-isQuerySymbol (Lexer.KwDef    {}) = True
-isQuerySymbol (Lexer.KwImport {}) = True
-isQuerySymbol (Lexer.KwOf     {}) = True
-isQuerySymbol (Lexer.Operator {}) = True
-isQuerySymbol (Lexer.Modifier {}) = True
+isQuerySymbol Lexer.Var      {} = True
+isQuerySymbol Lexer.Cons     {} = True
+isQuerySymbol Lexer.Wildcard {} = True
+isQuerySymbol Lexer.KwAll    {} = True
+isQuerySymbol Lexer.KwCase   {} = True
+isQuerySymbol Lexer.KwClass  {} = True
+isQuerySymbol Lexer.KwDef    {} = True
+isQuerySymbol Lexer.KwImport {} = True
+isQuerySymbol Lexer.KwOf     {} = True
+isQuerySymbol Lexer.Operator {} = True
+isQuerySymbol Lexer.Modifier {} = True
 isQuerySymbol _                   = False
 {-# INLINE isQuerySymbol #-}
 
 isInString :: Lexer.Symbol -> Bool
-isInString (Lexer.Str    {})           = True
-isInString (Lexer.StrEsc {})           = True
+isInString Lexer.Str    {}             = True
+isInString Lexer.StrEsc {}             = True
 isInString (Lexer.Quote _ Lexer.Begin) = True
 isInString _                           = False
 {-# INLINE isInString #-}

@@ -72,7 +72,7 @@ setImportedLibraries :: Set Library.Name -> Command State ()
 setImportedLibraries libs = do
     Global.searcherDatabase . NodeHint.imported .= libs
     missingLibs <- use $ Global.searcherDatabase . NodeHint.missingLibraries
-    unless (null missingLibs) $ do
+    unless (null missingLibs) $
         searchNodes missingLibs
 
 updateDocumentation :: Command State ()
@@ -135,7 +135,7 @@ getConnectedPortRef = let
 
 updateClassName :: Maybe Class.Name -> Command State ()
 updateClassName cl = do
-    modifySearcher $ do
+    modifySearcher $
         Searcher.mode . Mode._Node . NodeMode.mode
             . NodeMode._ExpressionMode . NodeMode.parent .= cl
     updateHintsPreservingSelection

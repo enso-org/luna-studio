@@ -101,14 +101,14 @@ fromLibrary lib libInfo = functionsHints <> classesHints where
     functionsHints = flip fromFunction libInfo <$> lib ^. Library.functions
     processClass className klass = fromClass className klass libInfo
     classes = lib ^. Library.classes
-    classesHints = concat $ fmap (uncurry processClass) $ Map.toList $ classes
+    classesHints = concatMap (uncurry processClass) . Map.toList $ classes
 {-# INLINE fromLibrary #-}
 
 fromSearcherLibraries :: Library.Set -> Set Library.Name -> [Node]
 fromSearcherLibraries libs importedLibs = let
     toLibInfo libName = Library.Info libName $ Set.member libName importedLibs
     processLib libName lib = fromLibrary lib (toLibInfo libName)
-    in concat $ fmap (uncurry processLib) $ Map.toList libs
+    in concatMap (uncurry processLib) . Map.toList $ libs
 {-# INLINE fromSearcherLibraries #-}
 
 
