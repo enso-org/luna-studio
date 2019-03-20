@@ -159,6 +159,9 @@ bumpIf pred amt = fmap bump where
 defaultBumpAmount :: Double
 defaultBumpAmount = 1
 
+defaultBumpAmount :: Double
+defaultBumpAmount = 1
+
 bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
               -> [Result NodeHint.Node]
 bumpLocalFuns Input.Argument = bumpIf (const True) defaultBumpAmount
