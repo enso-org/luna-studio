@@ -70,7 +70,7 @@ fromStream input inputStream cursorPos = let
         (pref , q')    = Text.splitAt qBeg pref'
         (q'', suff)    = Text.breakOn " " suff'
         q              = q' <> q''
-        in DividedInput $! Divided pref q suff
+        in DividedInput $ Divided pref q suff
     in case mayQueryBegin of
         Nothing  -> RawInput input
         Just beg -> splitInput beg
@@ -80,8 +80,8 @@ findLambdaArgsAndEndOfLambdaArgs :: Text32 -> [Lexer.Token Lexer.Symbol]
     -> Maybe ([Text], Int)
 findLambdaArgsAndEndOfLambdaArgs input' tokens = result where
     result         = findRecursive tokens (0 :: Int) 0 def def
-    exprLength   t = fromIntegral $! t ^. Lexer.span
-    offsetLength t = fromIntegral $! t ^. Lexer.offset
+    exprLength   t = fromIntegral $ t ^. Lexer.span
+    offsetLength t = fromIntegral $ t ^. Lexer.offset
     getArg   beg t = Vector.slice beg (exprLength t) input'
     tokenLength  t = exprLength t + offsetLength t
     findRecursive []    _                     _      _    res = res
@@ -92,7 +92,7 @@ findLambdaArgsAndEndOfLambdaArgs input' tokens = result where
             (endPos + tokenLength tok)
             arguments
             res'
-        updateResult     = Just (fmap convert $! args, endPos + exprLength tok)
+        updateResult     = Just (fmap convert $ args, endPos + exprLength tok)
         blockStartResult = if openParanthesisNumber == 0
             then updateResult
             else res
@@ -136,12 +136,12 @@ recursiveFindQueryBegin (h:t) cursorPos = let
     hSpanInt          = fromIntegral hSpan
     hOffset           = h ^. Lexer.offset
     hElement          = h ^. Lexer.element
-    tokenLength       = fromIntegral $! hSpan + hOffset
+    tokenLength       = fromIntegral $ hSpan + hOffset
     cursorPosInSuffix = cursorPos - tokenLength
     appendTokenLength = \r -> tokenLength + r
     maySuffixResult   = recursiveFindQueryBegin t cursorPosInSuffix
     skipWord          = appendTokenLength <$> maySuffixResult
-    notInString       = not $! isInString hElement
+    notInString       = not $ isInString hElement
     isHQuerySymbol    = isQuerySymbol hElement
     in if cursorPos > tokenLength                       then skipWord
         else if cursorPos <= hSpanInt && isHQuerySymbol then Just 0
