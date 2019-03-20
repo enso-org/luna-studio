@@ -114,8 +114,8 @@ updateHints' = unlessM inTopLevelBreadcrumb $ do
                     . NodeMode.parent . _Just
                 pure $ search query localFunctionsDb nsData mayClassName
             False -> pure mempty
-        Searcher.results  .= newHints
-        Searcher.waiting  .= (Database.size (nsData ^. NodeHint.database) == 0)
+        Searcher.results .= newHints
+        Searcher.waiting .= (Database.size (nsData ^. NodeHint.database) == 0)
         let selectInput = maybe True (Text.null . view Input.query) mayQuery
         hintsLen <- use $ Searcher.results . to length
         Searcher.selectedPosition .= if selectInput || hintsLen == 0
@@ -156,19 +156,25 @@ bumpIf pred amt = fmap bump where
                  then r & Result.score +~ amt
                  else r
 
+defaultBumpAmount :: Double
+defaultBumpAmount = 1
+
 bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
               -> [Result NodeHint.Node]
-bumpLocalFuns Input.Argument = bumpIf (const True) 1
+bumpLocalFuns Input.Argument = bumpIf (const True) defaultBumpAmount
 bumpLocalFuns _ = id
 
 bumpMethodsOf :: Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
-bumpMethodsOf cl = bumpIf (\r -> r ^. NodeHint.kind == NodeHint.Method cl) 1
+bumpMethodsOf cl = bumpIf (\r -> r ^. NodeHint.kind == NodeHint.Method cl)
+                          defaultBumpAmount
 
 bumpGlobalFuns :: [Result NodeHint.Node] -> [Result NodeHint.Node]
-bumpGlobalFuns = bumpIf (not . has (NodeHint.kind . NodeHint._Method)) 1
+bumpGlobalFuns = bumpIf (not . has (NodeHint.kind . NodeHint._Method))
+                        defaultBumpAmount
 
 bumpAllMethods :: [Result NodeHint.Node] -> [Result NodeHint.Node]
-bumpAllMethods = bumpIf (has $ NodeHint.kind . NodeHint._Method) 1
+bumpAllMethods = bumpIf (has $ NodeHint.kind . NodeHint._Method)
+                        defaultBumpAmount
 
 bumpOperators :: [Result NodeHint.Node] -> [Result NodeHint.Node]
 bumpOperators = id
