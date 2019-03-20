@@ -10,6 +10,7 @@ setup-info:
         sha1: a72a5181124baf64bcd0e68a8726e65914473b3b
 
 ghc-options:
+  $locals: -fno-warn-name-shadowing -fno-warn-unused-binds -fno-warn-unused-matches
   node-editor: -DGHCJS_BROWSER
   text-editor: -DGHCJS_BROWSER
 extra-deps:
