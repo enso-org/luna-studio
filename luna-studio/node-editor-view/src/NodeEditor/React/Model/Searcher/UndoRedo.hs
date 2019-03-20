@@ -2,6 +2,12 @@ module NodeEditor.React.Model.Searcher.UndoRedo where
 
 import Common.Prelude
 
+------------------------
+-- === InputState === --
+------------------------
+
+-- === Definition === --
+
 data InputState = InputState
     { _text :: Text
     , _selectionStart :: Int
@@ -12,6 +18,12 @@ makeLenses ''InputState
 
 instance NFData  InputState
 instance Default InputState where def = InputState "" 0 0
+
+---------------------------
+-- === UndoRedoState === --
+---------------------------
+
+-- === Definition === --
 
 data UndoRedoState = UndoRedoState
     { _undoStack :: [InputState]
@@ -24,17 +36,10 @@ makeLenses ''UndoRedoState
 instance NFData  UndoRedoState
 instance Default UndoRedoState where def = UndoRedoState def def def
 
+-- === Public API === --
+
 mk :: InputState -> UndoRedoState
 mk = UndoRedoState def def
-
-currentInput :: Lens' UndoRedoState InputState
-currentInput = lens getter setter where
-    getter ur = case ur ^. undoStack of
-        []        -> ur ^. initial
-        (inp : _) -> inp
-    setter ur inp = case ur ^. undoStack of
-        []      -> ur & initial .~ inp
-        (_ : _) -> ur & undoStack . ix 0 .~ inp
 
 undo :: UndoRedoState -> UndoRedoState
 undo st = case st ^. undoStack of
@@ -55,3 +60,15 @@ setInput inp urSt = urSt & undoStack %~ (inp :)
 setSelection :: Int -> Int -> UndoRedoState -> UndoRedoState
 setSelection start end = (set (currentInput . selectionStart) start)
                        . (set (currentInput . selectionEnd)   end)
+
+-- === Internal API === --
+
+currentInput :: Lens' UndoRedoState InputState
+currentInput = lens getter setter where
+    getter ur = case ur ^. undoStack of
+        []        -> ur ^. initial
+        (inp : _) -> inp
+    setter ur inp = case ur ^. undoStack of
+        []      -> ur & initial .~ inp
+        (_ : _) -> ur & undoStack . ix 0 .~ inp
+
