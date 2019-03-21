@@ -23,6 +23,7 @@ import LunaStudio.Data.Searcher.Hint.Class (Class)
 data Library = Library
     { _functions :: [Hint.Raw]
     , _classes   :: Map Class.Name Class
+    , _snippets  :: [Hint.Raw]
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Library

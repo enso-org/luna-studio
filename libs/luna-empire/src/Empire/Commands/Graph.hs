@@ -1,16 +1,16 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 module Empire.Commands.Graph (module Empire.Commands.Graph, module X) where
 
-import Empire.Commands.Graph.Autolayout as X
-import Empire.Commands.Graph.Breadcrumb as X
-import Empire.Commands.Graph.Code       as X
-import Empire.Commands.Graph.Context    as X
-import Empire.Commands.Graph.Metadata   as X
-import Empire.Commands.Graph.NodeMeta   as X
+import Empire.Commands.Graph.Autolayout    as X
+import Empire.Commands.Graph.Breadcrumb    as X
+import Empire.Commands.Graph.Code          as X
+import Empire.Commands.Graph.Context       as X
+import Empire.Commands.Graph.Metadata      as X
+import Empire.Commands.Graph.NodeMeta      as X
+import Empire.Commands.Graph.SearcherHints as X (getSearcherHints)
 
 import Empire.Prelude hiding (head, toList)
 
-import qualified Data.Bimap                            as Bimap
 import qualified Data.Graph.Data.Component.Vector      as PtrList
 import qualified Data.Graph.Data.Layer.Class           as Layer
 import qualified Data.Graph.Store                      as Store
@@ -37,14 +37,6 @@ import qualified Empire.Data.FileMetadata              as FileMetadata
 import qualified Empire.Data.Graph                     as Graph
 import qualified Luna.IR                               as IR
 import qualified Luna.IR.Term.Ast.Class                as Term
-import qualified Luna.Package                          as Package
-import qualified Luna.Pass.Scheduler                   as Scheduler
-import qualified Luna.Pass.Sourcing.Data.Class         as Class
-import qualified Luna.Pass.Sourcing.Data.Def           as Def
-import qualified Luna.Pass.Sourcing.Data.Unit          as Unit
-import qualified Luna.Pass.Sourcing.UnitLoader         as ModLoader
-import qualified Luna.Pass.Sourcing.UnitMapper         as UnitMapper
-import qualified Luna.Std                              as Std
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan  as CodeSpan
 import qualified LunaStudio.Data.Breadcrumb            as Breadcrumb
 import qualified LunaStudio.Data.Error                 as ErrorAPI
@@ -55,10 +47,7 @@ import qualified LunaStudio.Data.NodeMeta              as NodeMeta
 import qualified LunaStudio.Data.Port                  as Port
 import qualified LunaStudio.Data.PortRef               as PortRef
 import qualified LunaStudio.Data.Position              as Position
-import qualified LunaStudio.Data.Searcher.Hint         as Hint
-import qualified LunaStudio.Data.Searcher.Hint.Class   as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
-import qualified Path
 import qualified Safe
 
 import Control.Arrow                        ((***))
@@ -1397,81 +1386,12 @@ getAvailableImports gl = withUnit pureGl mkImports where
     implicitImports = [nativeModuleName, "Std.Base"]
     mkImports = fromList . (implicitImports <>) <$> runASTOp getImportsInFile
 
-classToHints :: Class.Class -> Hint.Class
-classToHints (Class.Class constructors methods _) = let
-    getDocumentation    = fromMaybe mempty . view Def.documentation
-    constructorsNames   = Map.keys constructors
-    constructorToHint   = flip Hint.Raw mempty . convert
-    constructorsHints   = constructorToHint <$> constructorsNames
-    methods'            = filter (isPublicMethod . fst)
-                        . Map.toList $ unwrap methods
-    methodToHint (n, d) = Hint.Raw (convert n) $ getDocumentation d
-    methodsHints        = methodToHint <$> methods'
-    in Hint.Class constructorsHints methodsHints
-
-isPublicMethod :: IR.Name -> Bool
-isPublicMethod (nameToString -> n) = Safe.headMay n /= Just '_'
-
-importsToHints :: Unit.Unit -> SearcherLibrary.Library
-importsToHints (Unit.Unit definitions classes) = let
-    funToHint (n,d) = Hint.Raw 
-        (convert n) 
-        $ fromMaybe mempty $ d ^. Def.documentation
-    funHints   = funToHint <$> Map.toList (unwrap definitions)
-    classHints = (classToHints . view Def.documented) <$> classes
-    in SearcherLibrary.Library funHints $ Map.mapKeys convert classHints
-
-data ModuleCompilationException = ModuleCompilationException ModLoader.UnitLoadingError
-    deriving (Show)
-
-instance Exception ModuleCompilationException where
-    toException = astExceptionToException
-    fromException = astExceptionFromException
-
 -- filterPrimMethods :: Module.Imports -> Module.Imports
 -- filterPrimMethods = id
 -- filterPrimMethods (Module.Imports classes funs) = Module.Imports classes properFuns
 --     where
 --         properFuns = Map.filterWithKey (\k _ -> not $ isPrimMethod k) funs
 --         isPrimMethod (nameToString -> n) = "prim" `List.isPrefixOf` n || n == "#uminus#"
-
-qualNameToText :: IR.Qualified -> Text
-qualNameToText = convertVia @String
-
-getImportPaths :: GraphLocation -> IO [FilePath]
-getImportPaths (GraphLocation file _) = do
-    currentProjPath <- Package.packageRootForFile =<< Path.parseAbsFile file
-    importPaths     <- Package.packageImportPaths currentProjPath
-    return $ map (view _2) importPaths
-
-getSearcherHints :: GraphLocation -> Empire SearcherLibrary.Set
-getSearcherHints loc = do
-    importPaths     <- liftIO $ getImportPaths loc
-    availableSource <- liftIO $ forM importPaths $ \path -> do
-        sources <- Package.findPackageSources =<< Path.parseAbsDir path
-        return $ Bimap.toMapR sources
-    let union = Map.map (Path.toFilePath) $ Map.unions availableSource
-    -- importsMVar <- view modules
-    -- cmpModules  <- liftIO $ readMVar importsMVar
-    res         <- try $ liftScheduler $ do
-        ModLoader.initHC
-        (_fin, stdUnitRef) <- Std.stdlib @Stage
-        Scheduler.registerAttr @Unit.UnitRefsMap
-        Scheduler.setAttr @Unit.UnitRefsMap $ wrap $ Map.singleton "Std.Primitive" stdUnitRef
-        forM (Map.keys union) $ ModLoader.loadUnit def union []
-        refsMap <- Scheduler.getAttr @Unit.UnitRefsMap
-        units <- flip Map.traverseWithKey (unwrap refsMap) $ \name unitRef -> case unitRef ^. Unit.root of
-            Unit.Graph termUnit   -> UnitMapper.mapUnit name termUnit
-            Unit.Precompiled unit -> return unit
-        return units
-    case res of
-        Left exc    -> throwM $ ModuleCompilationException exc
-        Right units -> do
-            -- Lifted.tryPutMVar importsMVar units
-            return $ Map.fromList
-                   $ map (\(a, b) -> (qualNameToText a, importsToHints b))
-                   $ Map.toList units
-
 
 reloadInterpreter :: GraphLocation -> Empire ()
 reloadInterpreter = runInterpreter

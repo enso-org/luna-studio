@@ -22,6 +22,7 @@ type Name = Text
 data Class = Class
     { _constructors :: [Hint.Raw]
     , _methods      :: [Hint.Raw]
+    , _snippets     :: [Hint.Raw]
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Class

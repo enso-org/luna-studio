@@ -29,6 +29,7 @@ data Kind
     = Function
     | Constructor Class.Name
     | Method      Class.Name
+    | Snippet     (Maybe Class.Name)
     deriving (Eq, Generic, Show)
 
 makePrisms ''Kind
@@ -40,6 +41,7 @@ className = to $ \case
     Function       -> Nothing
     Constructor cn -> Just cn
     Method      cn -> Just cn
+    Snippet     cn -> cn
 {-# INLINE className #-}
 
 ------------------
@@ -73,35 +75,42 @@ fromRawHint raw libInfo kind' = let
     in Node expr libInfo kind' doc
 {-# INLINE fromRawHint #-}
 
-fromFunction :: Hint.Raw -> Library.Info -> Node
-fromFunction raw libInfo = fromRawHint raw libInfo Function
+fromFunction :: Library.Info -> Hint.Raw -> Node
+fromFunction libInfo raw = fromRawHint raw libInfo Function
 {-# INLINE fromFunction #-}
 
-fromMethod :: Hint.Raw -> Class.Name -> Library.Info -> Node
-fromMethod raw className libInfo = fromRawHint raw libInfo $ Method className
+fromMethod :: Class.Name -> Library.Info -> Hint.Raw -> Node
+fromMethod className libInfo raw = fromRawHint raw libInfo $ Method className
 {-# INLINE fromMethod #-}
 
-fromConstructor :: Hint.Raw -> Class.Name -> Library.Info -> Node
-fromConstructor raw className libInfo
+fromConstructor :: Class.Name -> Library.Info -> Hint.Raw -> Node
+fromConstructor className libInfo raw
     = fromRawHint raw libInfo $ Constructor className
 {-# INLINE fromConstructor #-}
 
+fromSnippet :: Maybe Class.Name -> Library.Info -> Hint.Raw -> Node
+fromSnippet className libInfo raw = fromRawHint raw libInfo $ Snippet className
+{-# INLINE fromSnippet #-}
+
 fromClass :: Class.Name -> Class -> Library.Info -> [Node]
-fromClass className klass libInfo = constructorsHints <> methodsHints where
+fromClass className klass libInfo = let
     constructors = klass ^. Class.constructors
     methods      = klass ^. Class.methods
-    fromConstructor' h = fromConstructor h className libInfo
-    fromMethod'      h = fromMethod      h className libInfo
-    constructorsHints  = fromConstructor' <$> constructors
-    methodsHints       = fromMethod'      <$> methods
+    snippets     = klass ^. Class.snippets
+    constructorsHints  = fromConstructor className libInfo <$> constructors
+    methodsHints       = fromMethod      className libInfo <$> methods
+    snippetHints       = fromSnippet (Just className) libInfo <$> snippets
+    in concat [constructorsHints, methodsHints, snippetHints]
 {-# INLINE fromClass #-}
 
 fromLibrary :: Library -> Library.Info -> [Node]
-fromLibrary lib libInfo = functionsHints <> classesHints where
-    functionsHints = flip fromFunction libInfo <$> lib ^. Library.functions
+fromLibrary lib libInfo = let
+    functionsHints = fromFunction libInfo <$> lib ^. Library.functions
     processClass className klass = fromClass className klass libInfo
+    snippetHints = fromSnippet Nothing libInfo <$> lib ^. Library.snippets
     classes = lib ^. Library.classes
     classesHints = concatMap (uncurry processClass) . Map.toList $ classes
+    in concat [functionsHints, classesHints, snippetHints]
 {-# INLINE fromLibrary #-}
 
 fromSearcherLibraries :: Library.Set -> Set Library.Name -> [Node]
@@ -147,7 +156,7 @@ localFunctionsLibraryName = "#local"
 mkLocalFunctionsDb :: [Text] -> Database
 mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
     libs    = Map.singleton localFunctionsLibraryName library
-    library = Library.Library hints def
+    library = Library.Library hints def def
     hints   = flip Hint.Raw mempty <$> syms
 
 insertSearcherLibraries :: Library.Set -> Database -> Database
