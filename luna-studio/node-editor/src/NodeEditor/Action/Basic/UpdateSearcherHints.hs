@@ -162,6 +162,9 @@ defaultBumpAmount = 1
 defaultBumpAmount :: Double
 defaultBumpAmount = 1
 
+snippetBumpAmount :: Double
+snippetBumpAmount = 2
+
 bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
               -> [Result NodeHint.Node]
 bumpLocalFuns Input.Argument = bumpIf (const True) defaultBumpAmount
@@ -191,17 +194,33 @@ bumpGlobalSyms Input.Argument        _         = id
 bumpGlobalSyms Input.Method          _         = bumpAllMethods
 bumpGlobalSyms Input.Operator        _         = bumpOperators
 
+bumpSnippets :: [Result NodeHint.Node] -> [Result NodeHint.Node]
+bumpSnippets = bumpIf (has $ NodeHint.kind . NodeHint._Snippet)
+                      snippetBumpAmount
+
+filterSnippets :: Text -> Maybe Class.Name -> [Result NodeHint.Node]
+               -> [Result NodeHint.Node]
+filterSnippets query className = let
+    isNotSnippet = hasn't $ Result.hint . NodeHint.kind . NodeHint._Snippet
+    isSnippetForClass k =
+        k ^. Result.hint . NodeHint.kind == NodeHint.Snippet className
+    in if Text.null query
+        then filter ((||) <$> isNotSnippet <*> isSnippetForClass)
+        else filter isNotSnippet
+
 fullDbSearch :: Input.Divided -> NodeHint.Database -> NodeHint.Database
              -> Maybe Class.Name -> [Result Hint.Hint]
 fullDbSearch input localDb nsData mayClassName = let
-    query          = input ^. Input.query
-    nextSym        = input ^. Input.nextSymbolPrediction
-    scoredGlobal   = scoreTextMatch query nsData
-    scoredLocal    = scoreTextMatch query localDb
-    semanticLocal  = bumpLocalFuns  nextSym scoredLocal
-    semanticGlobal = bumpGlobalSyms nextSym mayClassName scoredGlobal
-    allHints       = semanticLocal <> semanticGlobal
-    sorted         = sortBy (comparing $ negate . view Result.score) allHints
+    query            = input ^. Input.query
+    nextSym          = input ^. Input.nextSymbolPrediction
+    scoredGlobal     = scoreTextMatch query nsData
+    scoredLocal      = scoreTextMatch query localDb
+    semanticLocal    = bumpLocalFuns  nextSym scoredLocal
+    semanticGlobal   = bumpGlobalSyms nextSym mayClassName scoredGlobal
+    filteredSnippets = filterSnippets query mayClassName semanticGlobal
+    scoredSnippets   = bumpSnippets filteredSnippets
+    allHints         = semanticLocal <> scoredSnippets
+    sorted           = sortBy (comparing $ negate . view Result.score) allHints
     in Hint.Node <<$>> sorted
 
 search :: Input.Divided -> NodeHint.Database -> NodeHint.Database
