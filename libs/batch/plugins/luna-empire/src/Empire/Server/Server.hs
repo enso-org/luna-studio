@@ -87,17 +87,6 @@ errorMessage = "error during processing request "
 formatErrorMessage :: forall a. MessageTopic a => a -> String -> String
 formatErrorMessage req msg = errorMessage <> (Topic.topic @a) <> ": " <> msg
 
-webGUIHack :: G.GraphRequest req => req -> IO req
-webGUIHack req = do
-    lunaroot <- liftIO $ getEnv Package.lunaRootEnv
-    let path = lunaroot </> "projects" </> Package.mainFile
-        realLocation = req ^. G.location
-        realFile     = realLocation ^. GraphLocation.filePath
-        hackedReq    = if null realFile
-            then req & G.location . GraphLocation.filePath .~ path
-            else req
-    return hackedReq
-
 modifyGraph :: forall req inv res res'.
     ( Show req
     , G.GraphRequest req
@@ -105,9 +94,8 @@ modifyGraph :: forall req inv res res'.
     => (req -> Empire inv) -> (req -> Empire res)
     -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req
     -> StateT Env BusT ()
-modifyGraph inverse action success origReq@(Request uuid guiID request') = do
-    logger Logger.info $ Topic.topic @(Request req) <> ": " <> show request'
-    request          <- liftIO $ webGUIHack request'
+modifyGraph inverse action success origReq@(Request uuid guiID request) = do
+    logger Logger.info $ Topic.topic @(Request req) <> ": " <> show request
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     endPoints        <- use $ Env.config . to EP.clientFromConfig

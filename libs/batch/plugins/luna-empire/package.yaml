@@ -22,6 +22,7 @@ dependencies:
     - lens
     - lifted-async
     - luna-core
+    - luna-datafile
     - luna-package
     - luna-empire
     - luna-passes

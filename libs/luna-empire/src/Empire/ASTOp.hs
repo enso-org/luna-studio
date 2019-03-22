@@ -98,7 +98,6 @@ match = matchExpr
 deriving instance MonadCatch (Pass stage t)
 deriving instance MonadCatch m => MonadCatch (MultiState.MultiStateT s m)
 deriving instance MonadCatch m => MonadCatch (LunaGraph.GraphT s m)
-deriving instance MonadCatch m => MonadCatch (Layered.StateT s m)
 
 
 defaultClsAST :: IO (IR.SomeTerm, LunaGraph.State TC.Stage, Scheduler.State)

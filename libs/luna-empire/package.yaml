@@ -61,6 +61,7 @@ dependencies:
     - luna-data-storable
     - luna-data-tag
     - luna-data-typemap
+    - luna-datafile
     - luna-debug
     - luna-exception
     - luna-foreign-utils
@@ -96,6 +97,7 @@ dependencies:
     - unordered-containers
     - uuid
     - vector-text
+    - yaml
     - zlib == 0.6.1.2
 
 default-extensions:

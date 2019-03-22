@@ -17,6 +17,7 @@ import qualified Empire.Data.BreadcrumbHierarchy    as BH
 import qualified Empire.Data.Graph                  as Graph
 import qualified Empire.Empire                      as Empire
 import qualified Empire.Utils.ValueListener         as Listener
+import qualified Luna.Datafile.Stdlib               as StdLocator
 import qualified Luna.IR                            as IR
 import qualified Luna.IR.Aliases                    as Uni
 import qualified Luna.Package                       as Package
@@ -240,7 +241,8 @@ fileImportPaths :: MonadIO m => FilePath -> m (Map IR.Qualified FilePath)
 fileImportPaths file = liftIO $ do
     filePath        <- Path.parseAbsFile file
     currentProjPath <- Package.packageRootForFile filePath
-    libs            <- Package.packageImportPaths currentProjPath
+    stdPath         <- StdLocator.findPath
+    libs            <- Package.packageImportPaths currentProjPath stdPath
     srcs            <- for (snd <$> libs) $ \libPath -> do
         p <- Path.parseAbsDir libPath
         fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources p
@@ -267,9 +269,8 @@ makePrimStdIfMissing = do
     when_ (isNothing existingStd) $ tryAny $ do
         (mods, finalizer, typed, computed, ress, units) <- liftScheduler $ do
             (fin, stdUnitRef) <- Std.stdlib @Stage
-            lunaroot <- liftIO $ canonicalizePath =<< getEnv Package.lunaRootEnv
-            stdPath <- Path.parseAbsDir $ lunaroot <> "/Std/"
-            srcs    <- fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources stdPath
+            stdPath <- StdLocator.findPath
+            srcs    <- fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources (stdPath Path.</> $(Path.mkRelDir "Std"))
             UnitLoader.init
             Scheduler.registerAttr @Unit.UnitRefsMap
             Scheduler.setAttr $ Unit.UnitRefsMap $ Map.singleton "Std.Primitive" stdUnitRef

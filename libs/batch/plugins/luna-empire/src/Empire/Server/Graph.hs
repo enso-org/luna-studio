@@ -20,6 +20,7 @@ import qualified Empire.Data.Graph                       as Graph (code,
 import qualified Empire.Empire                           as Empire
 import qualified Empire.Env                              as Env
 import qualified Empire.Server.Server                    as Server
+import qualified Luna.Datafile.Stdlib                    as StdLocator
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
 import qualified LunaStudio.API.Control.Interpreter      as Interpreter
@@ -107,8 +108,7 @@ import Empire.Empire                 (Empire)
 import Empire.Env                    (Env)
 import Empire.Server.Server          (defInverse, errorMessage, modifyGraph,
                                       modifyGraphOk, replyFail,
-                                      replyOk, replyResult, sendToBus',
-                                      webGUIHack)
+                                      replyOk, replyResult, sendToBus')
 import Luna.Package                  (findPackageFileForFile,
                                       findPackageRootForFile,
                                       getRelativePathForModule, includedLibs)
@@ -182,10 +182,11 @@ handleGetProgram = modifyGraph defInverse action replyResult where
             graph <- Graph.getGraph location
             crumb <- Graph.decodeLocation location
             code  <- Code <$> Graph.getCode location
+            stdPath <- StdLocator.findPath
             libsVisPaths <- Map.fromList . fmap
                 (\(libName, visLibPath)
                     -> (convert libName, visLibPath </> "visualizers"))
-                <$> includedLibs
+                <$> includedLibs stdPath
             let mayProjectVisPath
                     = ((</> "visualizers") . Path.toFilePath) <$> mayPackageRoot
                 externalVisPaths
@@ -221,8 +222,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes origReq@(Request uuid guiID
-    request'@(SearchNodes.Request location missingImps)) = do
-        request          <- liftIO $ webGUIHack request'
+    request@(SearchNodes.Request location missingImps)) = do
         currentEmpireEnv <- use Env.empireEnv
         empireNotifEnv   <- use Env.empireNotif
         endPoints        <- use $ Env.config . to EP.clientFromConfig

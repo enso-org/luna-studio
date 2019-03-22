@@ -1,4 +1,4 @@
-resolver: lts-12.16
+resolver: lts-12.26
 ghc-options:
     $everything:
         -O1
@@ -27,22 +27,9 @@ apply-ghc-options: everything
 #     http: https://hackage.haskell.org/01-index.tar.gz
 
 extra-deps:
-- layered-state-1.1.4
-- impossible-1.1.3
-- typelevel-1.2.2
-- container-1.1.5
-- layouting-1.1.3
-- monoid-0.1.8
-- terminal-text-1.1.1
-- lens-utils-1.4.5
-- convert-1.5
-- prologue-3.2.4
-- vector-text-1.1.5
-- monad-branch-1.0.3
-- functor-utils-1.17.1
-
 - c-storable-deriving-0.1.3
 - unagi-chan-0.4.1.0
+
 allow-newer: true
 
 packages:
@@ -62,7 +49,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 1f5f7194f371ea17df3c2f56f1c85a8eb6f3a320, git: 'https://github.com/luna/luna.git'}
+  location: {commit: 3424c79a983995ac1040c767ef6495ffa69ffeb3, git: 'https://github.com/luna/luna.git'}
   subdirs:
     - core
     - syntax/text/parser
@@ -75,27 +62,47 @@ packages:
     - package
     - runtime
     - stdlib
+
     - lib/autovector
+    - lib/ci
+    - lib/code-builder
+    - lib/container
+    - lib/convert
     - lib/cpp-containers
     - lib/data-construction
-    - lib/data-tag
-    - lib/data-typemap
     - lib/data-property
     - lib/data-storable
+    - lib/data-tag
+    - lib/data-typemap
+    - lib/datafile
     - lib/exception
     - lib/foreign-utils
+    - lib/functor-utils
     - lib/future
     - lib/generic-traversable
+    - lib/generic-traversable2
+    - lib/hspec-jenkins
+    - lib/impossible
+    - lib/layered-state
+    - lib/layouting
+    - lib/lens-utils
     - lib/memory-manager
     - lib/memory-pool
+    - lib/monad-branch
+    - lib/monoid
     - lib/nested-containers
     - lib/parser-utils
+    - lib/prologue
     - lib/syntax-definition
+    - lib/terminal-text
     - lib/text-processing
     - lib/th-builder
     - lib/tuple-utils
     - lib/type-cache
     - lib/typelevel
+    - lib/vector-text
+    - lib/yaml-utils
+
 - extra-dep: true
   location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'https://github.com/luna/visualization-api.git'}
 - extra-dep: true

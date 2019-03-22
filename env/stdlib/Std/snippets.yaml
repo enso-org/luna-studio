@@ -1,0 +1,15 @@
+Std.HTTP:
+  $global:
+    - name: Http.getJSON "http://ip.jsontest.com"
+      documentation: Fetch data from a JSON endpoint.
+
+Std.Time:
+  $global:
+    - name: Time.now
+      documentation: Get current time.
+    - name: Time.fromTimeOfYear 2019 02 26 Nothing
+      documentation: Construct a Time object by passing respective date fields.
+  Time:
+    - name: format "%m/%d/%y"
+      documentation: Convert Time object to a string with given formatting.
+
