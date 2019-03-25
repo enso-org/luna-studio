@@ -152,9 +152,9 @@ scoreTextMatch query nsData = case Text.null query of
 
 bumpIf :: (a -> Bool) -> Double -> [Result a] -> [Result a]
 bumpIf pred amt = fmap bump where
-    bump = \r -> if pred $ r ^. Result.hint
-                 then r & Result.score +~ amt
-                 else r
+    bump = \result -> if pred $ result ^. Result.hint
+                      then result & Result.score +~ amt
+                      else result
 
 defaultBumpAmount :: Double
 defaultBumpAmount = 1

@@ -67,12 +67,13 @@ searcher =  React.defineView name $ \(ref, properties) -> do
                 ( if isNothing selected
                     then ["searcher__input--selected"] 
                     else [] )
+            mayDocVis = s ^? Searcher.mode . Mode._Node
+                           . Node.documentationVisualization . _Just
+            visualizersPath = properties ^. Searcher.visualizerLibraryPath
 
         results_ ref selected (s ^. Searcher.waiting) (s ^. Searcher.results)
-        withJust (s ^? Searcher.mode . Mode._Node 
-            . Node.documentationVisualization . _Just)
-                $ docVisualization_ ref docPresent
-                    $ properties ^. Searcher.visualizerLibraryPath
+
+        withJust mayDocVis $ docVisualization_ ref docPresent visualizersPath
 
         input_ (
             [ "key"         $= "searchInput"

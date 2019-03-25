@@ -52,6 +52,6 @@ elems = Array.elems . view indexMapping
 
 size :: Database a -> Int
 size db = let
-    (min, max) = Array.bounds $ db ^. indexMapping
-    s' = max - min + 1
-    in if s' < 0 then 0 else s'
+    (left, right) = Array.bounds $ db ^. indexMapping
+    boundsSize = right - left + 1
+    in max boundsSize 0
