@@ -51,7 +51,7 @@ undo st = case st ^. undoStack of
 
 redo :: UndoRedoState -> UndoRedoState
 redo st = case st ^. redoStack of
-    []         -> st
+    []             -> st
     input : inputs -> st & undoStack %~ (input :)
                          & redoStack .~ inputs
 
@@ -60,8 +60,8 @@ setInput input urSt = urSt & undoStack %~ (input :)
                            & redoStack .~ []
 
 setSelection :: Int -> Int -> UndoRedoState -> UndoRedoState
-setSelection start end = (set (currentInput . selectionStart) start)
-                       . (set (currentInput . selectionEnd)   end)
+setSelection start end = set (currentInput . selectionStart) start
+                       . set (currentInput . selectionEnd)   end
 
 -- === Internal API === --
 
