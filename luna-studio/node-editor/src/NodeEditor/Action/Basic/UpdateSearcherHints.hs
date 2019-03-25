@@ -165,7 +165,7 @@ bumpLocalFuns Input.Argument = bumpIf (const True) defaultBumpAmount
 bumpLocalFuns _ = id
 
 bumpMethodsOf :: Class.Name -> [Result NodeHint.Node] -> [Result NodeHint.Node]
-bumpMethodsOf cl = bumpIf (\r -> r ^. NodeHint.kind == NodeHint.Method cl)
+bumpMethodsOf cl = bumpIf (\res -> res ^. NodeHint.kind == NodeHint.Method cl)
                           defaultBumpAmount
 
 bumpGlobalFuns :: [Result NodeHint.Node] -> [Result NodeHint.Node]
