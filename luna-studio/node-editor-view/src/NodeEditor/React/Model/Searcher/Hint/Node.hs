@@ -107,13 +107,17 @@ fromLibrary :: Library -> Library.Info -> [Node]
 fromLibrary lib libInfo = let
     functionsHints = fromFunction libInfo <$> lib ^. Library.functions
     processClass className klass = fromClass className klass libInfo
-    globalSnippetHints = fromSnippet Nothing libInfo <$> lib ^. Library.globalSnippets
+    globalSnippets = lib ^. Library.globalSnippets
+    globalSnippetHints = fromSnippet Nothing libInfo <$> globalSnippets
     importedSnippetsHints = if libInfo ^. Library.imported
         then fromSnippet Nothing libInfo <$> lib ^. Library.importedSnippets
         else mempty
     classes = lib ^. Library.classes
     classesHints = concatMap (uncurry processClass) . Map.toList $ classes
-    in concat [functionsHints, classesHints, globalSnippetHints, importedSnippetsHints]
+    in concat [functionsHints,
+               classesHints,
+               globalSnippetHints,
+               importedSnippetsHints]
 {-# INLINE fromLibrary #-}
 
 fromSearcherLibraries :: Library.Set -> Set Library.Name -> [Node]
@@ -144,9 +148,9 @@ instance Default Database where
 -- === API === --
 
 missingLibraries :: Getter Database (Set Library.Name)
-missingLibraries = to $ \d -> let
-    presentLibs  = Set.fromList $ Map.keys $ d ^. bareLibs
-    importedLibs = d ^. imported
+missingLibraries = to $ \db -> let
+    presentLibs  = Set.fromList $ Map.keys $ db ^. bareLibs
+    importedLibs = db ^. imported
     in Set.difference importedLibs presentLibs
 {-# INLINE missingLibraries #-}
 
@@ -161,13 +165,13 @@ mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
     hints   = flip Hint.Raw mempty <$> syms
 
 insertSearcherLibraries :: Library.Set -> Database -> Database
-insertSearcherLibraries libs d = let
-    oldLibraries = d ^. bareLibs
-    importedLibs = d ^. imported
+insertSearcherLibraries libs db = let
+    oldLibraries = db ^. bareLibs
+    importedLibs = db ^. imported
     libs'        = Map.union libs oldLibraries
     nodeHints    = fromSearcherLibraries libs' importedLibs
-    db           = Searcher.create nodeHints
-    in Database db importedLibs libs'
+    searcherDb   = Searcher.create nodeHints
+    in Database searcherDb importedLibs libs'
 {-# INLINE insertSearcherLibraries #-}
 
 importLibrary :: Library.Name -> Database -> Database

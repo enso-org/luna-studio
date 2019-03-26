@@ -21,9 +21,9 @@ import LunaStudio.Data.Searcher.Hint.Class (Class)
 -- === Definition === --
 
 data Library = Library
-    { _functions :: [Hint.Raw]
-    , _classes   :: Map Class.Name Class
-    , _globalSnippets  :: [Hint.Raw]
+    { _functions        :: [Hint.Raw]
+    , _classes          :: Map Class.Name Class
+    , _globalSnippets   :: [Hint.Raw]
     , _importedSnippets :: [Hint.Raw]
     } deriving (Eq, Generic, Show)
 

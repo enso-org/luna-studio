@@ -43,6 +43,9 @@ instance Exception ModuleCompilationException where
     toException   = astExceptionToException
     fromException = astExceptionFromException
 
+type RawLibrarySnippets   = Map Text [Hint.Raw]
+type RawLibrariesSnippets = Map Text RawLibrarySnippets
+
 snippetsFileName :: FilePath
 snippetsFileName = "snippets.yaml"
 
@@ -76,7 +79,7 @@ getSnippetsFile projectRoot = do
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (convert -> n) = head n /= Just '_'
 
-addSnippetsToLibrary :: Map Text [Hint.Raw] -> SearcherLibrary.Library
+addSnippetsToLibrary :: RawLibrarySnippets -> SearcherLibrary.Library
                      -> SearcherLibrary.Library
 addSnippetsToLibrary snippets lib = let
     globalSnippets =
@@ -91,7 +94,7 @@ addSnippetsToLibrary snippets lib = let
            & SearcherLibrary.importedSnippets .~ importedSnippets
            & SearcherLibrary.classes          .~ classesWithSnippets
 
-addSnippets :: Map Text (Map Text [Hint.Raw]) -> SearcherLibrary.Set
+addSnippets :: RawLibrariesSnippets -> SearcherLibrary.Set
             -> SearcherLibrary.Set
 addSnippets snippets libraries = let
     processLib libName =

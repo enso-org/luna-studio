@@ -269,8 +269,8 @@ makePrimStdIfMissing = do
     when_ (isNothing existingStd) $ tryAny $ do
         (mods, finalizer, typed, computed, ress, units) <- liftScheduler $ do
             (fin, stdUnitRef) <- Std.stdlib @Stage
-            stdPath <- StdLocator.findPath
-            srcs    <- fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources (stdPath Path.</> $(Path.mkRelDir "Std"))
+            stdPath <- (Path.</> $(Path.mkRelDir "Std")) <$> StdLocator.findPath
+            srcs    <- fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources stdPath
             UnitLoader.init
             Scheduler.registerAttr @Unit.UnitRefsMap
             Scheduler.setAttr $ Unit.UnitRefsMap $ Map.singleton "Std.Primitive" stdUnitRef
