@@ -159,9 +159,6 @@ bumpIf pred amt = fmap bump where
 defaultBumpAmount :: Double
 defaultBumpAmount = 1
 
-defaultBumpAmount :: Double
-defaultBumpAmount = 1
-
 snippetBumpAmount :: Double
 snippetBumpAmount = 2
 
