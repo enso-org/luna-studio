@@ -70,7 +70,7 @@ addDatabaseHints libHints = do
 
 setImportedLibraries :: Set Library.Name -> Command State ()
 setImportedLibraries libs = do
-    Global.searcherDatabase . NodeHint.imported .= libs
+    Global.searcherDatabase %= NodeHint.setImportedLibraries libs
     missingLibs <- use $ Global.searcherDatabase . NodeHint.missingLibraries
     unless (null missingLibs) $
         searchNodes missingLibs

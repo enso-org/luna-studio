@@ -7,6 +7,7 @@ Std.Time:
   $global:
     - name: Time.now
       documentation: Get current time.
+  $imported:
     - name: Time.fromTimeOfYear 2019 02 26 Nothing
       documentation: Construct a Time object by passing respective date fields.
   Time:

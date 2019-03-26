@@ -107,10 +107,13 @@ fromLibrary :: Library -> Library.Info -> [Node]
 fromLibrary lib libInfo = let
     functionsHints = fromFunction libInfo <$> lib ^. Library.functions
     processClass className klass = fromClass className klass libInfo
-    snippetHints = fromSnippet Nothing libInfo <$> lib ^. Library.snippets
+    globalSnippetHints = fromSnippet Nothing libInfo <$> lib ^. Library.globalSnippets
+    importedSnippetsHints = if libInfo ^. Library.imported
+        then fromSnippet Nothing libInfo <$> lib ^. Library.importedSnippets
+        else mempty
     classes = lib ^. Library.classes
     classesHints = concatMap (uncurry processClass) . Map.toList $ classes
-    in concat [functionsHints, classesHints, snippetHints]
+    in concat [functionsHints, classesHints, globalSnippetHints, importedSnippetsHints]
 {-# INLINE fromLibrary #-}
 
 fromSearcherLibraries :: Library.Set -> Set Library.Name -> [Node]
@@ -142,10 +145,8 @@ instance Default Database where
 
 missingLibraries :: Getter Database (Set Library.Name)
 missingLibraries = to $ \d -> let
-    allHints         = Searcher.elems $ d ^. database
-    addLibName acc h = Set.insert (h ^. library . Library.name) acc
-    presentLibs      = foldl addLibName mempty allHints
-    importedLibs     = d ^. imported
+    presentLibs  = Set.fromList $ Map.keys $ d ^. bareLibs
+    importedLibs = d ^. imported
     in Set.difference importedLibs presentLibs
 {-# INLINE missingLibraries #-}
 
@@ -156,7 +157,7 @@ localFunctionsLibraryName = "#local"
 mkLocalFunctionsDb :: [Text] -> Database
 mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
     libs    = Map.singleton localFunctionsLibraryName library
-    library = Library.Library hints def def
+    library = Library.Library hints def def def
     hints   = flip Hint.Raw mempty <$> syms
 
 insertSearcherLibraries :: Library.Set -> Database -> Database
@@ -168,3 +169,18 @@ insertSearcherLibraries libs d = let
     db           = Searcher.create nodeHints
     in Database db importedLibs libs'
 {-# INLINE insertSearcherLibraries #-}
+
+importLibrary :: Library.Name -> Database -> Database
+importLibrary lib db = let
+    importedSoFar = db ^. imported
+    libsHints = db ^. bareLibs
+    newDb = Database def (Set.insert lib importedSoFar) def
+    in insertSearcherLibraries libsHints newDb
+
+setImportedLibraries :: Set Library.Name -> Database -> Database
+setImportedLibraries libs db = let
+    libsHints = db ^. bareLibs
+    newDb = Database def libs def
+    in insertSearcherLibraries libsHints newDb
+
+

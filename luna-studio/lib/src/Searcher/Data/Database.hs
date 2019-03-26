@@ -20,7 +20,7 @@ import Searcher.Data.Class (SearcherData)
 data Database a = Database
     { _jsDatabase   :: JSVal
     , _indexMapping :: Array Int a
-    } deriving Generic
+    } deriving (Functor, Generic)
 makeLenses ''Database
 
 instance NFData a => NFData (Database a)

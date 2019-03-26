@@ -458,7 +458,9 @@ includeImport hint = let
     isImported = lib  ^. Library.imported
     name       = lib  ^. Library.name
     isLocal    = name == NodeHint.localFunctionsLibraryName
-    in unless (isImported || isLocal) $ addImport name
+    in unless (isImported || isLocal) $ do
+        Global.searcherDatabase %= NodeHint.importLibrary name
+        addImport name
 
 selectHint :: Int -> Searcher -> Command State Bool
 selectHint i _ = do

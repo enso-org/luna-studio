@@ -2,10 +2,11 @@ module Empire.Commands.Graph.SearcherHints where
 
 import Prologue
 
-import qualified Control.Monad.Exception.IO as Exception
+import qualified Control.Monad.Exception.IO            as Exception
 import qualified Data.Bimap                            as Bimap
 import qualified Data.Map                              as Map
-import qualified Luna.Datafile.Stdlib               as StdLocator
+import qualified Data.Yaml                             as Yaml
+import qualified Luna.Datafile.Stdlib                  as StdLocator
 import qualified Luna.IR                               as IR
 import qualified Luna.Package                          as Package
 import qualified Luna.Pass.Scheduler                   as Scheduler
@@ -20,19 +21,18 @@ import qualified LunaStudio.Data.Searcher.Hint         as Hint
 import qualified LunaStudio.Data.Searcher.Hint.Class   as SearcherClass
 import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
 import qualified Path
-import qualified Data.Yaml as Yaml
 
 import Control.Monad.Catch           (try)
-import Data.Map (Map)
+import Control.Monad.Exception       (MonadException)
+import Data.Map                      (Map)
 import Empire.ASTOp                  (liftScheduler)
 import Empire.Data.AST               (astExceptionFromException,
                                       astExceptionToException)
 import Empire.Empire                 (Empire)
+import Luna.Datafile                 (DatafileException)
+import Luna.Package                  (PackageNotFoundException)
 import Luna.Pass.Data.Stage          (Stage)
 import LunaStudio.Data.GraphLocation (GraphLocation)
-import Luna.Package        (PackageNotFoundException)
-import Luna.Datafile (DatafileException)
-import Control.Monad.Exception (MonadException)
 
 data ModuleCompilationException
     = ModuleCompilationException ModLoader.UnitLoadingError
@@ -47,6 +47,9 @@ snippetsFileName = "snippets.yaml"
 
 globalSnippetsFieldName :: Text
 globalSnippetsFieldName = "$global"
+
+importedSnippetsFieldName :: Text
+importedSnippetsFieldName = "$imported"
 
 getImportPaths ::
     (MonadIO m, MonadException PackageNotFoundException m,
@@ -75,13 +78,13 @@ isPublicMethod (convert -> n) = head n /= Just '_'
 addSnippetsToLibrary :: SearcherLibrary.Library -> Map Text [Hint.Raw] -> SearcherLibrary.Library
 addSnippetsToLibrary lib snippets = let
     globalSnippets = Map.findWithDefault mempty globalSnippetsFieldName snippets
+    importedSnippets = Map.findWithDefault mempty importedSnippetsFieldName snippets
     processClass clsName cls = cls & SearcherClass.snippets .~ Map.findWithDefault mempty clsName snippets
     classes = lib ^. SearcherLibrary.classes
     classesWithSnippets = Map.mapWithKey processClass classes
-    in lib & SearcherLibrary.snippets .~ globalSnippets
+    in lib & SearcherLibrary.globalSnippets .~ globalSnippets
+           & SearcherLibrary.importedSnippets .~ importedSnippets
            & SearcherLibrary.classes  .~ classesWithSnippets
-
-
 
 addSnippets :: SearcherLibrary.Set -> Map Text (Map Text [Hint.Raw]) -> SearcherLibrary.Set
 addSnippets libraries snippets = let
@@ -96,7 +99,7 @@ importsToHints (Unit.Unit definitions classes) = let
         $ fromMaybe mempty $ d ^. Def.documentation
     funHints   = funToHint <$> Map.toList (unwrap definitions)
     classHints = (classToHints . view Def.documented) <$> classes
-    in SearcherLibrary.Library funHints (Map.mapKeys convert classHints) []
+    in SearcherLibrary.Library funHints (Map.mapKeys convert classHints) [] []
 
 classToHints :: Class.Class -> SearcherClass.Class
 classToHints (Class.Class constructors methods _) = let
