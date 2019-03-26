@@ -13,7 +13,7 @@ import qualified Luna.Pass.Scheduler                   as Scheduler
 import qualified Luna.Pass.Sourcing.Data.Class         as Class
 import qualified Luna.Pass.Sourcing.Data.Def           as Def
 import qualified Luna.Pass.Sourcing.Data.Unit          as Unit
-import qualified Luna.Pass.Sourcing.UnitLoader         as ModLoader
+import qualified Luna.Pass.Sourcing.UnitLoader         as UnitLoader
 import qualified Luna.Pass.Sourcing.UnitMapper         as UnitMapper
 import qualified Luna.Std                              as Std
 import qualified LunaStudio.Data.GraphLocation         as GraphLocation
@@ -22,6 +22,7 @@ import qualified LunaStudio.Data.Searcher.Hint.Class   as SearcherClass
 import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
 import qualified Path
 
+import Control.Arrow                 ((***))
 import Control.Monad.Catch           (try)
 import Control.Monad.Exception       (MonadException)
 import Data.Map                      (Map)
@@ -35,7 +36,7 @@ import Luna.Pass.Data.Stage          (Stage)
 import LunaStudio.Data.GraphLocation (GraphLocation)
 
 data ModuleCompilationException
-    = ModuleCompilationException ModLoader.UnitLoadingError
+    = ModuleCompilationException UnitLoader.UnitLoadingError
     deriving (Show)
 
 instance Exception ModuleCompilationException where
@@ -75,35 +76,43 @@ getSnippetsFile projectRoot = do
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (convert -> n) = head n /= Just '_'
 
-addSnippetsToLibrary :: SearcherLibrary.Library -> Map Text [Hint.Raw] -> SearcherLibrary.Library
-addSnippetsToLibrary lib snippets = let
-    globalSnippets = Map.findWithDefault mempty globalSnippetsFieldName snippets
-    importedSnippets = Map.findWithDefault mempty importedSnippetsFieldName snippets
-    processClass clsName cls = cls & SearcherClass.snippets .~ Map.findWithDefault mempty clsName snippets
+addSnippetsToLibrary :: Map Text [Hint.Raw] -> SearcherLibrary.Library
+                     -> SearcherLibrary.Library
+addSnippetsToLibrary snippets lib = let
+    globalSnippets =
+        Map.findWithDefault mempty globalSnippetsFieldName snippets
+    importedSnippets =
+        Map.findWithDefault mempty importedSnippetsFieldName snippets
+    processClass clsName =
+        SearcherClass.snippets .~ Map.findWithDefault mempty clsName snippets
     classes = lib ^. SearcherLibrary.classes
     classesWithSnippets = Map.mapWithKey processClass classes
-    in lib & SearcherLibrary.globalSnippets .~ globalSnippets
+    in lib & SearcherLibrary.globalSnippets   .~ globalSnippets
            & SearcherLibrary.importedSnippets .~ importedSnippets
-           & SearcherLibrary.classes  .~ classesWithSnippets
+           & SearcherLibrary.classes          .~ classesWithSnippets
 
-addSnippets :: SearcherLibrary.Set -> Map Text (Map Text [Hint.Raw]) -> SearcherLibrary.Set
-addSnippets libraries snippets = let
-    processLib libName lib = addSnippetsToLibrary lib (Map.findWithDefault def libName snippets)
+addSnippets :: Map Text (Map Text [Hint.Raw]) -> SearcherLibrary.Set
+            -> SearcherLibrary.Set
+addSnippets snippets libraries = let
+    processLib libName =
+        addSnippetsToLibrary (Map.findWithDefault def libName snippets)
     libsWithSnippets = Map.mapWithKey processLib libraries
     in libsWithSnippets
 
 importsToHints :: Unit.Unit -> SearcherLibrary.Library
 importsToHints (Unit.Unit definitions classes) = let
-    funToHint (n,d) = Hint.Raw
-        (convert n)
-        $ fromMaybe mempty $ d ^. Def.documentation
+    funToHint (name, def) = Hint.Raw (convert name) $ fromJust mempty
+                                                    $ def ^. Def.documentation
     funHints   = funToHint <$> Map.toList (unwrap definitions)
-    classHints = (classToHints . view Def.documented) <$> classes
-    in SearcherLibrary.Library funHints (Map.mapKeys convert classHints) [] []
+    classHints = classToHints . view Def.documented <$> classes
+    in SearcherLibrary.Library funHints
+                               (Map.mapKeys convert classHints)
+                               mempty
+                               mempty
 
 classToHints :: Class.Class -> SearcherClass.Class
 classToHints (Class.Class constructors methods _) = let
-    getDocumentation    = fromMaybe mempty . view Def.documentation
+    getDocumentation    = fromJust mempty . view Def.documentation
     constructorsNames   = Map.keys constructors
     constructorToHint   = flip Hint.Raw mempty . convert
     constructorsHints   = constructorToHint <$> constructorsNames
@@ -111,33 +120,34 @@ classToHints (Class.Class constructors methods _) = let
                         . Map.toList $ unwrap methods
     methodToHint (n, d) = Hint.Raw (convert n) $ getDocumentation d
     methodsHints        = methodToHint <$> methods'
-    in SearcherClass.Class constructorsHints methodsHints []
+    in SearcherClass.Class constructorsHints methodsHints mempty
+
+readUnits :: Map IR.Qualified FilePath -> Empire (Map IR.Qualified Unit.Unit)
+readUnits sourceFiles = do
+    result <- try $ liftScheduler $ do
+        UnitLoader.init
+        unitRefs <- Map.traverseWithKey (flip UnitLoader.readUnit) sourceFiles
+        units    <- flip Map.traverseWithKey unitRefs $ \name unitRef ->
+            case unitRef ^. Unit.root of
+                Unit.Graph termUnit   -> UnitMapper.mapUnit name termUnit
+                Unit.Precompiled unit -> pure unit
+        pure units
+    case result of
+        Left exc    -> throwM $ ModuleCompilationException exc
+        Right units -> pure units
 
 getSearcherHints :: GraphLocation -> Empire SearcherLibrary.Set
 getSearcherHints loc = do
-    importPaths     <- liftIO $ getImportPaths loc
-    availableSource <- liftIO $ for importPaths $ \path -> do
+    importPaths     <- getImportPaths loc
+    availableSource <- for importPaths $ \path -> do
         sources <- Package.findPackageSources =<< Path.parseAbsDir path
-        return $ Bimap.toMapR sources
-    let allSourceFiles = Map.map (Path.toFilePath) $ Map.unions availableSource
-    res <- try $ liftScheduler $ do
-        ModLoader.init
-        stdUnitRef <- snd <$> Std.stdlib @Stage
-        Scheduler.registerAttr @Unit.UnitRefsMap
-        Scheduler.setAttr @Unit.UnitRefsMap $ wrap $ Map.singleton "Std.Primitive" stdUnitRef
-        for (Map.keys allSourceFiles) $ ModLoader.loadUnit def allSourceFiles []
-        refsMap <- Scheduler.getAttr @Unit.UnitRefsMap
-        units <- flip Map.traverseWithKey (unwrap refsMap) $ \name unitRef -> case unitRef ^. Unit.root of
-            Unit.Graph termUnit   -> UnitMapper.mapUnit name termUnit
-            Unit.Precompiled unit -> return unit
-        return units
-    snippetFiles <- fmap Map.unions $ traverse getSnippetsFile importPaths
-    print snippetFiles
-    case res of
-        Left exc    -> throwM $ ModuleCompilationException exc
-        Right units -> do
-            let res = Map.fromList
-                    $ map (\(a, b) -> (convert a, importsToHints b))
+        pure $ Bimap.toMapR sources
+    let allSources = Path.toFilePath <$> Map.unions availableSource
+    units        <- readUnits allSources
+    snippetFiles <- Map.unions <$> traverse getSnippetsFile importPaths
+    let sourceHints = Map.fromList
+                    $ fmap (convert *** importsToHints)
                     $ Map.toList units
-            pure $ addSnippets res snippetFiles
+        hintsWithSnippets = addSnippets snippetFiles sourceHints
+    pure hintsWithSnippets
 
