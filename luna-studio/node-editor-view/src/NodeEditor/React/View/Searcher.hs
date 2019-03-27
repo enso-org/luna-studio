@@ -8,20 +8,23 @@ import qualified NodeEditor.Event.Keys                     as Keys
 import qualified NodeEditor.Event.UI                       as UI
 import qualified NodeEditor.React.Event.App                as App
 import qualified NodeEditor.React.Model.Searcher           as Searcher
+import qualified NodeEditor.React.Model.Searcher.Hint      as Hint
+import qualified NodeEditor.React.Model.Searcher.Hint.Node as NodeHint
 import qualified NodeEditor.React.Model.Searcher.Mode      as Mode
 import qualified NodeEditor.React.Model.Searcher.Mode.Node as Node
 import qualified NodeEditor.React.View.Style               as Style
 import qualified React.Flux                                as React
 import qualified Searcher.Data.Class                       as SearcherData
 import qualified Searcher.Data.Match                       as Match
+import qualified Searcher.Data.Result                      as Result
 
-import JS.Searcher                         (searcherId)
+import JS.Searcher                          (searcherId)
 import NodeEditor.React.Event.Searcher
-import NodeEditor.React.IsRef              (IsRef, dispatch)
-import NodeEditor.React.View.Visualization (docVisualization_)
-import Searcher.Data.Class                 (SearcherHint)
-import Searcher.Data.Match                 (Range)
-import Searcher.Data.Result                (Result, match)
+import NodeEditor.React.IsRef               (IsRef, dispatch)
+import NodeEditor.React.Model.Searcher.Hint (Hint)
+import NodeEditor.React.View.Visualization  (docVisualization_)
+import Searcher.Data.Match                  (Range)
+import Searcher.Data.Result                 (Result, match)
 
 
 name :: JSString
@@ -86,7 +89,7 @@ searcher =  React.defineView name $ \(ref, properties) -> do
 searcher_ :: IsRef ref => ref -> Searcher.Properties -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
-results_ :: SearcherHint a => IsRef ref => ref -> Maybe Int -> Bool -> [Result a]
+results_ :: IsRef ref => ref -> Maybe Int -> Bool -> [Result Hint]
     -> ReactElementM ViewEventHandler ()
 results_ ref selected wait results = when (not (null results) || wait) $ do
     div_
@@ -120,16 +123,21 @@ results_ ref selected wait results = when (not (null results) || wait) $ do
                 , "className" $= Style.prefix "searcher__results__wait"
                 ] $ elemString "Indexing hints, please wait..."
 
-highlighted_ :: SearcherHint a => Result a -> ReactElementM ViewEventHandler ()
+isSnippet :: Result Hint -> Bool
+isSnippet = has $ Result.hint . Hint._Node . NodeHint.kind . NodeHint._Snippet
+
+highlighted_ :: Result Hint -> ReactElementM ViewEventHandler ()
 highlighted_ result = prefixElem >> highlighted_' 0 highlights where
     prefix     = convert $ result ^. SearcherData.prefix
-    prefixElem = span_ [ "className" $= Style.prefix "searcher__pre"
-                       , "key"       $= "searcherPre"]
-                       $ elemString $ if prefix == "" then prefix else prefix <> " . "
+    prefixElem = unless (isSnippet result) $
+        span_ [ "className" $= Style.prefix "searcher__pre"
+              , "key"       $= "searcherPre"
+              ] $ elemString $ if prefix == "" then prefix else prefix <> " . "
     highlights = result ^. match . wrapped
     name'      = convert $ result ^. SearcherData.text
     highlighted_' :: Int -> [Range] -> ReactElementM ViewEventHandler ()
-    highlighted_' omit [] = span_ [ "key" $= "l" ] $ elemString $ drop omit name'
+    highlighted_' omit [] = span_ [ "key" $= "l" ] $ elemString
+                                                   $ drop omit name'
     highlighted_' omit (h:rest) = do
         let start       = h ^. Match.start
             len         = h ^. Match.length

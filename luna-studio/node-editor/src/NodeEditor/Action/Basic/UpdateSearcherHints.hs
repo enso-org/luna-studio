@@ -162,6 +162,9 @@ defaultBumpAmount = 1
 snippetBumpAmount :: Double
 snippetBumpAmount = 2
 
+importedBumpAmount :: Double
+importedBumpAmount = 0.1
+
 bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
               -> [Result NodeHint.Node]
 bumpLocalFuns Input.Argument = bumpIf (const True) defaultBumpAmount
@@ -195,6 +198,10 @@ bumpSnippets :: [Result NodeHint.Node] -> [Result NodeHint.Node]
 bumpSnippets = bumpIf (has $ NodeHint.kind . NodeHint._Snippet)
                       snippetBumpAmount
 
+bumpImported :: [Result NodeHint.Node] -> [Result NodeHint.Node]
+bumpImported = bumpIf (\hint -> hint ^. NodeHint.library . Library.imported)
+                      importedBumpAmount
+
 filterSnippets :: Text -> Maybe Class.Name -> [Result NodeHint.Node]
                -> [Result NodeHint.Node]
 filterSnippets query className = let
@@ -216,7 +223,8 @@ fullDbSearch input localDb nsData mayClassName = let
     semanticGlobal   = bumpGlobalSyms nextSym mayClassName scoredGlobal
     filteredSnippets = filterSnippets query mayClassName semanticGlobal
     scoredSnippets   = bumpSnippets filteredSnippets
-    allHints         = semanticLocal <> scoredSnippets
+    scoredImports    = bumpImported scoredSnippets
+    allHints         = semanticLocal <> scoredImports
     sorted           = sortBy (comparing $ negate . view Result.score) allHints
     in Hint.Node <<$>> sorted
 
