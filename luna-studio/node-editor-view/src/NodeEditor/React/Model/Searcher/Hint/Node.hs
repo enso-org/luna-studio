@@ -149,7 +149,7 @@ instance Default Database where
 
 missingLibraries :: Getter Database (Set Library.Name)
 missingLibraries = to $ \db -> let
-    presentLibs  = Set.fromList $ Map.keys $ db ^. bareLibs
+    presentLibs  = Set.fromList . Map.keys $ db ^. bareLibs
     importedLibs = db ^. imported
     in Set.difference importedLibs presentLibs
 {-# INLINE missingLibraries #-}

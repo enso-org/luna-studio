@@ -24,7 +24,7 @@ import qualified Path
 
 import Control.Arrow                 ((***))
 import Control.Monad.Catch           (try)
-import Control.Monad.Exception       (MonadException)
+import Control.Monad.Exception       (Throws)
 import Data.Map                      (Map)
 import Empire.ASTOp                  (liftScheduler)
 import Empire.Data.AST               (astExceptionFromException,
@@ -35,7 +35,9 @@ import Luna.Package                  (PackageNotFoundException)
 import Luna.Pass.Data.Stage          (Stage)
 import LunaStudio.Data.GraphLocation (GraphLocation)
 
-data ModuleCompilationException
+-- === Auxiliary types === --
+
+newtype ModuleCompilationException
     = ModuleCompilationException UnitLoader.UnitLoadingError
     deriving (Show)
 
@@ -46,6 +48,8 @@ instance Exception ModuleCompilationException where
 type RawLibrarySnippets   = Map Text [Hint.Raw]
 type RawLibrariesSnippets = Map Text RawLibrarySnippets
 
+-- === Constants === --
+
 snippetsFileName :: FilePath
 snippetsFileName = "snippets.yaml"
 
@@ -55,32 +59,35 @@ globalSnippetsFieldName = "$global"
 importedSnippetsFieldName :: Text
 importedSnippetsFieldName = "$imported"
 
+-- === Disc IO operations === --
+
 getImportPaths ::
-    (MonadIO m, MonadException PackageNotFoundException m,
-     MonadException DatafileException m,
-     MonadException Path.PathException m
-     ) => GraphLocation -> m [FilePath]
+    ( MonadIO m
+    , Throws [PackageNotFoundException, DatafileException, Path.PathException] m
+    ) => GraphLocation -> m [FilePath]
 getImportPaths location = do
     let file = location ^. GraphLocation.filePath
     stdPath         <- StdLocator.findPath
     filePath        <- Exception.rethrowFromIO @Path.PathException
-                                               (Path.parseAbsFile file)
+                       (Path.parseAbsFile file)
     currentProjPath <- Package.packageRootForFile filePath
     importPaths     <- Package.packageImportPaths currentProjPath stdPath
     pure $ snd <$> importPaths
 
-getSnippetsFile :: MonadIO m => FilePath -> m (Map Text (Map Text [Hint.Raw]))
+getSnippetsFile :: MonadIO m => FilePath -> m RawLibrariesSnippets
 getSnippetsFile projectRoot = do
     contents <- liftIO $ Yaml.decodeFileEither (projectRoot <> snippetsFileName)
     case contents of
         Left err -> pure def
         Right f  -> pure f
 
+-- === Hints reformatting for API === --
+
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (convert -> n) = head n /= Just '_'
 
-addSnippetsToLibrary :: RawLibrarySnippets -> SearcherLibrary.Library
-                     -> SearcherLibrary.Library
+addSnippetsToLibrary
+    :: RawLibrarySnippets -> SearcherLibrary.Library -> SearcherLibrary.Library
 addSnippetsToLibrary snippets lib = let
     globalSnippets =
         Map.findWithDefault mempty globalSnippetsFieldName snippets
@@ -94,8 +101,8 @@ addSnippetsToLibrary snippets lib = let
            & SearcherLibrary.importedSnippets .~ importedSnippets
            & SearcherLibrary.classes          .~ classesWithSnippets
 
-addSnippets :: RawLibrariesSnippets -> SearcherLibrary.Set
-            -> SearcherLibrary.Set
+addSnippets
+    :: RawLibrariesSnippets -> SearcherLibrary.Set -> SearcherLibrary.Set
 addSnippets snippets libraries = let
     processLib libName =
         addSnippetsToLibrary (Map.findWithDefault def libName snippets)
@@ -104,7 +111,7 @@ addSnippets snippets libraries = let
 
 importsToHints :: Unit.Unit -> SearcherLibrary.Library
 importsToHints (Unit.Unit definitions classes) = let
-    funToHint (name, def) = Hint.Raw (convert name) $ fromJust mempty
+    funToHint (name, def) = Hint.Raw (convert name) . fromJust mempty
                                                     $ def ^. Def.documentation
     funHints   = funToHint <$> Map.toList (unwrap definitions)
     classHints = classToHints . view Def.documented <$> classes
@@ -125,9 +132,11 @@ classToHints (Class.Class constructors methods _) = let
     methodsHints        = methodToHint <$> methods'
     in SearcherClass.Class constructorsHints methodsHints mempty
 
+-- === Units processing === --
+
 readUnits :: Map IR.Qualified FilePath -> Empire (Map IR.Qualified Unit.Unit)
 readUnits sourceFiles = do
-    result <- try $ liftScheduler $ do
+    result <- try . liftScheduler $ do
         UnitLoader.init
         unitRefs <- Map.traverseWithKey (flip UnitLoader.readUnit) sourceFiles
         units    <- flip Map.traverseWithKey unitRefs $ \name unitRef ->
@@ -139,6 +148,8 @@ readUnits sourceFiles = do
         Left exc    -> throwM $ ModuleCompilationException exc
         Right units -> pure units
 
+-- === Public API === --
+
 getSearcherHints :: GraphLocation -> Empire SearcherLibrary.Set
 getSearcherHints loc = do
     importPaths     <- getImportPaths loc
@@ -149,7 +160,7 @@ getSearcherHints loc = do
     units        <- readUnits allSources
     snippetFiles <- Map.unions <$> traverse getSnippetsFile importPaths
     let sourceHints = Map.fromList
-                    $ fmap (convert *** importsToHints)
+                    . fmap (convert *** importsToHints)
                     $ Map.toList units
         hintsWithSnippets = addSnippets snippetFiles sourceHints
     pure hintsWithSnippets
