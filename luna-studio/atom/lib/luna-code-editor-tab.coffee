@@ -1,4 +1,4 @@
-{TextEditor, TextBuffer} = require 'atom'
+{TextEditor, TextBuffer, Range} = require 'atom'
 {TextEditorView, View} = require 'atom-space-pen-views'
 {CompositeDisposable} = require 'event-kit'
 path = require 'path'
@@ -57,6 +57,60 @@ TextBuffer::subscribeToFileOverride = (codeEditor) ->
 
     @fileSubscriptions.add @file.onWillThrowWatchError (errorObject) =>
         @emitter.emit 'will-throw-watch-error', errorObject
+
+################################################################################
+################################## Hack Zone ###################################
+################################################################################
+## This section is a hack designed to get around Atom's event throttling.
+## It is needed for programatically triggered changes, so that we know that
+## those are indeed programatically triggered and can ignored them.
+## It is mostly a blatant copy-paste from Atom repo, since the current (1.18.0)
+## version does not expose this functionality.
+## This code is unnecessary on newer versions of Atom and other editors.
+## If the out-of-the-box buffer defines the `#emitDidStopChangingEvent` method,
+## remove this code. Keep this in mind when maintaining this code.
+
+
+normalizePatchChanges = (changes) ->
+    changes.map (change) =>
+        oldRange = new Range(change.oldStart, change.oldEnd)
+        newRange = new Range(change.newStart, change.newEnd)
+        oldText = change.oldText
+        newText = change.newText
+        new TextChange(oldRange, newRange, oldText, newText)
+
+class TextChange
+    constructor: (@oldRange, @newRange, @oldText, @newText) ->
+
+Object.defineProperty TextChange.prototype, 'start',
+    get: () ->
+        @newRange.start
+    enumerable: false
+
+Object.defineProperty TextChange.prototype, 'oldExtent',
+    get: () ->
+        @oldRange.getExtent
+    enumerable: false
+
+Object.defineProperty TextChange.prototype, 'newExtent',
+    get: () ->
+        @newRange.getExtent
+    enumerable: false
+
+TextBuffer::emitDidStopChangingEvent = ->
+    patches = @patchesSinceLastStoppedChangingEvent
+    window.patches = patches
+    @patchesSinceLastStoppedChangingEvent = []
+    modifiedStatus = @isModified()
+    for patch in patches
+        @emitter.emit 'did-stop-changing',
+            changes: Object.freeze(normalizePatchChanges(patch.getHunks()))
+    @emitModifiedStatusChanged(modifiedStatus)
+
+################################################################################
+############################### End of Hack Zone ###############################
+################################################################################
+
 
 module.exports =
     class LunaCodeEditorTab extends TextEditor
@@ -221,6 +275,7 @@ module.exports =
                     if cursor?
                         selections.push([[cursor._row, cursor._column],
                                          [cursor._row, cursor._column]])
+                    @getBuffer().emitDidStopChangingEvent()
                 if selections.length > 0
                     @setSelectedBufferRanges(selections)
 
