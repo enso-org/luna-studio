@@ -21,6 +21,7 @@ import Data.Text    (Text)
 data Raw = Raw
     { _name          :: Text
     , _documentation :: Text
+    , _tags          :: [Text]
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Raw
@@ -33,4 +34,8 @@ instance ToJSON Raw where
     toEncoding = LensAeson.toEncoding
 
 instance FromJSON Raw where
-    parseJSON = LensAeson.parse
+    parseJSON = Aeson.withObject "Raw" $ \o -> do
+        name <- o Aeson..:  "name"
+        doc  <- o Aeson..:  "documentation"
+        tags <- o Aeson..:? "tags" Aeson..!= mempty
+        pure $ Raw name doc tags

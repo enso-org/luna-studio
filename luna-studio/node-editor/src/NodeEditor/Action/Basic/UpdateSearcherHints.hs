@@ -145,10 +145,13 @@ scoreTextMatch :: Text -> NodeHint.Database -> [Result NodeHint.Node]
 scoreTextMatch query nsData = case Text.null query of
     True ->
         let db = nsData ^. NodeHint.database
-        in Result.make <$> Database.elems db
+        in uncurry Result.make <$> Database.assocs db
     False ->
-        let db = nsData ^. NodeHint.database
-        in SearcherEngine.query db query
+        let db           = nsData ^. NodeHint.database
+            exprResults  = SearcherEngine.queryExpressions db query
+            tagResults   = SearcherEngine.queryTags db query
+            adjustedTags = (Result.score *~ tagMatchWeight) <$> tagResults
+        in SearcherEngine.selectBestResults $ adjustedTags <> exprResults
 
 bumpIf :: (a -> Bool) -> Double -> [Result a] -> [Result a]
 bumpIf pred amt = fmap bump where
@@ -164,6 +167,9 @@ snippetBumpAmount = 2
 
 importedBumpAmount :: Double
 importedBumpAmount = 0.1
+
+tagMatchWeight :: Double
+tagMatchWeight = 0.5
 
 bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
               -> [Result NodeHint.Node]

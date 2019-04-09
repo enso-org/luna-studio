@@ -5,13 +5,19 @@ module Searcher.Engine where
 import Common.Prelude
 import Prologue.Unsafe (error)
 
-import qualified Data.Array          as Array
-import qualified Searcher.Data.Match as Match
+import qualified Data.Array             as Array
+import qualified Data.Map               as Map
+import qualified Searcher.Data.Database as Database
+import qualified Searcher.Data.Match    as Match
+import qualified Searcher.Data.Result   as Result
 
 import GHCJS.Marshal.Pure     (pToJSVal)
-import Searcher.Data.Database (Database, indexMapping, jsDatabase)
+import Searcher.Data.Database (Database, JsDatabase)
+import Searcher.Data.Match    (MatchSource)
 import Searcher.Data.Result   (Result (Result))
 import System.IO.Unsafe       (unsafePerformIO)
+
+-- === Internal === --
 
 foreign import javascript safe "$1.query($2)"
     jsQuery :: JSVal -> JSVal -> JSVal
@@ -29,13 +35,34 @@ castResults = unsafeUnwrap . unsafePerformIO . fromJSVal where
                        ]
     unsafeUnwrap = fromMaybe $ error errorMsg
 
-query :: Database a -> Text -> [Result a]
-query db q = let
-    bareResults = jsQuery (db ^. jsDatabase) (pToJSVal q)
+rawQuery :: MatchSource -> JsDatabase -> Text -> [Result Int]
+rawQuery source db q = let
+    bareResults  = jsQuery (unwrap db) (pToJSVal q)
     typedResults = castResults bareResults
-    mkResult match score ix = Result ix score (Match.fromList match)
+    mkResult match score ix = Result ix ix score (Match.make source match)
     processResultGroup (ixes, match, score) = mkResult match score <$> ixes
-    intResults = concatMap processResultGroup typedResults
-    ixMap = db ^. indexMapping
-    results = (ixMap Array.!) <<$>> intResults
-    in results
+    in concatMap processResultGroup typedResults
+
+rebuildResults :: Database a -> [Result Int] -> [Result a]
+rebuildResults db results = let
+    ixMapping = db ^. Database.indexMapping
+    in (ixMapping Array.!) <<$>> results
+
+-- === Public API === --
+
+selectBestResults :: [Result a] -> [Result a]
+selectBestResults results = let
+    insertMax map result
+        = Map.insertWith Result.maxByScore (result ^. Result.id) result map
+    resultsMap = foldl' insertMax Map.empty results
+    in Map.elems resultsMap
+
+queryExpressions :: Database a -> Text -> [Result a]
+queryExpressions db query = let
+    bareResults = rawQuery Match.Expression (db ^. Database.jsDatabase) query
+    in rebuildResults db bareResults
+
+queryTags :: Database a -> Text -> [Result a]
+queryTags db query = let
+    bareResults = rawQuery Match.Tag (db ^. Database.jsTagsDatabase) query
+    in rebuildResults db bareResults

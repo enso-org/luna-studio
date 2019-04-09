@@ -55,13 +55,15 @@ data Node = Node
     , _library       :: Library.Info
     , _kind          :: Kind
     , _documentation :: Text
+    , _tags          :: [Text]
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Node
 
 instance NFData Node
 instance SearcherData Node where
-    text       = expression
+    text = expression
+    tags = tags
 instance SearcherHint Node where
     prefix        = kind . className . to (fromMaybe mempty)
     documentation = documentation
@@ -72,7 +74,8 @@ fromRawHint :: Hint.Raw -> Library.Info -> Kind -> Node
 fromRawHint raw libInfo kind' = let
     expr = raw ^. Hint.name
     doc  = raw ^. Hint.documentation
-    in Node expr libInfo kind' doc
+    tags = raw ^. Hint.tags
+    in Node expr libInfo kind' doc tags
 {-# INLINE fromRawHint #-}
 
 fromFunction :: Library.Info -> Hint.Raw -> Node
@@ -162,7 +165,7 @@ mkLocalFunctionsDb :: [Text] -> Database
 mkLocalFunctionsDb syms = insertSearcherLibraries libs def where
     libs    = Map.singleton localFunctionsLibraryName library
     library = Library.Library hints def def def
-    hints   = flip Hint.Raw mempty <$> syms
+    hints   = (\sym -> Hint.Raw sym mempty mempty) <$> syms
 
 insertSearcherLibraries :: Library.Set -> Database -> Database
 insertSearcherLibraries libs db = let

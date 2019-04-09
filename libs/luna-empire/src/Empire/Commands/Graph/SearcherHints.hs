@@ -111,8 +111,10 @@ addSnippets snippets libraries = let
 
 importsToHints :: Unit.Unit -> SearcherLibrary.Library
 importsToHints (Unit.Unit definitions classes) = let
-    funToHint (name, def) = Hint.Raw (convert name) . fromJust mempty
-                                                    $ def ^. Def.documentation
+    funToHint (name, def) = Hint.Raw
+        (convert name)
+        (fromJust mempty $ def ^. Def.documentation)
+        mempty
     funHints   = funToHint <$> Map.toList (unwrap definitions)
     classHints = classToHints . view Def.documented <$> classes
     in SearcherLibrary.Library funHints
@@ -124,13 +126,23 @@ classToHints :: Class.Class -> SearcherClass.Class
 classToHints (Class.Class constructors methods _) = let
     getDocumentation    = fromJust mempty . view Def.documentation
     constructorsNames   = Map.keys constructors
-    constructorToHint   = flip Hint.Raw mempty . convert
+    constructorToHint n = Hint.Raw (convert n) mempty mempty
     constructorsHints   = constructorToHint <$> constructorsNames
     methods'            = filter (isPublicMethod . fst)
                         . Map.toList $ unwrap methods
-    methodToHint (n, d) = Hint.Raw (convert n) $ getDocumentation d
+    methodToHint (n, d) = Hint.Raw (convert n) (getDocumentation d) mempty
     methodsHints        = methodToHint <$> methods'
     in SearcherClass.Class constructorsHints methodsHints mempty
+
+mockAddTags :: SearcherLibrary.Set -> SearcherLibrary.Set
+mockAddTags libs = let
+    addTags hint = case hint ^. Hint.name of
+        "+" -> hint & Hint.tags .~ ["add", "addition"]
+        "-" -> hint & Hint.tags .~ ["subtract", "subtraction"]
+        "*" -> hint & Hint.tags .~ ["multiply", "multiplication"]
+        "/" -> hint & Hint.tags .~ ["divide", "division"]
+        _   -> hint
+    in libs & ix "Std.Base" . SearcherLibrary.functions . traverse %~ addTags
 
 -- === Units processing === --
 
@@ -163,5 +175,6 @@ getSearcherHints loc = do
                     . fmap (convert *** importsToHints)
                     $ Map.toList units
         hintsWithSnippets = addSnippets snippetFiles sourceHints
-    pure hintsWithSnippets
+        hintsWithTags     = mockAddTags hintsWithSnippets
+    pure hintsWithTags
 

@@ -17,9 +17,15 @@ import Searcher.Data.Class (SearcherData)
 
 -- === Definition === --
 
+newtype JsDatabase = JsDatabase JSVal deriving (Generic)
+makeWrapped ''JsDatabase
+
+instance NFData JsDatabase
+
 data Database a = Database
-    { _jsDatabase   :: JSVal
-    , _indexMapping :: Array Int a
+    { _jsDatabase     :: JsDatabase
+    , _jsTagsDatabase :: JsDatabase
+    , _indexMapping   :: Array Int a
     } deriving (Functor, Generic)
 makeLenses ''Database
 
@@ -33,22 +39,34 @@ instance SearcherData a => Default (Database a) where
 foreign import javascript safe "new window.searcherEngine.Database($1)"
     jsCreate :: JSVal -> JSVal
 
+buildJsDatabase :: [(Int, Text)] -> JsDatabase
+buildJsDatabase assocs = let
+    -- Yes, it's `unsafeToJSVal`. It is a pure computation
+    -- by the virtue of its usage and semantics of the JS library,
+    -- so we ruthlessly navigate around GHCJS marshaling constraints.
+    jsValAssocs = Marshal.unsafeToJSVal assocs
+    jsDb        = jsCreate jsValAssocs
+    in wrap jsDb
+
 -- === API === --
 
 create :: SearcherData a => [a] -> Database a
 create hints = let
     len         = length hints
     hintsArr    = Array.listArray (0, len - 1) hints
-    assocs      = (_2 %~ view SearcherData.text) <$> Array.assocs hintsArr
-    -- Yes, it's `unsafeToJSVal`. It is a pure computation
-    -- by the virtue of its usage and semantics of the JS library,
-    -- so we ruthlessly navigate around GHCJS marshaling constraints.
-    jsValAssocs = Marshal.unsafeToJSVal assocs
-    jsDb        = jsCreate jsValAssocs
-    in Database jsDb hintsArr
+    assocs      = Array.assocs hintsArr
+    nameAssocs  = (_2 %~ view SearcherData.text) <$> assocs
+    toTagsAssocs idx item = (idx,) <$> item ^. SearcherData.tags
+    tagsAssocs  = concatMap (uncurry toTagsAssocs) assocs
+    jsDb        = buildJsDatabase nameAssocs
+    jsTagsDb    = buildJsDatabase tagsAssocs
+    in Database jsDb jsTagsDb hintsArr
 
 elems :: Database a -> [a]
 elems = Array.elems . view indexMapping
+
+assocs :: Database a -> [(Int, a)]
+assocs = Array.assocs . view indexMapping
 
 size :: Database a -> Int
 size db = let

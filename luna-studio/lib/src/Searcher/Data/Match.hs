@@ -26,16 +26,28 @@ letterRange = flip Range 1
 
 -- === Definition === --
 
-newtype Match = Match [Range] deriving (Show, Eq, Generic)
-makeWrapped ''Match
+data MatchSource
+    = None
+    | Expression
+    | Tag
+    deriving (Show, Eq, Generic)
+makePrisms ''MatchSource
+instance NFData MatchSource
+
+data Match = Match
+    { _source :: MatchSource
+    , _range  :: [Range]
+    } deriving (Show, Eq, Generic)
+makeLenses ''Match
 instance NFData Match
 
-instance Default Match where def = Match []
+instance Default Match where
+    def = Match None mempty
 
 -- === Construction === --
 
-fromList :: [Int] -> Match
-fromList matchedPositions = Match $ go Nothing matchedPositions where
+make :: MatchSource -> [Int] -> Match
+make source matchedPositions = Match source $ go Nothing matchedPositions where
     go (Just r) []           = [r]
     go Nothing  []           = []
     go (Just r) (pos : poss) =
