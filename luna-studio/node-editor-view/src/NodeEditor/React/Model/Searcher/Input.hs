@@ -59,7 +59,8 @@ instance Convertible Divided Text where
         s = d ^. suffix
         in p <> q <> s
 
-
+null :: Divided -> Bool
+null = Text.null . convert
 
 --------------------
 -- === Input === ---
@@ -107,13 +108,11 @@ findLambdaArgsAndEndOfLambdaArgs input' tokens = result where
     tokenLength  t = exprLength t + offsetLength t
     findRecursive []    _                     _      _    res = res
     findRecursive (tok:toks) openParanthesisNumber endPos args res = let
-        findR paranthesisModifier arguments res' = findRecursive
+        findR paranthesisModifier = findRecursive
             toks
             (paranthesisModifier openParanthesisNumber)
             (endPos + tokenLength tok)
-            arguments
-            res'
-        updateResult     = Just (fmap convert $ args, endPos + exprLength tok)
+        updateResult     = Just (convert <$> args, endPos + exprLength tok)
         blockStartResult = if openParanthesisNumber == 0
             then updateResult
             else res

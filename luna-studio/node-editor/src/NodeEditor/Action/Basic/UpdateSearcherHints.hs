@@ -202,13 +202,13 @@ bumpImported :: [Result NodeHint.Node] -> [Result NodeHint.Node]
 bumpImported = bumpIf (\hint -> hint ^. NodeHint.library . Library.imported)
                       importedBumpAmount
 
-filterSnippets :: Text -> Maybe Class.Name -> [Result NodeHint.Node]
+filterSnippets :: Input.Divided -> Maybe Class.Name -> [Result NodeHint.Node]
                -> [Result NodeHint.Node]
 filterSnippets query className = let
     isNotSnippet = hasn't $ Result.hint . NodeHint.kind . NodeHint._Snippet
     isSnippetForClass k =
         k ^. Result.hint . NodeHint.kind == NodeHint.Snippet className
-    in if Text.null query
+    in if Input.null query
         then filter ((||) <$> isNotSnippet <*> isSnippetForClass)
         else filter isNotSnippet
 
@@ -221,7 +221,7 @@ fullDbSearch input localDb nsData mayClassName = let
     scoredLocal      = scoreTextMatch query localDb
     semanticLocal    = bumpLocalFuns  nextSym scoredLocal
     semanticGlobal   = bumpGlobalSyms nextSym mayClassName scoredGlobal
-    filteredSnippets = filterSnippets query mayClassName semanticGlobal
+    filteredSnippets = filterSnippets input mayClassName semanticGlobal
     scoredSnippets   = bumpSnippets filteredSnippets
     scoredImports    = bumpImported scoredSnippets
     allHints         = semanticLocal <> scoredImports
