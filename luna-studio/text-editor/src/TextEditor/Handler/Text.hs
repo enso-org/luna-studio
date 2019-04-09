@@ -44,22 +44,22 @@ handle (Batch (SubstituteResponse response))
                 let request = response ^. Response.request
                     location = request ^. Substitute.location
                     diffs    = request ^. Substitute.diffs
-                liftIO . JS.insertCode $ TextEvent location diffs
+                JS.insertCode $ TextEvent location diffs
 handle (Batch (BufferGetResponse  response))
     = Just $ handleResponse response success doNothing2 where
         success result = do
             let uri  = response ^. Response.request . GetBuffer.filePath
                 code = result ^. GetBuffer.code
-            liftIO $ JS.setBuffer (convert uri) (convert code)
+            JS.setBuffer (convert uri) code
 handle (Batch (CopyResponse  response))
     = Just $ handleResponse response success doNothing2 where
         success result = do
             let uri  = response ^. Response.request . Copy.filePath
                 code = result ^. Copy.code
-            liftIO $ JS.setClipboard (convert uri) (convert code)
+            JS.setClipboard (convert uri) code
 
 handle (Batch (SubstituteUpdate (Substitute.Update path diffs))) =
-    Just . liftIO . JS.insertCode $ TextEvent (GraphLocation path def) diffs
+    Just . JS.insertCode $ TextEvent (GraphLocation path def) diffs
 
 
 handle _ = Nothing

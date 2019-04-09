@@ -32,13 +32,13 @@ import qualified TextEditor.Event.Text         as TextEvent
 
 
 foreign import javascript safe "atomCallbackTextEditor.insertCode($1, $2)"
-    insertCode' :: JSString -> JSVal -> IO ()
+    jsInsertCode :: JSString -> JSVal -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.setBuffer($1, $2)"
-    setBuffer :: JSString -> JSString -> IO ()
+    jsSetBuffer :: JSString -> JSString -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.setClipboard($1, $2)"
-    setClipboard :: JSString -> JSString -> IO ()
+    jsSetClipboard :: JSString -> JSString -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.pushStatus($1, $2, $3)"
     pushStatus :: JSString -> JSString -> JSString -> IO ()
@@ -106,11 +106,17 @@ subscribeDiffs callback = do
     subscribeDiffs' wrappedCallback
     return $ unsubscribeDiffs' wrappedCallback >> releaseCallback wrappedCallback
 
-insertCode :: TextEvent -> IO ()
-insertCode textEvent = do
+insertCode :: MonadIO m => TextEvent -> m ()
+insertCode textEvent = liftIO $ do
     let uri   = textEvent ^. TextEvent.filePath . to convert
         diffs = textEvent ^. TextEvent.diffs
-    insertCode' uri =<< toJSVal diffs
+    jsInsertCode uri =<< toJSVal diffs
+
+setBuffer :: MonadIO m => Text -> Text -> m ()
+setBuffer uri code = liftIO $ jsSetBuffer (convert uri) (convert code)
+
+setClipboard :: MonadIO m => Text -> Text -> m ()
+setClipboard uri code = liftIO $ jsSetClipboard (convert uri) (convert uri)
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do
