@@ -6,6 +6,7 @@ import qualified TextEditor.Batch.Commands as BatchCmd
 import qualified TextEditor.State.Global   as State
 
 import Common.Action.Command         (Command)
+import Control.Monad.State           (MonadState)
 import Data.UUID.Types               (UUID)
 import LunaStudio.Data.GraphLocation (GraphLocation)
 import LunaStudio.Data.Range         (Range)
@@ -14,11 +15,11 @@ import TextEditor.Action.UUID        (registerRequest)
 import TextEditor.State.Global       (State, clientId)
 
 
-withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
+withUUID :: (UUID -> Maybe UUID -> Command State ()) -> Command State ()
 withUUID act = do
     uuid  <- registerRequest
     guiID <- use clientId
-    liftIO $ act uuid $ Just guiID
+    act uuid $ Just guiID
 
 closeFile :: FilePath -> Command State ()
 closeFile = withUUID . BatchCmd.closeFile
@@ -48,11 +49,9 @@ setProject :: FilePath -> Command State ()
 setProject = withUUID . BatchCmd.setProject
 
 substitute :: GraphLocation -> [TextDiff] -> Command State ()
-substitute location diffs = do
-    uuid  <- registerRequest
-    guiId <- use clientId
+substitute location diffs = withUUID $ \uuid guiId -> do
     State.ignoreResponse uuid
-    liftIO $ BatchCmd.substitute location diffs uuid (Just guiId)
+    BatchCmd.substitute location diffs uuid guiId
 
 copy :: FilePath -> [Range] -> Command State ()
 copy = withUUID .: BatchCmd.copy

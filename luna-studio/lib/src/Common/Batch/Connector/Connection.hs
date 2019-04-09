@@ -30,7 +30,9 @@ data Message a = Message { _reqUUID :: UUID
                          , _request :: a }
                          deriving (Generic, Show)
 
-data Frame = Frame { _messages :: [WebMessage] } deriving (Show, Generic)
+data Frame = Frame
+    { _messages :: [WebMessage]
+    } deriving (Show, Generic)
 
 makeLenses ''Frame
 makeLenses ''Message
@@ -50,12 +52,12 @@ serialize = ByteString.toStrict . Binary.encode
 deserialize :: Strict.ByteString -> Frame
 deserialize = Binary.decode . ByteString.fromStrict
 
-sendMessages :: [WebMessage] -> IO ()
-sendMessages msgs = do
+sendMessages :: MonadIO m => [WebMessage] -> m ()
+sendMessages msgs = liftIO $ do
     socket <- getWebSocket
-    send socket $ serialize $ Frame msgs
+    send socket . serialize $ Frame msgs
 
-sendMessage :: WebMessage -> IO ()
+sendMessage :: MonadIO m => WebMessage -> m ()
 sendMessage msg = sendMessages [msg]
 
 makeMessage :: BinaryRequest a => Message a -> WebMessage
@@ -67,11 +69,11 @@ makeMessage' :: BinaryMessage a => a -> WebMessage
 makeMessage' body =
     WebMessage (Topic.topic' body) (GZip.compress $ Binary.encode body)
 
-sendRequest :: BinaryRequest a => Message a -> IO ()
+sendRequest :: (MonadIO m, BinaryRequest a) => Message a -> m ()
 sendRequest = sendMessage . makeMessage
 
-sendUpdate :: BinaryMessage a => a -> IO ()
+sendUpdate :: (MonadIO m, BinaryMessage a) => a -> m ()
 sendUpdate = sendMessage . makeMessage'
 
-sendRequests :: BinaryRequest a => [Message a] -> IO ()
+sendRequests :: (MonadIO m, BinaryRequest a) => [Message a] -> m ()
 sendRequests msgs = sendMessages $ makeMessage <$> msgs

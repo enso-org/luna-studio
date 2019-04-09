@@ -1,9 +1,7 @@
 module TextEditor.Batch.Commands where
 
-import           Common.Batch.Connector.Connection  (Message (Message), sendRequest)
-import           Common.Prelude                     hiding (span)
-import           Data.UUID.Types                    (UUID)
-import           JS.Atom                            (activeLocation)
+import Common.Prelude
+
 import qualified LunaStudio.API.Atom.CloseFile      as CloseFile
 import qualified LunaStudio.API.Atom.Copy           as Copy
 import qualified LunaStudio.API.Atom.CreateProject  as CreateProject
@@ -19,77 +17,83 @@ import qualified LunaStudio.API.Atom.Substitute     as Substitute
 import qualified LunaStudio.API.Control.Interpreter as Interpreter
 import qualified LunaStudio.API.Graph.Redo          as Redo
 import qualified LunaStudio.API.Graph.Undo          as Undo
-import           LunaStudio.Data.GraphLocation      (GraphLocation (..))
-import           LunaStudio.Data.Range              (Range)
-import           LunaStudio.Data.TextDiff           (TextDiff)
 
--- Atom requests --
+import Common.Batch.Connector.Connection (Message (Message), sendRequest)
+import Data.UUID.Types                   (UUID)
+import JS.Atom                           (activeLocation)
+import LunaStudio.Data.GraphLocation     (GraphLocation (..))
+import LunaStudio.Data.Range             (Range)
+import LunaStudio.Data.TextDiff          (TextDiff)
 
-closeFile :: FilePath -> UUID -> Maybe UUID -> IO ()
-closeFile path uuid guiID = sendRequest $ Message uuid guiID
+closeFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+closeFile path uuid guiID = sendRequest . Message uuid guiID
     $ CloseFile.Request path
 
-createProject :: FilePath -> UUID -> Maybe UUID -> IO ()
-createProject path uuid guiID = sendRequest $ Message uuid guiID
+createProject :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+createProject path uuid guiID = sendRequest . Message uuid guiID
     $ CreateProject.Request path
 
-fileChanged :: FilePath -> UUID -> Maybe UUID -> IO ()
-fileChanged path uuid guiID = sendRequest $ Message uuid guiID
+fileChanged :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+fileChanged path uuid guiID = sendRequest . Message uuid guiID
     $ FileChanged.Request path
 
-getBuffer :: FilePath -> UUID -> Maybe UUID -> IO ()
-getBuffer path uuid guiID = sendRequest $ Message uuid guiID
+getBuffer :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+getBuffer path uuid guiID = sendRequest . Message uuid guiID
     $ GetBuffer.Request path
 
-isSaved :: FilePath -> UUID -> Maybe UUID -> IO ()
-isSaved path uuid guiID = sendRequest $ Message uuid guiID
+isSaved :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+isSaved path uuid guiID = sendRequest . Message uuid guiID
     $ IsSaved.Request path
 
-openFile :: FilePath -> UUID -> Maybe UUID -> IO ()
-openFile path uuid guiID = sendRequest $ Message uuid guiID
+openFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+openFile path uuid guiID = sendRequest . Message uuid guiID
     $ OpenFile.Request path
 
-saveFile :: FilePath -> UUID -> Maybe UUID -> IO ()
-saveFile path uuid guiID = sendRequest $ Message uuid guiID
+saveFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+saveFile path uuid guiID = sendRequest . Message uuid guiID
     $ SaveFile.Request path
 
-setProject :: FilePath -> UUID -> Maybe UUID -> IO ()
-setProject rootPath uuid guiID = sendRequest $ Message uuid guiID
+setProject :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+setProject rootPath uuid guiID = sendRequest . Message uuid guiID
     $ SetProject.Request rootPath
 
-moveProject :: FilePath -> FilePath -> UUID -> Maybe UUID -> IO ()
-moveProject oldPath newPath uuid guiID = sendRequest $ Message uuid guiID
+moveProject :: MonadIO m => FilePath -> FilePath -> UUID -> Maybe UUID -> m ()
+moveProject oldPath newPath uuid guiID = sendRequest . Message uuid guiID
     $ MoveProject.Request oldPath newPath
 
-substitute :: GraphLocation -> [TextDiff] -> UUID -> Maybe UUID -> IO ()
+substitute
+    :: MonadIO m => GraphLocation -> [TextDiff] -> UUID -> Maybe UUID -> m ()
 substitute location diffs uuid guiID =
-    sendRequest $ Message uuid guiID $ Substitute.Request location diffs
+    sendRequest . Message uuid guiID $ Substitute.Request location diffs
 
-copy :: FilePath -> [Range] -> UUID -> Maybe UUID -> IO ()
-copy path spans uuid guiID = sendRequest $ Message uuid guiID
+copy :: MonadIO m => FilePath -> [Range] -> UUID -> Maybe UUID -> m ()
+copy path spans uuid guiID = sendRequest . Message uuid guiID
     $ Copy.Request path spans
 
-paste :: GraphLocation -> [Range] -> [Text] -> UUID -> Maybe UUID -> IO ()
-paste location spans content uuid guiID = sendRequest $ Message uuid guiID
+paste :: MonadIO m
+      => GraphLocation -> [Range] -> [Text] -> UUID -> Maybe UUID -> m ()
+paste location spans content uuid guiID = sendRequest . Message uuid guiID
     $ Paste.Request location spans content
 
-undo :: UUID -> Maybe UUID -> IO ()
-undo uuid guiID = sendRequest $ Message uuid guiID $ Undo.Request Undo.UndoRequest
+undo :: MonadIO m => UUID -> Maybe UUID -> m ()
+undo uuid guiID
+    = sendRequest . Message uuid guiID $ Undo.Request Undo.UndoRequest
 
-redo :: UUID -> Maybe UUID -> IO ()
-redo uuid guiID = sendRequest $ Message uuid guiID $ Redo.Request Redo.RedoRequest
+redo :: MonadIO m => UUID -> Maybe UUID -> m ()
+redo uuid guiID
+    = sendRequest . Message uuid guiID $ Redo.Request Redo.RedoRequest
 
-interpreterPause :: UUID -> Maybe UUID -> IO ()
+interpreterPause :: MonadIO m => UUID -> Maybe UUID -> m ()
 interpreterPause uuid guiID = do
     loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest $ Message uuid guiID $ Interpreter.Request loc Interpreter.Pause
+    sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Pause
 
-interpreterStart :: UUID -> Maybe UUID -> IO ()
+interpreterStart :: MonadIO m => UUID -> Maybe UUID -> m ()
 interpreterStart uuid guiID = do
     loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest $ Message uuid guiID $ Interpreter.Request loc Interpreter.Start
+    sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Start
 
-interpreterReload :: UUID -> Maybe UUID -> IO ()
+interpreterReload :: MonadIO m => UUID -> Maybe UUID -> m ()
 interpreterReload uuid guiID = do
     loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest $ Message uuid guiID $ Interpreter.Request loc Interpreter.Reload
+    sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Reload
