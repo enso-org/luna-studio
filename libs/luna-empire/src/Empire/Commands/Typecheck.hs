@@ -21,6 +21,7 @@ import qualified Luna.Datafile.Stdlib               as StdLocator
 import qualified Luna.IR                            as IR
 import qualified Luna.IR.Aliases                    as Uni
 import qualified Luna.Package                       as Package
+import qualified Luna.Package.Env                   as PackageEnv
 import qualified Luna.Package.Structure.Name        as Package
 import qualified Luna.Pass.Data.Error               as Error
 import qualified Luna.Pass.Evaluation.Data.Scope    as Scope
@@ -237,12 +238,13 @@ filePathToQualName path = liftIO $ do
     file  <- Path.stripProperPrefix (root Path.</> $(Path.mkRelDir "src")) path'
     return $ Package.mkQualName projName file
 
-fileImportPaths :: MonadIO m => FilePath -> m (Map IR.Qualified FilePath)
-fileImportPaths file = liftIO $ do
+prepareFileImportPaths :: MonadIO m => FilePath -> m (Map IR.Qualified FilePath)
+prepareFileImportPaths file = liftIO $ do
     filePath        <- Path.parseAbsFile file
     currentProjPath <- Package.packageRootForFile filePath
     stdPath         <- StdLocator.findPath
     libs            <- Package.packageImportPaths currentProjPath stdPath
+    PackageEnv.setLibraryVars libs
     srcs            <- for (snd <$> libs) $ \libPath -> do
         p <- Path.parseAbsDir libPath
         fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources p
@@ -309,7 +311,7 @@ compileCurrentScope modName path root = do
     (mods, newTyped, newEvald, newResolvers, units) <- liftScheduler $ do
         imports <- ImportsPlucker.run root
         UnitLoader.init
-        srcs <- fileImportPaths path
+        srcs <- prepareFileImportPaths path
         Scheduler.registerAttr @Unit.UnitRefsMap
         Scheduler.setAttr $ Unit.UnitRefsMap $ Map.singleton modName $ Unit.UnitRef (Unit.Graph $ Layout.unsafeRelayout root) (wrap imports)
         for imports $ UnitLoader.loadUnitIfMissing (Set.fromList $ Map.keys ress) srcs [modName]
