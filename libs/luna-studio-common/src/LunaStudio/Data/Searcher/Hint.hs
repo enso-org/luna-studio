@@ -22,6 +22,7 @@ data Raw = Raw
     { _name          :: Text
     , _documentation :: Text
     , _tags          :: [Text]
+    , _priority      :: Maybe Int
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Raw
@@ -35,15 +36,16 @@ instance ToJSON Raw where
 
 instance FromJSON Raw where
     parseJSON = Aeson.withObject "Raw" $ \o -> do
-        name <- o Aeson..:  "name"
-        doc  <- o Aeson..:  "documentation"
-        tags <- o Aeson..:? "tags" Aeson..!= mempty
-        pure $ Raw name doc tags
+        name     <- o Aeson..:  "name"
+        doc      <- o Aeson..:  "documentation"
+        tags     <- o Aeson..:? "tags" Aeson..!= mempty
+        priority <- o Aeson..:? "priority"
+        pure $ Raw name doc tags priority
 
 -- === Construction === --
 
 mk :: Text -> Raw
-mk name = Raw name mempty mempty
+mk name = Raw name mempty mempty mempty
 
-mkDocumented :: Text -> Text -> Raw
+mkDocumented :: Text -> Text -> Maybe Int -> Raw
 mkDocumented name doc = Raw name doc mempty

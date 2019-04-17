@@ -56,14 +56,16 @@ data Node = Node
     , _kind          :: Kind
     , _documentation :: Text
     , _tags          :: [Text]
+    , _priority      :: Maybe Int
     } deriving (Eq, Generic, Show)
 
 makeLenses ''Node
 
 instance NFData Node
 instance SearcherData Node where
-    text = expression
-    tags = tags
+    text     = expression
+    tags     = tags
+    priority = priority
 instance SearcherHint Node where
     prefix        = kind . className . to (fromMaybe mempty)
     documentation = documentation
@@ -71,11 +73,12 @@ instance SearcherHint Node where
 -- === API === --
 
 fromRawHint :: Hint.Raw -> Library.Info -> Kind -> Node
-fromRawHint raw libInfo kind' = let
-    expr = raw ^. Hint.name
-    doc  = raw ^. Hint.documentation
-    tags = raw ^. Hint.tags
-    in Node expr libInfo kind' doc tags
+fromRawHint raw libInfo kind = let
+    expr     = raw ^. Hint.name
+    doc      = raw ^. Hint.documentation
+    tags     = raw ^. Hint.tags
+    priority = raw ^. Hint.priority
+    in Node expr libInfo kind doc tags priority
 {-# INLINE fromRawHint #-}
 
 fromFunction :: Library.Info -> Hint.Raw -> Node

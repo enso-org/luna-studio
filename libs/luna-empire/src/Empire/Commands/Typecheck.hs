@@ -135,7 +135,7 @@ resolveSymbol units tgt = do
             methodRef     <- classRef ^? Class.methods . wrapped . ix method
             pure methodRef
         Target.Unknown                 -> Nothing
-    symbolBody <- symbolRef ^? Def.documented . Def._Body
+    symbolBody <- symbolRef ^? Def.documented . Def._Sourced . Def.body
     pure symbolBody
 
 makeError :: Error.CompileError -> NodeValue

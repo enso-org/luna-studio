@@ -166,10 +166,13 @@ snippetBumpAmount :: Double
 snippetBumpAmount = 2
 
 importedBumpAmount :: Double
-importedBumpAmount = 0.1
+importedBumpAmount = 0.3
 
 tagMatchWeight :: Double
 tagMatchWeight = 0.5
+
+priorityScoreWeight :: Double
+priorityScoreWeight = 0.2
 
 bumpLocalFuns :: Input.SymbolKind -> [Result NodeHint.Node]
               -> [Result NodeHint.Node]
@@ -208,6 +211,12 @@ bumpImported :: [Result NodeHint.Node] -> [Result NodeHint.Node]
 bumpImported = bumpIf (\hint -> hint ^. NodeHint.library . Library.imported)
                       importedBumpAmount
 
+scorePriority :: Result NodeHint.Node -> Result NodeHint.Node
+scorePriority res = let
+    priority = res ^. Searcher.priority
+    fullScore = maybe 0 ((1/) . fromIntegral . (+1)) priority
+    in res & Result.score +~ priorityScoreWeight * fullScore
+
 filterSnippets :: Input.Divided -> Maybe Class.Name -> [Result NodeHint.Node]
                -> [Result NodeHint.Node]
 filterSnippets query className = let
@@ -231,7 +240,8 @@ fullDbSearch input localDb nsData mayClassName = let
     scoredSnippets   = bumpSnippets filteredSnippets
     scoredImports    = bumpImported scoredSnippets
     allHints         = semanticLocal <> scoredImports
-    sorted           = sortBy (comparing $ negate . view Result.score) allHints
+    scoredPriority   = scorePriority <$> allHints
+    sorted = sortBy (comparing $ negate . view Result.score) scoredPriority
     in Hint.Node <<$>> sorted
 
 search :: Input.Divided -> NodeHint.Database -> NodeHint.Database

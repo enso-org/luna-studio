@@ -3,7 +3,7 @@ module Searcher.Data.Result where
 import Common.Prelude
 
 import Data.Ord            (comparing)
-import Searcher.Data.Class (SearcherData (text, tags),
+import Searcher.Data.Class (SearcherData (text, tags, priority),
                             SearcherHint (documentation, prefix))
 import Searcher.Data.Match (Match)
 
@@ -23,8 +23,9 @@ data Result a = Result
 makeLenses ''Result
 
 instance SearcherData a => SearcherData (Result a) where
-    text = hint . text
-    tags = hint . tags
+    text     = hint . text
+    tags     = hint . tags
+    priority = hint . priority
 
 instance SearcherHint a => SearcherHint (Result a) where
     prefix        = hint . prefix

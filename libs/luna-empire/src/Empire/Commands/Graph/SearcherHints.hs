@@ -23,6 +23,7 @@ import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
 import qualified Path
 
 import Control.Arrow                 ((***))
+import Control.Lens                  (_Just, preview)
 import Control.Monad.Catch           (try)
 import Control.Monad.Exception       (Throws)
 import Data.Map                      (Map)
@@ -86,6 +87,13 @@ getSnippetsFile projectRoot = do
 isPublicMethod :: IR.Name -> Bool
 isPublicMethod (convert -> n) = head n /= Just '_'
 
+getDocumentation :: Def.Documented Def.Def -> Text
+getDocumentation = fromJust mempty . view Def.documentation
+
+getPriority :: Def.Documented Def.Def -> Maybe Int
+getPriority
+    = preview $ Def.documented . Def._Sourced . Def.definitionOrder . _Just
+
 addSnippetsToLibrary
     :: RawLibrarySnippets -> SearcherLibrary.Library -> SearcherLibrary.Library
 addSnippetsToLibrary snippets lib = let
@@ -113,7 +121,8 @@ importsToHints :: Unit.Unit -> SearcherLibrary.Library
 importsToHints (Unit.Unit definitions classes) = let
     funToHint (name, def) = Hint.mkDocumented
         (convert name)
-        (fromJust mempty $ def ^. Def.documentation)
+        (getDocumentation def)
+        (getPriority def)
     funHints   = funToHint <$> Map.toList (unwrap definitions)
     classHints = classToHints . view Def.documented <$> classes
     in SearcherLibrary.Library funHints
@@ -123,14 +132,16 @@ importsToHints (Unit.Unit definitions classes) = let
 
 classToHints :: Class.Class -> SearcherClass.Class
 classToHints (Class.Class constructors methods _) = let
-    getDocumentation    = fromJust mempty . view Def.documentation
     constructorsNames   = Map.keys constructors
     constructorToHint n = Hint.mk $ convert n
     constructorsHints   = constructorToHint <$> constructorsNames
-    methods'            = filter (isPublicMethod . fst)
-                        . Map.toList $ unwrap methods
-    methodToHint (n, d) = Hint.mkDocumented (convert n) (getDocumentation d)
-    methodsHints        = methodToHint <$> methods'
+    publicMethods       = filter (isPublicMethod . fst) . Map.toList
+        $ unwrap methods
+    methodToHint (n, d) = Hint.mkDocumented
+        (convert n)
+        (getDocumentation d)
+        (getPriority d)
+    methodsHints        = methodToHint <$> publicMethods
     in SearcherClass.Class constructorsHints methodsHints mempty
 
 mockAddTags :: SearcherLibrary.Set -> SearcherLibrary.Set
