@@ -21,7 +21,7 @@ import qualified Luna.Datafile.Stdlib               as StdLocator
 import qualified Luna.IR                            as IR
 import qualified Luna.IR.Aliases                    as Uni
 import qualified Luna.Package                       as Package
-import qualified Luna.Package.Env                   as PackageEnv
+import qualified Luna.Package.Environment           as PackageEnv
 import qualified Luna.Package.Structure.Name        as Package
 import qualified Luna.Pass.Data.Error               as Error
 import qualified Luna.Pass.Evaluation.Data.Scope    as Scope
