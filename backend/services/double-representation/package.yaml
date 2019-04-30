@@ -76,6 +76,7 @@ library:
         - lens
         - lifted-async
         - luna-api-definition
+        - luna-bus
         - luna-core
         - luna-datafile
         - luna-package
@@ -100,8 +101,6 @@ library:
         - uuid
         - uuid-types
         - zeromq4-haskell >= 0.4
-        - zmq-bus
-        - zmq-bus-config
         - zlib
 
 executables:
@@ -114,6 +113,7 @@ executables:
           - binary
           - containers
           - luna-api-definition
+          - luna-bus
           - luna-double-representation
           - m-logger
           - matrix
@@ -121,8 +121,6 @@ executables:
           - prologue
           - text
           - unordered-containers
-          - zmq-bus
-          - zmq-bus-config
 
 tests:
     spec:

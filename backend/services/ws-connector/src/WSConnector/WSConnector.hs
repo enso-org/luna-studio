@@ -14,7 +14,8 @@ import           Control.Monad                 (forever)
 import qualified Data.ByteString               as ByteString
 import qualified Network.WebSockets            as WS
 
-import           ZMQ.Bus.EndPoint              (BusEndPoints)
+{-import           ZMQ.Bus.EndPoint              (BusEndPoints)-}
+import qualified Bus.Data.Config as Bus
 
 import           WSConnector.Data.WSFrame      (WSFrame (..), deserializeFrame, messages, serializeFrame)
 import           WSConnector.Data.WSMessage    (ControlCode (..), WSMessage (..))
@@ -87,7 +88,7 @@ sinkChan c = forever $ do
     !_ <- Unagi.readChan c
     return ()
 
-run :: BusEndPoints -> WSConfig.Config -> IO ()
+run :: Bus.Config -> WSConfig.Config -> IO ()
 run busEndPoints config = do
     (toBusIn, toBusOut)     <- Unagi.newChan
     (fromBusIn, fromBusOut) <- Unagi.newChan

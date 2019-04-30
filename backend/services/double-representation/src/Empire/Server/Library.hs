@@ -21,14 +21,16 @@ import qualified LunaStudio.API.Library.ListLibraries as ListLibraries
 import           LunaStudio.API.Request               (Request (..))
 import qualified LunaStudio.API.Response              as Response
 import qualified System.Log.MLogger                   as Logger
-import           ZMQ.Bus.Trans                        (BusT (..))
+{-import           ZMQ.Bus.Trans                        (BusT (..))-}
+
+import qualified Bus.Framework.App as Bus
 
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
 
-handleCreateLibrary :: Request CreateLibrary.Request -> StateT Env BusT ()
+handleCreateLibrary :: Request CreateLibrary.Request -> StateT Env Bus.App ()
 handleCreateLibrary req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
@@ -44,7 +46,7 @@ handleCreateLibrary req@(Request _ _ request) = do
             replyResult req () $ CreateLibrary.Result $_NOT_IMPLEMENTED $ DataLibrary.toAPI library
             sendToBus' $ CreateLibrary.Update $_NOT_IMPLEMENTED $ DataLibrary.toAPI library
 
-handleListLibraries :: Request ListLibraries.Request -> StateT Env BusT ()
+handleListLibraries :: Request ListLibraries.Request -> StateT Env Bus.App ()
 handleListLibraries req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif

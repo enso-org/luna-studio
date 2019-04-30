@@ -3,7 +3,7 @@
 module WSConnector.WSConfig where
 
 import           Prologue
-import qualified ZMQ.Bus.WS.Config as WSConfig
+{-import qualified ZMQ.Bus.WS.Config as WSConfig-}
 
 data Config = Config
     { _host        :: String
@@ -14,9 +14,11 @@ data Config = Config
 
 makeLenses ''Config
 
-readWebsocketConfig config = Config host fromWebPort toWebPort pingTime where
-    host        = WSConfig.host websocket
-    fromWebPort = unsafeRead (WSConfig.fromWebPort websocket)
-    toWebPort   = unsafeRead (WSConfig.toWebPort   websocket)
-    pingTime    = unsafeRead (WSConfig.pingTime    websocket)
-    websocket   = WSConfig.websocket config
+wsConfig = Config "0.0.0.0" 30533 30534 30
+
+{-readWebsocketConfig config = Config host fromWebPort toWebPort pingTime where-}
+    {-host        = WSConfig.host websocket-}
+    {-fromWebPort = unsafeRead (WSConfig.fromWebPort websocket)-}
+    {-toWebPort   = unsafeRead (WSConfig.toWebPort   websocket)-}
+    {-pingTime    = unsafeRead (WSConfig.pingTime    websocket)-}
+    {-websocket   = WSConfig.websocket config-}

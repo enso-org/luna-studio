@@ -4,6 +4,7 @@ module Empire.Handlers where
 import           Prelude               (undefined)
 import           Prologue
 
+import qualified Bus.Framework.App                       as Bus
 import qualified Empire.Server.Server                    as Server
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute          as Substitute
@@ -49,9 +50,8 @@ import qualified Empire.Server.Atom    as Atom
 import qualified Empire.Server.Graph   as Graph
 import qualified Empire.Server.Library as Library
 import qualified LunaStudio.API.Topic  as Topic
-import           ZMQ.Bus.Trans         (BusT (..))
 
-type Handler = BSL.ByteString -> StateT Env BusT ()
+type Handler = BSL.ByteString -> StateT Env Bus.App ()
 
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
@@ -98,6 +98,6 @@ handlersMap = Map.fromList
     ]
 
 
-makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)
+makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env Bus.App ()) -> (String, Handler)
 makeHandler h = (Topic.topic @a, process) where
    process content = h request where request = Bin.decode content

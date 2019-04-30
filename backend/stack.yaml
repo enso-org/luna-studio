@@ -31,13 +31,10 @@ packages:
 - {extra-dep: true, location: ../common/api-definition}
 - {extra-dep: true, location: libs/luna-empire}
 - {extra-dep: true, location: libs/m-logger}
-- {extra-dep: true, location: libs/zmq-bus-config}
-- {extra-dep: true, location: libs/zmq-bus}
-- {extra-dep: true, location: libs/zmq-rpc}
+- {extra-dep: true, location: libs/bus}
 - {location: services/ws-connector}
 - {location: services/broker}
 - {location: services/undo-redo}
-- {location: services/bus-logger}
 - {location: services/double-representation}
 - extra-dep: true
   location: {commit: bd7a627131b92b96633fef7ab9b4517093821120, git: 'https://github.com/luna/luna.git'}

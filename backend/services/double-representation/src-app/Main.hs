@@ -12,8 +12,9 @@ import qualified Empire.Version     as Version
 import           System.Log.MLogger
 import           System.Log.Options (help, long, metavar, short)
 import qualified System.Log.Options as Opt
-import qualified ZMQ.Bus.Config     as Config
-import qualified ZMQ.Bus.EndPoint   as EP
+{-import qualified ZMQ.Bus.Config     as Config-}
+{-import qualified ZMQ.Bus.EndPoint   as EP-}
+import Bus.Data.Config (Config (..))
 
 defaultTopics :: [String]
 defaultTopics = ["empire."]
@@ -45,8 +46,8 @@ run cmd = case cmd of
     Cmd.Version  -> putStrLn Version.fullVersion
     Cmd.Run {} -> do
         rootLogger setIntLevel $ Cmd.verbose cmd
-        endPoints <- EP.clientFromConfig <$> Config.load
-        projectRoot <- Config.projectRoot <$> Config.projects <$> Config.load
+        let endPoints = Config "tcp://127.0.0.1:30532" "tcp://127.0.0.1:30531"
+        let projectRoot = "/Users/marcinkostrzewa/code/luna-studio/env/projects" -- <- Config.projectRoot <$> Config.projects <$> Config.load
         let topics = if List.null $ Cmd.topics cmd
                         then defaultTopics
                         else Cmd.topics cmd

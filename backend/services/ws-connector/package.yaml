@@ -19,14 +19,13 @@ executables:
       - bytestring
       - either
       - ekg
+      - luna-bus
       - luna-ws-connector
       - m-logger
       - mtl
       - prologue
       - zeromq4-haskell
       - optparse-applicative
-      - zmq-bus
-      - zmq-bus-config
 
 library:
   source-dirs: src
@@ -39,6 +38,7 @@ library:
     - bytestring
     - either
     - exceptions
+    - luna-bus
     - m-logger
     - random
     - mtl
@@ -47,6 +47,4 @@ library:
     - unagi-chan
     - websockets
     - zeromq4-haskell
-    - zmq-bus
-    - zmq-bus-config
 

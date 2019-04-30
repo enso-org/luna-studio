@@ -7,6 +7,7 @@
 
 module Empire.Server where
 
+import qualified Bus.Framework.App                    as Bus
 import qualified Compress
 import           Control.Concurrent                   (forkIO, forkOn)
 import           Control.Concurrent.Async             (Async)
@@ -64,16 +65,20 @@ import           System.IO.Unsafe                     (unsafePerformIO)
 import           System.Mem                           (performGC)
 
 import           System.Remote.Monitoring
-import           ZMQ.Bus.Bus                          (Bus)
-import qualified ZMQ.Bus.Bus                          as Bus
-import qualified ZMQ.Bus.Data.Flag                    as Flag
-import           ZMQ.Bus.Data.Message                 (Message)
-import qualified ZMQ.Bus.Data.Message                 as Message
-import           ZMQ.Bus.Data.MessageFrame            (MessageFrame (MessageFrame))
-import           ZMQ.Bus.Data.Topic                   (Topic)
-import           ZMQ.Bus.EndPoint                     (BusEndPoints)
-import           ZMQ.Bus.Trans                        (BusT (..))
-import qualified ZMQ.Bus.Trans                        as BusT
+{-import           ZMQ.Bus.Bus                          (Bus)-}
+{-import qualified ZMQ.Bus.Bus                          as Bus-}
+{-import qualified ZMQ.Bus.Data.Flag                    as Flag-}
+{-import           ZMQ.Bus.Data.Message                 (Message)-}
+{-import qualified ZMQ.Bus.Data.Message                 as Message-}
+{-import           ZMQ.Bus.Data.MessageFrame            (MessageFrame (MessageFrame))-}
+{-import           ZMQ.Bus.Data.Topic                   (Topic)-}
+{-import           ZMQ.Bus.EndPoint                     (BusEndPoints)-}
+{-import           ZMQ.Bus.Trans                        (Bus.App (..))-}
+{-import qualified ZMQ.Bus.Trans                        as Bus.App-}
+
+import Bus.Data.Config (Config)
+import Bus.Data.Message (Message, Topic)
+import qualified Bus.Data.Message as Message
 
 import qualified Luna.Pass.Sourcing.UnitLoader as UnitLoader
 import qualified Luna.Pass.Sourcing.Data.Unit  as Unit
@@ -89,16 +94,16 @@ import qualified Luna.Pass.Flow.ProcessUnits as ProcessUnits
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
-sendStarted :: BusEndPoints -> IO ()
+sendStarted :: Config -> IO ()
 sendStarted endPoints = do
     let content = Compress.pack .  Bin.encode $ EmpireStarted.Status
-    void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic' EmpireStarted.Status) content
+    void $ Bus.run endPoints $ Bus.send (Topic.topic' EmpireStarted.Status) content
 
 requestCapability, tcCapability :: Int
 requestCapability = 0
 tcCapability      = 1
 
-run :: BusEndPoints -> [Topic] -> Bool -> FilePath -> IO ()
+run :: Config -> [Topic] -> Bool -> FilePath -> IO ()
 run endPoints topics formatted packageRoot = do
     forkServer "localhost" 1234
     logger Logger.info $ "Subscribing to topics: " <> show topics
@@ -109,19 +114,19 @@ run endPoints topics formatted packageRoot = do
     modules          <- newEmptyMVar
     env              <- Env.make toBusChan fromEmpireChan tcReq modules packageRoot
     let commEnv = env ^. Env.empireNotif
-    forkIO $ void $ Bus.runBus endPoints $ BusT.runBusT $ evalStateT (startAsyncUpdateWorker fromEmpireChan) env
-    forkIO $ void $ Bus.runBus endPoints $ startToBusWorker toBusChan
+    forkIO $ void $ Bus.run endPoints $ evalStateT (startAsyncUpdateWorker fromEmpireChan) env
+    forkIO $ void $ Bus.run endPoints $ startToBusWorker toBusChan
     waiting <- newEmptyMVar
-    requestThread <- forkOn requestCapability $ void $ Bus.runBus endPoints $ do
-        mapM_ Bus.subscribe topics
-        BusT.runBusT $ evalStateT (runBus formatted packageRoot) env
+    requestThread <- forkOn requestCapability $ void $ Bus.run endPoints $ do
+        Bus.subscribe topics
+        evalStateT (runBus formatted packageRoot) env
         liftIO $ putMVar waiting ()
     compiledStdlib <- newEmptyMVar
-    forkOn tcCapability $ void $ Bus.runBus endPoints $ startTCWorker commEnv
+    forkOn tcCapability $ void $ Bus.run endPoints $ startTCWorker commEnv
     sendStarted endPoints
     takeMVar waiting
 
-runBus :: Bool -> FilePath ->  StateT Env BusT ()
+runBus :: Bool -> FilePath ->  StateT Env Bus.App ()
 runBus formatted projectRoot = do
     Env.formatted   .= formatted
     Env.projectRoot .= projectRoot
@@ -141,7 +146,7 @@ runBus formatted projectRoot = do
 --             Async.uninterruptibleCancel a
 --     _      -> return ()
 
-startTCWorker :: Empire.CommunicationEnv -> Bus ()
+startTCWorker :: Empire.CommunicationEnv -> Bus.App ()
 startTCWorker env = liftIO $ do
     let reqs = env ^. Empire.typecheckChan
     pmState <- Graph.defaultPMState
@@ -186,12 +191,12 @@ startTCWorker env = liftIO $ do
 --         when recompute $ void (Async.waitCatch async)
 --         putMVar tcAsync async
 
-startToBusWorker :: TChan Message -> Bus ()
+startToBusWorker :: TChan Message -> Bus.App ()
 startToBusWorker toBusChan = forever $ do
     msg <- liftIO $ atomically $ readTChan toBusChan
-    Bus.send Flag.Enable msg
+    Bus.sendMessage msg
 
-startAsyncUpdateWorker :: TChan AsyncUpdate -> StateT Env BusT ()
+startAsyncUpdateWorker :: TChan AsyncUpdate -> StateT Env Bus.App ()
 startAsyncUpdateWorker asyncChan = forever $ do
     update <- liftIO $ atomically $ readTChan asyncChan
     case update of
@@ -204,7 +209,7 @@ startAsyncUpdateWorker asyncChan = forever $ do
 packageFiles :: FilePath -> IO [FilePath]
 packageFiles = find always (extension ==? ".luna")
 
-loadAllPackages :: StateT Env BusT ()
+loadAllPackages :: StateT Env Bus.App ()
 loadAllPackages = do
     packageRoot  <- use Env.projectRoot
     empireNotifEnv   <- use Env.empireNotif
@@ -231,66 +236,63 @@ loadAllPackages = do
 
 
 
-createDefaultState :: StateT Env BusT ()
+createDefaultState :: StateT Env Bus.App ()
 createDefaultState = loadAllPackages
 
-handleMessage :: StateT Env BusT ()
+handleMessage :: StateT Env Bus.App ()
 handleMessage = do
-    msgFrame <- lift $ BusT Bus.receive'
-    case msgFrame of
-        Left err -> logger Logger.error $ "Unparseable message: " <> err
-        Right (MessageFrame msg crlID senderID lastFrame) -> do
-            let handler :: MonadIO m => SomeException -> m ()
-                handler e = do
-                    excMsg <- liftIO $ Graph.prettyException e
-                    logger Logger.error $ "Uncaught exception: " <> excMsg
-            Exception.handle handler $ do
-                time <- liftIO Utils.currentISO8601Time
-                let topic   = msg ^. Message.topic
-                    logMsg  = time <> "\t:: received " <> topic
-                    content = Compress.unpack $ msg ^. Message.message
-                case Utils.lastPart '.' topic of
-                    "update"    -> handleUpdate        logMsg topic content
-                    "status"    -> handleStatus        logMsg topic content
-                    "request"   -> handleRequest       logMsg topic content
-                    "debug"     -> handleDebug         logMsg topic content
-                    "response"  -> handleResponse      logMsg topic content
-                    "typecheck" -> handleTypecheck     logMsg topic content
-                    _           -> handleNotRecognized logMsg topic content
+    msg <- lift Bus.receive
+    let handler :: MonadIO m => SomeException -> m ()
+        handler e = do
+            excMsg <- liftIO $ Graph.prettyException e
+            logger Logger.error $ "Uncaught exception: " <> excMsg
+    Exception.handle handler $ do
+        time <- liftIO Utils.currentISO8601Time
+        let topic   = msg ^. Message.topic
+            logMsg  = time <> "\t:: received " <> topic
+            content = Compress.unpack $ msg ^. Message.body
+        case Utils.lastPart '.' topic of
+            "update"    -> handleUpdate        logMsg topic content
+            "status"    -> handleStatus        logMsg topic content
+            "request"   -> handleRequest       logMsg topic content
+            "debug"     -> handleDebug         logMsg topic content
+            "response"  -> handleResponse      logMsg topic content
+            "typecheck" -> handleTypecheck     logMsg topic content
+            _           -> handleNotRecognized logMsg topic content
 
-defaultHandler :: ByteString -> StateT Env BusT ()
+defaultHandler :: ByteString -> StateT Env Bus.App ()
 defaultHandler content = do
     logger Logger.error $ "Not recognized request"
 
-handleRequest :: String -> String -> ByteString -> StateT Env BusT ()
+handleRequest :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleRequest logMsg topic content = do
     logger Logger.info logMsg
     let handler = Map.findWithDefault defaultHandler topic Handlers.handlersMap
     handler content
 
-handleUpdate :: String -> String -> ByteString -> StateT Env BusT ()
+handleUpdate :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleUpdate logMsg topic content = do
     logger Logger.info logMsg
 
-handleStatus :: String -> String -> ByteString -> StateT Env BusT ()
+handleStatus :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleStatus logMsg _ content = logger Logger.info logMsg
 
-handleDebug :: String -> String -> ByteString -> StateT Env BusT ()
+handleDebug :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleDebug logMsg _ content = do
     logger Logger.info logMsg
     currentEmpireEnv <- use Env.empireEnv
     formatted        <- use Env.formatted
     logger Logger.debug $ Utils.display formatted currentEmpireEnv
 
-handleNotRecognized :: String -> String -> ByteString -> StateT Env BusT ()
+handleNotRecognized :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleNotRecognized logMsg _ content = do
     logger Logger.error logMsg
     logger Logger.error $ show content
 
-handleResponse :: String -> String -> ByteString -> StateT Env BusT ()
+handleResponse :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleResponse logMsg _ content = do
     logger Logger.info logMsg
 
-handleTypecheck :: String -> String -> ByteString -> StateT Env BusT ()
+handleTypecheck :: String -> String -> ByteString -> StateT Env Bus.App ()
 handleTypecheck logMsg _ content = do
     logger Logger.info logMsg

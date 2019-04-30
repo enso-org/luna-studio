@@ -11,13 +11,17 @@ import           System.Log.Options              hiding (info)
 import qualified System.Log.Options              as Opt
 import           ZMQ.Bus.Broker.Cmd              (Cmd)
 import qualified ZMQ.Bus.Broker.Cmd              as Cmd
-import qualified ZMQ.Bus.Broker.Proxy            as Proxy
+{-import qualified ZMQ.Bus.Broker.Proxy            as Proxy-}
 import qualified ZMQ.Bus.Broker.Version          as Version
-import qualified ZMQ.Bus.Config                  as Config
-import qualified ZMQ.Bus.Control.BusCtx          as BusCtx
-import qualified ZMQ.Bus.Control.Handler.Handler as Handler
-import qualified ZMQ.Bus.EndPoint                as EP
-import qualified ZMQ.RPC.Server.Server           as RPC
+{-import qualified ZMQ.Bus.Config                  as Config-}
+{-import qualified ZMQ.Bus.Control.BusCtx          as BusCtx-}
+{-import qualified ZMQ.Bus.Control.Handler.Handler as Handler-}
+{-import qualified ZMQ.Bus.EndPoint                as EP-}
+{-import qualified ZMQ.RPC.Server.Server           as RPC-}
+
+import qualified Bus.Framework.App as Bus
+import Bus.Data.Config (Config (..))
+import qualified Bus.Data.Config as Config
 
 
 rootLogger :: Logger
@@ -51,9 +55,11 @@ run cmd = case cmd of
     Cmd.Version  -> putStrLn (Version.full False) -- TODO [PM] hardcoded numeric = False
     Cmd.Serve {} -> do
         rootLogger setIntLevel $ Cmd.verbose cmd
-        endPoints <- EP.serverFromConfig <$> Config.load
         logger info "Starting proxy service"
-        _ <- Concurrent.forkIO $ Proxy.run (EP.pullEndPoint endPoints) (EP.pubEndPoint endPoints)
-        logger info "Starting control service"
-        ctx <- BusCtx.empty
-        RPC.run 16 (EP.controlEndPoint endPoints) (Handler.handler ctx) -- TODO [PM] hardcoded number of workers
+        let config = Config "tcp://127.0.0.1:30532" "tcp://127.0.0.1:30531"
+        Bus.runProxy config
+
+        {-_ <- Concurrent.forkIO $ Proxy.run (EP.pullEndPoint endPoints) (EP.pubEndPoint endPoints)-}
+        {-logger info "Starting control service"-}
+        {-ctx <- BusCtx.empty-}
+        {-RPC.run 16 (EP.controlEndPoint endPoints) (Handler.handler ctx) -- TODO [PM] hardcoded number of workers-}

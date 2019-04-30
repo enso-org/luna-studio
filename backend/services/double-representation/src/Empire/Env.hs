@@ -11,7 +11,6 @@ import Prologue
 
 import qualified Empire.Empire                         as Empire
 import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
-import qualified ZMQ.Bus.Config                        as Config
 
 import Control.Concurrent.MVar       (MVar)
 import Control.Concurrent.STM.TChan  (TChan)
@@ -20,8 +19,8 @@ import Empire.Data.Graph             (ClsGraph, CommandState (..), Graph,
                                       defaultPMState)
 import LunaStudio.API.AsyncUpdate    (AsyncUpdate)
 import LunaStudio.Data.GraphLocation (GraphLocation (..))
-import ZMQ.Bus.Config                (Config)
-import ZMQ.Bus.Data.Message          (Message)
+import Bus.Data.Config                (Config (..))
+import Bus.Data.Message          (Message)
 
 instance Show (TChan Message) where
     show _ = "(TChan)"
@@ -42,8 +41,8 @@ make :: TChan Message
      -> FilePath
      -> IO Env
 make toBus fromEmpire tc imps fp = do
-    zmqConfig <- Config.load
     pmState   <- defaultPMState
+    let zmqConfig = Config "0.0.0.0:12345" "0.0.0.0:54321"
     let cmdState = CommandState pmState def
     return $ Env cmdState (Empire.CommunicationEnv fromEmpire tc imps) True toBus fp zmqConfig
 
