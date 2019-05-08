@@ -19,11 +19,15 @@ import Control.Monad.Trans.Control (MonadBaseControl)
 import Control.Monad.Base (MonadBase)
 import Data.ByteString (ByteString)
 
-type AppT m = State.StateT Environment m
 
-type App = AppT IO
+-- === Monad === --
 
+type AppT m     = State.StateT Environment m
+type App        = AppT IO
 type MonadApp m = (MonadIO m, State.Getter Environment m)
+
+
+-- === Utils === --
 
 withContext :: MonadBaseControl IO m => (Zmq.Context -> m a) -> m a
 withContext = Control.liftBaseOp Zmq.withContext
@@ -39,6 +43,9 @@ withEnvironment callback =
         withSocket ctx Zmq.Pub $ \pubSocket ->
             withSocket ctx Zmq.Sub $ \subSocket ->
                 callback $ Environment pubSocket subSocket
+
+
+-- === API === --
 
 run :: forall m a . (MonadIO m, MonadBaseControl IO m)
     => Config -> AppT m a -> m a
@@ -57,15 +64,6 @@ runProxy config = liftIO $ withContext $ \ctx ->
             Zmq.bind sub $ config ^. Config.pubSocketAddress
             Zmq.bind pub $ config ^. Config.subSocketAddress
             Zmq.proxy sub pub Nothing
-
-{-liftIO $ withEnvironment $ \env -> do-}
-    {-let pub = env ^. Environment.pubSocket-}
-        {-sub = env ^. Environment.subSocket-}
-        {-proxyConfig = Config.toProxyConfig config-}
-    {-Zmq.bind pub $ proxyConfig ^. Config.pubSocketAddress-}
-    {-Zmq.bind sub $ proxyConfig ^. Config.subSocketAddress-}
-    {-Zmq.proxy sub pub Nothing-}
-
 
 subscribe :: MonadApp m => [Topic] -> m ()
 subscribe topics = do
@@ -89,8 +87,5 @@ receive :: MonadApp m => m Message
 receive = do
     subSocket <- view Environment.subSocket <$> State.get @Environment
     liftIO $ do
-        print "will recv"
         recv <- Zmq.receive subSocket
-        print "recvd"
         pure $ Message.decode recv
-    {-liftIO $ Message.decode <$> Zmq.receive subSocket-}

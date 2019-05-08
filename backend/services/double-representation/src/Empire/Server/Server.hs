@@ -1,51 +1,46 @@
 module Empire.Server.Server where
 
+import Prologue
+
+import qualified Bus.Data.Message              as Message
+import qualified Bus.Framework.App             as Bus
 import qualified Compress
-import           Control.Arrow                 ((&&&))
-import           Control.Concurrent.STM.TChan  (writeTChan)
-import           Control.Lens                  (to, use, (.=), (^..), _Left)
-import           Control.Monad.Catch           (handle, try)
-import           Control.Monad.State           (StateT)
-import           Control.Monad.STM             (atomically)
-import           Data.Binary                   (Binary)
 import qualified Data.Binary                   as Bin
-import           Data.ByteString.Lazy          (toStrict)
 import qualified Data.Map                      as Map
 import qualified Data.Set                      as Set
 import qualified Data.Text                     as Text
-import           GHC.Stack                     (renderStack, whoCreated)
-import           Prelude                       ((++))
-import           Prologue
-import           System.Environment            (getEnv)
-import           System.FilePath               (replaceFileName, (</>))
-
 import qualified Empire.ApiHandlers            as Api
 import qualified Empire.Commands.Graph         as Graph
-import           Empire.Data.AST               (SomeASTException)
-import           Empire.Empire                 (Empire, runEmpire)
-import           Empire.Env                    (Env)
 import qualified Empire.Env                    as Env
-import           Empire.Utils                  (currentISO8601Time)
 import qualified Luna.Package.Structure.Name   as Package
 import qualified LunaStudio.API.Graph.Request  as G
-import           LunaStudio.API.Request        (Request (..))
 import qualified LunaStudio.API.Response       as Response
-import           LunaStudio.API.Topic          (MessageTopic)
 import qualified LunaStudio.API.Topic          as Topic
-import           LunaStudio.Data.Error         (Error, LunaError, errorContent)
-import           LunaStudio.Data.Graph         (Graph (..))
 import qualified LunaStudio.Data.Graph         as GraphAPI
-import           LunaStudio.Data.GraphLocation (GraphLocation (..))
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
 import qualified LunaStudio.Data.Node          as Node
 import qualified System.Log.MLogger            as Logger
-{-import qualified ZMQ.Bus.Config                as Config-}
-{-import qualified ZMQ.Bus.Data.Message          as Message-}
-import qualified Bus.Data.Message as Message
-{-import qualified ZMQ.Bus.EndPoint              as EP-}
-{-import           ZMQ.Bus.Trans                 (Bus.App (..))-}
 
-import qualified Bus.Framework.App as Bus
+import Control.Arrow                 ((&&&))
+import Control.Concurrent.STM.TChan  (writeTChan)
+import Control.Lens                  (to, use, (.=), (^..), _Left)
+import Control.Monad.Catch           (handle, try)
+import Control.Monad.State           (StateT)
+import Control.Monad.STM             (atomically)
+import Data.Binary                   (Binary)
+import Data.ByteString.Lazy          (toStrict)
+import Empire.Data.AST               (SomeASTException)
+import Empire.Empire                 (Empire, runEmpire)
+import Empire.Env                    (Env)
+import Empire.Utils                  (currentISO8601Time)
+import GHC.Stack                     (renderStack, whoCreated)
+import LunaStudio.API.Request        (Request (..))
+import LunaStudio.API.Topic          (MessageTopic)
+import LunaStudio.Data.Error         (Error, LunaError, errorContent)
+import LunaStudio.Data.Graph         (Graph (..))
+import LunaStudio.Data.GraphLocation (GraphLocation (..))
+import System.Environment            (getEnv)
+import System.FilePath               (replaceFileName, (</>))
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

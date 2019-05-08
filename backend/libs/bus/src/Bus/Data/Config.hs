@@ -10,6 +10,9 @@ import qualified Luna.Configurator          as Configurator
 
 import Control.Monad.Exception (Throws)
 
+
+-- === Definition === --
+
 data Config = Config
     { _pubSocketAddress :: String
     , _subSocketAddress :: String
@@ -23,6 +26,9 @@ instance Aeson.ToJSON Config where
 
 instance Aeson.FromJSON Config where
     parseJSON = LensAeson.parse
+
+
+-- === File API === --
 
 readFromFile ::
     (Throws Yaml.ParseException m, MonadIO m) => FilePath -> m Config

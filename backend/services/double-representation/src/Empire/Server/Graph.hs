@@ -1,6 +1,6 @@
 module Empire.Server.Graph where
 
-import Prologue hiding (Item, when)
+import Prologue hiding (Item)
 
 import qualified Bus.Data.Message                        as Message
 import qualified Bus.Framework.App                       as Bus
@@ -70,11 +70,6 @@ import qualified LunaStudio.Data.Project                 as Project
 import qualified Path
 import qualified Safe
 import qualified System.Log.MLogger                      as Logger
-{-import qualified ZMQ.Bus.Bus                             as Bus-}
-{-import qualified ZMQ.Bus.Config                          as Config-}
-{-import qualified ZMQ.Bus.Data.Message                    as Message-}
-{-import qualified ZMQ.Bus.EndPoint                        as EP-}
-{-import qualified ZMQ.Bus.Trans                           as Bus.App-}
 
 import Control.Arrow                 ((&&&))
 import Control.Concurrent            (forkIO)
@@ -109,8 +104,8 @@ import Empire.Data.AST               (SomeASTException,
 import Empire.Empire                 (Empire)
 import Empire.Env                    (Env)
 import Empire.Server.Server          (defInverse, errorMessage, modifyGraph,
-                                      modifyGraphOk, replyFail,
-                                      replyOk, replyResult, sendToBus')
+                                      modifyGraphOk, replyFail, replyOk,
+                                      replyResult, sendToBus')
 import Luna.Package                  (findPackageFileForFile,
                                       findPackageRootForFile,
                                       getRelativePathForModule, includedLibs)
@@ -141,7 +136,6 @@ import LunaStudio.Data.Visualizer    (ExternalVisualizers (ExternalVisualizers))
 import Path                          (fromAbsFile, fromRelFile, parseAbsFile)
 import System.Environment            (getEnv)
 import System.FilePath               (dropFileName, replaceFileName, (</>))
-{-import ZMQ.Bus.Trans                 (Bus.App (..))-}
 
 
 -- Handlers

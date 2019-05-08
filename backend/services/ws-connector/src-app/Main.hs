@@ -1,21 +1,18 @@
 module Main where
 
-import           GHC.IO.Encoding        (setLocaleEncoding, utf8)
 import           Prologue
-import           System.Log.MLogger
-import           System.Log.Options
+
+import qualified Bus.Data.Config         as Config
 import qualified System.Log.Options      as Opt
-import           WSConnector.Cmd         (Cmd (..))
 import qualified WSConnector.Version     as Version
 import qualified WSConnector.WSConfig    as WSConfig
 import qualified WSConnector.WSConnector as WSConnector
-{-import qualified ZMQ.Bus.Config          as Config-}
-{-import qualified ZMQ.Bus.EndPoint        as EndPoint-}
-{-import qualified ZMQ.Bus.WS.Config       as WSConfigLoader-}
 
-import qualified Bus.Data.Config as Config
-
+import GHC.IO.Encoding          (setLocaleEncoding, utf8)
+import System.Log.MLogger
+import System.Log.Options
 import System.Remote.Monitoring (forkServer)
+import WSConnector.Cmd          (Cmd (..))
 
 
 rootLogger :: Logger
@@ -32,7 +29,6 @@ opts = Opt.info (helper <*> parser)
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    -- forkServer "127.0.0.1" 12345
     execParser opts >>= run
 
 run :: Cmd -> IO ()

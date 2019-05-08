@@ -7,89 +7,73 @@
 
 module Empire.Server where
 
+import Prologue hiding (Text)
+
+import qualified Bus.Data.Message                     as Message
 import qualified Bus.Framework.App                    as Bus
 import qualified Compress
-import           Control.Concurrent                   (forkIO, forkOn)
-import           Control.Concurrent.Async             (Async)
 import qualified Control.Concurrent.Async             as Async
 import qualified Control.Concurrent.Async.Lifted      as AsyncL
-import           Control.Concurrent.MVar
-import           Control.Concurrent.STM               (STM)
-import           Control.Concurrent.STM.TChan         (TChan, newTChan, readTChan, tryPeekTChan)
 import qualified Control.Exception.Safe               as Exception
-import           Control.Lens                         ((.=), use)
-import           Control.Monad                        (forever)
-import           Control.Monad.State                  (StateT, evalStateT)
-import           Control.Monad.STM                    (atomically)
+import qualified Data.Bimap                           as Bimap
 import qualified Data.Binary                          as Bin
-import           Data.ByteString.Lazy                 (ByteString)
-import           Data.ByteString.Lazy.Char8           (unpack)
-import           Data.IORef
 import qualified Data.Map.Strict                      as Map
-
-import           System.FilePath                      ()
-import           System.FilePath.Find                 (always, extension, find, (==?))
-import           System.FilePath.Glob                 ()
-import           System.FilePath.Manip                ()
-
--- import           Data.Future                          (minCapabilityNumber, updateCapabilities)
-import           Empire.Data.AST                      (SomeASTException)
-import           Empire.Data.Graph                    (ClsGraph, Graph)
-import qualified Empire.Data.Graph                    as Graph
-import qualified Luna.Package                         as Package
-import           LunaStudio.API.AsyncUpdate           (AsyncUpdate (..))
-import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
-import qualified LunaStudio.API.Graph.SetNodesMeta    as SetNodesMeta
-import qualified LunaStudio.API.Topic                 as Topic
-import           LunaStudio.Data.GraphLocation        (GraphLocation)
-
-import           Empire.ASTOp                         (liftScheduler)
 import qualified Empire.Commands.AST                  as AST
 import qualified Empire.Commands.Graph                as Graph
 import qualified Empire.Commands.Library              as Library
 import qualified Empire.Commands.Persistence          as Persistence
--- import           Empire.Commands.Typecheck            (Scope (..))
 import qualified Empire.Commands.Typecheck            as Typecheck
+import qualified Empire.Data.Graph                    as Graph
 import qualified Empire.Empire                        as Empire
-import           Empire.Env                           (Env)
 import qualified Empire.Env                           as Env
 import qualified Empire.Handlers                      as Handlers
 import qualified Empire.Server.Graph                  as Graph
 import qualified Empire.Server.Server                 as Server
 import qualified Empire.Utils                         as Utils
-import           Prologue                             hiding (Text)
-import           System.Directory                     (canonicalizePath)
-import           System.Environment                   (getEnv)
-import qualified System.Log.MLogger                   as Logger
-import           System.IO.Unsafe                     (unsafePerformIO)
-import           System.Mem                           (performGC)
-
-import           System.Remote.Monitoring
-{-import           ZMQ.Bus.Bus                          (Bus)-}
-{-import qualified ZMQ.Bus.Bus                          as Bus-}
-{-import qualified ZMQ.Bus.Data.Flag                    as Flag-}
-{-import           ZMQ.Bus.Data.Message                 (Message)-}
-{-import qualified ZMQ.Bus.Data.Message                 as Message-}
-{-import           ZMQ.Bus.Data.MessageFrame            (MessageFrame (MessageFrame))-}
-{-import           ZMQ.Bus.Data.Topic                   (Topic)-}
-{-import           ZMQ.Bus.EndPoint                     (BusEndPoints)-}
-{-import           ZMQ.Bus.Trans                        (Bus.App (..))-}
-{-import qualified ZMQ.Bus.Trans                        as Bus.App-}
-
-import Bus.Data.Config (Config)
-import Bus.Data.Message (Message, Topic)
-import qualified Bus.Data.Message as Message
-
-import qualified Luna.Pass.Sourcing.UnitLoader as UnitLoader
-import qualified Luna.Pass.Sourcing.Data.Unit  as Unit
-import           Luna.Pass.Data.Stage (Stage)
-import qualified Luna.Pass.Resolve.Data.Resolution  as Res
-import qualified Luna.Pass.Scheduler                 as Scheduler
-import qualified Luna.Pass.Sourcing.UnitMapper as UnitMap
-import qualified Luna.Std as Std
-import qualified Data.Bimap as Bimap
+import qualified Luna.Package                         as Package
+import qualified Luna.Pass.Flow.ProcessUnits          as ProcessUnits
+import qualified Luna.Pass.Resolve.Data.Resolution    as Res
+import qualified Luna.Pass.Scheduler                  as Scheduler
+import qualified Luna.Pass.Sourcing.Data.Unit         as Unit
+import qualified Luna.Pass.Sourcing.UnitLoader        as UnitLoader
+import qualified Luna.Pass.Sourcing.UnitMapper        as UnitMap
+import qualified Luna.Std                             as Std
+import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
+import qualified LunaStudio.API.Graph.SetNodesMeta    as SetNodesMeta
+import qualified LunaStudio.API.Topic                 as Topic
 import qualified Path
-import qualified Luna.Pass.Flow.ProcessUnits as ProcessUnits
+import qualified System.Log.MLogger                   as Logger
+
+import Bus.Data.Config               (Config)
+import Bus.Data.Message              (Message, Topic)
+import Control.Concurrent            (forkIO, forkOn)
+import Control.Concurrent.Async      (Async)
+import Control.Concurrent.MVar
+import Control.Concurrent.STM        (STM)
+import Control.Concurrent.STM.TChan  (TChan, newTChan, readTChan, tryPeekTChan)
+import Control.Lens                  (use, (.=))
+import Control.Monad                 (forever)
+import Control.Monad.State           (StateT, evalStateT)
+import Control.Monad.STM             (atomically)
+import Data.ByteString.Lazy          (ByteString)
+import Data.ByteString.Lazy.Char8    (unpack)
+import Data.IORef
+import Empire.ASTOp                  (liftScheduler)
+import Empire.Data.AST               (SomeASTException)
+import Empire.Data.Graph             (ClsGraph, Graph)
+import Empire.Env                    (Env)
+import Luna.Pass.Data.Stage          (Stage)
+import LunaStudio.API.AsyncUpdate    (AsyncUpdate (..))
+import LunaStudio.Data.GraphLocation (GraphLocation)
+import System.Directory              (canonicalizePath)
+import System.Environment            (getEnv)
+import System.FilePath               ()
+import System.FilePath.Find          (always, extension, find, (==?))
+import System.FilePath.Glob          ()
+import System.FilePath.Manip         ()
+import System.IO.Unsafe              (unsafePerformIO)
+import System.Mem                    (performGC)
+import System.Remote.Monitoring
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

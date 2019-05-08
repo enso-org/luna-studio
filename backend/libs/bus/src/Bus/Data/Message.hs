@@ -12,6 +12,9 @@ import qualified Data.Text as Text
 import Data.Binary (Put, Get)
 import Data.ByteString (ByteString)
 
+
+-- === Definition === --
+
 type Topic = String
 
 data Message = Message
@@ -20,6 +23,9 @@ data Message = Message
     }
 
 makeLenses ''Message
+
+
+-- === Serialization === --
 
 encodeTopic :: Topic -> ByteString
 encodeTopic = Encoding.encodeUtf8 . convert
@@ -38,6 +44,9 @@ decode bytes = flip Get.runGet (convert bytes) $ do
     topic <- getUntilSeparator 0
     body  <- convert <$> Get.getRemainingLazyByteString
     pure $ Message (decodeTopic topic) body
+
+
+-- === Utils === --
 
 getUntilSeparator :: Word8 -> Get ByteString
 getUntilSeparator sep = ByteString.pack <$> go where

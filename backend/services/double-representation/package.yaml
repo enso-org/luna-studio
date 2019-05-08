@@ -114,6 +114,7 @@ executables:
           - containers
           - luna-api-definition
           - luna-bus
+          - luna-configurator
           - luna-double-representation
           - m-logger
           - matrix
