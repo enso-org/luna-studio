@@ -29,9 +29,10 @@ allow-newer: true
 
 packages:
 - {extra-dep: true, location: ../common/api-definition}
+- {extra-dep: true, location: libs/bus}
+- {extra-dep: true, location: libs/configurator}
 - {extra-dep: true, location: libs/luna-empire}
 - {extra-dep: true, location: libs/m-logger}
-- {extra-dep: true, location: libs/bus}
 - {location: services/ws-connector}
 - {location: services/broker}
 - {location: services/undo-redo}

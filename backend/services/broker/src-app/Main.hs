@@ -20,7 +20,6 @@ import qualified ZMQ.Bus.Broker.Version          as Version
 {-import qualified ZMQ.RPC.Server.Server           as RPC-}
 
 import qualified Bus.Framework.App as Bus
-import Bus.Data.Config (Config (..))
 import qualified Bus.Data.Config as Config
 
 
@@ -56,7 +55,7 @@ run cmd = case cmd of
     Cmd.Serve {} -> do
         rootLogger setIntLevel $ Cmd.verbose cmd
         logger info "Starting proxy service"
-        let config = Config "tcp://127.0.0.1:30532" "tcp://127.0.0.1:30531"
+        config <- Config.readDefault
         Bus.runProxy config
 
         {-_ <- Concurrent.forkIO $ Proxy.run (EP.pullEndPoint endPoints) (EP.pubEndPoint endPoints)-}

@@ -13,7 +13,7 @@ import qualified WSConnector.WSConnector as WSConnector
 {-import qualified ZMQ.Bus.EndPoint        as EndPoint-}
 {-import qualified ZMQ.Bus.WS.Config       as WSConfigLoader-}
 
-import Bus.Data.Config (Config (..))
+import qualified Bus.Data.Config as Config
 
 import System.Remote.Monitoring (forkServer)
 
@@ -39,8 +39,7 @@ run :: Cmd -> IO ()
 run cmd = case cmd of
     Version     -> putStrLn (Version.full False)
     Run verbosity -> do
-        {-busEndPoints <- EndPoint.clientFromConfig <$> Config.load-}
-        let busEndPoints = Config "tcp://127.0.0.1:30532" "tcp://127.0.0.1:30531"
+        busEndPoints <- Config.readDefault
         let config = WSConfig.wsConfig
         rootLogger setIntLevel verbosity
         WSConnector.run busEndPoints config
