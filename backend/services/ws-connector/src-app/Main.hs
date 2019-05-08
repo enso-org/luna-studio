@@ -39,7 +39,7 @@ run :: Cmd -> IO ()
 run cmd = case cmd of
     Version     -> putStrLn (Version.full False)
     Run verbosity -> do
-        busEndPoints <- Config.readDefault
-        let config = WSConfig.wsConfig
+        busConfig <- Config.readDefault
+        wsConfig  <- WSConfig.readDefault
         rootLogger setIntLevel verbosity
-        WSConnector.run busEndPoints config
+        WSConnector.run busConfig wsConfig

@@ -3,22 +3,35 @@
 module WSConnector.WSConfig where
 
 import           Prologue
-{-import qualified ZMQ.Bus.WS.Config as WSConfig-}
+
+import qualified Control.Lens.Aeson         as LensAeson
+import qualified Control.Monad.Exception.IO as Exception
+import qualified Data.Aeson                 as Aeson
+import qualified Data.Yaml                  as Yaml
+import qualified Luna.Configurator          as Configurator
+
+import Control.Monad.Exception (Throws)
 
 data Config = Config
     { _host        :: String
     , _fromWebPort :: Int
     , _toWebPort   :: Int
     , _pingTime    :: Int
-    } deriving (Read, Show, Eq)
+    } deriving (Generic, Read, Show, Eq)
 
 makeLenses ''Config
 
-wsConfig = Config "0.0.0.0" 30533 30534 30
+instance Aeson.ToJSON Config where
+    toJSON     = LensAeson.toJSON
+    toEncoding = LensAeson.toEncoding
 
-{-readWebsocketConfig config = Config host fromWebPort toWebPort pingTime where-}
-    {-host        = WSConfig.host websocket-}
-    {-fromWebPort = unsafeRead (WSConfig.fromWebPort websocket)-}
-    {-toWebPort   = unsafeRead (WSConfig.toWebPort   websocket)-}
-    {-pingTime    = unsafeRead (WSConfig.pingTime    websocket)-}
-    {-websocket   = WSConfig.websocket config-}
+instance Aeson.FromJSON Config where
+    parseJSON = LensAeson.parse
+
+readFromFile ::
+    (Throws Yaml.ParseException m, MonadIO m) => FilePath -> m Config
+readFromFile =
+    liftIO . Exception.rethrowFromIO @Yaml.ParseException . Yaml.decodeFileThrow
+
+readDefault :: (Throws Yaml.ParseException m, MonadIO m) => m Config
+readDefault = readFromFile =<< Configurator.websocketConfigPath
