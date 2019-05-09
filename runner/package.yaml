@@ -5,6 +5,7 @@ maintainer:         New Byte Order <contact@luna-lang.org>
 
 dependencies:
     - base
+    - async
     - containers
     - dependent-state
     - prologue
@@ -21,8 +22,7 @@ dependencies:
     - path
     - safe-exceptions
     - split
-    - shelly
-    - system-filepath
+    - filepath
     - temporary
     - text
     - template-haskell
