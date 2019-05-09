@@ -249,8 +249,13 @@ copyLunaStudio = do
     atomHomeParent  <- takeDirectory <$> userStudioAtomHome
     liftIO $ do
       createDirectoryIfMissing True atomHomeParent
-      runProcess_ $ proc "cp" ["-r", packageAtomHome, atomHomeParent]
-    when (currentHost == Windows) $ liftIO $ runProcess_ $ shell $ "attrib +h " <> mainHomePath
+      -- TODO: find a library that can handle recursive copies while preserving symlinks on unix
+      if currentHost == Windows
+      then do
+        runProcess_ $ proc "robocopy" [packageAtomHome, atomHomeParent, "/e"]
+        runProcess_ $ proc "attrib" ["+h", mainHomePath]
+      else
+        runProcess_ $ proc "cp" ["-r", packageAtomHome, atomHomeParent]
 
 copyResourcesLinux :: MonadRun m => m ()
 copyResourcesLinux = when linux $ do
@@ -258,12 +263,13 @@ copyResourcesLinux = when linux $ do
     versionN  <- T.strip <$> versionText
     resources <- resourcesDirectory
     localShareFolder <- sharePath
-    let iconsFolder      = resources </> "icons"
-        desktopFile      = resources </> "app_shared.desktop"
-        localDesktop     = localShareFolder </> "applications" </> T.unpack (T.concat ["LunaStudio", versionN, ".desktop"])
+    let iconsFolder  = resources </> "icons"
+        desktopFile  = resources </> "app_shared.desktop"
+        localDesktop = localShareFolder </> "applications" </> T.unpack (T.concat ["LunaStudio", versionN, ".desktop"])
     liftIO $ do
       createDirectoryIfMissing True $ takeDirectory localShareFolder
       createDirectoryIfMissing True $ takeDirectory localDesktop
+      -- TODO: find a library that can handle recursive copies while preserving symlinks on unix
       runProcess_ $ proc "cp" ["-r", iconsFolder, localShareFolder]
       copyFileWithMetadata desktopFile localDesktop
 
