@@ -1,5 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 module Bus.Framework.App where
 
 import Prologue

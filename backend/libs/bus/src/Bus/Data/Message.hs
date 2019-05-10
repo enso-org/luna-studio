@@ -17,6 +17,13 @@ import Data.ByteString (ByteString)
 
 type Topic = String
 
+-- | We do not attach any additional meaning to the parts of the message,
+--   in this library a message is just an arbitrary String, with the body
+--   being an arbitrary ByteString.
+--   The topic is used to identify particular message and an of its prefixes
+--   can be used by clients to subscribe on particular messages.
+--   It is advised that clients of this library build some more typesafe
+--   structure on top of this.
 data Message = Message
     { _topic :: Topic
     , _body  :: ByteString
