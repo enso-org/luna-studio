@@ -123,7 +123,7 @@ instance Monad m => MonadHostConfig RunnerConfig 'Windows arch m where
 
 -- path helpers --
 runnerDir :: MonadIO m => m FilePath
-runnerDir = liftIO $ dropFileName <$> getExecutablePath
+runnerDir = liftIO $ takeDirectory <$> getExecutablePath
 
 mainAppDir :: MonadIO m => m FilePath
 mainAppDir = do
