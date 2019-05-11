@@ -162,13 +162,13 @@ versionText = do
     pure $ T.pack versionStr
 
 version :: MonadRun m => m FilePath
-version = do
-    versionTxt <- versionText
-    pure $ T.unpack versionTxt
+version = T.unpack <$> versionText
 
 printVersion :: (MonadRun m, MonadCatch m) => m ()
 printVersion = do
-    versionTxt <- catch versionText $ \e -> return $ if (isDoesNotExistError e) then "develop" else T.pack $ show e
+    versionTxt <- catch versionText $ \e -> pure $ if isDoesNotExistError e
+                                                   then "develop"
+                                                   else T.pack $ show e
     liftIO $ print versionTxt
 
 -- paths --
@@ -192,7 +192,7 @@ localLogsDirectory        = relativeToMainDir [logsFolder]
 versionFilePath           = relativeToMainDir [configFolder, versionFile]
 resourcesDirectory        = relativeToMainDir [binsFolder, resourcesFolder]
 windowsLogsDirectory      = relativeToMainDir [configFolder, logsFolder]
-userLogsDirectory         = relativeToHomeDir [logsFolder, appName] >>= (\p -> (fmap (p </>) version))
+userLogsDirectory         = relativeToHomeDir [logsFolder, appName] >>= \p -> fmap (p </>) version
 userdataStorageDirectory  = relativeToHomeDir [configHomeFolder, appName, storageDataHomeFolder]
 localdataStorageDirectory = relativeToHomeDir [storageDataHomeFolder]
 userInfoPath              = relativeToHomeDir [userInfoFile]
@@ -200,13 +200,12 @@ sharePath                 = relativeToDir (liftIO getHomeDirectory) [shareFolder
 windowsScriptsPath        = relativeToMainDir [configFolder, windowsFolder]
 userStudioAtomHome = do
     runnerCfg <- get @RunnerConfig
-    baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= (\p -> (fmap (p </>) version))
+    baseDir   <- relativeToHomeDir [configHomeFolder, appName] >>= \p -> fmap (p </>) version
     return $ baseDir </> (runnerCfg ^. studioHome)
 lunaTmpPath       = do
     runnerCfg  <- get @RunnerConfig
     systemTmp  <- liftIO getTemporaryDirectory
-    lunaTmpDir <- liftIO $ createTempDirectory systemTmp $ runnerCfg ^. mainTmpDirectory
-    return lunaTmpDir
+    liftIO $ createTempDirectory systemTmp $ runnerCfg ^. mainTmpDirectory
 lunaProjectsPath  = do
     runnerCfg <- get @RunnerConfig
     home      <- liftIO getHomeDirectory
@@ -216,7 +215,7 @@ lunaTutorialsPath = do
     lunaTmp   <- lunaTmpPath
     return $ lunaTmp </> (runnerCfg ^. tutorialsDirectory)
 backendLdLibraryPath = do
-    ldLibPath <- liftIO $ getCurrentDirectory
+    ldLibPath <- liftIO getCurrentDirectory
     return $ ldLibPath </> "lib" </> "zeromq"
 
 
@@ -248,14 +247,14 @@ copyLunaStudio = do
     packageAtomHome <- packageStudioAtomHome
     atomHomeParent  <- takeDirectory <$> userStudioAtomHome
     liftIO $ do
-      createDirectoryIfMissing True atomHomeParent
-      -- TODO: find a library that can handle recursive copies while preserving symlinks on unix
-      if currentHost == Windows
-      then do
-        runProcess_ $ proc "robocopy" [packageAtomHome, atomHomeParent, "/e"]
-        runProcess_ $ proc "attrib" ["+h", mainHomePath]
-      else
-        runProcess_ $ proc "cp" ["-r", packageAtomHome, atomHomeParent]
+        createDirectoryIfMissing True atomHomeParent
+        -- TODO: find a library that can handle recursive copies while preserving symlinks on unix
+        if currentHost == Windows
+        then do
+            runProcess_ $ proc "robocopy" [packageAtomHome, atomHomeParent, "/e"]
+            runProcess_ $ proc "attrib" ["+h", mainHomePath]
+        else
+            runProcess_ $ proc "cp" ["-r", packageAtomHome, atomHomeParent]
 
 copyResourcesLinux :: MonadRun m => m ()
 copyResourcesLinux = when linux $ do
@@ -267,11 +266,11 @@ copyResourcesLinux = when linux $ do
         desktopFile  = resources </> "app_shared.desktop"
         localDesktop = localShareFolder </> "applications" </> T.unpack (T.concat ["LunaStudio", versionN, ".desktop"])
     liftIO $ do
-      createDirectoryIfMissing True $ takeDirectory localShareFolder
-      createDirectoryIfMissing True $ takeDirectory localDesktop
-      -- TODO: find a library that can handle recursive copies while preserving symlinks on unix
-      runProcess_ $ proc "cp" ["-r", iconsFolder, localShareFolder]
-      copyFileWithMetadata desktopFile localDesktop
+        createDirectoryIfMissing True $ takeDirectory localShareFolder
+        createDirectoryIfMissing True $ takeDirectory localDesktop
+        -- TODO: find a library that can handle recursive copies while preserving symlinks on unix
+        runProcess_ $ proc "cp" ["-r", iconsFolder, localShareFolder]
+        copyFileWithMetadata desktopFile localDesktop
 
 testDirectory :: MonadIO m => FilePath -> m Bool
 testDirectory path =
@@ -287,24 +286,24 @@ checkLunaHome = do
     runnerCfg    <- get @RunnerConfig
     userAtomHome <- userStudioAtomHome
     let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder) </> (runnerCfg ^. atomPackageName)
-    testDirectory pathLunaPackage >>= (\exists -> unless exists copyLunaStudio)
+    testDirectory pathLunaPackage >>= \exists -> unless exists copyLunaStudio
 
 -- supervisord --
 supervisorctl :: MonadRun m => [T.Text] -> m T.Text
 supervisorctl args = do
     supervisorBinPath <- supervisorctlBinPath
-    supervisorDir <- backendDir
+    supervisorDir     <- backendDir
     let runSupervisorctl = readProcess_ $ setWorkingDir supervisorDir
                                         $ proc supervisorBinPath $ map T.unpack args
         supressErrors act = do
-          a <- Async.async act
-          either (const "Unable to run supervisorctl") (T.decodeUtf8 . BL.toStrict . fst) <$> Async.waitCatch a
+            a <- Async.async act
+            either (const "Unable to run supervisorctl") (T.decodeUtf8 . BL.toStrict . fst) <$> Async.waitCatch a
     liftIO $ supressErrors runSupervisorctl
 
 supervisord :: MonadRun m => FilePath -> m ()
 supervisord configFile = do
     supervisorBinPath <- supervisordBinPath
-    supervisorDir <- backendDir
+    supervisorDir     <- backendDir
     ldLibPath <- liftIO $ lookupEnv "LD_LIBRARY_PATH"
     setEnv "OLD_LIBPATH" $ fromMaybe "\"\"" ldLibPath
     runProcess_ $ setWorkingDir supervisorDir
@@ -432,13 +431,13 @@ optionParser = Options
     <*> switch (long "backend"    <> short 'b')
     <*> switch (long "develop"    <> short 'd')
     <*> switch (long "force-run"  <> short 'r')
-    <*> (optional $ strOption $ long "atom" <> short 'a')
+    <*> optional (strOption $ long "atom" <> short 'a')
     <*> switch (long "version")
 
 run :: Options -> IO ()
 run (Options frontend backend develop forceRun atom versionCheck) = do
     hostConfig <- defHostConfig @RunnerConfig
-    flip evalStateT hostConfig $ do
+    flip evalStateT hostConfig $
         if versionCheck then printVersion
         else if  frontend
         then runFrontend $ T.pack <$> atom
