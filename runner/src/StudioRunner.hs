@@ -237,9 +237,9 @@ copyLunaStudio :: MonadRun m => m ()
 copyLunaStudio = do
     mainHomePath    <- absHomeDir
     packageAtomHome <- packageStudioAtomHome
-    atomHomeParent  <- parent <$> userStudioAtomHome
-    createDirIfMissing True atomHomeParent
-    copyDirRecur packageAtomHome atomHomeParent
+    atomHome        <- userStudioAtomHome
+    createDirIfMissing True atomHome
+    copyDirRecur packageAtomHome atomHome
     when (currentHost == Windows) $ runProcess_ $ proc "attrib" ["+h", toFilePath mainHomePath]
 
 copyResourcesLinux :: MonadRun m => m ()
