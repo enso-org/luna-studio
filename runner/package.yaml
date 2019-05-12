@@ -5,7 +5,6 @@ maintainer:         New Byte Order <contact@luna-lang.org>
 
 dependencies:
     - base
-    - async
     - containers
     - dependent-state
     - prologue
@@ -16,14 +15,12 @@ dependencies:
     - dependent-state
     - aeson
     - bytestring
-    - directory
     - exceptions
     - optparse-applicative
     - path
+    - path-io
     - safe-exceptions
-    - split
     - filepath
-    - temporary
     - text
     - template-haskell
     - typed-process
