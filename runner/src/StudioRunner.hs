@@ -1,76 +1,82 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE ExtendedDefaultRules  #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE PackageImports        #-}
-{-# LANGUAGE FlexibleContexts      #-}
 
 module Main where
 
-import           Prelude
-import           Control.Exception.Safe        (MonadMask, MonadCatch, bracket_, catch, catchAny)
-import           Control.Lens
-import           Control.Monad
-import           Control.Monad.IO.Class        (MonadIO, liftIO)
-import           Control.Monad.State.Lazy
-import qualified Data.ByteString.Lazy          as BL
-import qualified Data.List                     as List
-import           Data.Maybe                    (fromMaybe, maybeToList)
-import           Data.Semigroup                ((<>))
-import qualified "containers"  Data.Set        as Set
-import           "containers"  Data.Set        (Set)
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as T
-import           Options.Applicative
-import           Path
-import           Path.IO
-import qualified System.FilePath               as FP
-import           System.Exit                   (ExitCode)
-import           System.Process.Typed          (proc, shell, runProcess_, setWorkingDir, readProcess_)
-import           System.Environment            (getExecutablePath, getArgs, lookupEnv)
-import qualified System.Environment            as Environment
-import           System.IO.Error               (isDoesNotExistError)
-import           System.Host
+import Prologue hiding (switch)
 
-default (T.Text)
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.List            as List
+import qualified Data.Set             as Set
+import qualified Data.Text            as T
+import qualified Data.Text.Encoding   as T
+import qualified Path.IO              as PIO
+import qualified System.Environment   as Environment
+
+import Control.Exception.Safe   (bracket_, catchAny)
+import Control.Monad.IO.Class   (MonadIO(..))
+import Control.Monad.State.Lazy (MonadState, evalStateT, get)
+import Data.Maybe               (fromMaybe, maybeToList)
+import Data.Semigroup           ((<>))
+import Data.Set                 (Set)
+import Options.Applicative      ( Parser, ParserInfo, ParserPrefs
+                                , execParserPure, handleParseResult, helper, idm
+                                , info, long, optional, prefs, short, strOption
+                                , switch, showHelpOnEmpty
+                                )
+import Path                     ( Path, Abs, Rel, Dir, File
+                                , mkRelDir, mkRelFile
+                                , parseAbsFile, parseRelDir, parseRelFile
+                                , (</>), dirname, parent, toFilePath
+                                )
+import System.Environment       (getExecutablePath, getArgs, lookupEnv)
+import System.Host              ( MonadHostConfig(..), System(..)
+                                , currentHost, defHostConfig
+                                , defaultHostConfigFor
+                                )
+import System.IO.Error          (isDoesNotExistError)
+import System.Process.Typed     (proc, runProcess_, setWorkingDir, readProcess_)
 
 
-data RunnerConfig = RunnerConfig { _versionFile            :: Path Rel File
-                                 , _mainHomeDir            :: Path Rel Dir
-                                 , _userConfigFolder       :: Path Rel Dir
-                                 , _configFolder           :: Path Rel Dir
-                                 , _configHomeFolder       :: Path Rel Dir
-                                 , _storageDataHomeFolder  :: Path Rel Dir
-                                 , _studioHome             :: Path Rel Dir
-                                 , _logsFolder             :: Path Rel Dir
-                                 , _atomPackageName        :: Path Rel Dir
-                                 , _appName                :: Path Rel Dir
-                                 , _supervisorFolder       :: Path Rel Dir
-                                 , _supervisordFolder      :: Path Rel Dir
-                                 , _supervisordBin         :: Path Rel File
-                                 , _supervisorctlBin       :: Path Rel File
-                                 , _supervisordConfig      :: Path Rel File
-                                 , _atomFolder             :: Path Rel Dir
-                                 , _thirdPartyFolder       :: Path Rel Dir
-                                 , _backendBinsFolder      :: Path Rel Dir
-                                 , _binsFolder             :: Path Rel Dir
-                                 , _packageFolder          :: Path Rel Dir
-                                 , _supervisorKillFolder   :: Path Rel Dir
-                                 , _supervisorKillBin      :: Path Rel File
-                                 , _atomBinPath            :: Path Rel File
-                                 , _mainTmpDirectoryTempl  :: String
-                                 , _lunaProjects           :: Path Rel Dir
-                                 , _tutorialsDirectory     :: Path Rel Dir
-                                 , _userInfoFile           :: Path Rel File
-                                 , _resourcesFolder        :: Path Rel Dir
-                                 , _shareFolder            :: Path Rel Dir
-                                 , _windowsFolder          :: Path Rel Dir
-                                 }
+data RunnerConfig = RunnerConfig
+    { _versionFile              :: Path Rel File
+    , _mainHomeDir              :: Path Rel Dir
+    , _userConfigFolder         :: Path Rel Dir
+    , _configFolder             :: Path Rel Dir
+    , _configHomeFolder         :: Path Rel Dir
+    , _storageDataHomeFolder    :: Path Rel Dir
+    , _studioHome               :: Path Rel Dir
+    , _logsFolder               :: Path Rel Dir
+    , _atomPackageName          :: Path Rel Dir
+    , _appName                  :: Path Rel Dir
+    , _supervisorFolder         :: Path Rel Dir
+    , _supervisordFolder        :: Path Rel Dir
+    , _supervisordBin           :: Path Rel File
+    , _supervisorctlBin         :: Path Rel File
+    , _supervisordConfig        :: Path Rel File
+    , _atomFolder               :: Path Rel Dir
+    , _thirdPartyFolder         :: Path Rel Dir
+    , _backendBinsFolder        :: Path Rel Dir
+    , _binsFolder               :: Path Rel Dir
+    , _packageFolder            :: Path Rel Dir
+    , _supervisorKillFolder     :: Path Rel Dir
+    , _supervisorKillBin        :: Path Rel File
+    , _atomBinPath              :: Path Rel File
+    , _lunaProjects             :: Path Rel Dir
+    , _tutorialsDirectory       :: Path Rel Dir
+    , _userInfoFile             :: Path Rel File
+    , _resourcesFolder          :: Path Rel Dir
+    , _shareFolder              :: Path Rel Dir
+    , _windowsFolder            :: Path Rel Dir
+    , _mainTmpDirectoryTemplate :: String -- Directory name template for Path.IO.withSystemTempDir
+    }
 
 makeLenses ''RunnerConfig
 
@@ -78,55 +84,55 @@ type MonadRun m = (MonadState RunnerConfig m, MonadIO m, MonadMask m)
 
 instance Monad m => MonadHostConfig RunnerConfig 'Linux arch m where
     defaultHostConfig = return $ RunnerConfig
-        { _versionFile            = $(mkRelFile "version.txt")
-        , _mainHomeDir            = $(mkRelDir ".luna")
-        , _userConfigFolder       = $(mkRelDir "user-config")
-        , _configFolder           = $(mkRelDir "config")
-        , _configHomeFolder       = $(mkRelDir "config")
-        , _storageDataHomeFolder  = $(mkRelDir "storage")
-        , _studioHome             = $(mkRelDir "atom")
-        , _logsFolder             = $(mkRelDir "logs")
-        , _atomPackageName        = $(mkRelDir "luna-studio")
-        , _appName                = $(mkRelDir "luna-studio")
-        , _supervisorFolder       = $(mkRelDir "supervisor")
-        , _supervisordFolder      = $(mkRelDir "supervisord")
-        , _supervisordBin         = $(mkRelFile "supervisord")
-        , _supervisorctlBin       = $(mkRelFile "supervisorctl")
-        , _supervisordConfig      = $(mkRelFile "supervisord-package.conf")
-        , _atomFolder             = $(mkRelDir "atom")
-        , _thirdPartyFolder       = $(mkRelDir "third-party")
-        , _backendBinsFolder      = $(mkRelDir "private")
-        , _binsFolder             = $(mkRelDir "bin")
-        , _packageFolder          = $(mkRelDir "packages")
-        , _supervisorKillFolder   = $(mkRelDir "kill")
-        , _supervisorKillBin      = $(mkRelFile "kill")
-        , _atomBinPath            = $(mkRelFile $ "atom" FP.</> "usr" FP.</> "bin" FP.</> "atom")
-        , _mainTmpDirectoryTempl  = "luna"
-        , _lunaProjects           = $(mkRelDir $ "luna" FP.</> "projects")
-        , _tutorialsDirectory     = $(mkRelDir "tutorials")
-        , _userInfoFile           = $(mkRelFile "user_info.json")
-        , _resourcesFolder        = $(mkRelDir $ "public" FP.</> "luna-studio" FP.</> "resources")
-        , _shareFolder            = $(mkRelDir $ ".local" FP.</> "share")
-        , _windowsFolder          = $(mkRelDir "windows")
+        { _versionFile               = $(mkRelFile "version.txt")
+        , _mainHomeDir               = $(mkRelDir ".luna")
+        , _userConfigFolder          = $(mkRelDir "user-config")
+        , _configFolder              = $(mkRelDir "config")
+        , _configHomeFolder          = $(mkRelDir "config")
+        , _storageDataHomeFolder     = $(mkRelDir "storage")
+        , _studioHome                = $(mkRelDir "atom")
+        , _logsFolder                = $(mkRelDir "logs")
+        , _atomPackageName           = $(mkRelDir "luna-studio")
+        , _appName                   = $(mkRelDir "luna-studio")
+        , _supervisorFolder          = $(mkRelDir "supervisor")
+        , _supervisordFolder         = $(mkRelDir "supervisord")
+        , _supervisordBin            = $(mkRelFile "supervisord")
+        , _supervisorctlBin          = $(mkRelFile "supervisorctl")
+        , _supervisordConfig         = $(mkRelFile "supervisord-package.conf")
+        , _atomFolder                = $(mkRelDir "atom")
+        , _thirdPartyFolder          = $(mkRelDir "third-party")
+        , _backendBinsFolder         = $(mkRelDir "private")
+        , _binsFolder                = $(mkRelDir "bin")
+        , _packageFolder             = $(mkRelDir "packages")
+        , _supervisorKillFolder      = $(mkRelDir "kill")
+        , _supervisorKillBin         = $(mkRelFile "kill")
+        , _atomBinPath               = $(mkRelFile "atom/usr/bin/atom")
+        , _lunaProjects              = $(mkRelDir "luna/projects")
+        , _tutorialsDirectory        = $(mkRelDir "tutorials")
+        , _userInfoFile              = $(mkRelFile "user_info.json")
+        , _resourcesFolder           = $(mkRelDir "public/luna-studio/resources")
+        , _shareFolder               = $(mkRelDir ".local/share")
+        , _windowsFolder             = $(mkRelDir "windows")
+        , _mainTmpDirectoryTemplate  = "luna"
         }
 
 instance Monad m => MonadHostConfig RunnerConfig 'Darwin arch m where
-    defaultHostConfig = reconfig <$> defaultHostConfigFor @Linux where
-        reconfig cfg = cfg & atomBinPath .~ $(mkRelFile $ "Atom.app" FP.</> "Contents" FP.</> "MacOS" FP.</> "Atom")
+    defaultHostConfig = reconfig <$> defaultHostConfigFor @'Linux where
+        reconfig cfg = cfg & atomBinPath .~ $(mkRelFile "Atom.app/Contents/MacOS/Atom")
 
 instance Monad m => MonadHostConfig RunnerConfig 'Windows arch m where
-    defaultHostConfig = reconfig <$> defaultHostConfigFor @Linux where
-        reconfig cfg = cfg & atomBinPath .~ $(mkRelFile $ "Atom" FP.</> "atom.exe")
+    defaultHostConfig = reconfig <$> defaultHostConfigFor @'Linux where
+        reconfig cfg = cfg & atomBinPath .~ $(mkRelFile "Atom/atom.exe")
 
 -- path helpers --
-runnerDir :: MonadIO m => m (Path Abs Dir)
-runnerDir = liftIO $ do
-  x <- getExecutablePath
-  parent <$> parseAbsFile x
+getRunnerDir :: MonadIO m => m (Path Abs Dir)
+getRunnerDir = liftIO $ do
+    x <- getExecutablePath
+    parent <$> parseAbsFile x
 
 absAppDir :: MonadIO m => m (Path Abs Dir)
 absAppDir = do
-    runnerDir <- runnerDir
+    runnerDir <- getRunnerDir
     -- Due to certain issues, two copies of luna-studio might be shipped:
     -- `bin/main/luna-studio` and `bin/public/luna-studio/luna-studio`
     -- Thus, we need to check where are we, to say where is the package root.
@@ -139,29 +145,29 @@ absAppDir = do
 
 absHomeDir ::  MonadRun m => m (Path Abs Dir)
 absHomeDir = do
-  runnerCfg <- get @RunnerConfig
-  home      <- getHomeDir
-  return $ home </> (runnerCfg ^. mainHomeDir)
+    runnerCfg <- get @RunnerConfig
+    home      <- PIO.getHomeDir
+    return $ home </> (runnerCfg ^. mainHomeDir)
 
-relToDirDir :: MonadRun m
+buildDirectoryPath :: MonadRun m
     => m (Path Abs Dir)
     -> [Getting (Path Rel Dir) RunnerConfig (Path Rel Dir)]
     -> m (Path Abs Dir)
-relToDirDir basePath segmentAccessors = do
+buildDirectoryPath basePath segmentAccessors = do
     runnerCfg <- get @RunnerConfig
-    b <- basePath
+    baseDir   <- basePath
     let segments = map (runnerCfg ^.) segmentAccessors
-    pure $ foldl (</>) b segments
+    pure $ foldl (</>) baseDir segments
 
-relToDirFile :: MonadRun m
+buildFilePath :: MonadRun m
     => m (Path Abs Dir)
     -> [Getting (Path Rel Dir) RunnerConfig (Path Rel Dir)]
     -> Getting (Path Rel File) RunnerConfig (Path Rel File)
     -> m (Path Abs File)
-relToDirFile basePath segmentAccessors fileAccessor = do
+buildFilePath basePath segmentAccessors fileAccessor = do
     runnerCfg <- get @RunnerConfig
-    d <- relToDirDir basePath segmentAccessors
-    pure $ d </> (runnerCfg ^. fileAccessor)
+    baseDir   <- buildDirectoryPath basePath segmentAccessors
+    pure $ baseDir </> (runnerCfg ^. fileAccessor)
 
 versionText :: MonadRun m => m T.Text
 versionText = T.pack <$> version
@@ -179,43 +185,43 @@ printVersion = do
     liftIO $ print versionTxt
 
 -- paths --
-backendBinsPath, configPath, backendDir                                  :: MonadRun m => m (Path Abs Dir)
-packageStudioAtomHome, userStudioAtomHome, localLogsDirectory            :: MonadRun m => m (Path Abs Dir)
-resourcesDirectory, windowsLogsDirectory, userLogsDirectory              :: MonadRun m => m (Path Abs Dir)
-userdataStorageDirectory, localdataStorageDirectory, lunaProjectsPath    :: MonadRun m => m (Path Abs Dir)
-sharePath, windowsScriptsPath, backendLdLibraryPath                      :: MonadRun m => m (Path Abs Dir)
+backendBinsPath, configPath, backendDir                               :: MonadRun m => m (Path Abs Dir)
+packageStudioAtomHome, userStudioAtomHome, localLogsDirectory         :: MonadRun m => m (Path Abs Dir)
+resourcesDirectory, windowsLogsDirectory, userLogsDirectory           :: MonadRun m => m (Path Abs Dir)
+userdataStorageDirectory, localdataStorageDirectory, lunaProjectsPath :: MonadRun m => m (Path Abs Dir)
+sharePath, windowsScriptsPath, backendLdLibraryPath                   :: MonadRun m => m (Path Abs Dir)
 
-backendBinsPath           = relToDirDir absAppDir [binsFolder, backendBinsFolder]
-backendDir                = relToDirDir absAppDir [configFolder, supervisorFolder]
-configPath                = relToDirDir absAppDir [configFolder]
-localLogsDirectory        = relToDirDir absAppDir [logsFolder]
-localdataStorageDirectory = relToDirDir absHomeDir [storageDataHomeFolder]
-lunaProjectsPath          = relToDirDir getHomeDir [lunaProjects]
-packageStudioAtomHome     = relToDirDir absAppDir [userConfigFolder, studioHome]
-resourcesDirectory        = relToDirDir absAppDir [binsFolder, resourcesFolder]
-sharePath                 = relToDirDir getHomeDir [shareFolder]
-userLogsDirectory         = relToDirDir absHomeDir [logsFolder, appName] >>= \p -> fmap (p </>) (parseRelDir =<< version)
-userdataStorageDirectory  = relToDirDir absHomeDir [configHomeFolder, appName, storageDataHomeFolder]
-windowsLogsDirectory      = relToDirDir absAppDir [configFolder, logsFolder]
-windowsScriptsPath        = relToDirDir absAppDir [configFolder, windowsFolder]
+backendBinsPath           = buildDirectoryPath absAppDir      [binsFolder, backendBinsFolder]
+backendDir                = buildDirectoryPath absAppDir      [configFolder, supervisorFolder]
+configPath                = buildDirectoryPath absAppDir      [configFolder]
+localLogsDirectory        = buildDirectoryPath absAppDir      [logsFolder]
+localdataStorageDirectory = buildDirectoryPath absHomeDir     [storageDataHomeFolder]
+lunaProjectsPath          = buildDirectoryPath PIO.getHomeDir [lunaProjects]
+packageStudioAtomHome     = buildDirectoryPath absAppDir      [userConfigFolder, studioHome]
+resourcesDirectory        = buildDirectoryPath absAppDir      [binsFolder, resourcesFolder]
+sharePath                 = buildDirectoryPath PIO.getHomeDir [shareFolder]
+userLogsDirectory         = buildDirectoryPath absHomeDir     [logsFolder, appName] >>= \x -> fmap (x </>) (parseRelDir =<< version)
+userdataStorageDirectory  = buildDirectoryPath absHomeDir     [configHomeFolder, appName, storageDataHomeFolder]
+windowsLogsDirectory      = buildDirectoryPath absAppDir      [configFolder, logsFolder]
+windowsScriptsPath        = buildDirectoryPath absAppDir      [configFolder, windowsFolder]
 userStudioAtomHome = do
     runnerCfg <- get @RunnerConfig
-    baseDir   <- relToDirDir absHomeDir [configHomeFolder, appName] >>= \p -> fmap (p </>) (parseRelDir =<< version)
+    baseDir   <- buildDirectoryPath absHomeDir [configHomeFolder, appName] >>= \x -> fmap (x </>) (parseRelDir =<< version)
     pure $ baseDir </> (runnerCfg ^. studioHome)
 backendLdLibraryPath = do
-    ldLibPath <- getCurrentDir
-    pure $ ldLibPath </> $(mkRelDir "lib") </> $(mkRelDir "zeromq")
+    ldLibPath <- PIO.getCurrentDir
+    pure $ ldLibPath </> $(mkRelDir "lib/zeromq")
 
 atomAppPath, killSupervisorBinPath, supervisordBinPath :: MonadRun m => m (Path Abs File)
 supervisorctlBinPath, versionFilePath, userInfoPath    :: MonadRun m => m (Path Abs File)
-atomAppPath               = relToDirFile absAppDir [thirdPartyFolder] atomBinPath
-killSupervisorBinPath     = relToDirFile absAppDir [thirdPartyFolder, supervisorKillFolder] supervisorKillBin
-supervisordBinPath        = relToDirFile absAppDir [thirdPartyFolder, supervisordFolder] supervisordBin
-supervisorctlBinPath      = relToDirFile absAppDir [thirdPartyFolder, supervisordFolder] supervisorctlBin
-versionFilePath           = relToDirFile absAppDir [configFolder] versionFile
-userInfoPath              = relToDirFile absHomeDir [] userInfoFile
+atomAppPath               = buildFilePath absAppDir  [thirdPartyFolder] atomBinPath
+killSupervisorBinPath     = buildFilePath absAppDir  [thirdPartyFolder, supervisorKillFolder] supervisorKillBin
+supervisordBinPath        = buildFilePath absAppDir  [thirdPartyFolder, supervisordFolder] supervisordBin
+supervisorctlBinPath      = buildFilePath absAppDir  [thirdPartyFolder, supervisordFolder] supervisorctlBin
+versionFilePath           = buildFilePath absAppDir  [configFolder] versionFile
+userInfoPath              = buildFilePath absHomeDir [] userInfoFile
 
-atomHomeDir, logsDir, windowsLogsDir, dataStorageDirectory               :: MonadRun m => Bool -> m (Path Abs Dir)
+atomHomeDir, logsDir, windowsLogsDir, dataStorageDirectory :: MonadRun m => Bool -> m (Path Abs Dir)
 atomHomeDir          develop = if develop then packageStudioAtomHome     else userStudioAtomHome
 logsDir              develop = if develop then localLogsDirectory        else userLogsDirectory
 windowsLogsDir       develop = if develop then localLogsDirectory        else windowsLogsDirectory
@@ -238,36 +244,38 @@ copyLunaStudio = do
     mainHomePath    <- absHomeDir
     packageAtomHome <- packageStudioAtomHome
     atomHome        <- userStudioAtomHome
-    createDirIfMissing True atomHome
-    copyDirRecur packageAtomHome atomHome
-    when (currentHost == Windows) $ runProcess_ $ proc "attrib" ["+h", toFilePath mainHomePath]
+    PIO.createDirIfMissing True atomHome
+    PIO.copyDirRecur packageAtomHome atomHome
+    when (currentHost == Windows) $
+        runProcess_ $ proc "attrib" ["+h", toFilePath mainHomePath]
 
 copyResourcesLinux :: MonadRun m => m ()
 copyResourcesLinux = when (currentHost == Linux) $ do
-    runnerCfg <- get @RunnerConfig
     versionN  <- T.strip <$> versionText
     resources <- resourcesDirectory
     localShareFolder <- sharePath
     localDesktopFile <- parseRelFile $ "LunaStudio" ++ T.unpack versionN ++ ".desktop"
     let iconsFolder  = resources </> $(mkRelDir "icons")
         desktopFile  = resources </> $(mkRelFile "app_shared.desktop")
-        localDesktop = localShareFolder </> $(mkRelDir "applications") </> localDesktopFile
-    createDirIfMissing True $ parent localShareFolder
-    createDirIfMissing True $ parent localDesktop
-    copyDirRecur iconsFolder localShareFolder
-    copyFile desktopFile localDesktop
+        localDesktop = localShareFolder </> $(mkRelDir "applications")
+                                        </> localDesktopFile
+    PIO.createDirIfMissing True $ parent localShareFolder
+    PIO.createDirIfMissing True $ parent localDesktop
+    PIO.copyDirRecur iconsFolder localShareFolder
+    PIO.copyFile desktopFile localDesktop
 
 createStorageDataDirectory :: MonadRun m => Bool -> m ()
 createStorageDataDirectory develop = do
     dataStoragePath <- dataStorageDirectory develop
-    createDirIfMissing True dataStoragePath
+    PIO.createDirIfMissing True dataStoragePath
 
 checkLunaHome :: MonadRun m => m ()
 checkLunaHome = do
     runnerCfg    <- get @RunnerConfig
     userAtomHome <- userStudioAtomHome
-    let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder) </> (runnerCfg ^. atomPackageName)
-    doesDirExist pathLunaPackage >>= \exists -> unless exists copyLunaStudio
+    let pathLunaPackage = userAtomHome </> (runnerCfg ^. packageFolder)
+                                       </> (runnerCfg ^. atomPackageName)
+    PIO.doesDirExist pathLunaPackage >>= \exists -> unless exists copyLunaStudio
 
 -- supervisord --
 supervisorctl :: MonadRun m => [T.Text] -> m T.Text
@@ -284,10 +292,10 @@ supervisord :: MonadRun m => Path Rel File -> m ()
 supervisord configFile = do
     supervisorBinPath <- toFilePath <$> supervisordBinPath
     supervisorDir     <- toFilePath <$> backendDir
-    ldLibPath <- liftIO $ lookupEnv "LD_LIBRARY_PATH"
+    ldLibPath         <- liftIO $ lookupEnv "LD_LIBRARY_PATH"
     setEnv "OLD_LIBPATH" $ fromMaybe "\"\"" ldLibPath
     runProcess_ $ setWorkingDir supervisorDir
-                $ shell $ supervisorBinPath ++ " -n -c " ++ toFilePath configFile
+                $ proc supervisorBinPath ["-n", "-c", toFilePath configFile]
 
 stopSupervisor :: MonadRun m => m ()
 stopSupervisor = void $ supervisorctl ["shutdown"]
@@ -296,7 +304,9 @@ testIfRunning :: MonadRun m => m Bool
 testIfRunning = do
     -- TODO[piotrMocz]: we'll need a more robust method eventually
     -- this merely check if there's any luna-related app running
-    let lunaApps = Set.fromList ["luna-broker", "luna-ws-connector", "luna-empire", "luna-atom", "luna-undo-redo"] :: Set T.Text
+    let lunaApps = Set.fromList [ "luna-broker", "luna-ws-connector"
+                                , "luna-empire", "luna-atom", "luna-undo-redo"
+                                ] :: Set T.Text
     runningApps <- Set.fromList . T.words <$> supervisorctl ["status", "all"]
     return . not . Set.null $ Set.intersection runningApps lunaApps
 
@@ -310,7 +320,7 @@ runLunaEmpire logs configFile forceRun = do
     if running && not forceRun then liftIO $ putStrLn "LunaStudio is already running"
     else do
         when running stopSupervisor
-        createDirIfMissing True logs
+        PIO.createDirIfMissing True logs
         supervisord configFile
 
 runFrontend :: MonadRun m => Maybe T.Text -> m ()
@@ -337,14 +347,14 @@ startServices :: MonadRun m => m ()
 startServices = case currentHost of
     Windows -> do
         path <- toFilePath <$> windowsScriptsPath
-        runProcess_ $ setWorkingDir path $ shell "start.bat"
+        runProcess_ $ setWorkingDir path $ proc "start.bat" []
     _       -> return ()
 
 stopServices :: MonadRun m => m ()
 stopServices = case currentHost of
     Windows -> do
         path <- toFilePath <$> windowsScriptsPath
-        runProcess_ $ setWorkingDir path $ shell "stop.bat"
+        runProcess_ $ setWorkingDir path $ proc "stop.bat" []
     _       -> return ()
 
 runPackage :: MonadRun m => Bool -> Bool -> m ()
@@ -359,7 +369,7 @@ runPackage develop forceRun = case currentHost of
         setEnvPath "LUNA_USER_INFO"        =<< userInfoPath
         setEnvPath "LUNA_VERSION_PATH"     =<< versionFilePath
         createStorageDataDirectory develop
-        bracket_ startServices stopServices $ runProcess_ $ shell atom
+        bracket_ startServices stopServices $ runProcess_ $ proc atom []
 
     _ -> do
         runnerCfg <- get @RunnerConfig
@@ -393,18 +403,18 @@ runApp develop forceRun atom = do
 withLunaTempDir :: MonadRun m => m () -> m ()
 withLunaTempDir cont = do
     runnerCfg <- get @RunnerConfig
-    withSystemTempDir (runnerCfg ^. mainTmpDirectoryTempl) $ \tmpdir -> do
+    PIO.withSystemTempDir (runnerCfg ^. mainTmpDirectoryTemplate) $ \tmpdir -> do
         setEnvPath "LUNA_TMP" tmpdir
         setEnvPath "LUNA_TUTORIALS" $ tmpdir </> (runnerCfg ^. tutorialsDirectory)
         cont
 
 data Options = Options
-    { frontend :: Bool
-    , backend  :: Bool
-    , develop  :: Bool
-    , forceRun :: Bool
-    , atom     :: Maybe String
-    , versioncheck  :: Bool
+    { _frontend     :: Bool
+    , _backend      :: Bool
+    , _develop      :: Bool
+    , _forceRun     :: Bool
+    , _atom         :: Maybe String
+    , _versionCheck :: Bool
     } deriving Show
 
 optionParser :: Parser Options
@@ -436,13 +446,14 @@ filterArgs :: [String] -> [String]
 filterArgs = filter filterArg
 
 filteredParser :: ParserPrefs -> ParserInfo a -> IO a
-filteredParser pprefs pinfo = execParserPure pprefs pinfo . filterArgs <$> getArgs >>= handleParseResult
+filteredParser pprefs pinfo =
+    execParserPure pprefs pinfo . filterArgs <$> getArgs >>= handleParseResult
 
 parser :: MonadIO m => m Options
-parser = liftIO $ filteredParser p opts
+parser = liftIO $ filteredParser ps opts
     where
         opts = info (optionParser <**> helper) idm
-        p    = prefs showHelpOnEmpty
+        ps   = prefs showHelpOnEmpty
 
 main :: IO ()
 main = run =<< parser
