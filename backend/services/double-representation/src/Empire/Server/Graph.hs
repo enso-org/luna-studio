@@ -1,7 +1,9 @@
 module Empire.Server.Graph where
 
-import Prologue hiding (Item, when)
+import Prologue hiding (Item)
 
+import qualified Bus.Data.Message                        as Message
+import qualified Bus.Framework.App                       as Bus
 import qualified Compress
 import qualified Data.Binary                             as Bin
 import qualified Data.HashMap.Strict                     as HashMap
@@ -68,11 +70,6 @@ import qualified LunaStudio.Data.Project                 as Project
 import qualified Path
 import qualified Safe
 import qualified System.Log.MLogger                      as Logger
-import qualified ZMQ.Bus.Bus                             as Bus
-import qualified ZMQ.Bus.Config                          as Config
-import qualified ZMQ.Bus.Data.Message                    as Message
-import qualified ZMQ.Bus.EndPoint                        as EP
-import qualified ZMQ.Bus.Trans                           as BusT
 
 import Control.Arrow                 ((&&&))
 import Control.Concurrent            (forkIO)
@@ -107,8 +104,8 @@ import Empire.Data.AST               (SomeASTException,
 import Empire.Empire                 (Empire)
 import Empire.Env                    (Env)
 import Empire.Server.Server          (defInverse, errorMessage, modifyGraph,
-                                      modifyGraphOk, replyFail,
-                                      replyOk, replyResult, sendToBus')
+                                      modifyGraphOk, replyFail, replyOk,
+                                      replyResult, sendToBus')
 import Luna.Package                  (findPackageFileForFile,
                                       findPackageRootForFile,
                                       getRelativePathForModule, includedLibs)
@@ -139,13 +136,12 @@ import LunaStudio.Data.Visualizer    (ExternalVisualizers (ExternalVisualizers))
 import Path                          (fromAbsFile, fromRelFile, parseAbsFile)
 import System.Environment            (getEnv)
 import System.FilePath               (dropFileName, replaceFileName, (</>))
-import ZMQ.Bus.Trans                 (BusT (..))
 
 
 -- Handlers
 
 
-handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
+handleGetProgram :: Request GetProgram.Request -> StateT Env Bus.App ()
 handleGetProgram = modifyGraph defInverse action replyResult where
     action (GetProgram.Request location' mayPrevSettings retrieveLocation) = do
         let moduleChanged = isNothing mayPrevSettings
@@ -220,12 +216,12 @@ handleGetProgram = modifyGraph defInverse action replyResult where
             $ \(gl, locSettings) -> Api.saveSettings gl locSettings location
         pure . GetProgram.Result location $ guiStateDiff guiState
 
-handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
+handleSearchNodes :: Request SearchNodes.Request -> StateT Env Bus.App ()
 handleSearchNodes origReq@(Request uuid guiID
     request@(SearchNodes.Request location missingImps)) = do
         currentEmpireEnv <- use Env.empireEnv
         empireNotifEnv   <- use Env.empireNotif
-        endPoints        <- use $ Env.config . to EP.clientFromConfig
+        endPoints        <- use Env.config
         env              <- get
         toBusChan        <- use Env.toBusChan
         let invStatus = Response.Ok ()
@@ -246,7 +242,7 @@ handleSearchNodes origReq@(Request uuid guiID
                         . Message.Message (Topic.topic' msg)
                             . Compress.pack $ Bin.encode msg
 
-handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
+handleTypecheck :: Request TypeCheck.Request -> StateT Env Bus.App ()
 handleTypecheck req@(Request _ _ request) = do
     let location = request ^. TypeCheck.location
     currentEmpireEnv <- use Env.empireEnv

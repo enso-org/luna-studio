@@ -13,6 +13,7 @@ dependencies:
   - hspec
   - lens
   - luna-api-definition
+  - luna-bus
   - luna-double-representation
   - mtl
   - m-logger
@@ -23,9 +24,6 @@ dependencies:
   - uuid
   - uuid-types
   - zeromq4-haskell
-  - zmq-bus
-  - zmq-bus-config
-  - zmq-rpc
 
 default-extensions:
   - DeriveGeneric

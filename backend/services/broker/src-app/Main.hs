@@ -2,58 +2,46 @@
 
 module Main where
 
-import qualified Control.Concurrent              as Concurrent
-import           GHC.IO.Encoding                 (setLocaleEncoding, utf8)
 
-import           Prologue                        hiding (error, switch)
-import           System.Log.MLogger
-import           System.Log.Options              hiding (info)
-import qualified System.Log.Options              as Opt
-import           ZMQ.Bus.Broker.Cmd              (Cmd)
-import qualified ZMQ.Bus.Broker.Cmd              as Cmd
-import qualified ZMQ.Bus.Broker.Proxy            as Proxy
-import qualified ZMQ.Bus.Broker.Version          as Version
-import qualified ZMQ.Bus.Config                  as Config
-import qualified ZMQ.Bus.Control.BusCtx          as BusCtx
-import qualified ZMQ.Bus.Control.Handler.Handler as Handler
-import qualified ZMQ.Bus.EndPoint                as EP
-import qualified ZMQ.RPC.Server.Server           as RPC
+import Prologue
 
+import qualified Bus.Data.Config        as Config
+import qualified Bus.Framework.App      as Bus
+import qualified GHC.IO.Encoding        as Encoding
+import qualified System.Log.MLogger     as Logger
+import qualified System.Log.Options     as Opt
+import qualified ZMQ.Bus.Broker.Cmd     as Cmd
+import qualified ZMQ.Bus.Broker.Version as Version
 
-rootLogger :: Logger
-rootLogger = getLogger ""
+import ZMQ.Bus.Broker.Cmd (Cmd)
 
+rootLogger :: Logger.Logger
+rootLogger = Logger.getLogger ""
 
-logger :: Logger
-logger = getLogger $moduleName
+logger :: Logger.Logger
+logger = Logger.getLogger $(Logger.moduleName)
 
+parser :: Opt.Parser Cmd
+parser = Opt.flag' Cmd.Version (Opt.long "version" <> Opt.hidden)
+    <|> Cmd.Serve
+        <$> Opt.optIntFlag (Just "verbose") 'v' 2 3
+            "Verbose level (level range is 0-5, default level is 3)"
+        <*> Opt.switch (Opt.long "no-color" <> Opt.help "Disable color output")
 
-parser :: Parser Cmd
-parser = Opt.flag' Cmd.Version (long "version" <> hidden)
-       <|> Cmd.Serve
-           <$> optIntFlag (Just "verbose") 'v' 2 3          "Verbose level (level range is 0-5, default level is 3)"
-           <*> switch    ( long "no-color"          <> help "Disable color output" )
-
-
-opts :: ParserInfo Cmd
-opts = Opt.info (helper <*> parser)
-                (Opt.fullDesc <> Opt.header (Version.full False))
-
+opts :: Opt.ParserInfo Cmd
+opts = Opt.info (Opt.helper <*> parser)
+    (Opt.fullDesc <> Opt.header (Version.full False))
 
 main :: IO ()
 main = do
-    setLocaleEncoding utf8
-    execParser opts >>= run
-
+    Encoding.setLocaleEncoding Encoding.utf8
+    Opt.execParser opts >>= run
 
 run :: Cmd -> IO ()
 run cmd = case cmd of
-    Cmd.Version  -> putStrLn (Version.full False) -- TODO [PM] hardcoded numeric = False
+    Cmd.Version  -> putStrLn (Version.full False)
     Cmd.Serve {} -> do
-        rootLogger setIntLevel $ Cmd.verbose cmd
-        endPoints <- EP.serverFromConfig <$> Config.load
-        logger info "Starting proxy service"
-        _ <- Concurrent.forkIO $ Proxy.run (EP.pullEndPoint endPoints) (EP.pubEndPoint endPoints)
-        logger info "Starting control service"
-        ctx <- BusCtx.empty
-        RPC.run 16 (EP.controlEndPoint endPoints) (Handler.handler ctx) -- TODO [PM] hardcoded number of workers
+        rootLogger Logger.setIntLevel $ Cmd.verbose cmd
+        logger Logger.info "Starting proxy service"
+        config <- Config.readDefault
+        Bus.runProxy config

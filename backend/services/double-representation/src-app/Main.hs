@@ -1,19 +1,20 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import qualified Data.List          as List
-import           GHC.IO.Encoding    (setLocaleEncoding, utf8)
-import           Prologue
+import Prologue
 
-import           Empire.Cmd         (Cmd)
+import qualified Bus.Data.Config    as Config
+import qualified Data.List          as List
 import qualified Empire.Cmd         as Cmd
 import qualified Empire.Server      as Server
 import qualified Empire.Version     as Version
-import           System.Log.MLogger
-import           System.Log.Options (help, long, metavar, short)
+import qualified Luna.Configurator  as Configurator
 import qualified System.Log.Options as Opt
-import qualified ZMQ.Bus.Config     as Config
-import qualified ZMQ.Bus.EndPoint   as EP
+
+import Empire.Cmd         (Cmd)
+import GHC.IO.Encoding    (setLocaleEncoding, utf8)
+import System.Log.MLogger (Logger, getLogger, moduleName, setIntLevel)
+import System.Log.Options (help, long, metavar, short)
 
 defaultTopics :: [String]
 defaultTopics = ["empire."]
@@ -45,10 +46,10 @@ run cmd = case cmd of
     Cmd.Version  -> putStrLn Version.fullVersion
     Cmd.Run {} -> do
         rootLogger setIntLevel $ Cmd.verbose cmd
-        endPoints <- EP.clientFromConfig <$> Config.load
-        projectRoot <- Config.projectRoot <$> Config.projects <$> Config.load
+        endPoints <- Config.readDefault
+        projectsPath <- Configurator.projectRootPath
         let topics = if List.null $ Cmd.topics cmd
                         then defaultTopics
                         else Cmd.topics cmd
             formatted = Cmd.formatted cmd
-        Server.run endPoints topics formatted projectRoot
+        Server.run endPoints topics formatted projectsPath

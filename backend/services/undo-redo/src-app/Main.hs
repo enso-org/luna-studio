@@ -1,16 +1,15 @@
 module Main where
 
-import           Prologue
+import Prologue
 
+import qualified Bus.Data.Config as Config
 import qualified Undo
 
-import           GHC.IO.Encoding      (setLocaleEncoding, utf8)
-import qualified ZMQ.Bus.EndPoint     as EP
-import qualified ZMQ.Bus.Config       as Config
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
 
 main :: IO ()
 main = do
     setLocaleEncoding utf8
-    endPoints <- EP.clientFromConfig <$> Config.load
+    endPoints <- Config.readDefault
     r <- Undo.run endPoints
     return ()

@@ -1,8 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
+module Bus.Data.Config where
 
-module WSConnector.WSConfig where
-
-import           Prologue
+import Prologue
 
 import qualified Control.Lens.Aeson         as LensAeson
 import qualified Control.Monad.Exception.IO as Exception
@@ -16,11 +14,9 @@ import Control.Monad.Exception (Throws)
 -- === Definition === --
 
 data Config = Config
-    { _host        :: String
-    , _fromWebPort :: Int
-    , _toWebPort   :: Int
-    , _pingTime    :: Int
-    } deriving (Generic, Read, Show, Eq)
+    { _pubSocketAddress :: String
+    , _subSocketAddress :: String
+    } deriving (Generic, Show)
 
 makeLenses ''Config
 
@@ -40,4 +36,4 @@ readFromFile =
     liftIO . Exception.rethrowFromIO @Yaml.ParseException . Yaml.decodeFileThrow
 
 readDefault :: (Throws Yaml.ParseException m, MonadIO m) => m Config
-readDefault = readFromFile =<< Configurator.websocketConfigPath
+readDefault = readFromFile =<< Configurator.busConfigPath

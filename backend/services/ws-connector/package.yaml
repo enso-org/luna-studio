@@ -4,10 +4,53 @@ license: AGPL-3
 author:  Luna Team <contact@luna-lang.org>
 
 default-extensions:
+  - AllowAmbiguousTypes
+  - ApplicativeDo
+  - Arrows
+  - BangPatterns
+  - BinaryLiterals
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DoAndIfThenElse
+  - DuplicateRecordFields
+  - EmptyDataDecls
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - LambdaCase
+  - LiberalTypeSynonyms
+  - MonadComprehensions
+  - MultiWayIf
+  - MultiParamTypeClasses
+  - NamedWildCards
+  - NegativeLiterals
   - NoImplicitPrelude
+  - NumDecimals
+  - OverloadedLabels
   - OverloadedStrings
-  - Strict
-  - StrictData
+  - PackageImports
+  - QuasiQuotes
+  - RankNTypes
+  - RecursiveDo
+  - RelaxedPolyRec
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TemplateHaskell
+  - TupleSections
+  - TypeApplications
+  - TypeFamilies
+  - TypeFamilyDependencies
+  - TypeSynonymInstances
+  - TypeOperators
+  - ViewPatterns
 
 executables:
   luna-ws-connector:
@@ -19,19 +62,19 @@ executables:
       - bytestring
       - either
       - ekg
+      - luna-bus
       - luna-ws-connector
       - m-logger
       - mtl
       - prologue
       - zeromq4-haskell
       - optparse-applicative
-      - zmq-bus
-      - zmq-bus-config
 
 library:
   source-dirs: src
   ghc-options: -Wall -O2 -threaded
   dependencies:
+    - aeson
     - async
     - base
     - base64-bytestring
@@ -39,14 +82,16 @@ library:
     - bytestring
     - either
     - exceptions
+    - lens-utils
+    - luna-bus
+    - luna-configurator
+    - luna-exception
     - m-logger
-    - random
     - mtl
     - prologue
+    - random
     - text
     - unagi-chan
     - websockets
+    - yaml
     - zeromq4-haskell
-    - zmq-bus
-    - zmq-bus-config
-

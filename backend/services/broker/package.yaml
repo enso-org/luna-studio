@@ -15,16 +15,14 @@ dependencies:
     - base
     - bytestring
     - containers
-    - zmq-bus
-    - zmq-rpc
+    - luna-bus
     - m-logger
-    - zmq-bus-config
     - prologue
     - transformers
     - protocol-buffers
     - zeromq4-haskell >=0.4
 
 executables:
-  luna-broker:
-    main: Main.hs
-    source-dirs: src-app
+    luna-broker:
+        main: Main.hs
+        source-dirs: src-app

@@ -2309,9 +2309,14 @@ class List a:
     # `that`: List object to combine with `self`.
     # `returns`: List object with elements being a result of combining elements
     #            from `self` and `that` list using function `f`.
-    def zipWith f that: case Tuple2 self that of
-        Tuple2 (Prepend x xs) (Prepend y ys): Prepend (f x y) (xs.zipWith f ys)
-        Tuple2 x y: Empty
+    def zipWith f that: case self of
+        Prepend x xs: case that of
+            Prepend y ys:
+                h = f x y
+                rest = xs.zipWith f ys
+                Prepend h rest
+            _: Empty
+        _: Empty
 
     # Returns a list of pairs of respective elements of two lists.
     # The length of the result is the length of the shorter of the lists.
@@ -2500,6 +2505,8 @@ class Map k v:
     # >     a = Map.singleton "foo" 10
     # >     None
     #
+    # `k`: Element key.
+    # `v`: Element value.
     # `returns`: The map with single element.
     def singleton k v: Bin 1 k v Tip Tip
 
@@ -3578,9 +3585,31 @@ def everyWithState timeInterval stateFunc state:
 def print x: putStr x.toText
 
 # Read file from the hard drive, returning a `Text` value.
+#
+# > import Std.Base
+# >
+# > def main:
+# >     filepath = Package.samples "Base" / "exampleFile.txt"
+# >     txt = read filepath
+# >     None
+#
+# `f`: Filepath to a file to read.
+# `returns`: Text value with a file content.
 def readFile f: primReadFile (expandPath f)
 
 # Write a Text object into a file with a given path.
+#
+# > import Std.Base
+# >
+# > def main:
+# >     filepath = "./myFile.txt"
+# >     text = "Lorem ipsum"
+# >     write = write filepath text
+# >     None
+#
+# `f`: Filepath for a file to write.
+# `c`: Text object to write.
+# `returns`: None
 def writeFile f c: primWriteFile (expandPath f) c
 
 # Takes a Text and throws it as an error.

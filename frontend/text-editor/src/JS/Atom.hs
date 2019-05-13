@@ -116,7 +116,7 @@ setBuffer :: MonadIO m => Text -> Text -> m ()
 setBuffer uri code = liftIO $ jsSetBuffer (convert uri) (convert code)
 
 setClipboard :: MonadIO m => Text -> Text -> m ()
-setClipboard uri code = liftIO $ jsSetClipboard (convert uri) (convert uri)
+setClipboard uri code = liftIO $ jsSetClipboard (convert uri) (convert code)
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do

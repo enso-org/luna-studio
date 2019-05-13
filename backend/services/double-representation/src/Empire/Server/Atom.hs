@@ -2,6 +2,7 @@
 
 module Empire.Server.Atom where
 
+import qualified Bus.Framework.App                       as Bus
 import           Control.Exception.Safe         (try, catchAny)
 import           Control.Lens                   ((.=), use)
 import qualified Control.Monad.Catch            as MC
@@ -51,15 +52,13 @@ import qualified Empire.Empire                  as Empire
 import           Empire.Server.Server           (errorMessage, defInverse, modifyGraph, replyFail,
                                                 replyOk, replyResult)
 import qualified System.Log.MLogger             as Logger
-import qualified ZMQ.Bus.EndPoint               as EP
-import           ZMQ.Bus.Trans                  (BusT (..))
 
 import Debug.Trace (trace)
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
-handleSetProject :: Request SetProject.Request -> StateT Env BusT ()
+handleSetProject :: Request SetProject.Request -> StateT Env Bus.App ()
 handleSetProject req = do
     liftIO $ putStrLn $ "OPEN PROJECT" <> show req
     replyOk req ()
@@ -69,7 +68,7 @@ replaceDir oldPath newPath path = case stripPrefix (addTrailingPathSeparator old
     Just suffix -> newPath </> suffix
     _           -> path
 
-handleCreateProject :: Request CreateProject.Request -> StateT Env BusT ()
+handleCreateProject :: Request CreateProject.Request -> StateT Env Bus.App ()
 handleCreateProject req@(Request _ _ (CreateProject.Request path)) = do
     result <- PackageGen.genPackageStructure path Nothing def
     logger Logger.info $ show ("CREATE PROJECT", req, result)
@@ -88,7 +87,7 @@ partitionM f (x:xs) = do
     (as, bs) <- partitionM f xs
     return ([x | res] ++ as, [x | not res] ++ bs)
 
-handleMoveProject :: Request MoveProject.Request -> StateT Env BusT ()
+handleMoveProject :: Request MoveProject.Request -> StateT Env Bus.App ()
 handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
     result <- liftIO $ try $ do
         src    <- Path.parseAbsDir oldPath
@@ -106,7 +105,7 @@ handleMoveProject req@(Request _ _ (MoveProject.Request oldPath newPath)) = do
             Env.empireEnv . Graph.userState . Empire.activeFiles .= Map.fromList newFiles
             replyOk req ()
 
-handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
+handleOpenFile :: Request OpenFile.Request -> StateT Env Bus.App ()
 handleOpenFile req@(Request _ _ (OpenFile.Request path)) = timeIt "handleOpenFile" $ do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
@@ -128,7 +127,7 @@ withClosedTempFile dir template action = MC.bracket (liftIO mkFile)
                            (IO.hClose . snd)
                            (return . fst)
 
-handleSaveFile :: Request SaveFile.Request -> StateT Env BusT ()
+handleSaveFile :: Request SaveFile.Request -> StateT Env Bus.App ()
 handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
     logger Logger.info $ show ("SAVE FILE")
     currentEmpireEnv <- use Env.empireEnv
@@ -155,17 +154,17 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
                 Dir.renameFile tmpFile (Path.toFilePath path)
             replyOk req ()
 
-handleCloseFile :: Request CloseFile.Request -> StateT Env BusT ()
+handleCloseFile :: Request CloseFile.Request -> StateT Env Bus.App ()
 handleCloseFile (Request _ _ (CloseFile.Request path)) = do
     Env.empireEnv . Graph.userState . Empire.activeFiles . at path .= Nothing
     empireNotifEnv   <- use Env.empireNotif
     currentEmpireEnv <- use Env.empireEnv
     void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Publisher.stopTC
 
-handleIsSaved :: Request IsSaved.Request -> StateT Env BusT ()
+handleIsSaved :: Request IsSaved.Request -> StateT Env Bus.App ()
 handleIsSaved (Request _ _ _) = $_NOT_IMPLEMENTED
 
-handlePasteText :: Request Paste.Request -> StateT Env BusT ()
+handlePasteText :: Request Paste.Request -> StateT Env Bus.App ()
 handlePasteText = modifyGraph defInverse action replyResult where
     action (Paste.Request loc spans text) = Api.withDiff loc $ do
         Graph.pasteText loc spans text
@@ -175,7 +174,7 @@ instance G.GraphRequest Copy.Request where
         getter (Copy.Request file _) = GraphLocation.GraphLocation file (Breadcrumb [])
         setter (Copy.Request _ spans) (GraphLocation.GraphLocation file _) = Copy.Request file spans
 
-handleCopyText :: Request Copy.Request -> StateT Env BusT ()
+handleCopyText :: Request Copy.Request -> StateT Env Bus.App ()
 handleCopyText = modifyGraph defInverse action replyResult where
     action (Copy.Request path spans) = do
         Copy.Result <$> Graph.copyText (GraphLocation path (Breadcrumb [])) spans
