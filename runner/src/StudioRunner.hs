@@ -346,15 +346,17 @@ runBackend forceRun = do
 startServices :: MonadRun m => m ()
 startServices = case currentHost of
     Windows -> do
-        path <- toFilePath <$> windowsScriptsPath
-        runProcess_ $ setWorkingDir path $ proc "start.bat" []
+        scriptsDir <- windowsScriptsPath
+        let path = toFilePath $ scriptsDir </> $(mkRelFile "start.bat")
+        runProcess_ $ proc path []
     _       -> return ()
 
 stopServices :: MonadRun m => m ()
 stopServices = case currentHost of
     Windows -> do
-        path <- toFilePath <$> windowsScriptsPath
-        runProcess_ $ setWorkingDir path $ proc "stop.bat" []
+        scriptsDir <- windowsScriptsPath
+        let path = toFilePath $ scriptsDir </> $(mkRelFile "stop.bat")
+        runProcess_ $ proc path []
     _       -> return ()
 
 runPackage :: MonadRun m => Bool -> Bool -> m ()
