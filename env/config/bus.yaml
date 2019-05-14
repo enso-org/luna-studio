@@ -1,0 +1,2 @@
+pubSocketAddress: "tcp://127.0.0.1:30531"
+subSocketAddress: "tcp://127.0.0.1:30532"

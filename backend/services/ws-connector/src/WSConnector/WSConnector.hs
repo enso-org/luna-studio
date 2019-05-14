@@ -4,24 +4,24 @@
 
 module WSConnector.WSConnector where
 
-import           Prologue
-import           System.Log.MLogger
+import Prologue
 
-import           Control.Concurrent            (forkIO)
-import qualified Control.Concurrent.MVar       as MVar
+import qualified Bus.Data.Config               as Bus
 import qualified Control.Concurrent.Chan.Unagi as Unagi
-import           Control.Monad                 (forever)
+import qualified Control.Concurrent.MVar       as MVar
 import qualified Data.ByteString               as ByteString
 import qualified Network.WebSockets            as WS
-
-import           ZMQ.Bus.EndPoint              (BusEndPoints)
-
-import           WSConnector.Data.WSFrame      (WSFrame (..), deserializeFrame, messages, serializeFrame)
-import           WSConnector.Data.WSMessage    (ControlCode (..), WSMessage (..))
+import qualified System.CPUTime                as CPUTime
 import qualified WSConnector.Workers.BusWorker as BusWorker
 import qualified WSConnector.WSConfig          as WSConfig
 
-import qualified System.CPUTime                as CPUTime
+import Control.Concurrent         (forkIO)
+import Control.Monad              (forever)
+import System.Log.MLogger
+import WSConnector.Data.WSFrame   (WSFrame (..), deserializeFrame, messages,
+                                   serializeFrame)
+import WSConnector.Data.WSMessage (ControlCode (..), WSMessage (..))
+
 
 logger :: Logger
 logger = getLogger $moduleName
@@ -87,7 +87,7 @@ sinkChan c = forever $ do
     !_ <- Unagi.readChan c
     return ()
 
-run :: BusEndPoints -> WSConfig.Config -> IO ()
+run :: Bus.Config -> WSConfig.Config -> IO ()
 run busEndPoints config = do
     (toBusIn, toBusOut)     <- Unagi.newChan
     (fromBusIn, fromBusOut) <- Unagi.newChan

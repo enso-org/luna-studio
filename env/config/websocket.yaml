@@ -1,0 +1,4 @@
+host: "127.0.0.1"
+fromWebPort: 30533
+toWebPort: 30534
+pingTime: 30
