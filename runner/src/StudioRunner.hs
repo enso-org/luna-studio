@@ -130,6 +130,7 @@ getRunnerDir = liftIO $ do
     x <- getExecutablePath
     parent <$> parseAbsFile x
 
+-- | Path to application package root
 absAppDir :: MonadIO m => m (Path Abs Dir)
 absAppDir = do
     runnerDir <- getRunnerDir
@@ -143,6 +144,7 @@ absAppDir = do
                  else parent . parent . parent -- drop bin/public/luna-studio/
     pure $ stepUp runnerDir
 
+-- | Path to application directory inside user home directory
 absHomeDir ::  MonadRun m => m (Path Abs Dir)
 absHomeDir = do
     runnerCfg <- get @RunnerConfig
@@ -209,8 +211,8 @@ userStudioAtomHome = do
     baseDir   <- buildDirectoryPath absHomeDir [configHomeFolder, appName] >>= \x -> fmap (x </>) (parseRelDir =<< version)
     pure $ baseDir </> (runnerCfg ^. studioHome)
 backendLdLibraryPath = do
-    ldLibPath <- PIO.getCurrentDir
-    pure $ ldLibPath </> $(mkRelDir "lib/zeromq")
+    appDir <- absAppDir
+    pure $ appDir </> $(mkRelDir "lib/zeromq")
 
 atomAppPath, killSupervisorBinPath, supervisordBinPath :: MonadRun m => m (Path Abs File)
 supervisorctlBinPath, versionFilePath, userInfoPath    :: MonadRun m => m (Path Abs File)
