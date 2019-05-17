@@ -19,14 +19,27 @@ towards a style that is expressive while still easy to read and understand.
 
 ## Code Formatting
 Rather than a whole host of complicated formatting rules for TypeScript, we make
-use of [prettier](https://prettier.io/), an opinionated code formatter. All
-TypeScript code should be formatted using prettier, though the point at which
-you do this is up to you. We recommend either on-save in your editor, or using
-a precommit hook.
+use of [prettier](https://prettier.io), an opinionated code formatter, and
+[eslint](https://eslint.org). All TypeScript code should be formatted using
+prettier and checked using eslint, though the point at which you do this is up
+to you. We recommend either on-save in your editor, or using a precommit hook.
 
-The prettier configuration that can be used is located in the root of this
-repository, and should be copied to all other repositories containing TypeScript
-code if it is not already there.
+Both the prettier and eslint configurations that can be used are located in the
+root of this repository, and should be copied to all other repositories
+containing TypeScript code if it is not already there.
+
+Please note that in order to enable smooth prettier and eslint experience in the
+Visual Studio Code, you should install the `prettier` and `eslint` plugins, add
+the following configuration to the user configuration (File -> Preferences ->
+Settings), and restart the IDE.
+
+```json
+{
+    "editor.formatOnSave": true,
+    "eslint.provideLintTask": true,
+    "eslint.validate": ["javascript", "typescript"],
+}
+```
 
 ## Comments
 Comments are a tricky area to get right, as we have found that comments often
@@ -127,7 +140,7 @@ We follow a simple convention for `TODO` comments in our codebases:
 
 For example:
 
-```hs
+```typescript
 // TODO [ARA] This is a bit of a kludge. Instead of X it should to Y, accounting
 // for the fact that Z.
 ```
@@ -168,12 +181,12 @@ the following rules of thumb
 One of the main issues with using composition architect code is that it can
 result in the need for a lot of bookkeeping and boilerplate to expose the
 desired functionality to the host object. This can often become quite the chore
-in languages without first-class support for composition. 
+in languages without first-class support for composition.
 
 As a result, we've created the `composable-mixins` library, currently located in
 the `BaseGL` repository as that library is its primary client for now. It allows
 for significantly simpler definition and management of composed objects. Please
-refer to the library's documentation for a detailed description of its 
+refer to the library's documentation for a detailed description of its
 functionality, but an example is provided below.
 
 ```ts
