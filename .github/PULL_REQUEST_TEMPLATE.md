@@ -14,7 +14,7 @@
 ### Checklist
 
 - [ ] The documentation has been updated if necessary.
-- [ ] The code conforms to the [Haskell Style Guide](https://github.com/luna/luna/blob/master/doc/haskell-style-guide.md) 
+- [ ] The code conforms to the [Haskell Style Guide](https://github.com/luna/luna/blob/master/doc/haskell-style-guide.md)
   and/or the [TypeScript Style Guide](https://github.com/luna/luna-studio/blob/master/doc/typescript-style-guide.md).
 - [ ] The code has been tested where possible.
 
