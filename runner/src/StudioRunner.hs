@@ -293,11 +293,11 @@ supervisorctl args = do
 supervisord :: MonadRun m => Path Rel File -> m ()
 supervisord configFile = do
     supervisorBinPath <- toFilePath <$> supervisordBinPath
-    supervisorDir     <- toFilePath <$> backendDir
+    supervisorDir     <- backendDir
     ldLibPath         <- liftIO $ lookupEnv "LD_LIBRARY_PATH"
     setEnv "OLD_LIBPATH" $ fromMaybe "\"\"" ldLibPath
-    runProcess_ $ setWorkingDir supervisorDir
-                $ proc supervisorBinPath ["-n", "-c", toFilePath configFile]
+    let configFileAbs = supervisorDir </> configFile
+    runProcess_ $ proc supervisorBinPath ["-n", "-c", toFilePath configFileAbs]
 
 stopSupervisor :: MonadRun m => m ()
 stopSupervisor = void $ supervisorctl ["shutdown"]
