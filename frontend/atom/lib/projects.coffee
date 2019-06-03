@@ -151,7 +151,7 @@ recentProjectsPaths = ->
 
 mkRecentProject = (id, projectPath, name, thumb) ->
     uri = "http://127.0.0.1:50505/projects/#{id}"
-    new ProjectItem {id: id, uri: uri, thumb: thumb, name: name}, recentClasses, (progress, finalize) =>
+    new ProjectItem {id: id, uri: uri, path: projectPath, thumb: thumb, name: name}, recentClasses, (progress, finalize) =>
         progress 0.5
         tryCloseAllFiles =>
             atom.project.setPaths [id]
@@ -234,6 +234,8 @@ module.exports =
                         (name) => callback name
         getRecentItems: -> recentProjects
 
+        find
+
         refreshRecentList: (callback) =>
             recentProjects = []
             request.get {url: "http://127.0.0.1:50505/projects", json: true}, (e, r, projects) ->
@@ -249,6 +251,10 @@ module.exports =
             fs.writeFile recentProjectsPath, data, encoding, (err) =>
                 if err?
                     console.log err
+
+        findById: (id) =>
+            for proj in recentProjects
+                return proj if proj.id == id
 
         getSampleProjectItems: =>
             sampleProjects = {}

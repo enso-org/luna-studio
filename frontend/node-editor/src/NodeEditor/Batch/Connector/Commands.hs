@@ -36,6 +36,7 @@ import qualified LunaStudio.API.Library.ListLibraries     as ListLibraries
 import qualified LunaStudio.Data.GraphLocation            as GraphLocation
 import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
 import qualified LunaStudio.Data.Searcher.Hint.Library    as Library
+import qualified Path
 
 import Common.Batch.Connector.Connection        (Message (Message), sendRequest,
                                                  sendUpdate)
@@ -57,6 +58,7 @@ import LunaStudio.Data.Project                  (LocationSettings, ProjectId)
 import NodeEditor.Batch.Workspace               (Workspace)
 import NodeEditor.Batch.Workspace               (currentLocation)
 import NodeEditor.React.Model.Connection        (ConnectionId)
+import Path                                     (Path, Rel, File)
 
 
 
@@ -75,9 +77,9 @@ listLibraries :: ProjectId -> UUID -> Maybe UUID -> IO ()
 listLibraries pid uuid guiID = sendRequest $ Message uuid guiID
     $ ListLibraries.Request pid
 
-openFile :: FilePath -> UUID -> Maybe UUID -> IO ()
+openFile :: Path Rel File -> UUID -> Maybe UUID -> IO ()
 openFile path uuid guiID = sendRequest $ Message uuid guiID
-    $ OpenFile.Request path
+    $ OpenFile.Request $ Path.toFilePath path
 
 dumpGraphViz :: Workspace -> UUID -> Maybe UUID -> IO ()
 dumpGraphViz workspace uuid guiID = sendRequest $ Message uuid guiID

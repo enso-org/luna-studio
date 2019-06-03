@@ -17,8 +17,7 @@ import qualified Empire.ApiHandlers                      as Api
 import qualified Empire.ASTOps.Print                     as Print
 import qualified Empire.Commands.Graph                   as Graph
 import qualified Empire.Commands.GraphBuilder            as GraphBuilder
-import qualified Empire.Data.Graph                       as Graph (code,
-                                                                   nodeCache)
+import qualified Empire.Data.Graph                       as Graph
 import qualified Empire.Empire                           as Empire
 import qualified Empire.Env                              as Env
 import qualified Empire.Server.Server                    as Server
@@ -159,14 +158,8 @@ handleGetProgram = modifyGraph defInverse action replyResult where
             let filePath      = location' ^. GraphLocation.filePath
                 closestBc loc = Api.getClosestBcLocation
                     (GraphLocation.GraphLocation filePath def)
-            mayProjectPathAndRelModulePath <- liftIO
-                $ Api.getProjectPathAndRelativeModulePath filePath
-            mayPackageRoot <- findPackageRootForFile
-                =<< Path.parseAbsFile filePath
-            mayModuleSettings <- liftIO $ maybe
-                (pure def)
-                (uncurry Project.getModuleSettings)
-                mayProjectPathAndRelModulePath
+            packageRoot <- use $ Graph.userState . Empire.activeProject
+            mayModuleSettings <- liftIO $ Project.getModuleSettings (Path.toFilePath packageRoot) (Path.toFilePath filePath)
             location <- if not retrieveLocation
                 then pure location'
                 else Api.getClosestBcLocation
@@ -183,10 +176,10 @@ handleGetProgram = modifyGraph defInverse action replyResult where
                 (\(libName, visLibPath)
                     -> (convert libName, visLibPath </> "visualizers"))
                 <$> includedLibs stdPath
-            let mayProjectVisPath
-                    = ((</> "visualizers") . Path.toFilePath) <$> mayPackageRoot
+            let projectVisPath
+                    = Path.toFilePath packageRoot </> "visualizers"
                 externalVisPaths
-                    = ExternalVisualizers mayProjectVisPath libsVisPaths
+                    = ExternalVisualizers (Just projectVisPath) libsVisPaths
                 defaultCamera = maybe
                     def
                     (`Camera.getCameraForRectangle` def)
@@ -220,42 +213,48 @@ handleSearchNodes :: Request SearchNodes.Request -> StateT Env Bus.App ()
 handleSearchNodes origReq@(Request uuid guiID
     request@(SearchNodes.Request location missingImps)) = do
         currentEmpireEnv <- use Env.empireEnv
-        empireNotifEnv   <- use Env.empireNotif
-        endPoints        <- use Env.config
-        env              <- get
-        toBusChan        <- use Env.toBusChan
-        let invStatus = Response.Ok ()
-        liftIO $ void $ forkIO $ void $ liftIO $ do
-            result <- try . Empire.runEmpire empireNotifEnv currentEmpireEnv $ do
-                Graph.addImports location missingImps
-                SearchNodes.Result <$> Graph.getSearcherHints location
-            case result of
-                Left (exc :: SomeException) -> do
-                    err <- liftIO $ Graph.prepareLunaError exc
-                    let msg = Response.error origReq invStatus err
-                    atomically . writeTChan toBusChan
-                        . Message.Message (Topic.topic' msg)
-                            . Compress.pack $ Bin.encode msg
-                Right (result, _) -> do
-                    let msg = Response.result origReq () result
-                    atomically . writeTChan toBusChan
-                        . Message.Message (Topic.topic' msg)
-                            . Compress.pack $ Bin.encode msg
+        case currentEmpireEnv of
+            Just empireEnv -> do
+                empireNotifEnv   <- use Env.empireNotif
+                endPoints        <- use Env.config
+                env              <- get
+                toBusChan        <- use Env.toBusChan
+                let invStatus = Response.Ok ()
+                liftIO $ void $ forkIO $ void $ liftIO $ do
+                    result <- try . Empire.runEmpire empireNotifEnv empireEnv $ do
+                        Graph.addImports location missingImps
+                        SearchNodes.Result <$> Graph.getSearcherHints location
+                    case result of
+                        Left (exc :: SomeException) -> do
+                            err <- liftIO $ Graph.prepareLunaError exc
+                            let msg = Response.error origReq invStatus err
+                            atomically . writeTChan toBusChan
+                                . Message.Message (Topic.topic' msg)
+                                    . Compress.pack $ Bin.encode msg
+                        Right (result, _) -> do
+                            let msg = Response.result origReq () result
+                            atomically . writeTChan toBusChan
+                                . Message.Message (Topic.topic' msg)
+                                    . Compress.pack $ Bin.encode msg
+            Nothing -> pure ()
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env Bus.App ()
 handleTypecheck req@(Request _ _ request) = do
     let location = request ^. TypeCheck.location
     currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    result           <- liftIO . try
-        . Empire.runEmpire empireNotifEnv currentEmpireEnv
-            $ Graph.typecheck location
-    case result of
-        Left (exc :: SomeASTException) -> do
-            err <- liftIO $ Graph.prepareLunaError $ toException exc
-            replyFail Api.logger err req (Response.Error err)
-        Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
-    pure ()
+    case currentEmpireEnv of
+        Just empireEnv -> do
+            empireNotifEnv   <- use Env.empireNotif
+            result           <- liftIO . try
+                . Empire.runEmpire empireNotifEnv empireEnv
+                    $ Graph.typecheck location
+            case result of
+                Left (exc :: SomeASTException) -> do
+                    err <- liftIO $ Graph.prepareLunaError $ toException exc
+                    replyFail Api.logger err req (Response.Error err)
+                Right (_, newEmpireEnv) -> Env.empireEnv .= Just newEmpireEnv
+            pure ()
+        Nothing -> pure ()
 
 stdlibFunctions :: [String]
 stdlibFunctions = ["mockFunction"]

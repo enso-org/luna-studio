@@ -9,8 +9,8 @@ import qualified Data.Map                                as Map
 import qualified Data.Set                                as Set
 import qualified Data.UUID.V4                            as UUID
 import qualified Empire.Commands.Graph                   as Graph
-import qualified Empire.Data.Graph                       as Graph (code,
-                                                                   nodeCache)
+import qualified Empire.Data.Graph                       as Graph
+import qualified Empire.Empire                           as Empire
 import qualified LunaStudio.API.Atom.Copy                as CopyText
 import qualified LunaStudio.API.Atom.GetBuffer           as GetBuffer
 import qualified LunaStudio.API.Atom.Paste               as PasteText
@@ -497,24 +497,6 @@ getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
 getNodeById location nid
     = find (\n -> n ^. Node.nodeId == nid) <$> getAllNodes location
 
-getProjectPathAndRelativeModulePath :: MonadIO m
-    => FilePath -> m (Maybe (FilePath, FilePath))
-getProjectPathAndRelativeModulePath modulePath = do
-    let eitherToMaybe :: MonadIO m
-            => Either Path.PathException (Path.Path Path.Abs Path.File)
-            -> m (Maybe (Path.Path Path.Abs Path.File))
-        eitherToMaybe (Left  e) = Project.logProjectSettingsError e >> pure def
-        eitherToMaybe (Right a) = pure $ Just a
-    mayProjectPathAndRelModulePath <- liftIO . runMaybeT $ do
-        absModulePath  <- MaybeT $
-            eitherToMaybe =<< try (Path.parseAbsFile modulePath)
-        absProjectPath <- MaybeT $ findPackageFileForFile absModulePath
-        relModulePath  <- MaybeT $
-            getRelativePathForModule absProjectPath absModulePath
-        pure (Path.fromAbsFile absProjectPath, Path.fromRelFile relModulePath)
-    when (isNothing mayProjectPathAndRelModulePath) logProjectPathNotFound
-    pure mayProjectPathAndRelModulePath
-
 saveSettings :: GraphLocation -> LocationSettings -> GraphLocation -> Empire ()
 saveSettings gl settings newGl = handle logError action where
     logError :: MonadIO m => SomeException -> m ()
@@ -522,15 +504,13 @@ saveSettings gl settings newGl = handle logError action where
     action     = do
         bc    <- Breadcrumb.toNames <$> Graph.decodeLocation gl
         newBc <- Breadcrumb.toNames <$> Graph.decodeLocation newGl
-        let filePath        = gl    ^. GraphLocation.filePath
-            newFilePath     = newGl ^. GraphLocation.filePath
+        let filePath        = Path.toFilePath $ gl    ^. GraphLocation.filePath
+            newFilePath     = Path.toFilePath $ newGl ^. GraphLocation.filePath
             lastBcInOldFile = if filePath == newFilePath then newBc else bc
-        withJustM (getProjectPathAndRelativeModulePath filePath) $ \(cp, fp) ->
-            Project.updateLocationSettings cp fp bc settings lastBcInOldFile
-        when (filePath /= newFilePath)
-            $ withJustM (getProjectPathAndRelativeModulePath newFilePath)
-                $ \(cp, fp) ->
-                    Project.updateCurrentBreadcrumbSettings cp fp newBc
+        packageRoot <- fmap Path.toFilePath $ use $ Graph.userState . Empire.activeProject
+        Project.updateLocationSettings packageRoot filePath bc settings lastBcInOldFile
+        when (filePath /= newFilePath) $
+            Project.updateCurrentBreadcrumbSettings packageRoot newFilePath newBc
 
 getClosestBcLocation :: GraphLocation -> Breadcrumb Text -> Empire GraphLocation
 getClosestBcLocation gl (Breadcrumb []) = pure gl

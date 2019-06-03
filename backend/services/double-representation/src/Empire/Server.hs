@@ -142,21 +142,23 @@ startTCWorker env = liftIO $ do
                             def
                             def
                             def
+                            (error "no project")
         commandState   = Graph.CommandState pmState interpreterEnv
     void $ Empire.evalEmpire env commandState $ do
         Typecheck.makePrimStdIfMissing
         forever $ do
-            Empire.TCRequest loc g rooted flush interpret recompute stop <- liftIO $ takeMVar reqs
-            if stop then do
-                Typecheck.stop
-            else do
-                as <- AsyncL.asyncOn tcCapability $ do
-                    Typecheck.run loc g rooted interpret recompute `Exception.onException`
-                        Typecheck.stop
-                res <- AsyncL.waitCatch as
-                case res of
-                    Left exc -> logger Logger.warning $ "TCWorker: TC failed with: " <> displayException exc
-                    Right _  -> return ()
+            req <- liftIO $ takeMVar reqs
+            {-Empire.TCRequest loc g rooted interpret recompute stop <- liftIO $ takeMVar reqs-}
+            case req of
+                Empire.TCRun (Empire.TCRunRequest loc g rooted interpret recompute) -> do
+                    as <- AsyncL.asyncOn tcCapability $ do
+                        Typecheck.run loc g rooted interpret recompute `Exception.onException`
+                            Typecheck.stop
+                    res <- AsyncL.waitCatch as
+                    case res of
+                        Left exc -> logger Logger.warning $ "TCWorker: TC failed with: " <> displayException exc
+                        Right _  -> return ()
+                Empire.TCStop -> Typecheck.stop
 
 --     tcAsync <- newEmptyMVar
 --         modules = env ^. Empire.modules
@@ -198,17 +200,17 @@ loadAllPackages = do
     packageRoot  <- use Env.projectRoot
     empireNotifEnv   <- use Env.empireNotif
   
-    packages <- liftIO $ packageFiles packageRoot
-    loadedPackages <- flip mapM packages $ \proj -> do
-        currentEmpireEnv <- use Env.empireEnv
-        result <- liftIO $ Exception.try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
-        case result of
-            Left (exc :: SomeASTException) -> do
-              logger Logger.error $ "Cannot load package [" <> proj <> "]: " <> (displayException exc)
-              return Nothing
-            Right (_, newEmpireEnv) -> do
-              Env.empireEnv .= newEmpireEnv
-              return $ Just ()
+    {-packages <- liftIO $ packageFiles packageRoot-}
+    {-loadedPackages <- flip mapM packages $ \proj -> do-}
+        {-currentEmpireEnv <- use Env.empireEnv-}
+        {-result <- liftIO $ Exception.try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj-}
+        {-case result of-}
+            {-Left (exc :: SomeASTException) -> do-}
+              {-logger Logger.error $ "Cannot load package [" <> proj <> "]: " <> (displayException exc)-}
+              {-return Nothing-}
+            {-Right (_, newEmpireEnv) -> do-}
+              {-Env.empireEnv .= newEmpireEnv-}
+              {-return $ Just ()-}
     return ()
 
   -- when ((catMaybes loadedPackages) == []) $ do

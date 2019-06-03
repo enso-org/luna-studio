@@ -17,18 +17,21 @@ module JS.Atom
     , subscribeEventListenerInternal
     ) where
 
-import           Common.Data.JSON              (fromJSONVal, toJSONVal)
-import           Common.Prelude                hiding (toList)
-import           Control.Monad.Trans.Maybe     (MaybeT (MaybeT), runMaybeT)
-import           Data.Aeson.Types              (FromJSON)
-import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure            (PToJSVal (pToJSVal))
-import           LunaStudio.Data.GraphLocation (GraphLocation)
-import           LunaStudio.Data.Point         (Point)
-import           LunaStudio.Data.TextDiff      (TextDiff)
-import           TextEditor.Event.Internal     (InternalEvent, InternalEvent (..))
-import           TextEditor.Event.Text         (TextEvent (TextEvent))
-import qualified TextEditor.Event.Text         as TextEvent
+import Common.Prelude hiding (toList)
+
+import qualified Path
+import qualified TextEditor.Event.Text as TextEvent
+
+import Common.Data.JSON              (fromJSONVal, toJSONVal)
+import Control.Monad.Trans.Maybe     (MaybeT (MaybeT), runMaybeT)
+import Data.Aeson.Types              (FromJSON)
+import GHCJS.Foreign.Callback
+import GHCJS.Marshal.Pure            (PToJSVal (pToJSVal))
+import LunaStudio.Data.GraphLocation (GraphLocation)
+import LunaStudio.Data.Point         (Point)
+import LunaStudio.Data.TextDiff      (TextDiff)
+import TextEditor.Event.Internal     (InternalEvent (..))
+import TextEditor.Event.Text         (TextEvent (TextEvent))
 
 
 foreign import javascript safe "atomCallbackTextEditor.insertCode($1, $2)"
@@ -108,7 +111,7 @@ subscribeDiffs callback = do
 
 insertCode :: MonadIO m => TextEvent -> m ()
 insertCode textEvent = liftIO $ do
-    let uri   = textEvent ^. TextEvent.filePath . to convert
+    let uri   = textEvent ^. TextEvent.filePath . to (convert . Path.toFilePath)
         diffs = textEvent ^. TextEvent.diffs
     jsInsertCode uri =<< toJSVal diffs
 

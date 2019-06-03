@@ -35,6 +35,7 @@ import qualified Empire.Commands.Publisher             as Publisher
 import qualified Empire.Data.BreadcrumbHierarchy       as BH
 import qualified Empire.Data.FileMetadata              as FileMetadata
 import qualified Empire.Data.Graph                     as Graph
+import qualified Empire.Empire                         as Empire
 import qualified Luna.IR                               as IR
 import qualified Luna.IR.Term.Ast.Class                as Term
 import qualified Luna.Syntax.Text.Parser.Ast.CodeSpan  as CodeSpan
@@ -48,6 +49,7 @@ import qualified LunaStudio.Data.Port                  as Port
 import qualified LunaStudio.Data.PortRef               as PortRef
 import qualified LunaStudio.Data.Position              as Position
 import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
+import qualified Path
 import qualified Safe
 
 import Control.Arrow                        ((***))
@@ -103,6 +105,7 @@ import LunaStudio.Data.PortRef              (AnyPortRef (..), InPortRef (..),
                                              OutPortRef (..))
 import LunaStudio.Data.Position             (Position)
 import LunaStudio.Data.Range                (Range (..))
+import Path                                 (Path, Abs, Rel, Dir, File)
 
 
 addImports :: GraphLocation -> Set Text -> Empire ()
@@ -141,7 +144,7 @@ addNodeCondTC tc loc@(GraphLocation f _) uuid expr meta
         resendCode loc
         return node
     | otherwise = do
-        let runner = if tc then withTC loc False else withGraph loc
+        let runner = if tc then withTC loc else withGraph loc
         (node, indent) <- runner $ do
             node   <- addNodeNoTC loc uuid expr Nothing meta
             indent <- runASTOp Code.getCurrentIndentationLength
@@ -498,7 +501,7 @@ addPortNoTC loc (OutPortRef nl pid) name = runASTOp $ do
 
 addPortWithConnections :: GraphLocation -> OutPortRef -> Maybe Text -> [AnyPortRef] -> Empire ()
 addPortWithConnections loc portRef name connectTo = do
-    withTC loc False $ do
+    withTC loc $ do
         addPortNoTC loc portRef name
         for_ connectTo $ connectNoTC loc portRef
     resendCode loc
@@ -509,7 +512,7 @@ addSubgraph loc@(GraphLocation _ (Breadcrumb [])) nodes _ = do
     resendCode loc
     return res
 addSubgraph loc nodes conns = do
-    newNodes <- withTC loc False $ do
+    newNodes <- withTC loc $ do
         newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.code) (n ^. Node.name) (n ^. Node.nodeMeta)
         for_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
         return newNodes
@@ -556,7 +559,7 @@ removeNodes loc@(GraphLocation file (Breadcrumb [])) nodeIds = do
             return ()
     resendCode loc
 removeNodes loc@(GraphLocation file _) nodeIds = do
-    withTC loc False $ runASTOp $ mapM_ removeNodeNoTC nodeIds
+    withTC loc $ runASTOp $ mapM_ removeNodeNoTC nodeIds
     resendCode loc
 
 deepRemoveExprMarkers :: BH.BChild -> GraphOp ()
@@ -630,7 +633,7 @@ removeFromSequence ref = do
 
 removePort :: GraphLocation -> OutPortRef -> Empire ()
 removePort loc portRef = do
-    withTC loc False $ runASTOp $ do
+    withTC loc $ runASTOp $ do
         let nodeId = portRef ^. PortRef.srcNodeId
         ref <- ASTRead.getCurrentASTTarget
         ASTBuilder.detachNodeMarkersForArgs ref
@@ -644,7 +647,7 @@ removePort loc portRef = do
 
 movePort :: GraphLocation -> OutPortRef -> Int -> Empire ()
 movePort loc portRef newPosition = do
-    withTC loc False $ runASTOp $ do
+    withTC loc $ runASTOp $ do
         let nodeId = portRef ^. PortRef.srcNodeId
         ref        <- ASTRead.getCurrentASTTarget
         (input, _) <- GraphBuilder.getEdgePortMapping
@@ -657,7 +660,7 @@ movePort loc portRef newPosition = do
 
 renamePort :: GraphLocation -> OutPortRef -> Text -> Empire ()
 renamePort loc portRef newName = do
-    withTC loc False $ runASTOp $ do
+    withTC loc $ runASTOp $ do
         let nodeId = portRef ^. PortRef.srcNodeId
         ref        <- ASTRead.getCurrentASTTarget
         (input, _) <- GraphBuilder.getEdgePortMapping
@@ -724,7 +727,7 @@ connectCondTC False loc outPort anyPort = do
 
 connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connect loc outPort anyPort = do
-    connection <- withTC loc False $ connectNoTC loc outPort anyPort
+    connection <- withTC loc $ connectNoTC loc outPort anyPort
     resendCode loc
     return connection
 
@@ -821,7 +824,7 @@ getPortDefault loc (InPortRef (NodeLoc _ nodeId) [])          = withGraph loc $ 
 
 setPortDefault :: GraphLocation -> InPortRef -> Maybe PortDefault -> Empire ()
 setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) (Just val) = do
-    withTC loc False $ do
+    withTC loc $ do
         parsed <- ASTParse.parsePortDefault val
         runAliasAnalysis
         runASTOp $ case port of
@@ -829,24 +832,24 @@ setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) (Just val) = do
             _  -> makeInternalConnection parsed nodeId port
     resendCode loc
 setPortDefault loc port Nothing = do
-    withTC loc False $ runASTOp $ disconnectPort port
+    withTC loc $ runASTOp $ disconnectPort port
     resendCode loc
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
 disconnect loc@(GraphLocation file _) port@(InPortRef (NodeLoc _ nid) _) = do
-    withTC loc False $ do
+    withTC loc $ do
         runASTOp $ disconnectPort port
         runAliasAnalysis
     resendCode loc
 
 
 
-getBuffer :: FilePath -> Empire Text
+getBuffer :: Path Rel File -> Empire Text
 getBuffer file = getCode (GraphLocation file (Breadcrumb []))
 
 getGraphCondTC :: Bool -> GraphLocation -> Empire APIGraph.Graph
 getGraphCondTC tc loc = withImports getFullGraph where
-    getFullGraph = (if tc then withTC' loc True else withBreadcrumb loc)
+    getFullGraph = (if tc then withTC' loc else withBreadcrumb loc)
         (runASTOp buildGraph)
         (runASTOp buildClassGraph)
     unlessError action = maybe action throwM
@@ -863,11 +866,11 @@ getGraphNoTC :: GraphLocation -> Empire APIGraph.Graph
 getGraphNoTC = getGraphCondTC False
 
 getNodes :: GraphLocation -> Empire [ExpressionNode]
-getNodes loc = withTC' loc True (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildGraph))
-                                (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildClassGraph))
+getNodes loc = withTC' loc (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildGraph))
+                           (runASTOp (view APIGraph.nodes <$> GraphBuilder.buildClassGraph))
 
 getConnections :: GraphLocation -> Empire [Connection]
-getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
+getConnections loc = withTC loc $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
 decodeLocation loc@(GraphLocation file crumbs) = case crumbs of
@@ -899,7 +902,7 @@ renameNode loc nid name
             Code.replaceAllUses v oldLen stripped
         resendCode loc
     | otherwise = do
-        withTC loc False $ do
+        withTC loc $ do
             _        <- ASTParse.runProperPatternParser name
             pat      <- ASTParse.parsePattern name
             runASTOp $ do
@@ -930,9 +933,10 @@ dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ return ()
 
 
-openFile :: FilePath -> Empire ()
+openFile :: Path Rel File -> Empire ()
 openFile path = do
-    code <- liftIO (Text.readFile path) <!!> "readFile"
+    absPath <- (Path.</> path) <$> use (Graph.userState . Empire.activeProject)
+    code <- liftIO (Text.readFile $ Path.toFilePath absPath) <!!> "readFile"
     Library.createLibrary Nothing path  <!!> "createLibrary"
     let loc = GraphLocation path $ Breadcrumb []
     withUnit loc (Graph.code .= code)
@@ -944,7 +948,7 @@ openFile path = do
         _      -> return ()
 
 typecheck :: GraphLocation -> Empire ()
-typecheck loc = withTC' loc False (return ()) (return ())
+typecheck loc = withTC' loc (return ()) (return ())
 
 
 putIntoHierarchy :: NodeId -> NodeRef -> GraphOp ()
@@ -1406,7 +1410,7 @@ pauseInterpreter :: GraphLocation -> Empire ()
 pauseInterpreter loc = do
     Graph.userState . activeInterpreter .= False
     Publisher.notifyInterpreterUpdate "Interpreter stopped"
-    withTC' loc False (return ()) (return ())
+    withTC' loc (return ()) (return ())
 
 -- internal
 
@@ -1428,33 +1432,33 @@ generateNewFunctionName forbiddenNames base =
         Just newName     = find (not . flip Set.member forbiddenNames) allPossibleNames
     in newName
 
-runTC :: GraphLocation -> Bool -> Bool -> Bool -> Command ClsGraph ()
-runTC loc flush interpret recompute = do
+runTC :: GraphLocation -> Bool -> Bool -> Command ClsGraph ()
+runTC loc interpret recompute = do
     g <- use Graph.userState
     let root = g ^. Graph.clsClass
     rooted <- runASTOp $ Store.serializeWithRedirectMap root
-    Publisher.requestTC loc g rooted flush interpret recompute
+    Publisher.requestTC loc g rooted interpret recompute
 
 typecheckWithRecompute :: GraphLocation -> Empire ()
 typecheckWithRecompute loc@(GraphLocation file _) = do
-    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc True True True)
+    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc True True)
 
 runInterpreter :: GraphLocation -> Empire ()
 runInterpreter loc@(GraphLocation file _) = do
-    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc True True False)
+    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc True False)
 
-withTC' :: GraphLocation -> Bool -> Command Graph a -> Command ClsGraph a -> Empire a
-withTC' loc@(GraphLocation file bs) flush actG actC = do
+withTC' :: GraphLocation -> Command Graph a -> Command ClsGraph a -> Empire a
+withTC' loc@(GraphLocation file bs) actG actC = do
     res       <- withBreadcrumb loc actG actC
     interpret <- use $ Graph.userState . activeInterpreter
-    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc flush interpret False)
+    withBreadcrumb (GraphLocation file def) (return ()) (runTC loc interpret False)
     return res
 
-withTCUnit :: GraphLocation -> Bool -> Command ClsGraph a -> Empire a
-withTCUnit loc flush cmd = withTC' loc flush (throwM UnsupportedOperation) cmd
+withTCUnit :: GraphLocation -> Command ClsGraph a -> Empire a
+withTCUnit loc cmd = withTC' loc (throwM UnsupportedOperation) cmd
 
-withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
-withTC loc flush actG = withTC' loc flush actG (throwM UnsupportedOperation)
+withTC :: GraphLocation -> Command Graph a -> Empire a
+withTC loc actG = withTC' loc actG (throwM UnsupportedOperation)
 
 
 getOutEdges :: NodeId -> GraphOp [InPortRef]

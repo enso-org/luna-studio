@@ -38,9 +38,10 @@ import LunaStudio.Data.GraphLocation        (GraphLocation (GraphLocation))
 import LunaStudio.Data.NodeCache            (NodeCache (NodeCache))
 import LunaStudio.Data.NodeId               (NodeId)
 import LunaStudio.Data.NodeMeta             (NodeMeta)
+import Path                                 (Path, Rel, File)
 
 
-dumpMetadata :: FilePath -> Empire [MarkerNodeMeta]
+dumpMetadata :: Path Rel File -> Empire [MarkerNodeMeta]
 dumpMetadata file = do
     funs <- withUnit (GraphLocation.top file) $
         fmap Map.keys . use $ Graph.userState . Graph.clsFuns
@@ -52,7 +53,7 @@ dumpMetadata file = do
             | (marker, (Just meta, _)) <- oldMetas ]
     pure $ concat metas
 
-addMetadataToCode :: FilePath -> Empire Text
+addMetadataToCode :: Path Rel File -> Empire Text
 addMetadataToCode file = do
     metadata <- FileMetadata <$> dumpMetadata file
     let metadataJSON
@@ -87,7 +88,7 @@ readMetadata' = do
             parseMetadata code
         _ -> pure $ FileMetadata mempty
 
-readMetadata :: FilePath -> Empire FileMetadata
+readMetadata :: Path Rel File -> Empire FileMetadata
 readMetadata file = withUnit (GraphLocation.top file) $ runASTOp readMetadata'
 
 extractMarkedMetasAndIds

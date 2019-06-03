@@ -30,6 +30,7 @@ import NodeEditor.Batch.Workspace        (Workspace)
 import NodeEditor.React.Model.Connection (ConnectionId)
 import NodeEditor.React.Model.Node       (ExpressionNode, NodeLoc)
 import NodeEditor.State.Global           (State, backend, clientId)
+import Path                              (Path, Rel, File)
 
 
 withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
@@ -56,7 +57,7 @@ withUUID act = do
     guiID <- use $ backend . clientId
     liftIO $ act uuid $ Just guiID
 
-openFile :: FilePath -> Command State ()
+openFile :: Path Rel File -> Command State ()
 openFile = withUUID . BatchCmd.openFile
 
 

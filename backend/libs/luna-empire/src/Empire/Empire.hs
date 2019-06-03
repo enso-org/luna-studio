@@ -22,11 +22,12 @@ import Empire.Data.Graph             (ClsGraph, CommandState (CommandState))
 import Empire.Data.Library           (Library)
 import LunaStudio.API.AsyncUpdate    (AsyncUpdate)
 import LunaStudio.Data.GraphLocation (GraphLocation)
+import Path                          (Path, Abs, Rel, Dir, File)
 
 
 type Error = String
 
-type ActiveFiles = Map FilePath Library
+type ActiveFiles = Map (Path Rel File) Library
 
 data SymbolMap = SymbolMap
     { _functions :: [Text]
@@ -38,24 +39,31 @@ instance Default SymbolMap where
     def = SymbolMap def def
 
 data Env = Env
-    { _activeFiles       :: ActiveFiles
+    { _activeProject     :: Path Abs Dir
+    , _activeFiles       :: ActiveFiles
     , _activeInterpreter :: Bool
     } deriving (Show)
 makeLenses ''Env
 
-instance Default Env where
-    def = Env Map.empty True
+{-instance Default Env where-}
+    {-def = Env (error "No active project!") Map.empty True-}
 
-data TCRequest = TCRequest
+mkEnv :: Path Abs Dir -> Env
+mkEnv p = Env p def True
+
+data TCRunRequest = TCRunRequest
     { _tcLocation       :: GraphLocation
     , _tcGraph          :: ClsGraph
     , _rooted           :: Store.RootedWithRedirects NodeRef
-    , _tcFlush          :: Bool
     , _tcRunInterpreter :: Bool
     , _tcRecompute      :: Bool
-    , _tcStop           :: Bool
     }
-makeLenses ''TCRequest
+makeLenses ''TCRunRequest
+
+data TCRequest
+    = TCRun TCRunRequest
+    | TCStop
+makePrisms ''TCRequest
 
 data CommunicationEnv = CommunicationEnv
     { _updatesChan   :: TChan AsyncUpdate
@@ -75,6 +83,7 @@ data InterpreterEnv = InterpreterEnv
     , _typedUnits   :: Typed.Units
     , _runtimeUnits :: Runtime.Units
     , _resolvers    :: Map IR.Qualified Res.UnitResolver
+    , _packageRoot  :: Path Abs Dir
     }
 makeLenses ''InterpreterEnv
 

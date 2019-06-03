@@ -21,13 +21,15 @@ import qualified Empire.Data.Library     as Library
 import           Empire.Empire           (Command, Empire, zoomCommand)
 import qualified Empire.Empire           as Empire
 
-createLibrary :: Maybe String -> FilePath -> Empire Library
+import Path (Path, Rel, File)
+
+createLibrary :: Maybe String -> Path Rel File -> Empire Library
 createLibrary name path = do
     library <- liftIO $ make name path
     userState . Empire.activeFiles . at path ?= library
     pure library
 
-make :: Maybe String -> FilePath -> IO Library
+make :: Maybe String -> Path Rel File -> IO Library
 make name path = do
     clsGraph <- defaultClsGraph
     pure $ Library.Library name path clsGraph
@@ -38,14 +40,14 @@ listLibraries = do
     files <- use $ userState . Empire.activeFiles
     pure $ Map.elems files
 
-data LibraryNotFoundException = LibraryNotFoundException FilePath
+data LibraryNotFoundException = LibraryNotFoundException (Path Rel File)
     deriving (Show)
 
 instance Exception LibraryNotFoundException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
-withLibrary :: FilePath -> Command Library a -> Empire a
+withLibrary :: Path Rel File -> Command Library a -> Empire a
 withLibrary file cmd = do
     zoomCommand (Empire.activeFiles . at file) $ do
         CommandState pm libMay <- get

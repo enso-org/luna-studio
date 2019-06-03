@@ -14,6 +14,7 @@ import qualified NodeEditor.React.Model.App as App
 import qualified NodeEditor.React.Store     as Store
 import qualified NodeEditor.React.View.App  as App
 import           NodeEditor.State.Global    (mkState)
+import qualified Path
 import qualified React.Flux                 as React
 import           System.Random              (newStdGen)
 import           WebSocket                  (WebSocket)
@@ -22,7 +23,7 @@ import           WebSocket                  (WebSocket)
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     random         <- newStdGen
-    let openedFile = Mount.openedFile
+    let openedFile = Mount.openedFile >>= Path.parseRelFile
     mdo
         let loop = LoopRef chan state
         Engine.scheduleInit loop

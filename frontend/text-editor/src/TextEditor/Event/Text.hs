@@ -1,13 +1,16 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module TextEditor.Event.Text where
 
-import           Common.Analytics              (IsTrackedEvent)
-import           Common.Data.Event             (EventName)
-import           Common.Prelude
-import           Data.Aeson                    (FromJSON, ToJSON)
-import           LunaStudio.Data.GraphLocation (GraphLocation)
+import Common.Prelude
+
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
-import           LunaStudio.Data.TextDiff      (TextDiff)
+
+import Common.Analytics              (IsTrackedEvent)
+import Common.Data.Event             (EventName)
+import Data.Aeson                    (FromJSON, ToJSON)
+import LunaStudio.Data.GraphLocation (GraphLocation)
+import LunaStudio.Data.TextDiff      (TextDiff)
+import Path                          (File, Path, Rel)
 
 
 data TextEvent = TextEvent
@@ -17,7 +20,7 @@ data TextEvent = TextEvent
 
 makeLenses ''TextEvent
 
-filePath :: Lens' TextEvent FilePath
+filePath :: Lens' TextEvent (Path Rel File)
 filePath = location . GraphLocation.filePath
 
 instance EventName TextEvent

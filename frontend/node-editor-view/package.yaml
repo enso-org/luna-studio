@@ -75,6 +75,7 @@ dependencies:
   - luna-lexer
   - matrix
   - mtl
+  - path
   - prologue
   - random
   - react-flux

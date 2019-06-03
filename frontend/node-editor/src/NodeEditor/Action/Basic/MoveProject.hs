@@ -10,8 +10,8 @@ import           NodeEditor.State.Global                (State)
 
 
 localMoveProject :: FilePath -> FilePath -> Command State ()
-localMoveProject old new = modifyApp $ do
-    withJustM (use workspace) $ \workspace' -> do
-        let oldFilePath = workspace' ^. currentLocation . filePath
-        withJust (stripPrefix old oldFilePath) $ \fileName ->
-            workspace . _Just . currentLocation . filePath .= new <> fileName
+localMoveProject old new = pure () -- modifyApp $ do
+    {-withJustM (use workspace) $ \workspace' -> do-}
+        {-let oldFilePath = workspace' ^. currentLocation . filePath-}
+        {-withJust (stripPrefix old oldFilePath) $ \fileName ->-}
+            {-workspace . _Just . currentLocation . filePath .= new <> fileName-}

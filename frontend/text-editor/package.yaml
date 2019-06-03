@@ -43,6 +43,7 @@ dependencies:
   - luna-api-definition
   - luna-lexer
   - mtl
+  - path
   - prologue
   - random
   - text

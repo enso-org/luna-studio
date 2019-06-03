@@ -5,13 +5,14 @@ import           Common.Analytics  (IsTrackedEvent (..))
 import           Common.Data.Event (EventName)
 import           Common.Prelude
 import           Data.Aeson        (FromJSON, ToJSON)
+import Path (Abs, Dir, File, Path, Rel)
 
 data InternalEvent
     = Copy          { _path :: FilePath , _selections :: [(Int, Int)]}
     | CloseFile     { _path :: FilePath }
     | CreateProject { _path :: FilePath }
     | FileChanged   { _path :: FilePath }
-    | GetBuffer     { _path :: FilePath }
+    | GetBuffer     { _filePath :: Path Rel File }
     | InterpreterPause
     | InterpreterReload
     | InterpreterStart
@@ -21,7 +22,7 @@ data InternalEvent
     | Paste       { _selections :: [(Int, Int)], _content :: [Text] }
     | Redo
     | SaveFile    { _path :: FilePath }
-    | SetProject  { _path :: FilePath }
+    | SetProject  { _projectPath :: Path Abs Dir }
     | Undo
     deriving (Generic, NFData, Show, Typeable)
 

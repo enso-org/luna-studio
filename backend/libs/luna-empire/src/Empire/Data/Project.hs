@@ -17,9 +17,3 @@ make :: String -> Project
 make name' = Project name' IntMap.empty
 
 makeLenses ''Project
-
-toAPI :: Project -> API.Project
-toAPI (Project name' libs') = API.Project name' (Library.toAPI <$> libs')
-
-toPersistent :: Project -> IntMap Persistence.Library -> Persistence.Project
-toPersistent (Project name' _) = Persistence.Project name'

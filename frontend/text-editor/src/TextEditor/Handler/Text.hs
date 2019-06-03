@@ -9,6 +9,7 @@ import qualified LunaStudio.API.Atom.Copy       as Copy
 import qualified LunaStudio.API.Atom.GetBuffer  as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute as Substitute
 import qualified LunaStudio.API.Response        as Response
+import qualified Path
 import qualified TextEditor.Action.Batch        as ActBatch
 import qualified TextEditor.State.Global        as State
 
@@ -48,7 +49,7 @@ handle (Batch (SubstituteResponse response))
 handle (Batch (BufferGetResponse  response))
     = Just $ handleResponse response success doNothing2 where
         success result = do
-            let uri  = response ^. Response.request . GetBuffer.filePath
+            let uri  = Path.toFilePath $ response ^. Response.request . GetBuffer.filePath
                 code = result ^. GetBuffer.code
             JS.setBuffer (convert uri) code
 handle (Batch (CopyResponse  response))

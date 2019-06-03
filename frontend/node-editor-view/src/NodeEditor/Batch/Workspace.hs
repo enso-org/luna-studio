@@ -1,17 +1,20 @@
 module NodeEditor.Batch.Workspace where
 
-import           Common.Prelude
+import Common.Prelude
+
 import qualified LunaStudio.Data.Breadcrumb    as Breadcrumb
-import           LunaStudio.Data.GraphLocation (GraphLocation (..))
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
-import           LunaStudio.Data.NodeLoc       (HasBreadcrumb (..))
+
+import LunaStudio.Data.GraphLocation (GraphLocation (..))
+import LunaStudio.Data.NodeLoc       (HasBreadcrumb (..))
+import Path (Path, Rel, File)
 
 
 data Workspace = Workspace { _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe GraphLocation
                            } deriving (Show, Eq, Generic)
 
-mk :: FilePath -> Workspace
+mk :: Path Rel File -> Workspace
 mk path = Workspace (GraphLocation path def) def
 
 makeLenses ''Workspace

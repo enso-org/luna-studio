@@ -7,8 +7,19 @@ import qualified LunaStudio.API.Response as Response
 import qualified LunaStudio.API.Topic    as T
 import           Prologue
 
+import Path (Abs, Dir, Path)
+import qualified Data.Binary        as Binary
+import qualified Path
 
-data Request = Request { _rootPath :: FilePath } deriving (Eq, Generic, Show)
+instance Binary (Path Abs Dir) where
+    put = Binary.put . Path.toFilePath
+    get = do
+        filepath <- Binary.get
+        case Path.parseAbsDir filepath of
+            Nothing -> fail "Not an absolute directory"
+            Just p  -> pure p
+
+data Request = Request { _rootPath :: Path Abs Dir } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 

@@ -44,6 +44,7 @@ import qualified LunaStudio.Data.Error              as APIError
 import qualified LunaStudio.Data.GraphLocation      as GraphLocation
 import qualified Memory                             as Memory
 import qualified Path
+import qualified Path.IO                            as PathIO
 
 import Control.Concurrent.Async         (Async)
 import Control.Exception.Safe           (mask_, tryAny)
@@ -70,6 +71,7 @@ import LunaStudio.Data.Breadcrumb       (Breadcrumb (Breadcrumb),
 import LunaStudio.Data.GraphLocation    (GraphLocation (GraphLocation))
 import LunaStudio.Data.NodeValue        (NodeValue (NodeError, NodeValue))
 import LunaStudio.Data.Visualization    (VisualizationValue (StreamDataPoint, StreamStart, Value))
+import Path                             (Path, Abs, Rel, Dir, File)
 import System.Directory                 (canonicalizePath, withCurrentDirectory)
 import System.Environment               (getEnv)
 import System.FilePath                  (takeDirectory)
@@ -103,13 +105,11 @@ runTC modName (GraphLocation _ br) = do
     --     Graph.breadcrumbHierarchy . BH.refs %= (\x -> Map.findWithDefault x x mapping)
     -- return ()
     --
-withPackageCurrentDirectory :: FilePath -> IO a -> IO a
-withPackageCurrentDirectory currentFile act = do
-    rootPath <- liftIO $ Package.findPackageRootForFile =<< Path.parseAbsFile currentFile
-    let packageDirectory = maybe (takeDirectory currentFile) Path.toFilePath rootPath
-    withCurrentDirectory packageDirectory act
+withPackageCurrentDirectory :: Path Abs Dir -> IO a -> IO a
+withPackageCurrentDirectory packageRoot act = do
+    PathIO.withCurrentDir packageRoot act
 
-runInterpreter :: FilePath -> Runtime.Units -> Command Graph (Maybe LocalScope)
+runInterpreter :: Path Abs Dir -> Runtime.Units -> Command Graph (Maybe LocalScope)
 runInterpreter path imports = do
     selfRef    <- use    $ Graph.userState . Graph.breadcrumbHierarchy . BH.self
     bodyRefMay <- runASTOp $ matchExpr selfRef $ \case
@@ -192,9 +192,10 @@ updateNodes loc@(GraphLocation _ br) = case br of
     Breadcrumb _ -> pure ()
 
 updateValues :: GraphLocation
+             -> Path Abs Dir
              -> LocalScope
              -> Command Graph [Async ()]
-updateValues loc@(GraphLocation path _) scope = do
+updateValues loc path scope = do
     childrenMap <- use $ Graph.userState . Graph.breadcrumbHierarchy . BH.children
     let allNodes = Map.assocs $ view BH.self <$> childrenMap
     env     <- ask
@@ -230,20 +231,16 @@ updateValues loc@(GraphLocation path _) scope = do
 essentialImports :: [IR.Qualified]
 essentialImports = ["Std.Primitive", "Std.Base"]
 
-filePathToQualName :: MonadIO m => FilePath -> m IR.Qualified
-filePathToQualName path = liftIO $ do
-    path' <- Path.parseAbsFile path
-    root  <- Package.packageRootForFile path'
-    let projName = Package.getPackageName root
-    file  <- Path.stripProperPrefix (root Path.</> $(Path.mkRelDir "src")) path'
+filePathToQualName :: MonadIO m => Path Abs Dir -> Path Rel File -> m IR.Qualified
+filePathToQualName pkgRoot filepath = liftIO $ do
+    let projName = Package.getPackageName pkgRoot
+    file  <- Path.stripProperPrefix $(Path.mkRelDir "src") filepath
     return $ Package.mkQualName projName file
 
-prepareFileImportPaths :: MonadIO m => FilePath -> m (Map IR.Qualified FilePath)
-prepareFileImportPaths file = liftIO $ do
-    filePath        <- Path.parseAbsFile file
-    currentProjPath <- Package.packageRootForFile filePath
+prepareFileImportPaths :: MonadIO m => Path Abs Dir -> m (Map IR.Qualified FilePath)
+prepareFileImportPaths packageRoot = liftIO $ do
     stdPath         <- StdLocator.findPath
-    libs            <- Package.packageImportPaths currentProjPath stdPath
+    libs            <- Package.packageImportPaths packageRoot stdPath
     PackageEnv.setLibraryVars libs
     srcs            <- for (snd <$> libs) $ \libPath -> do
         p <- Path.parseAbsDir libPath
@@ -296,14 +293,14 @@ makePrimStdIfMissing = do
         Graph.userState . Empire.runtimeUnits .= computed
         Graph.userState . Empire.resolvers    .= ress
 
-ensureCurrentScope :: Bool -> IR.Qualified -> FilePath -> NodeRef -> Command InterpreterEnv ()
+ensureCurrentScope :: Bool -> IR.Qualified -> Path Abs Dir -> NodeRef -> Command InterpreterEnv ()
 ensureCurrentScope recompute modName path root = do
     existing <- use $ Graph.userState . Empire.resolvers . at modName
     when (recompute || isNothing existing) $ do
         compileCurrentScope modName path root
 
-compileCurrentScope :: IR.Qualified -> FilePath -> NodeRef -> Command InterpreterEnv ()
-compileCurrentScope modName path root = do
+compileCurrentScope :: IR.Qualified -> Path Abs Dir -> NodeRef -> Command InterpreterEnv ()
+compileCurrentScope modName packageRoot root = do
     typed   <- use $ Graph.userState . Empire.typedUnits
     evald   <- use $ Graph.userState . Empire.runtimeUnits
     ress    <- use $ Graph.userState . Empire.resolvers
@@ -311,7 +308,7 @@ compileCurrentScope modName path root = do
     (mods, newTyped, newEvald, newResolvers, units) <- liftScheduler $ do
         imports <- ImportsPlucker.run root
         UnitLoader.init
-        srcs <- prepareFileImportPaths path
+        srcs <- prepareFileImportPaths packageRoot
         Scheduler.registerAttr @Unit.UnitRefsMap
         Scheduler.setAttr $ Unit.UnitRefsMap $ Map.singleton modName $ Unit.UnitRef (Unit.Graph $ Layout.unsafeRelayout root) (wrap imports)
         for imports $ UnitLoader.loadUnitIfMissing (Set.fromList $ Map.keys ress) srcs [modName]
@@ -357,23 +354,24 @@ runNoCleanUp gl clsGraph rooted interpret recompute = do
     stop
     (root, redirects)
         <- runASTOp . Store.deserializeWithRedirects $ rooted ^. Store.rooted
+    packageRoot <- use $ Graph.userState . Empire.packageRoot
     let filePath        = gl ^. GraphLocation.filePath
         deserializerOff = redirects Map.! someTypeRep @IR.Terms
         newClsGraph     = clsGraph & BH.refs %~ translate
             (rooted ^. Store.redirections)
             deserializerOff
     Graph.userState . Empire.clsGraph .= newClsGraph
-    modName <- filePathToQualName filePath
+    modName <- filePathToQualName packageRoot filePath
     makePrimStdIfMissing
-    ensureCurrentScope recompute modName filePath root
+    ensureCurrentScope recompute modName packageRoot root
     runTC modName gl
     updateNodes gl
     let processBC evald (Breadcrumb (Definition uuid:r))
             = zoomCommand Empire.clsGraph
             . withRootedFunction uuid
             . runInternalBreadcrumb (Breadcrumb r) $ do
-                scope <- runInterpreter filePath evald
-                traverse (updateValues gl) scope
+                scope <- runInterpreter packageRoot evald
+                traverse (updateValues gl packageRoot) scope
         processBC _ _ = pure Nothing
     when interpret $ do
         evald  <- use $ Graph.userState . Empire.runtimeUnits

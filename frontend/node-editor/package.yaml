@@ -80,6 +80,7 @@ dependencies:
   - luna-node-editor-view
   - matrix
   - mtl
+  - path
   - random
   - react-flux
   - scientific

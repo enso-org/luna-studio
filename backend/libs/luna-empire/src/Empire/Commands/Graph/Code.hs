@@ -35,6 +35,7 @@ import LunaStudio.Data.GraphLocation        (GraphLocation)
 import LunaStudio.Data.NodeCache            (nodeIdMap, nodeMetaMap)
 import LunaStudio.Data.Point                (Point)
 import LunaStudio.Data.TextDiff             (TextDiff (TextDiff))
+import Path                                 (Path, Rel, File)
 
 -- | minimizeDiff takes the old code and a diff and strips off the longest
 --   common prefix, shortening the diff.
@@ -75,7 +76,7 @@ viewDeltasToRealDeltas markerlessCode = case Text.uncons markerlessCode of
         then Code.viewDeltasToRealBeforeMarker
         else Code.viewDeltasToReal
 
-substituteCodeFromPoints :: FilePath -> [TextDiff] -> Empire ()
+substituteCodeFromPoints :: Path Rel File -> [TextDiff] -> Empire ()
 substituteCodeFromPoints path (breakDiffs -> diffs) = do
     let gl = GraphLocation.top path
     changes <- withUnit gl $ do
@@ -198,7 +199,7 @@ sanitizeMarkers text = let
         else removeErroneousMarkers (coerce erroneousMarkers) text
 
 
-substituteCode :: FilePath -> [(Delta, Delta, Text)] -> Empire ()
+substituteCode :: Path Rel File -> [(Delta, Delta, Text)] -> Empire ()
 substituteCode path changes = do
     let gl = GraphLocation.top path
     newCode <- sanitizeMarkers <$> withUnit gl (Code.applyMany changes)

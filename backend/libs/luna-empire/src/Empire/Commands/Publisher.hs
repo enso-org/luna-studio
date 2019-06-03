@@ -17,7 +17,9 @@ import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (NodeId, NodeTypecheckerUpdate)
 import           LunaStudio.Data.NodeValue                  (NodeValue)
 import           LunaStudio.Data.TextDiff                   (TextDiff (..))
+import           Path                                       (Path, Rel, File)
 
+import qualified Empire.Empire                              as Empire
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
 import qualified LunaStudio.API.Control.Interpreter         as Interpreter
 import qualified LunaStudio.API.Graph.MonadsUpdate          as Monads
@@ -42,7 +44,7 @@ notifyResultUpdate loc nid v t =
     sendUpdate $ ResultUpdate $ NodeResult.Update loc nid v t
 
 notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m)
-    => FilePath -> Text -> Maybe Point -> m ()
+    => Path Rel File -> Text -> Maybe Point -> m ()
 notifyCodeUpdate path code cursor =
     sendUpdate $ CodeUpdate
         $ Substitute.Update path [TextDiff Nothing code cursor]
@@ -57,15 +59,15 @@ sendUpdate upd = do
     chan <- asks $ view updatesChan
     liftIO $ atomically $ writeTChan chan upd
 
-requestTC :: GraphLocation -> ClsGraph -> Store.RootedWithRedirects NodeRef -> Bool -> Bool -> Bool -> Command s ()
-requestTC loc g rooted flush runInterpreter recompute = do
+requestTC :: GraphLocation -> ClsGraph -> Store.RootedWithRedirects NodeRef -> Bool -> Bool -> Command s ()
+requestTC loc g rooted runInterpreter recompute = do
     chan <- view typecheckChan
     liftIO $ do
         a <- tryTakeMVar chan
         let recompute' = case a of
-                Just h -> if h ^. tcRecompute then True else recompute
+                Just h -> (h ^? Empire._TCRun . tcRecompute == Just True) || recompute
                 _      -> recompute
-        putMVar chan $ TCRequest loc g rooted flush runInterpreter recompute' False
+        putMVar chan $ TCRun $ TCRunRequest loc g rooted runInterpreter recompute'
 
 stopTC :: Command s ()
 stopTC = do
@@ -73,4 +75,4 @@ stopTC = do
     liftIO $ do
         g <- defaultClsGraph
         tryTakeMVar chan
-        putMVar chan $ TCRequest (GraphLocation "" def) g (error "stopTC: rooted") False False False True
+        putMVar chan TCStop

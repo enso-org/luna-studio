@@ -9,10 +9,15 @@ import qualified LunaStudio.Data.GraphLocation as GraphLocation
 import Data.Aeson.Types           (ToJSON)
 import Data.Binary                (Binary)
 import LunaStudio.Data.Breadcrumb (Breadcrumb (..))
+import Path                       (Path, Rel, File)
 
 
-data Request = Request { _filePath :: FilePath } deriving (Eq, Generic, Show)
-data Result  = Result  { _code     :: Text     } deriving (Eq, Generic, Show)
+data Request = Request
+    { _filePath :: Path Rel File }
+    deriving (Eq, Generic, Show)
+data Result  = Result
+    { _code :: Text }
+    deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 makeLenses ''Result

@@ -66,7 +66,7 @@ class LunaStudio
                 when 'ProjectSet'
                     @projects.openMainIfExists()
                 when 'FileOpened'
-                    codeEditor.pushInternalEvent(tag: "GetBuffer", _path: arg0)
+                    codeEditor.pushInternalEvent(tag: "GetBuffer", _filePath: arg0)
                 when 'ProjectMove'
                     moveUri = (oldUri) -> if oldUri? and oldUri.startsWith arg1
                         return arg0 + oldUri.slice arg1.length
@@ -181,15 +181,16 @@ class LunaStudio
 
     handleProjectPathsChange: (projectPaths) =>
         console.log(projectPaths)
-        projectPath = projectPaths[0]
-        if projectPath?
+        projectId = projectPaths[0]
+        project = @projects.findById projectId
+        if project?
             #@projects.addRecent projectPath
-            codeEditor.pushInternalEvent(tag: "SetProject", _path: projectPath)
+            codeEditor.pushInternalEvent(tag: "SetProject", _projectPath: project.path)
             analytics.track 'LunaStudio.Project.Open',
-                name: path.basename projectPath
-                path: projectPath
+                name: path.basename project.name
+                path: project.path
             @welcome.close()
-            @projects.getTree(projectPath, (tree) => @treeView.setTree tree)
+            @projects.getTree(projectId, (tree) => @treeView.setTree tree)
         if @moving
             @moving = false
         else

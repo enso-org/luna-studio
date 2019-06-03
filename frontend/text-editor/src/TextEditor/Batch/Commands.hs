@@ -24,6 +24,7 @@ import JS.Atom                           (activeLocation)
 import LunaStudio.Data.GraphLocation     (GraphLocation (..))
 import LunaStudio.Data.Range             (Range)
 import LunaStudio.Data.TextDiff          (TextDiff)
+import Path                              (Abs, Dir, File, Path, Rel)
 
 closeFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
 closeFile path uuid guiID = sendRequest . Message uuid guiID
@@ -37,7 +38,7 @@ fileChanged :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
 fileChanged path uuid guiID = sendRequest . Message uuid guiID
     $ FileChanged.Request path
 
-getBuffer :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+getBuffer :: MonadIO m => Path Rel File -> UUID -> Maybe UUID -> m ()
 getBuffer path uuid guiID = sendRequest . Message uuid guiID
     $ GetBuffer.Request path
 
@@ -53,7 +54,7 @@ saveFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
 saveFile path uuid guiID = sendRequest . Message uuid guiID
     $ SaveFile.Request path
 
-setProject :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+setProject :: MonadIO m => Path Abs Dir -> UUID -> Maybe UUID -> m ()
 setProject rootPath uuid guiID = sendRequest . Message uuid guiID
     $ SetProject.Request rootPath
 
@@ -84,16 +85,16 @@ redo uuid guiID
     = sendRequest . Message uuid guiID $ Redo.Request Redo.RedoRequest
 
 interpreterPause :: MonadIO m => UUID -> Maybe UUID -> m ()
-interpreterPause uuid guiID = do
-    loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Pause
+interpreterPause uuid guiID = pure () --do
+    {-loc <- fromMaybe (GraphLocation def def) <$> activeLocation-}
+    {-sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Pause-}
 
 interpreterStart :: MonadIO m => UUID -> Maybe UUID -> m ()
-interpreterStart uuid guiID = do
-    loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Start
+interpreterStart uuid guiID = pure () -- do
+    {-loc <- fromMaybe (GraphLocation def def) <$> activeLocation-}
+    {-sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Start-}
 
 interpreterReload :: MonadIO m => UUID -> Maybe UUID -> m ()
-interpreterReload uuid guiID = do
-    loc <- fromMaybe (GraphLocation def def) <$> activeLocation
-    sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Reload
+interpreterReload uuid guiID = pure () -- do
+    {-loc <- fromMaybe (GraphLocation def def) <$> activeLocation-}
+    {-sendRequest . Message uuid guiID $ Interpreter.Request loc Interpreter.Reload-}

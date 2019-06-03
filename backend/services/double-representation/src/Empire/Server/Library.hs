@@ -30,31 +30,29 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 
 handleCreateLibrary :: Request CreateLibrary.Request -> StateT Env Bus.App ()
-handleCreateLibrary req@(Request _ _ request) = do
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary
-        (request ^. CreateLibrary.libraryName)
-        (fromString $ request ^. CreateLibrary.path)
-    case result of
-        Left (exc :: SomeASTException) -> do
-            err <- liftIO $ prepareLunaError $ toException exc
-            replyFail logger err req (Response.Error err)
-        Right (library, newEmpireEnv) -> do
-            Env.empireEnv .= newEmpireEnv
-            replyResult req () $ CreateLibrary.Result $_NOT_IMPLEMENTED $ DataLibrary.toAPI library
-            sendToBus' $ CreateLibrary.Update $_NOT_IMPLEMENTED $ DataLibrary.toAPI library
+handleCreateLibrary req@(Request _ _ request) = $_NOT_IMPLEMENTED -- do
+    {-currentEmpireEnv <- use Env.empireEnv-}
+    {-empireNotifEnv   <- use Env.empireNotif-}
+    {-result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary-}
+        {-(request ^. CreateLibrary.libraryName)-}
+        {-(fromString $ request ^. CreateLibrary.path)-}
+    {-case result of-}
+        {-Left (exc :: SomeASTException) -> do-}
+            {-err <- liftIO $ prepareLunaError $ toException exc-}
+            {-replyFail logger err req (Response.Error err)-}
+        {-Right (library, newEmpireEnv) -> do-}
+    {-replyResult req () $ CreateLibrary.Result $_NOT_IMPLEMENTED $_NOT_IMPLEMENTED-}
+    {-sendToBus' $ CreateLibrary.Update $_NOT_IMPLEMENTED $_NOT_IMPLEMENTED-}
 
 handleListLibraries :: Request ListLibraries.Request -> StateT Env Bus.App ()
-handleListLibraries req@(Request _ _ request) = do
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries
-    case result of
-        Left (exc :: SomeASTException) -> do
-            err <- liftIO $ prepareLunaError $ toException exc
-            replyFail logger err req (Response.Error err)
-        Right (librariesList, newEmpireEnv) -> do
-            Env.empireEnv .= newEmpireEnv
-            let libraries = zip [0..] (map DataLibrary.toAPI librariesList)
-            replyResult req () $ ListLibraries.Result $ libraries
+handleListLibraries req@(Request _ _ request) = $_NOT_IMPLEMENTED -- do
+    {-currentEmpireEnv <- use Env.empireEnv-}
+    {-empireNotifEnv   <- use Env.empireNotif-}
+    {-result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries-}
+    {-case result of-}
+        {-Left (exc :: SomeASTException) -> do-}
+            {-err <- liftIO $ prepareLunaError $ toException exc-}
+            {-replyFail logger err req (Response.Error err)-}
+        {-Right (librariesList, newEmpireEnv) -> do-}
+            {-Env.empireEnv .= newEmpireEnv-}
+            {-replyResult req () $ ListLibraries.Result $_NOT_IMPLEMENTED-}

@@ -1,18 +1,22 @@
 module NodeEditor.Action.Basic.Atom where
 
-import           Common.Action.Command                  (Command)
-import           Common.Prelude
-import           LunaStudio.Data.GraphLocation          (filePath)
-import           NodeEditor.Action.Basic.ProjectManager (getSettings, loadGraph, saveSettings)
-import           NodeEditor.Action.State.App            (getWorkspace, modifyApp)
-import           NodeEditor.Action.State.NodeEditor     (resetApp)
-import           NodeEditor.Batch.Workspace             (currentLocation)
-import qualified NodeEditor.Batch.Workspace             as Workspace
-import           NodeEditor.React.Model.App             (workspace)
-import           NodeEditor.State.Global                (State)
+import Common.Prelude
+
+import qualified NodeEditor.Batch.Workspace as Workspace
+
+import Common.Action.Command                  (Command)
+import LunaStudio.Data.GraphLocation          (filePath)
+import NodeEditor.Action.Basic.ProjectManager (getSettings, loadGraph,
+                                               saveSettings)
+import NodeEditor.Action.State.App            (getWorkspace, modifyApp)
+import NodeEditor.Action.State.NodeEditor     (resetApp)
+import NodeEditor.Batch.Workspace             (currentLocation)
+import NodeEditor.React.Model.App             (workspace)
+import NodeEditor.State.Global                (State)
+import Path                                   (Path, Rel, File)
 
 
-setFile :: FilePath -> Command State ()
+setFile :: Path Rel File -> Command State ()
 setFile path = do
     saveSettings
     mayWorkspace <- getWorkspace
@@ -25,7 +29,7 @@ setFile path = do
         loadGraph (newWorkspace ^. currentLocation) ((, settings) <$> mayCurrentLocation) True
 
 
-updateFilePath :: FilePath -> Command State ()
+updateFilePath :: Path Rel File -> Command State ()
 updateFilePath path = do
     mayWorkspace <- getWorkspace
     let mayOldLocation = mayWorkspace ^? _Just . currentLocation

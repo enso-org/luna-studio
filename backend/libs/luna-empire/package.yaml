@@ -85,6 +85,7 @@ dependencies:
     - mtl
     - open-browser
     - path
+    - path-io
     - prologue
     - safe
     - safe-exceptions

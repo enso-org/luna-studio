@@ -6,6 +6,8 @@ import qualified Control.Monad.Exception.IO            as Exception
 import qualified Data.Bimap                            as Bimap
 import qualified Data.Map                              as Map
 import qualified Data.Yaml                             as Yaml
+import qualified Empire.Data.Graph                     as Graph
+import qualified Empire.Empire                         as Empire
 import qualified Luna.Datafile.Stdlib                  as StdLocator
 import qualified Luna.IR                               as IR
 import qualified Luna.Package                          as Package
@@ -23,7 +25,7 @@ import qualified LunaStudio.Data.Searcher.Hint.Library as SearcherLibrary
 import qualified Path
 
 import Control.Arrow                 ((***))
-import Control.Lens                  (_Just, preview)
+import Control.Lens                  (_Just, preview, use)
 import Control.Monad.Catch           (try)
 import Control.Monad.Exception       (Throws)
 import Data.Map                      (Map)
@@ -62,16 +64,10 @@ importedSnippetsFieldName = "$imported"
 
 -- === Disc IO operations === --
 
-getImportPaths ::
-    ( MonadIO m
-    , Throws [PackageNotFoundException, DatafileException, Path.PathException] m
-    ) => GraphLocation -> m [FilePath]
+getImportPaths :: GraphLocation -> Empire [FilePath]
 getImportPaths location = do
-    let file = location ^. GraphLocation.filePath
     stdPath         <- StdLocator.findPath
-    filePath        <- Exception.rethrowFromIO @Path.PathException
-                       (Path.parseAbsFile file)
-    currentProjPath <- Package.packageRootForFile filePath
+    currentProjPath <- use $ Graph.userState . Empire.activeProject
     importPaths     <- Package.packageImportPaths currentProjPath stdPath
     pure $ snd <$> importPaths
 

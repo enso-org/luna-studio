@@ -11,6 +11,7 @@ import Data.UUID.Types               (UUID)
 import LunaStudio.Data.GraphLocation (GraphLocation)
 import LunaStudio.Data.Range         (Range)
 import LunaStudio.Data.TextDiff      (TextDiff)
+import Path                          (Abs, Dir, File, Path, Rel)
 import TextEditor.Action.UUID        (registerRequest)
 import TextEditor.State.Global       (State, clientId)
 
@@ -27,7 +28,7 @@ closeFile = withUUID . BatchCmd.closeFile
 createProject :: FilePath -> Command State ()
 createProject = withUUID . BatchCmd.createProject
 
-getBuffer :: FilePath -> Command State ()
+getBuffer :: Path Rel File -> Command State ()
 getBuffer = withUUID . BatchCmd.getBuffer
 
 fileChanged :: FilePath -> Command State ()
@@ -45,7 +46,7 @@ isSaved = withUUID . BatchCmd.isSaved
 moveProject :: FilePath -> FilePath -> Command State ()
 moveProject = withUUID .: BatchCmd.moveProject
 
-setProject :: FilePath -> Command State ()
+setProject :: Path Abs Dir -> Command State ()
 setProject = withUUID . BatchCmd.setProject
 
 substitute :: GraphLocation -> [TextDiff] -> Command State ()

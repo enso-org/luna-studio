@@ -94,25 +94,29 @@ modifyGraph :: forall req inv res res'.
 modifyGraph inverse action success origReq@(Request uuid guiID request) = do
     logger Logger.info $ Topic.topic @(Request req) <> ": " <> show request
     currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    endPoints        <- use Env.config
-    inv'             <- liftIO $ try
-        $ runEmpire empireNotifEnv currentEmpireEnv $ inverse request
-    case inv' of
-        Left (exc :: SomeException) -> do
-            err <- liftIO $ Graph.prepareLunaError exc
-            replyFail logger err origReq (Response.Error err)
-        Right (inv, _) -> do
-            let invStatus = Response.Ok inv
-            result <- liftIO $ try
-                $ runEmpire empireNotifEnv currentEmpireEnv $ action request
-            case result of
-                Left  (exc :: SomeException) -> do
+    case currentEmpireEnv of
+        Just empireEnv -> do
+            empireNotifEnv   <- use Env.empireNotif
+            endPoints        <- use Env.config
+            inv'             <- liftIO $ try
+                $ runEmpire empireNotifEnv empireEnv $ inverse request
+            case inv' of
+                Left (exc :: SomeException) -> do
                     err <- liftIO $ Graph.prepareLunaError exc
-                    replyFail logger err origReq invStatus
-                Right (result, newEmpireEnv) -> do
-                    Env.empireEnv .= newEmpireEnv
-                    success origReq inv result
+                    replyFail logger err origReq (Response.Error err)
+                Right (inv, _) -> do
+                    let invStatus = Response.Ok inv
+                    result <- liftIO $ try
+                        $ runEmpire empireNotifEnv empireEnv $ action request
+                    case result of
+                        Left  (exc :: SomeException) -> do
+                            err <- liftIO $ Graph.prepareLunaError exc
+                            replyFail logger err origReq invStatus
+                        Right (result, newEmpireEnv) -> do
+                            Env.empireEnv .= Just newEmpireEnv
+                            success origReq inv result
+        Nothing -> do
+            logger Logger.info $ "Modify Graph: No Project Set"
 
 modifyGraphOk :: forall req inv.
     ( Show req

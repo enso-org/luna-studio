@@ -23,6 +23,7 @@ dependencies:
   - lens
   - lens-utils
   - matrix
+  - path
   - pretty-show
   - prologue
   - storable-tuple
