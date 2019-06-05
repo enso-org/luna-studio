@@ -17,7 +17,7 @@ import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (NodeId, NodeTypecheckerUpdate)
 import           LunaStudio.Data.NodeValue                  (NodeValue)
 import           LunaStudio.Data.TextDiff                   (TextDiff (..))
-import           Path                                       (Path, Rel, File)
+import           Path                                       (Abs, Dir, File, Path, Rel)
 
 import qualified Empire.Empire                              as Empire
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
@@ -76,3 +76,10 @@ stopTC = do
         g <- defaultClsGraph
         tryTakeMVar chan
         putMVar chan TCStop
+
+setProjectTC :: Path Abs Dir -> Command s ()
+setProjectTC root = do
+    chan <- view typecheckChan
+    liftIO $ do
+        tryTakeMVar chan
+        putMVar chan $ TCSetProject root

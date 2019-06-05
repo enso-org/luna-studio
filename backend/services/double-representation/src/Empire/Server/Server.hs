@@ -97,7 +97,6 @@ modifyGraph inverse action success origReq@(Request uuid guiID request) = do
     case currentEmpireEnv of
         Just empireEnv -> do
             empireNotifEnv   <- use Env.empireNotif
-            endPoints        <- use Env.config
             inv'             <- liftIO $ try
                 $ runEmpire empireNotifEnv empireEnv $ inverse request
             case inv' of

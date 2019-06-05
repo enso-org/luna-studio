@@ -216,7 +216,6 @@ handleSearchNodes origReq@(Request uuid guiID
         case currentEmpireEnv of
             Just empireEnv -> do
                 empireNotifEnv   <- use Env.empireNotif
-                endPoints        <- use Env.config
                 env              <- get
                 toBusChan        <- use Env.toBusChan
                 let invStatus = Response.Ok ()

@@ -8,7 +8,6 @@ import qualified Data.List          as List
 import qualified Empire.Cmd         as Cmd
 import qualified Empire.Server      as Server
 import qualified Empire.Version     as Version
-import qualified Luna.Configurator  as Configurator
 import qualified System.Log.Options as Opt
 
 import Empire.Cmd         (Cmd)
@@ -47,9 +46,7 @@ run cmd = case cmd of
     Cmd.Run {} -> do
         rootLogger setIntLevel $ Cmd.verbose cmd
         endPoints <- Config.readDefault
-        projectsPath <- Configurator.projectRootPath
         let topics = if List.null $ Cmd.topics cmd
                         then defaultTopics
                         else Cmd.topics cmd
-            formatted = Cmd.formatted cmd
-        Server.run endPoints topics formatted projectsPath
+        Server.run endPoints topics

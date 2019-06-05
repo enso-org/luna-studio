@@ -4,7 +4,9 @@ import Empire.Prelude
 
 import qualified Data.Graph.Store                      as Store
 import qualified Data.Map.Lazy                         as Map
+import qualified Empire.Data.Graph                     as Graph
 import qualified Luna.IR                               as IR
+import qualified Luna.Package.Configuration.Local      as Local
 import qualified Luna.Pass.Resolve.Data.Resolution     as Res
 import qualified Luna.Pass.Sourcing.Data.Unit          as Unit
 import qualified Luna.Pass.Typing.Data.Typed           as Typed
@@ -45,9 +47,6 @@ data Env = Env
     } deriving (Show)
 makeLenses ''Env
 
-{-instance Default Env where-}
-    {-def = Env (error "No active project!") Map.empty True-}
-
 mkEnv :: Path Abs Dir -> Env
 mkEnv p = Env p def True
 
@@ -63,12 +62,12 @@ makeLenses ''TCRunRequest
 data TCRequest
     = TCRun TCRunRequest
     | TCStop
+    | TCSetProject (Path Abs Dir)
 makePrisms ''TCRequest
 
 data CommunicationEnv = CommunicationEnv
     { _updatesChan   :: TChan AsyncUpdate
     , _typecheckChan :: MVar TCRequest
-    , _searcherHints :: MVar Libraries.Set
     } deriving Generic
 makeLenses ''CommunicationEnv
 
@@ -76,14 +75,14 @@ instance Show CommunicationEnv where
     show _ = "CommunicationEnv"
 
 data InterpreterEnv = InterpreterEnv
-    { _cleanUp      :: IO ()
-    , _clsGraph     :: ClsGraph
-    , _listeners    :: [Async ()]
-    , _mappedUnits  :: Map IR.Qualified Unit.Unit
-    , _typedUnits   :: Typed.Units
-    , _runtimeUnits :: Runtime.Units
-    , _resolvers    :: Map IR.Qualified Res.UnitResolver
-    , _packageRoot  :: Path Abs Dir
+    { _cleanUp       :: IO ()
+    , _listeners     :: [Async ()]
+    , _mappedUnits   :: Map IR.Qualified Unit.Unit
+    , _typedUnits    :: Typed.Units
+    , _runtimeUnits  :: Runtime.Units
+    , _resolvers     :: Map IR.Qualified Res.UnitResolver
+    , _packageRoot   :: Path Abs Dir
+    , _packageConfig :: Local.Config
     }
 makeLenses ''InterpreterEnv
 
@@ -112,7 +111,27 @@ zoomCommand :: Lens' s t -> Command t a -> Command s a
 zoomCommand l cmd = do
     CommandState pmState s <- get
     commEnv                <- ask
-    (r, CommandState pm' newS)
-        <- liftIO $ runEmpire commEnv (CommandState pmState $ s ^. l) cmd
+    (r, CommandState pm' newS) <- liftIO $
+        runEmpire commEnv (CommandState pmState $ s ^. l) cmd
     put $ CommandState pm' $ s & l .~ newS
     pure r
+
+zoomCommandMaybe :: Command s a -> Command (Maybe s) (Maybe a)
+zoomCommandMaybe cmd = do
+    CommandState pmState s <- get
+    communicationsEnv      <- ask
+    for s $ \state -> do
+        (r, newS) <- liftIO $ runEmpire communicationsEnv
+            (CommandState pmState state) cmd
+        put $ newS & Graph.userState %~ Just
+        pure r
+
+generalizeCommand :: Lens' t s -> (s -> t) -> Command t a -> Command s a
+generalizeCommand lens constructor cmd = do
+    CommandState pmState s <- get
+    communicationsEnv      <- ask
+    (r, CommandState pm' newS) <- liftIO $
+        runEmpire communicationsEnv (CommandState pmState $ constructor s) cmd
+    put $ CommandState pm' (newS ^. lens)
+    pure r
+

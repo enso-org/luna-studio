@@ -61,10 +61,12 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 handleSetProject :: Request SetProject.Request -> StateT Env Bus.App ()
 handleSetProject req@(Request _ _ (SetProject.Request path)) = do
-    liftIO $ putStrLn $ "OPEN PROJECT" <> show req
     pmState <- liftIO Graph.defaultPMState
     let cmdState = Graph.CommandState pmState $ Empire.mkEnv path
     Env.empireEnv .= Just cmdState
+    empireNotifEnv <- use Env.empireNotif
+    liftIO $ Empire.runEmpire empireNotifEnv cmdState $
+        Publisher.setProjectTC path
     replyOk req ()
 
 replaceDir :: FilePath -> FilePath -> FilePath -> FilePath

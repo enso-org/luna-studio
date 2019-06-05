@@ -3,6 +3,7 @@ module Empire.Commands.Typecheck where
 import Empire.Prelude hiding (mod)
 
 import qualified Control.Concurrent.Async           as Async
+import qualified Control.Monad.State                as State
 import qualified Data.Bimap                         as Bimap
 import qualified Data.Graph.Data.Component.Vector   as ComponentVector
 import qualified Data.Graph.Data.Layer.Layout       as Layout
@@ -43,6 +44,7 @@ import qualified Luna.Std                           as Std
 import qualified LunaStudio.Data.Error              as APIError
 import qualified LunaStudio.Data.GraphLocation      as GraphLocation
 import qualified Memory                             as Memory
+import qualified Luna.Package.Configuration.Local   as Local
 import qualified Path
 import qualified Path.IO                            as PathIO
 
@@ -60,7 +62,7 @@ import Empire.Commands.Graph.Breadcrumb (runInternalBreadcrumb,
 import Empire.Data.AST                  (NodeRef)
 import Empire.Data.BreadcrumbHierarchy  (topLevelIDs)
 import Empire.Data.Graph                (Graph)
-import Empire.Empire                    (Command, InterpreterEnv, zoomCommand)
+import Empire.Empire                    (Command, InterpreterEnv (..), zoomCommand)
 import Empire.Utils.ValueListener       (SingleRep (ErrorRep, SuccessRep),
                                          ValueRep (OneTime, Streaming))
 import Foreign.Ptr                      (plusPtr)
@@ -77,25 +79,29 @@ import System.Environment               (getEnv)
 import System.FilePath                  (takeDirectory)
 
 
+data GraphEnv = GraphEnv
+    { _clsGraph :: Graph.ClsGraph
+    , _interpreterEnv :: InterpreterEnv
+    }
 
-runTC :: IR.Qualified -> GraphLocation -> Command InterpreterEnv ()
+makeLenses ''GraphEnv
+
+
+runTC :: IR.Qualified -> GraphLocation -> Command GraphEnv ()
 runTC modName (GraphLocation _ br) = do
-    typed <- use $ Graph.userState . Empire.typedUnits
-    unit  <- use $ Graph.userState . Empire.clsGraph . Graph.clsClass
+    typed <- use $ Graph.userState . interpreterEnv . Empire.typedUnits
+    unit  <- use $ Graph.userState . clsGraph . Graph.clsClass
     imps  <- liftScheduler $ ImportsPlucker.run unit
-    ress  <- use $ Graph.userState . Empire.resolvers
+    ress  <- use $ Graph.userState . interpreterEnv . Empire.resolvers
     let relevantResolvers = Map.restrictKeys ress
             (Set.fromList $ essentialImports <> [modName] <> imps)
         resolver          = mconcat . Map.elems $ relevantResolvers
-    zoomCommand Empire.clsGraph $ case br of
+    zoomCommand clsGraph $ case br of
         Breadcrumb (Definition uuid:_) -> do
             root <- preuse $ Graph.userState . Graph.clsFuns . ix uuid . Graph.funGraph . Graph.breadcrumbHierarchy . BH.self
-            case root of
-                Just r -> liftScheduler $ do
-                    Prep.preprocessDef resolver r
-                    TC.runTypechecker def r typed
-                _      -> error $ "runTC: wrong breadcrumb " <> show br
-            pure ()
+            for_ root $ \r -> liftScheduler $ do
+                Prep.preprocessDef resolver r
+                TC.runTypechecker def r typed
         Breadcrumb _                   -> pure ()
  -- do
     -- let currentTarget = TgtDef (convert moduleName) (convert functionName)
@@ -165,11 +171,11 @@ makeError err =
                 (err ^. Error.contents)
     in nodeError
 
-updateNodes :: GraphLocation -> Command InterpreterEnv ()
+updateNodes :: GraphLocation -> Command GraphEnv ()
 updateNodes loc@(GraphLocation _ br) = case br of
     Breadcrumb (Definition uuid:rest) -> do
-        units <- use $ Graph.userState . Empire.mappedUnits
-        zoomCommand Empire.clsGraph $ withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
+        units <- use $ Graph.userState . interpreterEnv . Empire.mappedUnits
+        zoomCommand clsGraph $ withRootedFunction uuid $ runInternalBreadcrumb (Breadcrumb rest) $ do
             (inEdge, outEdge) <- use $ Graph.userState . Graph.breadcrumbHierarchy . BH.portMapping
             (updates, errors) <- runASTOp $ do
                 inputUpdate  <-
@@ -231,11 +237,10 @@ updateValues loc path scope = do
 essentialImports :: [IR.Qualified]
 essentialImports = ["Std.Primitive", "Std.Base"]
 
-filePathToQualName :: MonadIO m => Path Abs Dir -> Path Rel File -> m IR.Qualified
-filePathToQualName pkgRoot filepath = liftIO $ do
-    let projName = Package.getPackageName pkgRoot
+filePathToQualName :: MonadIO m => Text -> Path Rel File -> m IR.Qualified
+filePathToQualName pkgName filepath = liftIO $ do
     file  <- Path.stripProperPrefix $(Path.mkRelDir "src") filepath
-    return $ Package.mkQualName projName file
+    return $ Package.mkQualName (convert pkgName) file
 
 prepareFileImportPaths :: MonadIO m => Path Abs Dir -> m (Map IR.Qualified FilePath)
 prepareFileImportPaths packageRoot = liftIO $ do
@@ -247,8 +252,8 @@ prepareFileImportPaths packageRoot = liftIO $ do
         fmap Path.toFilePath . Bimap.toMapR <$> Package.findPackageSources p
     pure $ Map.unions srcs
 
-stop :: Command InterpreterEnv ()
-stop = do
+stop :: Command (Maybe InterpreterEnv) ()
+stop = void $ Empire.zoomCommandMaybe $ do
     cln     <- use $ Graph.userState . Empire.cleanUp
     threads <- use $ Graph.userState . Empire.listeners
     Graph.userState . Empire.listeners .= []
@@ -284,7 +289,7 @@ makePrimStdIfMissing = do
                 unitsWithResolvers = Map.mapWithKey (\n u -> (importResolvers Map.! n, u)) units
             (typed, evald) <- ProcessUnits.processUnits def def unitsWithResolvers
             return (mods, fin, typed, evald, unitResolvers, units)
-        zoomCommand Empire.clsGraph $ runASTOp $ for mods $ \u -> case u ^. Unit.root of
+        runASTOp $ for mods $ \u -> case u ^. Unit.root of
             Unit.Graph r -> IR.deleteSubtree r
             _            -> return ()
         Graph.userState . Empire.cleanUp      .= finalizer
@@ -324,7 +329,7 @@ compileCurrentScope modName packageRoot root = do
             unitsWithResolvers = Map.mapWithKey (\n u -> (importResolvers Map.! n, u)) units
         (newTyped, newEvald) <- ProcessUnits.processUnits typed evald unitsWithResolvers
         return (mods, newTyped, newEvald, unitResolvers, units)
-    for mods $ \u -> zoomCommand Empire.clsGraph $ runASTOp $ case u ^. Unit.root of
+    for mods $ \u -> runASTOp $ case u ^. Unit.root of
         Unit.Graph r -> when (Layout.relayout r /= root) $ IR.deleteSubtree r
         _            -> return ()
 
@@ -333,48 +338,63 @@ compileCurrentScope modName packageRoot root = do
     Graph.userState . Empire.runtimeUnits .= newEvald
     Graph.userState . Empire.resolvers    .= newResolvers
 
-run :: GraphLocation
-    -> Graph.ClsGraph
-    -> Store.RootedWithRedirects NodeRef
-    -> Bool
-    -> Bool
-    -> Command InterpreterEnv ()
-run gl clsGraph rooted interpret recompute = do
-    root <- runNoCleanUp gl clsGraph rooted interpret recompute
-    zoomCommand Empire.clsGraph . runASTOp $ IR.deleteSubtree root
-
-runNoCleanUp
+runIfActive
     :: GraphLocation
     -> Graph.ClsGraph
     -> Store.RootedWithRedirects NodeRef
     -> Bool
     -> Bool
-    -> Command InterpreterEnv (Component Nodes ())
-runNoCleanUp gl clsGraph rooted interpret recompute = do
+    -> Command (Maybe InterpreterEnv) ()
+runIfActive gl cls rooted interpret recompute = do
     stop
+    void $ Empire.zoomCommandMaybe $ run gl cls rooted interpret recompute
+
+run
+    :: GraphLocation
+    -> Graph.ClsGraph
+    -> Store.RootedWithRedirects NodeRef
+    -> Bool
+    -> Bool
+    -> Command InterpreterEnv ()
+run gl clsGraph' rooted interpret recompute = do
     (root, redirects)
         <- runASTOp . Store.deserializeWithRedirects $ rooted ^. Store.rooted
     packageRoot <- use $ Graph.userState . Empire.packageRoot
+    packageName <- use $ Graph.userState . Empire.packageConfig. Local.name
     let filePath        = gl ^. GraphLocation.filePath
         deserializerOff = redirects Map.! someTypeRep @IR.Terms
-        newClsGraph     = clsGraph & BH.refs %~ translate
+        newClsGraph     = clsGraph' & BH.refs %~ translate
             (rooted ^. Store.redirections)
             deserializerOff
-    Graph.userState . Empire.clsGraph .= newClsGraph
-    modName <- filePathToQualName packageRoot filePath
+    modName <- filePathToQualName packageName filePath
     makePrimStdIfMissing
     ensureCurrentScope recompute modName packageRoot root
-    runTC modName gl
-    updateNodes gl
-    let processBC evald (Breadcrumb (Definition uuid:r))
-            = zoomCommand Empire.clsGraph
-            . withRootedFunction uuid
-            . runInternalBreadcrumb (Breadcrumb r) $ do
-                scope <- runInterpreter packageRoot evald
-                traverse (updateValues gl packageRoot) scope
-        processBC _ _ = pure Nothing
-    when interpret $ do
-        evald  <- use $ Graph.userState . Empire.runtimeUnits
-        asyncs <- processBC evald $ gl ^. GraphLocation.breadcrumb
-        Graph.userState . Empire.listeners .= fromMaybe mempty asyncs
-    pure root
+    Empire.generalizeCommand interpreterEnv (GraphEnv newClsGraph) $ do
+        runTC modName gl
+        updateNodes gl
+        let processBC evald (Breadcrumb (Definition uuid:r))
+                = zoomCommand clsGraph
+                . withRootedFunction uuid
+                . runInternalBreadcrumb (Breadcrumb r) $ do
+                    scope <- runInterpreter packageRoot evald
+                    traverse (updateValues gl packageRoot) scope
+            processBC _ _ = pure Nothing
+        when interpret $ do
+            evald  <- use $
+                Graph.userState . interpreterEnv . Empire.runtimeUnits
+            asyncs <- processBC evald $ gl ^. GraphLocation.breadcrumb
+            Graph.userState . interpreterEnv . Empire.listeners .=
+                fromMaybe mempty asyncs
+        runASTOp $ IR.deleteSubtree root
+
+setProject :: Path Abs Dir -> Command (Maybe InterpreterEnv) ()
+setProject root = do
+    stop
+    config <- Package.tryGetConfigFile root
+    case config of
+        Nothing -> pure ()
+        Just cfg -> do
+            let newEnv = InterpreterEnv (pure ()) def def def def def root cfg
+            Graph.userState .= Just newEnv
+            void $ Empire.zoomCommandMaybe makePrimStdIfMissing
+
