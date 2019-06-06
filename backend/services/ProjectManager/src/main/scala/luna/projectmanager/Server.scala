@@ -1,26 +1,52 @@
 package luna.projectmanager
 
 import java.io.File
+import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
 import luna.projectmanager.api.{Project, ProjectJsonSupport}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 
 class Server(host: String, port: Int, repository: ProjectsRepository)(implicit val system: ActorSystem, implicit val executor: ExecutionContext, implicit val materializer: ActorMaterializer) extends Directives with ProjectJsonSupport {
-  val route = {
-    path("projects") {
-      get {
-        extractUri(uri => {
-          val response = repository.projects.toSeq.map { case (id, project) =>
-            Project.fromModel(id, project, uri)
+
+  val exceptionHandler = ExceptionHandler {
+    case DoesNotExistException(id) =>
+      complete(HttpResponse(StatusCodes.NotFound, entity=s"Project $id does not exist."))
+  }
+
+  val route = ignoreTrailingSlash {
+    handleExceptions(exceptionHandler) {
+      pathPrefix("projects") {
+        pathSingleSlash {
+          get {
+            extractUri { uri =>
+              val response = repository.projects.toSeq.map { case (id, project) =>
+                Project.fromModel(id, project, uri)
+              }
+              complete(response)
+            }
           }
-          complete(response)
-        })
+        } ~
+        pathPrefix(Segment) { id =>
+          val uid = Try(UUID.fromString(id)).getOrElse(throw DoesNotExistException(id))
+          val project = repository.getById(uid)
+          path("thumb") {
+            get {
+              if (project.hasThumb)
+                getFromFile(project.thumbPath)
+              else
+                complete(HttpResponse(StatusCodes.NotFound, entity="Thumbnail does not exist"))
+            }
+          }
+        }
       }
     }
   }

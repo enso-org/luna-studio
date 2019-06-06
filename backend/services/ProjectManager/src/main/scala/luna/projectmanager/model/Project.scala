@@ -34,5 +34,6 @@ object Config {
 case class Project(path: File, config: Config, lastOpen: Option[Long]) {
   def name: String = config.name
   def thumbFilename = "thumb.png"
-  def hasThumb: Boolean = new File(path, thumbFilename).exists()
+  def thumbPath = new File(this.path, thumbFilename)
+  def hasThumb: Boolean = thumbPath.exists
 }

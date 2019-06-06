@@ -15,6 +15,8 @@ import scala.collection.immutable.HashMap
 
 case class ProjectCacheItem(path: String, id: UUID, lastOpen: Option[Long])
 
+case class DoesNotExistException(id: String) extends Exception
+
 class ProjectsRepository(settingsPath: File, projectsPath: File) {
   var projects: HashMap[UUID, Project] = readProjects
 
@@ -24,31 +26,35 @@ class ProjectsRepository(settingsPath: File, projectsPath: File) {
     processProjectsWithCache(projects, cache)
   }
 
+  def getById(id: UUID): Project = {
+    projects.getOrElse(id, throw DoesNotExistException(id.toString))
+  }
+
   def projectsFromCache(cache: List[ProjectCacheItem]): List[(UUID, Project)] = {
-    cache.flatMap(cacheItem => {
+    cache.flatMap { cacheItem =>
       val path = new File(cacheItem.path)
       val config = Config.readFromPackage(path)
-      config.map(cfg => (cacheItem.id, Project(path, cfg, cacheItem.lastOpen)))
-    })
+      config.map { cfg => (cacheItem.id, Project(path, cfg, cacheItem.lastOpen)) }
+    }
   }
 
   def listProjectsInDirectory: List[Project] = {
     val candidates = projectsPath.listFiles(_.isDirectory).toList
-    candidates.flatMap(candidate => {
+    candidates.flatMap { candidate =>
       val config = Config.readFromPackage(candidate)
       config.map(Project(candidate, _, None))
-    })
+    }
   }
 
   def processProjectsWithCache(projects: List[Project], cache: List[ProjectCacheItem]): HashMap[UUID, Project] = {
     val cacheMap = cache.map(item => new File(item.path).getAbsolutePath -> item).toMap
-    val fixedProjects = projects.map(project => {
+    val fixedProjects = projects.map { project =>
       cacheMap
         .get(project.path.getAbsolutePath)
         .map(cacheItem =>
           (cacheItem.id, project.copy(lastOpen=cacheItem.lastOpen)))
         .getOrElse((UUID.randomUUID(), project))
-    })
+    }
     HashMap(fixedProjects: _*)
   }
 
@@ -57,9 +63,9 @@ class ProjectsRepository(settingsPath: File, projectsPath: File) {
     val source = Try(Source.fromFile(cachePath))
     val result = source
       .map(_.mkString)
-      .flatMap(contents => {
+      .flatMap { contents =>
         yaml.parser.parse(contents).flatMap(_.as[List[ProjectCacheItem]]).toTry
-      })
+      }
       .getOrElse(Nil)
     source.foreach(_.close())
     result

@@ -21,9 +21,10 @@ object Project {
   }
 
   def thumbPath(id: UUID): Path = {
-    projectPath(id) / "thumb.png"
+    projectPath(id) / "thumb"
   }
 }
 
 trait ProjectJsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val projectFormat = jsonFormat5(Project.apply)
+}
