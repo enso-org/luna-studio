@@ -8,8 +8,8 @@ import           Data.Aeson        (FromJSON, ToJSON)
 import Path (Abs, Dir, File, Path, Rel)
 
 data InternalEvent
-    = Copy          { _path :: FilePath , _selections :: [(Int, Int)]}
-    | CloseFile     { _path :: FilePath }
+    = Copy          { _filePath :: Path Rel File, _selections :: [(Int, Int)]}
+    | CloseFile     { _filePath :: Path Rel File }
     | CreateProject { _path :: FilePath }
     | FileChanged   { _path :: FilePath }
     | GetBuffer     { _filePath :: Path Rel File }
@@ -21,7 +21,7 @@ data InternalEvent
     | OpenFile    { _path :: FilePath }
     | Paste       { _selections :: [(Int, Int)], _content :: [Text] }
     | Redo
-    | SaveFile    { _path :: FilePath }
+    | SaveFile    { _filePath :: Path Rel File }
     | SetProject  { _projectPath :: Path Abs Dir }
     | Undo
     deriving (Generic, NFData, Show, Typeable)

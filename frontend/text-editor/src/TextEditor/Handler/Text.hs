@@ -57,7 +57,7 @@ handle (Batch (CopyResponse  response))
         success result = do
             let uri  = response ^. Response.request . Copy.filePath
                 code = result ^. Copy.code
-            JS.setClipboard (convert uri) code
+            JS.setClipboard (convert $ Path.toFilePath uri) code
 
 handle (Batch (SubstituteUpdate (Substitute.Update path diffs))) =
     Just . JS.insertCode $ TextEvent (GraphLocation path def) diffs

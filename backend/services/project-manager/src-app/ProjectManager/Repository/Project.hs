@@ -84,8 +84,8 @@ readProjectsCache path = liftIO $
 listProjectsInDirectory :: MonadIO m => Path Abs Dir -> m [Project]
 listProjectsInDirectory container = do
     subdirs <- fst <$> PathIO.listDir container
-    configs <- fmap catMaybes $ for subdirs $ \path ->
-        (path,) <<$>> Package.tryGetConfigFile path
+    configs <- for subdirs $ \path ->
+        (path,) <$> Package.ensureConfig path
     for configs $ \(path, cfg) -> do
         hasThumb <- PathIO.doesFileExist $ path </> $(Path.mkRelFile "thumb.png")
         pure $ Project.Project path cfg def hasThumb

@@ -26,7 +26,7 @@ import LunaStudio.Data.Range             (Range)
 import LunaStudio.Data.TextDiff          (TextDiff)
 import Path                              (Abs, Dir, File, Path, Rel)
 
-closeFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+closeFile :: MonadIO m => Path Rel File -> UUID -> Maybe UUID -> m ()
 closeFile path uuid guiID = sendRequest . Message uuid guiID
     $ CloseFile.Request path
 
@@ -50,7 +50,7 @@ openFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
 openFile path uuid guiID = sendRequest . Message uuid guiID
     $ OpenFile.Request path
 
-saveFile :: MonadIO m => FilePath -> UUID -> Maybe UUID -> m ()
+saveFile :: MonadIO m => Path Rel File -> UUID -> Maybe UUID -> m ()
 saveFile path uuid guiID = sendRequest . Message uuid guiID
     $ SaveFile.Request path
 
@@ -67,7 +67,7 @@ substitute
 substitute location diffs uuid guiID =
     sendRequest . Message uuid guiID $ Substitute.Request location diffs
 
-copy :: MonadIO m => FilePath -> [Range] -> UUID -> Maybe UUID -> m ()
+copy :: MonadIO m => Path Rel File -> [Range] -> UUID -> Maybe UUID -> m ()
 copy path spans uuid guiID = sendRequest . Message uuid guiID
     $ Copy.Request path spans
 

@@ -22,7 +22,7 @@ withUUID act = do
     guiID <- use clientId
     act uuid $ Just guiID
 
-closeFile :: FilePath -> Command State ()
+closeFile :: Path Rel File -> Command State ()
 closeFile = withUUID . BatchCmd.closeFile
 
 createProject :: FilePath -> Command State ()
@@ -37,7 +37,7 @@ fileChanged = withUUID . BatchCmd.fileChanged
 openFile :: FilePath -> Command State ()
 openFile = withUUID . BatchCmd.openFile
 
-saveFile :: FilePath -> Command State ()
+saveFile :: Path Rel File -> Command State ()
 saveFile = withUUID . BatchCmd.saveFile
 
 isSaved :: FilePath -> Command State ()
@@ -54,7 +54,7 @@ substitute location diffs = withUUID $ \uuid guiId -> do
     State.ignoreResponse uuid
     BatchCmd.substitute location diffs uuid guiId
 
-copy :: FilePath -> [Range] -> Command State ()
+copy :: Path Rel File -> [Range] -> Command State ()
 copy = withUUID .: BatchCmd.copy
 
 paste :: GraphLocation -> [Range] -> [Text] -> Command State ()

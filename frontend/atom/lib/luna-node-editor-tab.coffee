@@ -119,7 +119,7 @@ class LunaNodeEditorTab extends View
         e.preventDefault()
         e.stopImmediatePropagation()
         if @uri?
-            @codeEditor.pushInternalEvent(tag: "SaveFile", _path: @uri)
+            @codeEditor.pushInternalEvent(tag: "SaveFile", _filePath: @uri)
             oldPath = atom.project.getPaths()[0]
             @projects.temporaryProjectSave (newPath) =>
                 @codeEditor.pushInternalEvent(tag: 'MoveProject', _oldPath : oldPath, _newPath: newPath)

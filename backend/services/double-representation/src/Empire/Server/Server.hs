@@ -11,6 +11,7 @@ import qualified Data.Set                      as Set
 import qualified Data.Text                     as Text
 import qualified Empire.ApiHandlers            as Api
 import qualified Empire.Commands.Graph         as Graph
+import qualified Empire.Empire                 as Empire
 import qualified Empire.Env                    as Env
 import qualified Luna.Package.Structure.Name   as Package
 import qualified LunaStudio.API.Graph.Request  as G
@@ -30,6 +31,7 @@ import Control.Monad.STM             (atomically)
 import Data.Binary                   (Binary)
 import Data.ByteString.Lazy          (toStrict)
 import Empire.Data.AST               (SomeASTException)
+import Empire.Data.Graph             (CommandState)
 import Empire.Empire                 (Empire, runEmpire)
 import Empire.Env                    (Env)
 import Empire.Utils                  (currentISO8601Time)
@@ -84,6 +86,14 @@ errorMessage = "error during processing request "
 formatErrorMessage :: forall a. MessageTopic a => a -> String -> String
 formatErrorMessage req msg = errorMessage <> (Topic.topic @a) <> ": " <> msg
 
+withActiveProject :: (CommandState Empire.Env -> StateT Env Bus.App ()) ->
+    StateT Env Bus.App ()
+withActiveProject act = do
+    currentEmpireEnv <- use Env.empireEnv
+    case currentEmpireEnv of
+        Just env -> act env
+        Nothing  -> logger Logger.info "withActiveProject: No Project"
+
 modifyGraph :: forall req inv res res'.
     ( Show req
     , G.GraphRequest req
@@ -92,30 +102,26 @@ modifyGraph :: forall req inv res res'.
     -> (Request req -> inv -> res -> StateT Env Bus.App ()) -> Request req
     -> StateT Env Bus.App ()
 modifyGraph inverse action success origReq@(Request uuid guiID request) = do
-    logger Logger.info $ Topic.topic @(Request req) <> ": " <> show request
-    currentEmpireEnv <- use Env.empireEnv
-    case currentEmpireEnv of
-        Just empireEnv -> do
-            empireNotifEnv   <- use Env.empireNotif
-            inv'             <- liftIO $ try
-                $ runEmpire empireNotifEnv empireEnv $ inverse request
-            case inv' of
-                Left (exc :: SomeException) -> do
-                    err <- liftIO $ Graph.prepareLunaError exc
-                    replyFail logger err origReq (Response.Error err)
-                Right (inv, _) -> do
-                    let invStatus = Response.Ok inv
-                    result <- liftIO $ try
-                        $ runEmpire empireNotifEnv empireEnv $ action request
-                    case result of
-                        Left  (exc :: SomeException) -> do
-                            err <- liftIO $ Graph.prepareLunaError exc
-                            replyFail logger err origReq invStatus
-                        Right (result, newEmpireEnv) -> do
-                            Env.empireEnv .= Just newEmpireEnv
-                            success origReq inv result
-        Nothing -> do
-            logger Logger.info $ "Modify Graph: No Project Set"
+    withActiveProject $ \empireEnv -> do
+        logger Logger.info $ Topic.topic @(Request req) <> ": " <> show request
+        empireNotifEnv   <- use Env.empireNotif
+        inv'             <- liftIO $ try
+            $ runEmpire empireNotifEnv empireEnv $ inverse request
+        case inv' of
+            Left (exc :: SomeException) -> do
+                err <- liftIO $ Graph.prepareLunaError exc
+                replyFail logger err origReq (Response.Error err)
+            Right (inv, _) -> do
+                let invStatus = Response.Ok inv
+                result <- liftIO $ try
+                    $ runEmpire empireNotifEnv empireEnv $ action request
+                case result of
+                    Left  (exc :: SomeException) -> do
+                        err <- liftIO $ Graph.prepareLunaError exc
+                        replyFail logger err origReq invStatus
+                    Right (result, newEmpireEnv) -> do
+                        Env.empireEnv .= Just newEmpireEnv
+                        success origReq inv result
 
 modifyGraphOk :: forall req inv.
     ( Show req

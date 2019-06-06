@@ -1,14 +1,19 @@
 module LunaStudio.API.Atom.CloseFile where
 
-import           Data.Aeson.Types        (ToJSON)
-import           Data.Binary             (Binary)
+import Prologue
+
 import qualified LunaStudio.API.Request  as R
 import qualified LunaStudio.API.Response as Response
 import qualified LunaStudio.API.Topic    as T
-import           Prologue
+
+import Data.Aeson.Types (ToJSON)
+import Data.Binary      (Binary)
+import Data.Path        (File, Path, Rel)
 
 
-data Request = Request { _filePath :: FilePath } deriving (Eq, Generic, Show)
+data Request = Request
+    { _filePath :: Path Rel File }
+    deriving (Eq, Generic, Show)
 
 makeLenses ''Request
 

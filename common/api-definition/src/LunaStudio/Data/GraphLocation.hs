@@ -3,7 +3,6 @@ module LunaStudio.Data.GraphLocation where
 import Prologue hiding ((|>))
 
 import qualified Control.Lens.Aeson as Lens
-import qualified Data.Binary        as Binary
 import qualified Path
 
 import Data.Aeson.Types           (FromJSON (..), ToJSON (..))
@@ -11,15 +10,7 @@ import Data.Binary                (Binary)
 import LunaStudio.Data.Breadcrumb (Breadcrumb (Breadcrumb),
                                    BreadcrumbItem (Arg, Definition, Lambda))
 import LunaStudio.Data.NodeId     (NodeId)
-import Path                       (Path, Rel, File)
-
-instance Binary (Path Rel File) where
-    put = Binary.put . Path.toFilePath
-    get = do
-        filepath <- Binary.get
-        case Path.parseRelFile filepath of
-            Nothing -> fail "Not a relative filepath"
-            Just p  -> pure p
+import Data.Path                       (Path, Rel, File)
 
 data GraphLocation = GraphLocation
     { _filePath   :: Path Rel File

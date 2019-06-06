@@ -227,14 +227,14 @@ module.exports =
             e.preventDefault()
             e.stopImmediatePropagation()
             @forceStopChanging =>
-                @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @spans(true))
+                @codeEditor.pushInternalEvent(tag: "Copy", _filePath: @uri, _selections: @spans(true))
 
         handleCut: (e) =>
             e.preventDefault()
             e.stopImmediatePropagation()
             @forceStopChanging =>
                 spans = @__spans true
-                @codeEditor.pushInternalEvent(tag: "Copy", _path: @uri, _selections: @__convertSpans spans)
+                @codeEditor.pushInternalEvent(tag: "Copy", _filePath: @uri, _selections: @__convertSpans spans)
                 spans.reverse().forEach (span) =>
                     @getBuffer().delete span
 
@@ -256,7 +256,7 @@ module.exports =
             e.stopImmediatePropagation()
             @forceStopChanging =>
                 @setModified(false)
-                @codeEditor.pushInternalEvent(tag: "SaveFile", _path: @uri)
+                @codeEditor.pushInternalEvent(tag: "SaveFile", _filePath: @uri)
                 oldPath = atom.project.getPaths()[0]
                 @projects.temporaryProjectSave (newPath) =>
                     @codeEditor.pushInternalEvent(tag: 'MoveProject', _oldPath : oldPath, _newPath: newPath)
