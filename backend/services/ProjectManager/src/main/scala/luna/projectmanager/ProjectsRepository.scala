@@ -41,7 +41,7 @@ class ProjectsRepository(settingsPath: File, projectsPath: File) {
   }
 
   def processProjectsWithCache(projects: List[Project], cache: List[ProjectCacheItem]): HashMap[UUID, Project] = {
-    val cacheMap = cache.map(item => item.path -> item).toMap
+    val cacheMap = cache.map(item => new File(item.path).getAbsolutePath -> item).toMap
     val fixedProjects = projects.map(project => {
       cacheMap
         .get(project.path.getAbsolutePath)
