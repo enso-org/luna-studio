@@ -57,6 +57,9 @@ luna-shell.sh
 #IntelliJ IDEA
 .idea
 
+#Scala
+resolution-cache
+
 #Atom
 .imdone
 
@@ -87,3 +90,4 @@ supervisor/tmp/*
 supervisord.log
 workspace
 scripts
+
