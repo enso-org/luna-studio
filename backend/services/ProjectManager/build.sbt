@@ -25,6 +25,9 @@ lazy val root = (project in file("."))
   )
   .settings(libraryDependencies ++= circe)
   .settings(libraryDependencies += "io.spray" %% "spray-json" % "1.3.5")
+  .settings(
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "5.3.1.201904271842-r"
+  )
   .settings(Compile / mainClass := main)
   .settings(assembly / mainClass := main)
   .settings(
@@ -32,4 +35,5 @@ lazy val root = (project in file("."))
       "../../../dist/bin/private/luna-project-manager.jar"
     )
   )
+  .settings(envVars in run += "GIT_CONFIG_NOSYSTEM" -> "true")
   .dependsOn(pkgProject)

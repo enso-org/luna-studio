@@ -14,7 +14,7 @@ import akka.http.scaladsl.model.StatusCodes
 import org.enso.pkg.Package
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
-import luna.projectmanager.api.Project
+import luna.projectmanager.api.{Project => ApiProject}
 import luna.projectmanager.api.ProjectJsonSupport
 
 import scala.concurrent.ExecutionContext
@@ -49,24 +49,24 @@ class Server(
             extractUri { uri =>
               val response = repository.projects.toSeq.map {
                 case (id, project) =>
-                  Project.fromModel(
+                  ApiProject.fromModel(
                     id,
-                    project,
+                    project.pkg,
                     uri,
-                    repository.isPersistent(project)
+                    project.isPersistent
                   )
               }
               complete(response)
             }
-          } ~ post {}
+          }
         } ~ pathPrefix(Segment) { id =>
           val uid =
             Try(UUID.fromString(id)).getOrElse(throw DoesNotExistException(id))
           val project = repository.getById(uid)
           path("thumb") {
             get {
-              if (project.hasThumb)
-                getFromFile(project.thumbFile)
+              if (project.pkg.hasThumb)
+                getFromFile(project.pkg.thumbFile)
               else
                 complete(
                   HttpResponse(
@@ -94,6 +94,10 @@ object Server {
     implicit val system: ActorSystem = ActorSystem("luna-studio")
     implicit val executor: ExecutionContext = system.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
+
+    val tuts = new TutorialsDownloader(new File(".")).getTutorialsList
+    print(tuts.map(tut => tut -> tut.lastPush))
+//    new TutorialsDownloader(new File("/Users/marcinkostrzewa/luna/tutorials")).cloneTutorials
 
     val repo = new ProjectsRepository(
       new File("/Users/marcinkostrzewa/luna/")
