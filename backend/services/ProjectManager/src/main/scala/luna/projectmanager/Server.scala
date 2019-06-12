@@ -3,19 +3,15 @@ package luna.projectmanager
 import java.io.File
 import java.util.UUID
 
-import akka.actor.ActorRef
 import akka.actor.ActorSystem
-import akka.actor.Props
-import akka.http.javadsl.server.Route
-import akka.http.scaladsl.server.ExceptionHandler
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.StatusCodes
-import org.enso.pkg.Package
 import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server.ExceptionHandler
 import akka.stream.ActorMaterializer
-import luna.projectmanager.api.{Project => ApiProject}
 import luna.projectmanager.api.ProjectJsonSupport
+import luna.projectmanager.api.{Project => ApiProject}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -95,16 +91,40 @@ object Server {
     implicit val executor: ExecutionContext = system.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-    val tuts = new TutorialsDownloader(new File(".")).getTutorialsList
-    print(tuts.map(tut => tut -> tut.lastPush))
-//    new TutorialsDownloader(new File("/Users/marcinkostrzewa/luna/tutorials")).cloneTutorials
+    val downloader = new TutorialsDownloader(
+      new File("/Users/marcinkostrzewa/luna/tutorials"),
+      new File("/Users/marcinkostrzewa/luna/.tutorials-cache")
+    )
+    val tuts = downloader.getAvailable
+    val downfut = tuts.flatMap { tutorials =>
+      Future
+        .sequence(
+          tutorials.map(
+            tut =>
+              downloader
+                .downloadZip(tut)
+                .map(
+                  downloader.unzip
+                )
+          )
+        )
+    }
+//    val files = Await.result(downfut, 30 seconds)
+//    val files = List(
+//      "CryptoCurrencyPlayground.zip",
+//      "USElectionPlayground.zip",
+//      "TramsPlayground.zip",
+//      "TechnicalAnalysis.zip"
+//    ).map(new File(downloader.workDir, _))
+//    files.map(downloader.unzip)
 
+    //    new TutorialsDownloader(new File("/Users/marcinkostrzewa/luna/tutorials")).cloneTutorials
     val repo = new ProjectsRepository(
       new File("/Users/marcinkostrzewa/luna/")
     )
 
     // val bindingFuture = Http().bindAndHandle(route, host, port)
-    val server = new Server(host, port, repo)
-    server.serve
+//    val server = new Server(host, port, repo)
+//    server.serve
   }
 }

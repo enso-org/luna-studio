@@ -5,9 +5,8 @@ import java.util.UUID
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path
-import spray.json.DefaultJsonProtocol
-
 import org.enso.pkg.Package
+import spray.json.DefaultJsonProtocol
 
 case class Project(
     id: String,

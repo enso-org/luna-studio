@@ -1,33 +1,11 @@
 package luna.projectmanager
 
 import java.io.File
-import java.time.format.DateTimeFormatter
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
-import io.circe.Json
-import org.eclipse.jgit.api.Git
 import org.enso.pkg.Package
-import spray.json.DefaultJsonProtocol
-import spray.json.JsArray
-import spray.json.JsObject
-import spray.json.JsValue
-import spray.json.JsonParser
 
 import scala.collection.immutable.HashMap
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 
 case class DoesNotExistException(id: String) extends Exception
 
@@ -46,48 +24,6 @@ case object Temporary extends ProjectType {
 
 case class Project(kind: ProjectType, pkg: Package) {
   def isPersistent: Boolean = kind.isPersistent
-}
-
-case class GithubTutorial(
-    name: String,
-    cloneUrl: String,
-    lastPushString: String) {
-  val lastPush: Long = Instant.parse(lastPushString).getEpochSecond
-}
-
-trait GithubJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val tutorialFormat =
-    jsonFormat(GithubTutorial, "name", "clone_url", "pushed_at")
-}
-
-class TutorialsDownloader(
-    workDir: File
-  )(implicit val system: ActorSystem,
-    implicit val executor: ExecutionContext,
-    implicit val materializer: ActorMaterializer)
-    extends GithubJsonProtocol {
-  val packagesGithubOrg = "luna-packages"
-  val packagesGithubUrl = s"https://api.github.com/orgs/$packagesGithubOrg"
-  val packagesGithubRepos = s"$packagesGithubUrl/repos"
-
-  def getTutorialsList: List[GithubTutorial] = {
-    val future = Http()
-      .singleRequest(HttpRequest(uri = packagesGithubRepos))
-      .flatMap(resp => Unmarshal(resp.entity).to[String])
-      .map(JsonParser(_).convertTo[List[GithubTutorial]])
-    Await.result(future, 10 seconds)
-  }
-
-  def cloneTutorial(ref: GithubTutorial) = {
-    Git
-      .cloneRepository()
-      .setURI(ref.cloneUrl)
-      .setDirectory(new File(workDir, ref.name))
-      .call()
-      .close()
-  }
-
-  def cloneTutorials: Unit = getTutorialsList.foreach(cloneTutorial)
 }
 
 class ProjectsRepository(rootProjectsPath: File) {
