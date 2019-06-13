@@ -3,6 +3,11 @@ package luna.projectmanager
 import java.io.File
 import java.util.UUID
 
+import akka.actor.Status.Success
+import akka.actor.typed.ActorRef
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.StashBuffer
 import org.enso.pkg.Package
 
 import scala.collection.immutable.HashMap
@@ -26,36 +31,20 @@ case class Project(kind: ProjectType, pkg: Package) {
   def isPersistent: Boolean = kind.isPersistent
 }
 
-class ProjectsRepository(rootProjectsPath: File) {
-  val projectsPath = new File(rootProjectsPath, "projects")
-  val tmpProjectsPath = new File(rootProjectsPath, "tmp")
-  val tutorialsPath = new File(rootProjectsPath, "tutorials")
+case class ProjectsStorageManager(
+    localProjectsPath: File,
+    tmpProjectsPath: File,
+    tutorialsPath: File) {
 
-  var projects: HashMap[UUID, Project] = readProjects(projectsPath)
-  def getById(id: UUID): Project = {
-    projects.getOrElse(id, throw DoesNotExistException(id.toString))
-  }
-
-  def persist(projectId: UUID, newName: Option[String] = None): Project = {
-    val project = getById(projectId)
+  def persist(project: Project, newName: Option[String]): Project = {
     val pkg = project.pkg
     val renamed = newName.map(pkg.rename).getOrElse(pkg)
-    val root = assignRootForName(projectsPath, renamed.name)
+    val root = assignRootForName(localProjectsPath, renamed.name)
     val moved = renamed.move(root)
-    val newProject = Project(Local, moved)
-    projects += projectId -> newProject
-    newProject
+    Project(Local, moved)
   }
 
-  def createTemporary(name: String): UUID = {
-    val root = assignRootForName(tmpProjectsPath, name)
-    val pkg = Package.create(root, name)
-    val id = UUID.randomUUID()
-    projects += id -> Project(Temporary, pkg)
-    id
-  }
-
-  private def assignRootForName(
+  def assignRootForName(
       rootDir: File,
       name: String,
       idx: Option[Int] = None
@@ -69,16 +58,90 @@ class ProjectsRepository(rootProjectsPath: File) {
     else rootToTry
   }
 
-  private def readProjects(dir: File): HashMap[UUID, Project] = {
-    val projects = listProjectsInDirectory(dir)
-    HashMap(
-      projects.map(UUID.randomUUID() -> Project(Local, _)): _*
-    )
-  }
+  def readLocalProjects: ProjectsRepository =
+    listProjectsInDirectory(Local, localProjectsPath)
 
-  private def listProjectsInDirectory(dir: File): List[Package] = {
+  def readTutorials: ProjectsRepository =
+    listProjectsInDirectory(Tutorial, tutorialsPath)
+
+  def listProjectsInDirectory(
+      kind: ProjectType,
+      dir: File
+    ): ProjectsRepository = {
     val candidates = dir.listFiles(_.isDirectory).toList
-    candidates.map(Package.getOrCreate)
+    val projects = candidates.map(Package.getOrCreate).map(Project(kind, _))
+    ProjectsRepository(HashMap(projects.map(UUID.randomUUID() -> _): _*))
+
   }
 
+  def createTemporary(name: String): Project = {
+    val root = assignRootForName(tmpProjectsPath, name)
+    val pkg = Package.create(root, name)
+    Project(Temporary, pkg)
+  }
+}
+
+case class ProjectsRepository(projects: HashMap[UUID, Project]) {
+
+  def getById(id: UUID): Option[Project] = {
+    projects.get(id)
+  }
+
+  def insert(project: Project): (UUID, ProjectsRepository) = {
+    val id = UUID.randomUUID()
+    val newRepo = copy(projects = projects + (id -> project))
+    (id, newRepo)
+  }
+
+}
+
+sealed trait ProjectsCommand extends InternalProjectsCommand
+sealed trait InternalProjectsCommand
+
+case class ListTutorialsRequest(replyTo: ActorRef[ListProjectsResponse])
+    extends ProjectsCommand
+case class ListProjectsRequest(replyTo: ActorRef[ListProjectsResponse])
+    extends ProjectsCommand
+case class ListProjectsResponse(projects: HashMap[UUID, Project])
+
+case class GetProjectById(id: UUID, replyTo: ActorRef[GetProjectResponse])
+    extends ProjectsCommand
+case class GetProjectResponse(project: Option[Project])
+
+case object TutorialsReady extends InternalProjectsCommand
+
+object ProjectsService {
+  def behavior(
+      storageManager: ProjectsStorageManager,
+      tutorialsDownloader: TutorialsDownloader
+    ): Behavior[InternalProjectsCommand] = Behaviors.setup { context =>
+    val buffer = StashBuffer[InternalProjectsCommand](capacity = 100)
+
+    def handle(
+        localRepo: ProjectsRepository,
+        tutorialsRepo: Option[ProjectsRepository]
+      ): Behavior[InternalProjectsCommand] = Behaviors.receiveMessage {
+      case ListProjectsRequest(replyTo) =>
+        replyTo ! ListProjectsResponse(localRepo.projects)
+        Behaviors.same
+      case msg: ListTutorialsRequest =>
+        tutorialsRepo match {
+          case Some(repo) => msg.replyTo ! ListProjectsResponse(repo.projects)
+          case None       => buffer.stash(msg)
+        }
+        Behaviors.same
+      case GetProjectById(id, replyTo) =>
+        val project =
+          localRepo.getById(id).orElse(tutorialsRepo.flatMap(_.getById(id)))
+        replyTo ! GetProjectResponse(project)
+        Behaviors.same
+      case TutorialsReady =>
+        val newTutorialsRepo = storageManager.readTutorials
+        buffer.unstashAll(context, handle(localRepo, Some(newTutorialsRepo)))
+    }
+
+    context.pipeToSelf(tutorialsDownloader.run())(_ => TutorialsReady)
+
+    handle(storageManager.readLocalProjects, None)
+  }
 }

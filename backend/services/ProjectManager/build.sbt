@@ -8,6 +8,7 @@ val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.23"
 val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.23"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.8"
 val akkaSpray = "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8"
+val akkaTyped = "com.typesafe.akka" %% "akka-actor-typed" % "2.5.23"
 val circe = Seq("circe-core", "circe-generic", "circe-yaml").map(
   "io.circe" %% _ % "0.10.0"
 )
@@ -20,7 +21,8 @@ lazy val root = (project in file("."))
       akkaActor,
       akkaStream,
       akkaHttp,
-      akkaSpray
+      akkaSpray,
+      akkaTyped
     )
   )
   .settings(libraryDependencies ++= circe)

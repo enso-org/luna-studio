@@ -26,16 +26,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 
-case class GithubTutorial(
-    name: String,
-    cloneUrl: String,
-    lastPushString: String) {
-  val lastPush: Long = Instant.parse(lastPushString).getEpochSecond
+case class GithubTutorial(name: String, lastPushString: String) {
+  val lastPush: Long = Instant.parse(lastPushString).toEpochMilli
 }
 
 trait GithubJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val tutorialFormat =
-    jsonFormat(GithubTutorial, "name", "clone_url", "pushed_at")
+    jsonFormat(GithubTutorial, "name", "pushed_at")
 }
 
 case class HttpHelper(
@@ -86,10 +83,24 @@ case class TutorialsDownloader(
       .flatMap(resp => Unmarshal(resp.entity).to[String])
       .map(JsonParser(_).convertTo[List[GithubTutorial]])
 
-  def downloadZip(ref: GithubTutorial): Future[File] = {
-    val request = HttpRequest(uri = downloadUrlFor(ref))
+  def downloadIfNeeded(tutorial: GithubTutorial): Future[File] =
+    if (needsUpdate(tutorial)) {
+      logging.info(s"Downloading zip archive for ${tutorial.name}")
+      downloadZip(tutorial)
+    }
+    else {
+      logging.info(s"Reusing cached zip archive for ${tutorial.name}")
+      Future { zipFileFor(tutorial) }
+    }
+
+  def needsUpdate(tutorial: GithubTutorial): Boolean =
+    zipFileFor(tutorial).lastModified < tutorial.lastPush
+
+  def downloadZip(tutorial: GithubTutorial): Future[File] = {
+    val downloadUrl = downloadUrlFor(tutorial)
+    val request = HttpRequest(uri = downloadUrl)
     val response = HttpHelper().performWithRedirects(request)
-    val target = zipFileFor(ref)
+    val target = zipFileFor(tutorial)
     response
       .flatMap(_.entity.dataBytes.runWith(FileIO.toPath(target.toPath)))
       .map(_ => target)
@@ -113,6 +124,16 @@ case class TutorialsDownloader(
       }
     }
     zipFile.close()
+  }
+
+  def run(): Future[Unit] = {
+    val tutorialsFuture = getAvailable
+    val zipsFuture = tutorialsFuture.flatMap { tutorials =>
+      Future.sequence(
+        tutorials.map(downloadIfNeeded)
+      )
+    }
+    zipsFuture.map(_.foreach(unzip))
   }
 
 }
