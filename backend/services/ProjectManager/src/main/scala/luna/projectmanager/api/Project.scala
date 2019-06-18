@@ -5,33 +5,29 @@ import java.util.UUID
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path
-import org.enso.pkg.Package
+import luna.projectmanager.{Project => Model}
 import spray.json.DefaultJsonProtocol
 
 case class Project(
-    id: String,
-    name: String,
-    path: String,
-    thumb: Option[String],
-    lastOpenTime: Option[Long],
-    persisted: Boolean)
+  id: String,
+  name: String,
+  path: String,
+  thumb: Option[String],
+  lastOpenTime: Option[Long],
+  persisted: Boolean)
 
 object Project {
-  def fromModel(
-      id: UUID,
-      project: Package,
-      baseUri: Uri,
-      persisted: Boolean
-    ): Project = {
+
+  def fromModel(id: UUID, project: Model, baseUri: Uri): Project = {
     val thumbUri =
-      if (project.hasThumb) Some(baseUri.withPath(thumbPath(id))) else None
+      if (project.pkg.hasThumb) Some(baseUri.withPath(thumbPath(id))) else None
     Project(
       id.toString,
-      project.name,
-      project.root.getAbsolutePath,
+      project.pkg.name,
+      project.pkg.root.getAbsolutePath,
       thumbUri.map(_.toString()),
       None,
-      persisted
+      project.isPersistent
     )
   }
 

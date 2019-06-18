@@ -32,23 +32,23 @@ case class Project(kind: ProjectType, pkg: Package) {
 }
 
 case class ProjectsStorageManager(
-    localProjectsPath: File,
-    tmpProjectsPath: File,
-    tutorialsPath: File) {
+  localProjectsPath: File,
+  tmpProjectsPath: File,
+  tutorialsPath: File) {
 
   def persist(project: Project, newName: Option[String]): Project = {
-    val pkg = project.pkg
+    val pkg     = project.pkg
     val renamed = newName.map(pkg.rename).getOrElse(pkg)
-    val root = assignRootForName(localProjectsPath, renamed.name)
-    val moved = renamed.move(root)
+    val root    = assignRootForName(localProjectsPath, renamed.name)
+    val moved   = renamed.move(root)
     Project(Local, moved)
   }
 
   def assignRootForName(
-      rootDir: File,
-      name: String,
-      idx: Option[Int] = None
-    ): File = {
+    rootDir: File,
+    name: String,
+    idx: Option[Int] = None
+  ): File = {
     val nameToTry = s"$name.${idx.getOrElse("")}"
     val rootToTry = new File(rootDir, nameToTry)
 
@@ -65,18 +65,18 @@ case class ProjectsStorageManager(
     listProjectsInDirectory(Tutorial, tutorialsPath)
 
   def listProjectsInDirectory(
-      kind: ProjectType,
-      dir: File
-    ): ProjectsRepository = {
+    kind: ProjectType,
+    dir: File
+  ): ProjectsRepository = {
     val candidates = dir.listFiles(_.isDirectory).toList
-    val projects = candidates.map(Package.getOrCreate).map(Project(kind, _))
+    val projects   = candidates.map(Package.getOrCreate).map(Project(kind, _))
     ProjectsRepository(HashMap(projects.map(UUID.randomUUID() -> _): _*))
 
   }
 
   def createTemporary(name: String): Project = {
     val root = assignRootForName(tmpProjectsPath, name)
-    val pkg = Package.create(root, name)
+    val pkg  = Package.create(root, name)
     Project(Temporary, pkg)
   }
 }
@@ -88,7 +88,7 @@ case class ProjectsRepository(projects: HashMap[UUID, Project]) {
   }
 
   def insert(project: Project): (UUID, ProjectsRepository) = {
-    val id = UUID.randomUUID()
+    val id      = UUID.randomUUID()
     val newRepo = copy(projects = projects + (id -> project))
     (id, newRepo)
   }
@@ -108,19 +108,26 @@ case class GetProjectById(id: UUID, replyTo: ActorRef[GetProjectResponse])
     extends ProjectsCommand
 case class GetProjectResponse(project: Option[Project])
 
+case class CreateTemporary(
+  name: String,
+  replyTo: ActorRef[CreateTemporaryResponse])
+    extends ProjectsCommand
+case class CreateTemporaryResponse(id: UUID, project: Project)
+
 case object TutorialsReady extends InternalProjectsCommand
 
 object ProjectsService {
+
   def behavior(
-      storageManager: ProjectsStorageManager,
-      tutorialsDownloader: TutorialsDownloader
-    ): Behavior[InternalProjectsCommand] = Behaviors.setup { context =>
+    storageManager: ProjectsStorageManager,
+    tutorialsDownloader: TutorialsDownloader
+  ): Behavior[InternalProjectsCommand] = Behaviors.setup { context =>
     val buffer = StashBuffer[InternalProjectsCommand](capacity = 100)
 
     def handle(
-        localRepo: ProjectsRepository,
-        tutorialsRepo: Option[ProjectsRepository]
-      ): Behavior[InternalProjectsCommand] = Behaviors.receiveMessage {
+      localRepo: ProjectsRepository,
+      tutorialsRepo: Option[ProjectsRepository]
+    ): Behavior[InternalProjectsCommand] = Behaviors.receiveMessage {
       case ListProjectsRequest(replyTo) =>
         replyTo ! ListProjectsResponse(localRepo.projects)
         Behaviors.same
@@ -138,6 +145,12 @@ object ProjectsService {
       case TutorialsReady =>
         val newTutorialsRepo = storageManager.readTutorials
         buffer.unstashAll(context, handle(localRepo, Some(newTutorialsRepo)))
+      case msg: CreateTemporary =>
+        val project =
+          storageManager.createTemporary(msg.name)
+        val (projectId, newProjectsRepo) = localRepo.insert(project)
+        msg.replyTo ! CreateTemporaryResponse(projectId, project)
+        handle(newProjectsRepo, tutorialsRepo)
     }
 
     context.pipeToSelf(tutorialsDownloader.run())(_ => TutorialsReady)

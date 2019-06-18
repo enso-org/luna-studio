@@ -4,6 +4,7 @@ import java.io.File
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.actor.Scheduler
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpResponse
@@ -28,12 +29,12 @@ import scala.concurrent.duration._
 import akka.actor.typed.scaladsl.adapter._
 
 case class Server(
-    host: String,
-    port: Int,
-    repository: ActorRef[ProjectsCommand]
-  )(implicit val system: ActorSystem,
-    implicit val executor: ExecutionContext,
-    implicit val materializer: ActorMaterializer)
+  host: String,
+  port: Int,
+  repository: ActorRef[ProjectsCommand]
+)(implicit val system: ActorSystem,
+  implicit val executor: ExecutionContext,
+  implicit val materializer: ActorMaterializer)
     extends Directives
     with ProjectJsonSupport {
 
@@ -47,8 +48,8 @@ case class Server(
       )
   }
 
-  implicit val timeout: Timeout = 10 seconds
-  implicit val scheduler = system.scheduler
+  implicit val timeout: Timeout     = 10.seconds
+  implicit val scheduler: Scheduler = system.scheduler
 
   def withProject(id: String)(route: Project => Route): Route = {
     val uid =
@@ -61,71 +62,65 @@ case class Server(
     }
   }
 
-  val route = ignoreTrailingSlash {
+  def withSuccess[T](
+    fut: Future[T],
+    errorResponse: Option[HttpResponse] = None
+  )(successHandler: T => Route
+  ): Route = {
+    onComplete(fut) {
+      case Success(r) => successHandler(r)
+      case Failure(_) =>
+        val response =
+          errorResponse.getOrElse(HttpResponse(StatusCodes.InternalServerError))
+        complete(response)
+    }
+  }
+
+  val route: Route = ignoreTrailingSlash {
     handleExceptions(exceptionHandler) {
       pathPrefix("projects") {
-        pathSingleSlash {
-          get {
-            extractUri { uri =>
-              val projectsFuture = repository.ask(ListProjectsRequest)
-              onComplete(projectsFuture) {
-                case Success(projectsResponse) =>
-                  val response = projectsResponse.projects.toSeq.map {
-                    case (id, project) =>
-                      ApiProject.fromModel(
-                        id,
-                        project.pkg,
-                        uri,
-                        project.isPersistent
-                      )
-                  }
-                  complete(response)
-                case Failure(_) =>
-                  complete(HttpResponse(StatusCodes.InternalServerError))
-              }
+        (pathSingleSlash & extractUri & get) { uri =>
+          val projectsFuture = repository.ask(ListProjectsRequest)
+          withSuccess(projectsFuture) { projectsResponse =>
+            val response = projectsResponse.projects.toSeq.map {
+              case (id, project) => ApiProject.fromModel(id, project, uri)
             }
+            complete(response)
           }
-        } ~ pathPrefix(Segment) { id =>
-          path("thumb") {
-            get {
-              withProject(id) { project =>
-                if (project.pkg.hasThumb) getFromFile(project.pkg.thumbFile)
-                else
-                  complete(
-                    HttpResponse(
-                      StatusCodes.NotFound,
-                      entity = "Thumbnail does not exist"
-                    )
-                  )
-              }
-            }
+        } ~ (pathSingleSlash & extractUri & post) { uri =>
+          val projectFuture = repository.ask(CreateTemporary("NewProject", _))
+          withSuccess(projectFuture) {
+            case CreateTemporaryResponse(id, project) =>
+              complete(ApiProject.fromModel(id, project, uri))
+          }
+        } ~ (pathPrefix(Segment) & path("thumb") & get) { id =>
+          withProject(id) { project =>
+            if (project.pkg.hasThumb) getFromFile(project.pkg.thumbFile)
+            else
+              complete(
+                HttpResponse(
+                  StatusCodes.NotFound,
+                  entity = "Thumbnail does not exist"
+                )
+              )
           }
         }
       } ~
-        pathPrefix("tutorials") {
-          pathSingleSlash {
-            get {
-              extractUri { uri =>
-                val projectsFuture = repository.ask(ListTutorialsRequest)
-                onComplete(projectsFuture) {
-                  case Success(projectsResponse) =>
-                    val response = projectsResponse.projects.toSeq.map {
-                      case (id, project) =>
-                        ApiProject.fromModel(
-                          id,
-                          project.pkg,
-                          uri,
-                          project.isPersistent
-                        )
-                    }
-                    complete(response)
-                  case Failure(_) =>
-                    complete(HttpResponse(StatusCodes.InternalServerError))
+      pathPrefix("tutorials") {
+        pathSingleSlash {
+          get {
+            extractUri { uri =>
+              val projectsFuture = repository.ask(ListTutorialsRequest)
+              withSuccess(projectsFuture) { projectsResponse =>
+                val response = projectsResponse.projects.toSeq.map {
+                  case (id, project) => ApiProject.fromModel(id, project, uri)
                 }
+                complete(response)
               }
             }
           }
         }
+      }
     }
   }
 
@@ -135,18 +130,19 @@ case class Server(
 }
 
 object Server {
+
   def main(args: Array[String]) {
     val host = "0.0.0.0"
     val port = 50505
 
-    implicit val system: ActorSystem = ActorSystem("luna-studio")
-    implicit val executor: ExecutionContext = system.dispatcher
+    implicit val system: ActorSystem             = ActorSystem("luna-studio")
+    implicit val executor: ExecutionContext      = system.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-    val rootProjectsPath = new File("/Users/marcinkostrzewa/luna/")
-    val localProjectsPath = new File(rootProjectsPath, "projects")
-    val tmpProjectsPath = new File(rootProjectsPath, "tmp")
-    val tutorialsPath = new File(rootProjectsPath, "tutorials")
+    val rootProjectsPath   = new File("/Users/marcinkostrzewa/luna/")
+    val localProjectsPath  = new File(rootProjectsPath, "projects")
+    val tmpProjectsPath    = new File(rootProjectsPath, "tmp")
+    val tutorialsPath      = new File(rootProjectsPath, "tutorials")
     val tutorialsCachePath = new File(rootProjectsPath, ".tutorials-cache")
 
     val tutorialsDownloader =
