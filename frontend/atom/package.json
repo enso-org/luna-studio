@@ -27,7 +27,7 @@
         "fuzzaldrin": "^2.1.0",
         "fuzzly": "git+https://github.com/luna/fuzzly.git",
         "jquery": "3.2.x",
-        "js-yaml": "3.9.x",
+        "js-yaml": "3.13.x",
         "luna-logo": "1.1.3",
         "mixpanel-browser": "2.9.x",
         "pako": "1.0.x",
