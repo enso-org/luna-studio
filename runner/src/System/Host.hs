@@ -19,7 +19,7 @@ module System.Host where
 
 import Prologue
 -- import Luna.Manager.Component.Pretty
-import Control.Lens.Aeson
+import qualified Control.Lens.Aeson as LensJSON
 import Control.Monad.State.Layered
 import Type.Known
 
@@ -83,23 +83,23 @@ Running on unsupported system architecture.
 currentSysDesc :: SysDesc
 currentSysDesc = SysDesc currentHost currentArch
 
-instance Known 'Linux   where fromType = Linux
-instance Known 'Darwin  where fromType = Darwin
-instance Known 'Windows where fromType = Windows
+instance KnownType 'Linux   where fromType = Linux
+instance KnownType 'Darwin  where fromType = Darwin
+instance KnownType 'Windows where fromType = Windows
 
-instance Known 'X32     where fromType = X32
-instance Known 'X64     where fromType = X64
+instance KnownType 'X32     where fromType = X32
+instance KnownType 'X64     where fromType = X64
 
 
 -- === Instances === --
 
 -- JSON
-instance ToJSON   System  where toEncoding = lensJSONToEncoding; toJSON = lensJSONToJSON
-instance ToJSON   SysArch where toEncoding = lensJSONToEncoding; toJSON = lensJSONToJSON
-instance ToJSON   SysDesc where toEncoding = lensJSONToEncoding; toJSON = lensJSONToJSON
-instance FromJSON System  where parseJSON  = lensJSONParse
-instance FromJSON SysArch where parseJSON  = lensJSONParse
-instance FromJSON SysDesc where parseJSON  = lensJSONParse
+instance ToJSON   System  where toEncoding = LensJSON.toEncoding; toJSON = LensJSON.toJSON
+instance ToJSON   SysArch where toEncoding = LensJSON.toEncoding; toJSON = LensJSON.toJSON
+instance ToJSON   SysDesc where toEncoding = LensJSON.toEncoding; toJSON = LensJSON.toJSON
+instance FromJSON System  where parseJSON  = LensJSON.parse
+instance FromJSON SysArch where parseJSON  = LensJSON.parse
+instance FromJSON SysDesc where parseJSON  = LensJSON.parse
 instance FromJSONKey SysDesc where
     fromJSONKey = JSON.FromJSONKeyTextParser $ either (fail . convert) return . readPretty
 instance ToJSONKey   SysDesc where

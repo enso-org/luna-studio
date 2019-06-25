@@ -21,9 +21,10 @@ import qualified Path.IO              as PIO
 import qualified System.Environment   as Environment
 
 import Control.Exception.Safe   (bracket_, catchAny)
+import Control.Lens.Combinators (Getting)
 import Control.Monad.IO.Class   (MonadIO(..))
 import Control.Monad.State.Lazy (MonadState, evalStateT, get)
-import Data.Maybe               (fromMaybe, maybeToList)
+import Data.Maybe               (maybeToList)
 import Data.Semigroup           ((<>))
 import Data.Set                 (Set)
 import Options.Applicative      ( Parser, ParserInfo, ParserPrefs
@@ -256,7 +257,7 @@ copyResourcesLinux = when (currentHost == Linux) $ do
     versionN  <- T.strip <$> versionText
     resources <- resourcesDirectory
     localShareFolder <- sharePath
-    localDesktopFile <- parseRelFile $ "LunaStudio" ++ T.unpack versionN ++ ".desktop"
+    localDesktopFile <- parseRelFile $ "LunaStudio" <> T.unpack versionN <> ".desktop"
     let iconsFolder  = resources </> $(mkRelDir "icons")
         desktopFile  = resources </> $(mkRelFile "app_shared.desktop")
         localDesktop = localShareFolder </> $(mkRelDir "applications")
