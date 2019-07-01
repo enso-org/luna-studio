@@ -22,6 +22,7 @@ def copy_configs(supervisor,env, windows):
     supervisor_path = config_path + '/supervisor'
     env_path = config_path + '/env'
     windows_path = config_path + '/windows'
+    print(f"Copying env subtree from {env} to {env_path}")
     dir_util.copy_tree(env, env_path)
 
     if system.windows():
