@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PackageImports        #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 
@@ -12,20 +13,20 @@ module Main where
 
 import Prologue hiding (switch)
 
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.List            as List
-import qualified Data.Set             as Set
-import qualified Data.Text            as T
-import qualified Data.Text.Encoding   as T
-import qualified Path.IO              as PIO
-import qualified System.Environment   as Environment
+import qualified Data.ByteString.Lazy  as BL
+import qualified Data.List             as List
+import qualified "containers" Data.Set as Set
+import qualified Data.Text             as T
+import qualified Data.Text.Encoding    as T
+import qualified Path.IO               as PIO
+import qualified System.Environment    as Environment
 
 import Control.Exception.Safe   (bracket_, catchAny)
 import Control.Monad.IO.Class   (MonadIO(..))
 import Control.Monad.State.Lazy (MonadState, evalStateT, get)
 import Data.Maybe               (fromMaybe, maybeToList)
 import Data.Semigroup           ((<>))
-import Data.Set                 (Set)
+import "containers" Data.Set    (Set)
 import Options.Applicative      ( Parser, ParserInfo, ParserPrefs
                                 , execParserPure, handleParseResult, helper, idm
                                 , info, long, optional, prefs, short, strOption
