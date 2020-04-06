@@ -1,5 +1,9 @@
+<h1 align="center">
+  <b>Development has moved to <a href="https://github.com/luna/enso">Enso</a>.</b> <br/>
+  Watch <a href="https://github.com/luna/enso">Enso</a> for the upcoming 2.0 release.<br/>
+</h1>
 <p align="center">
-  <b>DEVELOPMENT HAS MOVED TO <a href="https://github.com/luna/enso">ENSO</a> WHICH IS THE 2.0 VERSION OF LUNA</b>
+  <b>Want to support Enso? Star the new repo, or check out our <a href="https://github.com/luna/ide/contribute">good first issues.</a> </b>
 </p>
 
 <p align="center">
