@@ -1,38 +1,18 @@
-resolver: lts-8.2
-extra-deps: [cond-0.4.1.1]
+resolver: lts-12.26
+extra-deps:
+  - cond-0.4.1.1
+  - ../../dependent-state
+  - lens-utils-1.4.6@sha256:26425c34292e7bd11ce490e5f38fe5eaa0bf506bb1675051362ba88f221f87bf
+  - prologue-3.2.6@sha256:435af18824437789b515e73550a291174373b6b89d231d301954a11c3b20eef6
+  - typelevel-1.2.3@sha256:94cbc4376ff2bba7c24e2ea88c0032acb47b41a5855865b461e6d131b9864ef4
+  - container-1.1.6@sha256:95436896b18c970f8058f555a287909280e1e59c799dcc06ed4eedd51c95e88b
+  - convert-1.5.1@sha256:ae5e236caa15a2aa30568ab1766a944d30d5a864253d1a4d595c3117b9b42efe
+  - functor-utils-1.17.2@sha256:828cf87f085430f02f1815dd7c760e19b8053f45f340f32f02a3675f73dff486
+  - impossible-1.1.4@sha256:99009328a5c0c0eebd395c89504c8618480018deac57dde8e0380358e1c86603
+  - monad-branch-1.0.4@sha256:59d4a17708985e11e5eefb4f567a0430c8e693e50784b6245ac56f402a432234
+  - monoid-0.1.9@sha256:5c30f78d722e4e48ef63aba9078a0ca38b36bf038276320befbfc0315a7c0b0e
 
 ghc-options:
   '*': -threaded -fconstraint-solver-iterations=100
 local-bin-path:
   ../dist/bin/public/luna-studio
-
-packages:
-- location: ./
-- extra-dep: true
-  location: {commit: 64179d2492e68016fb34d09b6faf966f3b9f91bd, git: 'https://github.com/luna/prologue.git'}
-- extra-dep: true
-  location: {commit: 4d4914483e7f207c94fcadf8f7f2736367165451, git: 'https://github.com/luna/container.git'}
-- extra-dep: true
-  location: {commit: 2371dec86a94f2e50ad8bdb8cad4e9afa2a9291a, git: 'https://github.com/luna/convert.git'}
-- extra-dep: true
-  location: {commit: 62aebd5ecb6ea873ce8db4cc230d156126cd82ee, git: 'https://github.com/luna/data-layer.git'}
-- extra-dep: true
-  location: {commit: 7a0eb39c82acb212a50c028143458ae7ce93745c, git: 'https://github.com/luna/functor-utils.git'}
-- extra-dep: true
-  location: {commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56, git: 'https://github.com/luna/impossible.git'}
-- extra-dep: true
-  location: {commit: 3bd224d169262af9f473e9b1bd691fd12caec8e2, git: 'https://github.com/luna/lens-utils.git'}
-- extra-dep: true
-  location: {commit: d5c2a68df9b34b8370c98a84f8bcaf311869daa9, git: 'https://github.com/luna/typelevel.git'}
-- extra-dep: true
-  location: {commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae, git: 'https://github.com/luna/data-construction.git'}
-- extra-dep: true
-  location: {commit: c20f35c8e2f25fd84df385e8646b125d9fca8ac4, git: 'https://github.com/luna/data-repr.git'}
-- extra-dep: true
-  location: {commit: 0f86d4dff7192db7b4f4001f427126a889ff311f, git: 'https://github.com/luna/data-rtuple.git'}
-- extra-dep: true
-  location: {commit: adb894846d34ceaa005961bd8fe676023cf1b036, git: 'https://github.com/luna/data-prop.git'}
-- extra-dep: true
-  location: {commit: ffd97a6ec0eab065cebf06663a37362c1e13a05b, git: 'https://github.com/luna/monoid'}
-- extra-dep: true
-  location: {commit: 896f4472b64ab23e610db74991de0af3b1ec0e17, git: 'https://github.com/luna/dependent-state.git'}
